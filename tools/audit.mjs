@@ -628,7 +628,44 @@ async function main() {
     else if (!/Import 2 bets/.test(csv.label))
       fail('import', 'CSV preview offered "' + csv.label + '", expected 2 importable bets');
 
+    /* A slip that arrived already settled must carry its result through,
+       computed from the returns the slip printed rather than from the odds:
+       on a partially cashed-out or each-way slip the printed figure is right
+       and the arithmetic is not. */
+    await page.evaluate(() => { const b = document.querySelector('[data-import="importUpload"]'); if (b) b.click(); });
+    await page.setInputFiles('#slipFile', {
+      name: 'settled.jpg', mimeType: 'image/jpeg', buffer: Buffer.from('settled-slip')
+    });
+    await page.waitForTimeout(700);
+    const settledCard = await page.evaluate(() => {
+      const cards = document.querySelectorAll('#uploadResults .card');
+      const c = cards[cards.length - 1];
+      return { stage: c.dataset.stage, result: c.dataset.result, returns: c.dataset.returns,
+               note: (c.querySelector('.slipstage') || {}).textContent };
+    });
+    if (settledCard.stage !== 'settled' || settledCard.result !== 'won')
+      fail('import', 'a settled slip read as stage=' + settledCard.stage + ' result=' + settledCard.result);
+    if (!/settled/i.test(settledCard.note || ''))
+      fail('import', 'the review card did not say the slip was already settled');
+
+    const beforeSettled = posted.length;
+    await page.evaluate(() => {
+      const cards = document.querySelectorAll('#uploadResults .card');
+      const b = cards[cards.length - 1].querySelector('[data-confirm-slip]');
+      if (b) b.click();
+    });
+    await page.waitForTimeout(600);
+    const sent = posted.slice(beforeSettled)[0];
+    if (!sent) fail('import', 'confirming a settled slip did not POST');
+    else {
+      if (sent.outcome !== 'won') fail('import', 'settled slip POSTed outcome ' + sent.outcome);
+      /* 38273 returned minus 30618 staked. */
+      if (sent.profitPence !== 7655)
+        fail('import', 'settled slip POSTed profit ' + sent.profitPence + ' pence, expected 7655');
+    }
+
     const before = posted.length;
+    await page.evaluate(() => { const b = document.querySelector('[data-import="importOther"]'); if (b) b.click(); });
     await page.evaluate(() => { const b = document.getElementById('csvGo'); if (b) b.click(); });
     await page.waitForTimeout(600);
     const bulk = posted.slice(before).find(b => Array.isArray(b.bets));

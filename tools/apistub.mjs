@@ -138,12 +138,27 @@ export async function installStub(page, opts = {}) {
   /* The slip reader. Returns one legible slip and one the reader could only
      partly make out, which is the case the editable fields exist for. */
   let extractCall = 0;
-  await page.route('**/api/extract', route => route.fulfill({
+  await page.route('**/api/extract', route => {
+    /* Read the counter once. `extractCall++ % 3` in the first branch and
+       `extractCall % 3` in the second read different values, which silently
+       skipped a case. */
+    const n = extractCall++ % 3;
+    return route.fulfill({
     status: 200, contentType: 'application/json',
-    body: JSON.stringify({ fields: (extractCall++ % 2 === 0)
+    body: JSON.stringify({ fields: (n === 0)
+      /* Unsettled and fully legible: the common case. */
       ? { selection: 'Over 2.5 Goals', event: 'Arsenal v Chelsea', stake: 25.00,
-          odds: 1.85, bookmaker: 'bet365', market: 'Over/Under' }
-      : { selection: 'Under 3.5 Goals', event: null, stake: null, odds: 1.44,
-          bookmaker: 'Sky Bet', market: 'Over/Under' } })
-  }));
+          odds: 1.85, bookmaker: 'bet365', market: 'Over/Under',
+          stage: 'prematch', result: 'open', returns: null }
+      : (n === 1)
+      /* Legible but missing the stake: the case the editable fields exist for. */
+      ? { selection: 'Under 3.5 Goals', event: null, stake: null, odds: 1.44,
+          bookmaker: 'Sky Bet', market: 'Over/Under',
+          stage: 'inplay', result: 'open', returns: null }
+      /* Already settled, with the returns printed on it. */
+      : { selection: 'Under 5.5 Goals', event: 'Oskarshamns AIK v IFK Karlshamn',
+          stake: 306.18, odds: 1.25, bookmaker: 'Paddy Power', market: 'Over/Under',
+          stage: 'settled', result: 'won', returns: 382.73 } })
+    });
+  });
 }

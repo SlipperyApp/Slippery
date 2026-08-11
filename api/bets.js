@@ -116,11 +116,24 @@ async function create(req, res, user, body) {
   const odds = body.odds == null ? null : Number(body.odds);
   const placedAt = body.placedAt ? new Date(body.placedAt) : new Date();
 
+  /* A slip can be forwarded before kick-off, in play, or after it settled.
+     Only the third carries a result, and only a result the slip actually
+     stated — never one inferred here. Everything else lands pending and the
+     results lookup grades it. */
+  const settledNow = body.outcome && body.profitPence != null;
+  const outcome = settledNow ? importOutcome(body) : null;
+  const profit = settledNow && outcome ? Math.round(Number(body.profitPence)) : null;
+
   const rows = await sql`
     INSERT INTO bets (user_id, event, selection, market, bookmaker, odds,
-                      stake_pence, status, placed_at, source)
+                      stake_pence, profit_pence, outcome, status, placed_at,
+                      settled_at, settle_reason, source)
     VALUES (${user.id}, ${str(body.event)}, ${str(body.selection)}, ${str(body.market)},
-            ${str(body.book)}, ${odds}, ${stake}, 'pending', ${placedAt},
+            ${str(body.book)}, ${odds}, ${stake},
+            ${profit}, ${outcome},
+            ${outcome ? 'settled' : 'pending'}, ${placedAt},
+            ${outcome ? new Date() : null},
+            ${outcome ? 'Result read from the slip' : null},
             ${body.source === 'telegram' ? 'telegram' : 'upload'})
     RETURNING id, event, selection, market, bookmaker, odds, stake_pence,
               profit_pence, outcome, status, placed_at, settled_at, settle_reason, source`;

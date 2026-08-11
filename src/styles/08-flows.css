@@ -295,6 +295,15 @@
   display:grid;grid-template-columns:1fr 1fr;gap:9px;margin:12px 0;
   & > label:nth-child(-n+2){grid-column:1/-1}
 }
+/* Where the bet is in its life, stated on the review card so nobody is
+   surprised that an unsettled slip shows no profit yet. */
+.slipstage{
+  margin:0 0 4px;font-size:12px;line-height:1.5;
+  display:flex;align-items:center;gap:7px;
+  &::before{content:"";width:7px;height:7px;border-radius:50%;flex:0 0 auto}
+  &.ok{color:var(--t2);&::before{background:var(--pos)}}
+  &.warn{color:var(--t2);&::before{background:var(--a)}}
+}
 .slipfield{
   display:block;
   & span{display:block;font-size:9.5px;color:var(--t2);letter-spacing:.05em;

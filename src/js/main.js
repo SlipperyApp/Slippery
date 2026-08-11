@@ -421,6 +421,20 @@ function renderExtraction(card, file, res) {
   const missing = ['stake', 'odds', 'selection'].filter(k => f[k] == null);
   const val = (v, fmt) => v == null ? '' : fmt ? fmt(v) : String(v);
 
+  /* Where the bet is in its life. A slip forwarded at placement has no
+     result and gets looked up later; one forwarded after settlement carries
+     its own. The reader states which — it is never inferred here, because
+     every slip prints a potential-returns figure and inferring "settled"
+     from that would grade open bets. */
+  const stage = f.stage || (f.result && f.result !== 'open' ? 'settled' : null);
+  const result = f.result && f.result !== 'open' ? f.result : null;
+  const stageNote = stage === 'settled' && result
+      ? ['ok', 'Settled on the slip: ' + RESULT_WORD[result]]
+    : stage === 'settled' ? ['ok', 'Settled, result unclear — we will look it up']
+    : stage === 'inplay' ? ['warn', 'In play. We will settle it at full time']
+    : stage === 'prematch' ? ['warn', 'Not started. We will settle it at full time']
+    : ['warn', 'We will look the result up when the game finishes'];
+
   const field = (key, label, value, mode) =>
     '<label class="slipfield"><span>' + label + '</span>' +
     '<input class="field compact" data-slip="' + key + '" ' +
@@ -439,6 +453,7 @@ function renderExtraction(card, file, res) {
       field('book', 'Bookmaker', val(f.bookmaker)) +
       field('market', 'Market', val(f.market)) +
     '</div>' +
+    '<p class="slipstage ' + stageNote[0] + '">' + esc(stageNote[1]) + '</p>' +
     (missing.length
       ? '<p class="hinttext">Slippery will not guess at numbers it cannot read. ' +
         'Type what is missing, or retake the photo with the stake and odds in frame.</p>'
@@ -447,8 +462,15 @@ function renderExtraction(card, file, res) {
     '<button class="btn primary small" data-confirm-slip="1">Confirm</button>' +
     '<button class="btn ghost small" data-dismiss-card="1">Discard</button></div>';
 
+  card.dataset.stage = stage || '';
+  card.dataset.result = result || '';
+  /* Returns is what the slip paid out, so profit is returns minus stake —
+     the same definition the engine uses, computed once. */
+  card.dataset.returns = f.returns != null ? String(Math.round(f.returns * 100)) : '';
   syncSlipCard(card);
 }
+
+const RESULT_WORD = { won: 'won', lost: 'lost', void: 'void', cashed_out: 'cashed out' };
 
 /* Read the card's inputs into its dataset, and gate Confirm on the three
    fields a bet cannot exist without. Called on render and on every keystroke
@@ -500,13 +522,32 @@ async function confirmSlip(btn) {
   const was = btn.textContent;
   btn.textContent = 'Saving…';
 
+  const stake = Number(card.dataset.stake || 0);
+  const odds = card.dataset.odds ? Number(card.dataset.odds) : null;
+  const result = card.dataset.result || '';
+
+  /* Only send an outcome when the slip stated one. Prefer the returns the
+     slip printed over recomputing from the odds: on a partially cashed out
+     or each-way slip the printed figure is right and the arithmetic is not. */
+  let outcome = null, profitPence = null;
+  if (result) {
+    outcome = result === 'cashed_out' ? 'cash' : result;
+    const returns = card.dataset.returns ? Number(card.dataset.returns) : null;
+    profitPence = returns != null ? returns - stake
+      : result === 'lost' ? -stake
+      : result === 'void' ? 0
+      : odds ? Math.round(stake * (odds - 1)) : null;
+    if (profitPence == null) { outcome = null; }      // no figure, no grade
+  }
+
   const r = await post('/api/bets', {
     event: card.dataset.event || '',
     selection: card.dataset.selection || '',
     market: card.dataset.market || '',
     book: card.dataset.book || '',
-    odds: card.dataset.odds ? Number(card.dataset.odds) : null,
-    stakePence: Number(card.dataset.stake || 0),
+    odds,
+    stakePence: stake,
+    outcome, profitPence,
     source: 'upload'
   });
 
