@@ -124,7 +124,12 @@ src/            source of truth — edit here, never edit the built output
   styles/       CSS, one file per concern, native nesting
   js/           ES modules, assembled into one IIFE at build time
 api/            Vercel serverless functions (Node runtime)
-  _lib/         shared server code (db, auth, mail, rate limiting)
+  bets.js       the ledger: list, log, bulk import, settle by hand, delete
+  settle.js     the refresh button: look up this user's running bets now
+  results.js    the cron sweep, same job for everyone every 20 minutes
+  extract.js    slip image or PDF -> structured fields, refuses to guess
+  telegram.js   the bot webhook
+  _lib/         shared server code (db, auth, mail, rate limiting, feeds)
 tests/          node:test — run with `npm test`
 build.mjs       inlines src/ into public/index.html
 public/         BUILD OUTPUT — generated, do not hand-edit
@@ -147,7 +152,13 @@ node tools/icons.mjs   re-rasterise the PWA icons and og.png after art changes
    definition. This is deliberate: two production bugs came from collisions.
 4. Money is always integer pence internally. Format only at the edge.
 5. Secrets come from `process.env` and are never logged or echoed.
-6. No emoji as an interface element. They rasterise from the system font,
+6. There is no demo data. `src/js/data.js` is a store that starts empty and
+   is filled by `hydrate()` from GET /api/bets. The marketing pages run on
+   one labelled worked example in `content.js` (SAMPLE) which must never
+   reach the app. `tools/apistub.mjs` fakes the backend for the audit.
+7. Settlement writes happen on the server only. The browser asks and
+   re-reads; it never grades a bet itself, or there would be two graders.
+8. No emoji as an interface element. They rasterise from the system font,
    so they cannot take #86EFAC or #FCA5A5 and they differ per platform.
    Add a `<symbol>` to `src/icons.svg` and use `ico(id)` from `data.js`.
 
@@ -165,3 +176,15 @@ node tools/icons.mjs   re-rasterise the PWA icons and og.png after art changes
   re-evaluated every scroll frame regardless of whether anything animates:
   measured 49.9ms p95 with it, 16.8ms without. Bake the gaussian into the
   SVG with `feGaussianBlur` and use it as a `background-image` instead.
+
+- **A delegated selector must not be able to match `<html>` or `<body>`.**
+  `[data-theme]` matched every click, because the theme lives on
+  `<html data-theme>`, and since that branch returns it made every branch
+  after it dead code — import, signup, the unit row and both dropzones all
+  silently stopped working. `tools/audit.mjs` now reads the handler's
+  selectors out of the source and fails if any reaches the root.
+- **Results come from SofaScore by default**, because it publishes period
+  scores and so can prove the 90-minute score on a knockout tie.
+  football-data.org is the automatic fallback for SofaScore's 403s, which
+  is what a datacenter IP gets. Neither is a paid feed; if settlement
+  becomes load-bearing, buy one.
