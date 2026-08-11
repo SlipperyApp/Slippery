@@ -162,12 +162,17 @@ function renderBotChat() {
   const staked = day8.reduce((a, b) => a + b.stake, 0);
   const pad = (s, n) => (s + '                    ').slice(0, n);
   setHTML('botChat',
+    /* What you forward is the bookmaker's PLACED receipt. Capture happens
+       before the result exists — that is the locked core idea, and a
+       preview showing a forwarded winner teaches the opposite habit. */
     '<div class="bubble outgoing" style="padding:0;overflow:hidden;width:66%"><div style="background:#fff;color:#0b1220;padding:12px">' +
-    '<div style="color:#065f3c;font-weight:700;font-size:12px">CONGRATS, you won £' +
-      ((slip.stake + slip.profit) / 100).toFixed(2) + '</div>' +
+    '<div style="color:#1e293b;font-weight:700;font-size:11px;letter-spacing:.08em">BET PLACED</div>' +
     '<div style="font-weight:700;font-size:12px;margin-top:6px">' + esc(slip.selection) + '</div>' +
     '<div style="font-size:10.5px;color:#475569;margin-top:3px">' + esc(slip.event) + '</div>' +
-    '<div style="font-size:10.5px;color:#475569">Stake £' + (slip.stake / 100).toFixed(2) + '</div></div></div>' +
+    '<div style="font-size:10.5px;color:#475569">Stake £' + (slip.stake / 100).toFixed(2) +
+      ' at ' + slip.odds.toFixed(2) + '</div>' +
+    '<div style="font-size:10.5px;color:#475569">To return £' +
+      ((slip.stake + slip.profit) / 100).toFixed(2) + '</div></div></div>' +
 
     '<div class="bubble incoming slim">Reading your slip…</div>' +
 
@@ -175,11 +180,16 @@ function renderBotChat() {
     '<div class="m" style="font-size:10.5px;color:var(--s);letter-spacing:.07em;text-transform:uppercase;margin-bottom:9px">Slip read, single</div>' +
     kv('Selection', esc(slip.selection)) + kv('Odds', slip.odds.toFixed(2)) +
     kv('Stake', M.money(slip.stake)) + kv('Returns', M.money(slip.stake + slip.profit)) +
-    kv('Result', '<span class="pos">Won, ' + M.signed(slip.profit) + '</span>') +
     kv('Bookmaker', esc(slip.book)) +
+    kv('Status', '<span style="color:var(--a)">Tracking</span>') +
     '<div style="display:flex;gap:8px;margin-top:11px">' +
     '<span style="flex:1;text-align:center;font-size:12.5px;padding:9px 0;border-radius:9px;background:linear-gradient(135deg,var(--p),var(--s));color:#08111f">Confirm</span>' +
     '<span style="flex:1;text-align:center;font-size:12.5px;padding:9px 0;border-radius:9px;background:var(--c1);border:1px solid var(--e1)">Edit</span></div></div>' +
+
+    /* Settlement arrives later, from the results feed. Showing it as a
+       separate, later message is the honest shape of the product. */
+    '<div class="bubble incoming slim">Full time. ' + esc(slip.selection) + ' <b class="pos">won</b>, ' +
+      M.signed(slip.profit) + '.</div>' +
 
     '<div class="bubble incoming slim">Logged. Today: <b class="' + (net >= 0 ? 'pos' : 'neg') + '">' +
       M.signed(net) + '</b> across ' + day8.length + ' bets.</div>' +
@@ -228,21 +238,31 @@ function scene(i) {
   const days = dayMap(TODAY.month);
   const slip = LEDGER.find(b => b.event.startsWith('Oskarshamns'));
 
-  if (i === 0) return { top: ['Telegram', ''], html:
+  /* Scene 0 is a chat, so it anchors to the bottom the way a real one
+     does. The rest are cards and sit centred. */
+  if (i === 0) return { top: ['Telegram', ''], cls: 'chat', html:
+    /* The forwarded image is a BET PLACED receipt, not a winning one.
+       Capture-at-placement is the locked core idea, and a walkthrough that
+       shows someone forwarding a settled winner demonstrates precisely the
+       habit the product exists to break. */
     '<div style="background:#fff;color:#0b1220;border-radius:9px;padding:9px;align-self:flex-end;max-width:80%;display:flex;flex-direction:column;gap:2px">' +
-    '<b style="font-size:9.5px;color:#054b30">WON ' + M.money(slip.stake + slip.profit) + '</b>' +
+    '<b style="font-size:9.5px;color:#1e293b;letter-spacing:.08em">BET PLACED</b>' +
     '<span style="font-size:8.5px;color:#334155">' + esc(slip.selection) + '</span>' +
     '<span style="font-size:8.5px;color:#334155">' + esc(slip.event) + '</span>' +
-    '<span style="font-size:8.5px;color:#334155">Stake ' + M.money(slip.stake) + '</span></div>' +
+    '<span style="font-size:8.5px;color:#334155">Stake ' + M.money(slip.stake) +
+      ' at ' + slip.odds.toFixed(2) + '</span>' +
+    '<span style="font-size:8.5px;color:#334155">To return ' + M.money(slip.stake + slip.profit) + '</span></div>' +
     '<div style="font-size:9.5px;background:var(--c2);border-radius:8px;padding:7px 10px;align-self:flex-start;max-width:88%;color:var(--t1)">Reading your slip…</div>' +
     '<p style="font-size:9px;color:var(--t2);text-align:center;padding-top:4px">One slip, no typing</p>' };
 
-  if (i === 1) return { top: ['Slip read, single', M.signed(slip.profit)], html:
+  if (i === 1) return { top: ['Slip read, single', ''], html:
     '<div style="background:var(--c2);border:1px solid var(--e1);border-radius:9px;padding:9px">' +
     srow('Selection', esc(slip.selection)) + srow('Odds', slip.odds.toFixed(2)) +
     srow('Stake', M.money(slip.stake)) + srow('Returns', M.money(slip.stake + slip.profit)) +
-    srow('Result', '<span class="pos">Won, ' + M.signed(slip.profit) + '</span>') +
     srow('Bookmaker', esc(slip.book)) +
+    /* No result here. The bet has only just been placed; the grade arrives
+       at full time, from the results feed, not from the image. */
+    srow('Status', '<span style="color:var(--a)">Tracking, kicks off 16:00</span>') +
     '<div style="display:flex;gap:5px;margin-top:7px">' +
     '<span style="flex:1;text-align:center;font-size:9px;padding:5px 0;border-radius:6px;background:linear-gradient(135deg,var(--p),var(--s));color:#08111f">Confirm</span>' +
     '<span style="flex:1;text-align:center;font-size:9px;padding:5px 0;border-radius:6px;background:var(--c1);border:1px solid var(--e1)">Edit</span></div></div>' +
@@ -346,7 +366,7 @@ function paintScene() {
     const val = $('sceneValue');
     val.textContent = sc.top[1];
     val.className = 'r ' + (sc.top[1].charAt(0) === '−' ? 'neg' : sc.top[1].charAt(0) === '+' ? 'pos' : '');
-    body.innerHTML = '<div class="scene"></div>';
+    body.innerHTML = '<div class="scene ' + (sc.cls || '') + '"></div>';
     const el = body.firstChild;
     el.innerHTML = sc.html;
     requestAnimationFrame(() => el.classList.add('on'));

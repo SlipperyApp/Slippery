@@ -120,6 +120,7 @@ or a decision that changes what the product is.
 ```
 src/            source of truth — edit here, never edit the built output
   app.html      body markup
+  icons.svg     the icon sprite, inlined once at the top of <body>
   styles/       CSS, one file per concern, native nesting
   js/           ES modules, assembled into one IIFE at build time
 api/            Vercel serverless functions (Node runtime)
@@ -134,6 +135,7 @@ public/         BUILD OUTPUT — generated, do not hand-edit
 npm run build     src/ → public/index.html   (Vercel runs this)
 npm test          settlement + unit + integration tests
 npm run verify    build, test, then real-browser audit (axe, overflow, screenshots)
+node tools/icons.mjs   re-rasterise the PWA icons and og.png after art changes
 ```
 
 ## Rules for this codebase
@@ -145,3 +147,21 @@ npm run verify    build, test, then real-browser audit (axe, overflow, screensho
    definition. This is deliberate: two production bugs came from collisions.
 4. Money is always integer pence internally. Format only at the edge.
 5. Secrets come from `process.env` and are never logged or echoed.
+6. No emoji as an interface element. They rasterise from the system font,
+   so they cannot take #86EFAC or #FCA5A5 and they differ per platform.
+   Add a `<symbol>` to `src/icons.svg` and use `ico(id)` from `data.js`.
+
+## Decisions that reversed an earlier one
+- **Scroll jacking is now in**, on the owner's explicit instruction, and it
+  supersedes the "already tried, rejected" line in the brief. What was
+  rejected was *mandatory* snap, which traps people. The landing sequence
+  in `src/styles/09-jack.css` is jacked without trapping: a real 300svh
+  track, a `position:sticky` stage rather than fixed, proximity snap, no
+  intercepted wheel or touch events, and a full collapse under
+  prefers-reduced-motion. `tools/audit.mjs` asserts all of that. If you
+  change it, keep those five properties — they are the entire difference
+  between this and the version that was rejected.
+- **A live `filter: blur()` is banned in the background layer.** It is
+  re-evaluated every scroll frame regardless of whether anything animates:
+  measured 49.9ms p95 with it, 16.8ms without. Bake the gaussian into the
+  SVG with `feGaussianBlur` and use it as a `background-image` instead.

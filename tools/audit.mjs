@@ -413,7 +413,7 @@ async function main() {
     const page = await browser.newPage({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 2 });
     await page.goto(base, { waitUntil: 'networkidle' });
     await page.waitForTimeout(600);
-    for (const v of ['landing', 'dash', 'setup', 'howto', 'settings', 'imp']) {
+    for (const v of ['landing', 'dash', 'setup', 'howto', 'settings', 'imp', 'bot']) {
       await page.evaluate(id => {
         const b = document.querySelector('[data-nav="' + id + '"]');
         if (b) b.click();
