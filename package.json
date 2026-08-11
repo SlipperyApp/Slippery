@@ -1,0 +1,19 @@
+{
+  "name": "slippery",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "node build.mjs",
+    "test": "node --test \"tests/**/*.test.mjs\"",
+    "verify": "node build.mjs && node --test \"tests/**/*.test.mjs\" && node tools/audit.mjs"
+  },
+  "dependencies": {
+    "@neondatabase/serverless": "^0.10.4"
+  },
+  "devDependencies": {
+    "playwright-core": "^1.49.1",
+    "axe-core": "^4.10.2"
+  },
+  "engines": { "node": ">=20" }
+}
