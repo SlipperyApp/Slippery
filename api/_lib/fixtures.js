@@ -18,7 +18,34 @@
 const FD_BASE = 'https://api.football-data.org/v4';
 
 export function configured() {
-  return Boolean(process.env.FOOTBALL_DATA_TOKEN);
+  return Boolean(process.env.FOOTBALL_DATA_TOKEN) || sofascoreEnabled();
+}
+
+const sofascoreEnabled = () => process.env.RESULTS_PROVIDER === 'sofascore';
+
+/**
+ * Fetch finished fixtures from whichever provider is configured.
+ *
+ * SofaScore first when asked for, because it publishes the 90-minute score
+ * on knockout ties and football-data.org does not. But it sits behind a bot
+ * filter that refuses datacenter IPs, which is what a serverless function
+ * has — so a 403 falls back to football-data.org rather than returning an
+ * empty day and leaving every bet pending. Falling back is the difference
+ * between "settled a bit later than ideal" and "silently stopped settling".
+ */
+export async function resolveFinished(dateFrom, dateTo) {
+  if (sofascoreEnabled()) {
+    try {
+      const sofa = await import('./sofascore.js');
+      return { provider: 'sofascore', fixtures: await sofa.finishedBetween(dateFrom, dateTo) };
+    } catch (err) {
+      if (!process.env.FOOTBALL_DATA_TOKEN) throw err;
+      /* Blocked or broken. Say which, once, then carry on with the fallback. */
+      console.warn('sofascore unavailable (' + (err.blocked ? 'blocked' : err.message) +
+                   '), falling back to football-data.org');
+    }
+  }
+  return { provider: 'football-data', fixtures: await finishedBetween(dateFrom, dateTo) };
 }
 
 /** Map a football-data.org status onto what the engine understands. */

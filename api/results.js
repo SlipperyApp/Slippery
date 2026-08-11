@@ -22,6 +22,7 @@ export default async function handler(req, res) {
     if (!dbConfigured()) return json(res, 503, { error: 'No database is connected yet.', needs: ['DATABASE_URL'] });
     if (!feed.configured()) return json(res, 503, { error: 'No results feed is configured.', needs: ['FOOTBALL_DATA_TOKEN'] });
 
+
     await ensureSchema();
     const sql = db();
 
@@ -34,7 +35,7 @@ export default async function handler(req, res) {
     const today = new Date();
     const from = iso(new Date(today.getTime() - 3 * 86400000));
     const to = iso(new Date(today.getTime() + 86400000));
-    const fixtures = await feed.finishedBetween(from, to);
+    const { provider, fixtures } = await feed.resolveFinished(from, to);
 
     let settled = 0, asked = 0, stillPending = 0;
     const details = [];
@@ -72,7 +73,7 @@ export default async function handler(req, res) {
     }
 
     return json(res, 200, {
-      checked: pending.length, fixtures: fixtures.length,
+      checked: pending.length, fixtures: fixtures.length, provider,
       settled, asked, stillPending,
       details: details.slice(0, 50)
     });
