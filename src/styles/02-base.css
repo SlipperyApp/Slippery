@@ -22,6 +22,10 @@ body{
 }
 :where(button,input,select,textarea){font:inherit;color:inherit}
 button{cursor:pointer;background:none;border:none;color:inherit}
+/* Removes the ~300ms delay iOS holds every tap for while it waits to see
+   whether a second tap is coming. Double-tap-to-zoom is not wanted on any
+   control here, and pinch zoom is untouched. */
+:where(button,a,label,summary,[role=button],input,select,textarea){touch-action:manipulation}
 [hidden]{display:none!important}
 
 /* iOS zooms any focused field under 16px and never zooms back out.

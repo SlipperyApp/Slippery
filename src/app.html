@@ -337,12 +337,12 @@
           <button data-unit="custom">Custom</button>
         </div>
         <label class="sr" for="unitCustomSetup">Custom unit</label>
-        <input class="field" id="unitCustomSetup" inputmode="decimal" placeholder="For example 35…" hidden>
+        <input class="field" id="unitCustomSetup" inputmode="decimal" placeholder="For example 35…" hidden autocomplete="off">
         <p class="fineprint" style="margin-top:8px" id="unitExample"></p>
         <div class="fieldrow" style="margin-top:13px">
           <span class="lab" id="targetLabel">Monthly target</span>
           <label class="sr" for="targetSetup">Target amount</label>
-          <input class="field compact m" id="targetSetup" inputmode="decimal" value="2500">
+          <input class="field compact m" id="targetSetup" inputmode="decimal" value="2500" autocomplete="off">
         </div>
         <div class="targetlist" id="targetListSetup"></div>
       </div>
@@ -475,7 +475,7 @@
         </div>
         <div class="addrow" style="margin-top:12px" id="newMonthEdit" hidden>
           <label class="sr" for="newMonthInput">New target</label>
-          <input class="field" id="newMonthInput" inputmode="decimal" value="2500">
+          <input class="field" id="newMonthInput" inputmode="decimal" value="2500" autocomplete="off">
           <button class="btn primary" id="newMonthSave">Save</button>
         </div>
       </div>
@@ -579,7 +579,7 @@
         <div class="searchbox">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>
           <label class="sr" for="betSearch">Search bets</label>
-          <input class="field" id="betSearch" type="search" placeholder="Search event, market or bookmaker…">
+          <input class="field" id="betSearch" type="search" placeholder="Search event, market or bookmaker…" autocomplete="off">
         </div>
         <div class="chiprow" id="betFilters" role="group" aria-label="Filter by outcome"></div>
         <div class="card pad"><div id="ledgerList"></div></div>
@@ -636,7 +636,7 @@
         <div class="searchbox">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>
           <label class="sr" for="peopleSearch">Search people</label>
-          <input class="field" id="peopleSearch" type="search" placeholder="Find someone by name…">
+          <input class="field" id="peopleSearch" type="search" placeholder="Find someone by name…" autocomplete="off">
         </div>
         <div id="followingSummary"></div>
         <div class="card pad"><div id="followingList"></div></div>
@@ -791,11 +791,11 @@
         <button data-unit="custom">Custom</button>
       </div>
       <label class="sr" for="unitCustomSettings">Custom unit</label>
-      <input class="field" id="unitCustomSettings" inputmode="decimal" placeholder="For example 35…" hidden style="margin-bottom:6px">
+      <input class="field" id="unitCustomSettings" inputmode="decimal" placeholder="For example 35…" hidden style="margin-bottom:6px" autocomplete="off">
       <div class="fieldrow"><span class="lab">Enter stakes as</span><label class="sr" for="stakeAs">Enter stakes as</label>
         <select class="select compact" id="stakeAs"><option>Currency</option><option>Units (u)</option></select></div>
       <div class="fieldrow"><span class="lab">Target amount</span><label class="sr" for="targetSettings">Target amount</label>
-        <input class="field compact m" id="targetSettings" inputmode="decimal" value="2500"></div>
+        <input class="field compact m" id="targetSettings" inputmode="decimal" value="2500" autocomplete="off"></div>
       <div class="targetlist" id="targetListSettings"></div>
     </div>
 
@@ -830,7 +830,7 @@
         <summary>Tipsters <span class="count" id="tipsterCount"></span></summary>
         <div class="tagchips" id="tipsterChips"></div>
         <div class="addrow"><label class="sr" for="tipsterInput">New tipster</label>
-          <input class="field" id="tipsterInput" placeholder="Add a name…">
+          <input class="field" id="tipsterInput" placeholder="Add a name…" autocomplete="off">
           <button class="btn ghost" id="tipsterAdd" style="padding:0 17px">Add</button></div>
       </details>
       <details class="disclose">
@@ -838,7 +838,7 @@
         <p class="desc" style="margin:3px 0 5px">Grouped by the operator behind them.</p>
         <div id="bookGroups"></div>
         <div class="addrow" style="margin-top:12px"><label class="sr" for="bookInput">New bookmaker</label>
-          <input class="field" id="bookInput" placeholder="Add a bookmaker…">
+          <input class="field" id="bookInput" placeholder="Add a bookmaker…" autocomplete="off">
           <label class="sr" for="bookParent">Group</label>
           <select class="select" id="bookParent" style="max-width:110px"><option>Flutter</option><option>Kambi</option><option selected>Other</option></select>
           <button class="btn ghost" id="bookAdd" style="padding:0 15px">Add</button></div>

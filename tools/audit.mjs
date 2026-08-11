@@ -430,6 +430,52 @@ async function main() {
     await page.close();
   }
 
+  /* ── views are addressable and back works ─────────────────────
+     Nothing wrote to history, so the back button did nothing: on an
+     installed PWA that means Android's hardware back exits the app from the
+     middle of signup, and no screen could be linked to. */
+  {
+    const page = await browser.newPage({ viewport: { width: 390, height: 844 } });
+    await installStub(page);
+    await page.goto(base, { waitUntil: 'networkidle' });
+    await page.waitForTimeout(500);
+    const view = () => page.evaluate(() => {
+      const on = document.querySelector('.view.on');
+      return { id: on ? on.id : null, hash: location.hash };
+    });
+
+    await page.evaluate(() => document.querySelector('[data-nav="imp"]').click());
+    await page.waitForTimeout(200);
+    let v = await view();
+    if (v.id !== 'imp') fail('routing', 'navigating to import landed on ' + v.id);
+    if (v.hash !== '#imp') fail('routing', 'the URL did not follow the view: "' + v.hash + '"');
+
+    await page.evaluate(() => document.querySelector('[data-nav="settings"]').click());
+    await page.waitForTimeout(200);
+    await page.goBack();
+    await page.waitForTimeout(300);
+    v = await view();
+    if (v.id !== 'imp') fail('routing', 'back from settings landed on ' + v.id + ', expected imp');
+
+    await page.goForward();
+    await page.waitForTimeout(300);
+    v = await view();
+    if (v.id !== 'settings') fail('routing', 'forward landed on ' + v.id + ', expected settings');
+
+    /* And a cold load of a deep link. */
+    const deep = await browser.newPage({ viewport: { width: 390, height: 844 } });
+    await installStub(deep);
+    await deep.goto(base + '#settings', { waitUntil: 'networkidle' });
+    await deep.waitForTimeout(600);
+    const landed = await deep.evaluate(() => {
+      const on = document.querySelector('.view.on');
+      return on ? on.id : null;
+    });
+    if (landed !== 'settings') fail('routing', 'a cold load of #settings opened ' + landed);
+    await deep.close();
+    await page.close();
+  }
+
   /* ── the signup wizard advances ───────────────────────────────
      It sits below the broken [data-theme] branch, so Continue did nothing
      at all: filling the form and pressing it applied a colour scheme. A

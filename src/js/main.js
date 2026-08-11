@@ -57,8 +57,15 @@ function showBackendNotice(body) {
   setText('backendNeeds', (body && body.needs || []).join(', ') || 'a database');
 }
 
-/* ---------------- navigation ---------------- */
-function go(id) {
+/* ---------------- navigation ----------------
+   Views are addressable. Without this the back button did nothing at all:
+   on an installed PWA that means Android's hardware back exits the app from
+   the middle of signup, and no screen can be linked to or bookmarked.
+
+   pushState rather than location.hash, deliberately — every view id is also
+   an element id, so assigning the hash would make the browser scroll to it
+   and fight the view transition. */
+function go(id, fromHistory) {
   const view = $(id);
   if (!view) return;
   /* The app views hold a real person's money. Without a session there is
@@ -78,6 +85,13 @@ function go(id) {
     if (t === id) b.setAttribute('aria-current', 'page');
     else b.removeAttribute('aria-current');
   });
+  if (!fromHistory) {
+    const url = id === 'landing' ? location.pathname : location.pathname + '#' + id;
+    /* Replace rather than push when re-entering the same view, so tapping a
+       tab twice does not need two presses of back to undo. */
+    if (prev === id) history.replaceState({ view: id }, '', url);
+    else history.pushState({ view: id }, '', url);
+  }
   scrollTo(0, 0);
   reveal(view);
   paintSegs(view);
@@ -1096,6 +1110,10 @@ async function init() {
   initMotion();
   Auth.init();
 
+  /* Honour a deep link before anything else paints over it. */
+  const deep = location.hash.slice(1);
+  if (deep && $(deep) && deep !== 'landing') go(deep, true);
+
   /* Find out who we are before anything can navigate into the app. Until
      this resolves, sessionChecked is false and go() lets navigation
      through, so a deep link is never bounced by a race. */
@@ -1103,7 +1121,8 @@ async function init() {
   if (user) {
     R.renderAccount(user);
     await loadLedger();
-    /* Land a signed-in visitor on their dashboard rather than the pitch. */
+    /* Land a signed-in visitor on their dashboard rather than the pitch,
+       unless they asked for a particular view. */
     if (S.view === 'landing' && !location.hash) go('dash');
   }
 
@@ -1124,6 +1143,13 @@ async function init() {
     }, 8000);
   }
 }
+
+/* Back and forward. `fromHistory` stops go() from pushing the entry it is
+   in the middle of returning to. */
+addEventListener('popstate', e => {
+  const id = (e.state && e.state.view) || location.hash.slice(1) || 'landing';
+  if ($(id)) go(id, true);
+});
 
 if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
 else init();
