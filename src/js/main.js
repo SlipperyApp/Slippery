@@ -4,23 +4,68 @@ import { S, canUsePeriod, periodNeedsFocus } from './state.js';
 import * as M from './money.js';
 import {
   LEDGER, PENDING, PEOPLE, GROUPS, TODAY, THEMES, THEME_BG, BOOKS, TIPSTERS,
-  DEMO_RESULTS, TARGETS
+  TARGETS, hydrate, addBet, settleLocal, setMe, ME
 } from './data.js';
 import { settle, settleCashOut, ledgerOutcome } from './settlement.js';
 import { stats, dayMap, monthTotal, targetFor, weekRange, invalidateDays } from './stats.js';
 import * as R from './render.js';
 import * as C from './content.js';
 import { initMotion, syncThemeColor } from './motion.js';
-import { extractSlip } from './api.js';
+import { extractSlip, get, post, patch } from './api.js';
 import * as Auth from './auth.js';
 
 const MS = R.MS;
 const APP_VIEWS = ['dash', 'imp', 'settings', 'prof'];
 
+
+/* ---------------- the live ledger ----------------
+   Everything the app shows comes from here. There is no seeded dataset any
+   more, so an empty response renders the empty states rather than somebody
+   else's numbers. */
+let sessionChecked = false;
+
+/** Ask who we are. Returns the user, or null when signed out. */
+async function loadSession() {
+  const r = await get('/api/auth/me');
+  sessionChecked = true;
+  setMe(r.ok ? r.body.user : null);
+  document.body.classList.toggle('signed-in', Boolean(r.ok && r.body.user));
+  if (r.ok && r.body.configured === false) document.body.classList.add('no-backend');
+  return r.ok ? r.body.user : null;
+}
+
+/** Pull the ledger. Returns false if it could not be loaded, having said so. */
+async function loadLedger() {
+  const r = await get('/api/bets');
+  if (r.status === 401) { setMe(null); go('setup'); toast('Log in to see your bets.'); return false; }
+  if (r.status === 503) { showBackendNotice(r.body); return false; }
+  if (!r.ok) { toast(r.body.error || 'Your ledger could not be loaded.'); return false; }
+  hydrate(r.body);
+  invalidateDays();
+  R.renderAll();
+  return true;
+}
+
+/* When no database is connected the honest thing is to say so, once, rather
+   than render an app that silently holds nothing. */
+function showBackendNotice(body) {
+  const el = $('backendNotice');
+  if (!el) return;
+  el.hidden = false;
+  setText('backendNeeds', (body && body.needs || []).join(', ') || 'a database');
+}
+
 /* ---------------- navigation ---------------- */
 function go(id) {
   const view = $(id);
   if (!view) return;
+  /* The app views hold a real person's money. Without a session there is
+     nothing to show, so asking to see them is a request to sign in — not a
+     reason to render an empty dashboard and let them wonder. */
+  if (APP_VIEWS.includes(id) && sessionChecked && !ME) {
+    if (id !== 'setup') { go('setup'); toast('Create an account, or log in, to start tracking.'); }
+    return;
+  }
   const prev = S.view;
   $$('.view').forEach(v => v.classList.toggle('on', v === view));
   S.view = id;
@@ -183,90 +228,47 @@ function closeDay() {
    silently won and every manual Won/Lost/Cashed/Void tap called the
    engine with the wrong arguments, dismissed the row, and did nothing. */
 function commitSettlement(id, outcome, profitPence, stakePence, reason) {
-  const i = PENDING.findIndex(b => b.id === id);
-  if (i < 0) return false;
-  const b = PENDING[i];
-  LEDGER.unshift({
-    id: 'settled-' + b.id + '-' + Date.now(),
-    event: b.event, selection: b.selection,
-    market: b.selection.includes('handicap') ? 'Handicap'
-      : /over|under/i.test(b.selection) ? 'Over/Under'
-      : /btts/i.test(b.selection) ? 'Both to score' : 'Multiple',
-    odds: b.odds, stake: stakePence != null ? stakePence : b.stake,
-    profit: profitPence, outcome,
-    book: b.book, tipster: b.tipster || '', viaTelegram: true,
-    year: TODAY.year, month: TODAY.month, day: TODAY.day,
-    time: new Date().toTimeString().slice(0, 5)
-  });
-  PENDING.splice(i, 1);
+  settleLocal(id, outcome, profitPence);
   invalidateDays();
   if (reason) announce(reason);
   return true;
 }
 
-function manualSettle(id, kind, cashPence) {
+async function manualSettle(id, kind, cashPence) {
   const b = PENDING.find(x => x.id === id);
   if (!b) return;
-  let outcome, profit;
-  if (kind === 'won') { outcome = 'won'; profit = Math.round(b.stake * (b.odds - 1)); }
-  else if (kind === 'lost') { outcome = 'lost'; profit = -b.stake; }
-  else if (kind === 'void') { outcome = 'void'; profit = 0; }
-  else {
-    const out = settleCashOut({ stakePence: b.stake }, cashPence != null ? cashPence : b.stake);
-    outcome = out.outcome; profit = out.profit;
-  }
-  if (commitSettlement(id, outcome, profit)) {
-    R.renderAll();
-    toast(b.selection + ' settled, ' + M.signed(profit));
-  }
+  /* The server settles it, using the same engine, and returns the pence it
+     stored. Computing the profit here as well would give two answers that
+     could disagree — so this asks rather than guesses. */
+  const body = kind === 'cash'
+    ? { id, kind: 'cash', returnedPence: cashPence != null ? cashPence : b.stake }
+    : { id, kind };
+  const r = await patch('/api/bets', body);
+  if (!r.ok) { toast(r.body.error || 'That could not be saved.'); return; }
+  commitSettlement(id, r.body.bet.outcome, r.body.bet.profit);
+  R.renderAll();
+  toast(b.selection + ' settled, ' + M.signed(r.body.bet.profit));
 }
 
-/* Grade every running bet against the results feed. Renders once at the
-   end: the old build re-rendered inside a per-bet timer chain, so later
-   timers held detached nodes and rows dismissed inconsistently. */
-function checkResults() {
-  const settledIds = [];
-  let asked = 0, pending = 0;
-  PENDING.forEach(b => {
-    const out = settle(
-      { selection: b.selection, stakePence: b.stake, odds: b.odds, book: b.book },
-      DEMO_RESULTS[b.id]
-    );
-    if (out.status === 'settled') {
-      settledIds.push({ id: b.id, out });
-      delete b.ask;
-    } else if (out.status === 'ask') { asked++; b.ask = out.reason; }
-    else { pending++; b.ask = null; }
-  });
-
-  const finish = () => {
-    settledIds.forEach(({ id, out }) => commitSettlement(id, out.outcome, out.profit, null, out.reason));
-    R.renderAll();
-    const bits = [];
-    if (settledIds.length) bits.push(settledIds.length + ' settled');
-    if (asked) bits.push(asked + ' need you');
-    if (pending) bits.push(pending + ' still running');
-    toast(bits.length ? bits.join(', ') : 'Nothing to check');
-  };
-
-  if (!settledIds.length || RM) { R.renderPending(); finish(); return; }
-
-  settledIds.forEach(({ id, out }) => {
-    const row = document.querySelector('.pendrow[data-pending="' + id + '"]');
-    if (!row) return;
-    const kind = out.outcome === 'won' ? 'won' : out.outcome === 'lost' ? 'lost'
-      : out.outcome === 'void' ? 'void' : 'cash';
-    row.classList.add('flash', 'flash-' + kind);
-    const btn = row.querySelector('[data-settle$="|' + kind + '"]');
-    if (btn) btn.classList.add('chosen');
-  });
-  setTimeout(() => {
-    settledIds.forEach(({ id }) => {
-      const row = document.querySelector('.pendrow[data-pending="' + id + '"]');
-      if (row) collapse(row);
-    });
-    setTimeout(finish, 340);
-  }, 480);
+/* Refresh from the server.
+   Settlement is not a client-side act any more: the scheduled sweep grades
+   bets against the results feed and writes the outcome, so "check results"
+   asks the server what it knows rather than running a second grader in the
+   browser that could disagree with the first. */
+async function checkResults() {
+  const btn = $('checkResults');
+  if (btn) { btn.disabled = true; btn.dataset.was = btn.textContent; btn.textContent = 'Checking…'; }
+  const before = PENDING.length;
+  const loaded = await loadLedger();
+  if (btn) { btn.disabled = false; btn.textContent = btn.dataset.was || 'Check results'; }
+  if (!loaded) return;
+  const settledNow = before - PENDING.length;
+  const asked = PENDING.filter(b => b.status === 'ask').length;
+  const bits = [];
+  if (settledNow > 0) bits.push(settledNow + ' settled');
+  if (asked) bits.push(asked + ' need you');
+  if (PENDING.length - asked) bits.push((PENDING.length - asked) + ' still running');
+  toast(bits.length ? bits.join(', ') : 'Nothing new yet');
 }
 
 /* ---------------- theme ---------------- */
@@ -378,35 +380,122 @@ async function handleFiles(files) {
 
 function renderExtraction(card, file, res) {
   const f = res.fields || {};
+  /* The reader will not guess at a number it cannot see, which is right.
+     But "needs retake" as the only option was wrong: if the stake is
+     illegible and the odds are not, retyping one field beats rephotographing
+     the slip. Anything missing becomes an input, and Confirm stays disabled
+     until the three that matter are present. */
   const missing = ['stake', 'odds', 'selection'].filter(k => f[k] == null);
-  const val = (v, fmt) => v == null
-    ? '<span class="mut">Not legible</span>'
-    : fmt ? fmt(v) : esc(String(v));
+  const val = (v, fmt) => v == null ? '' : fmt ? fmt(v) : String(v);
+
+  const field = (key, label, value, mode) =>
+    '<label class="slipfield"><span>' + label + '</span>' +
+    '<input class="field compact" data-slip="' + key + '" ' +
+    (mode ? 'inputmode="' + mode + '" ' : '') +
+    'value="' + esc(value) + '"' + (value ? '' : ' data-empty="1"') + '></label>';
+
   card.innerHTML =
     '<div class="cardhead"><span class="title">' + esc(file.name) + '</span>' +
     '<span class="tagbit ' + (missing.length ? 'warn' : 'ok') + '">' +
-    (missing.length ? 'Needs you' : 'Looks right') + '</span></div>' +
-    '<div style="font-weight:600;font-size:15px">' + val(f.selection) + '</div>' +
-    '<div style="font-size:12.5px;margin-top:3px;color:var(--t2)">' + val(f.event) + '</div>' +
-    '<div class="readout">' +
-      '<div><div class="k">Result</div><div class="v">' + val(f.result) + '</div></div>' +
-      '<div><div class="k">Odds</div><div class="v">' + val(f.odds, v => Number(v).toFixed(2)) + '</div></div>' +
-      '<div><div class="k">Stake</div><div class="v">' + val(f.stake, v => M.money(Math.round(v * 100))) + '</div></div>' +
-      '<div><div class="k">Returns</div><div class="v">' + val(f.returns, v => M.money(Math.round(v * 100))) + '</div></div>' +
-      '<div><div class="k">Bookmaker</div><div class="v">' + val(f.bookmaker) + '</div></div>' +
-      '<div><div class="k">Legs</div><div class="v">' + val(f.legs) + '</div></div>' +
+    (missing.length ? 'Fill in ' + missing.length : 'Looks right') + '</span></div>' +
+    '<div class="slipgrid">' +
+      field('selection', 'Selection', val(f.selection)) +
+      field('event', 'Event', val(f.event)) +
+      field('stake', 'Stake £', val(f.stake, v => Number(v).toFixed(2)), 'decimal') +
+      field('odds', 'Odds', val(f.odds, v => Number(v).toFixed(2)), 'decimal') +
+      field('book', 'Bookmaker', val(f.bookmaker)) +
+      field('market', 'Market', val(f.market)) +
     '</div>' +
     (missing.length
       ? '<p class="hinttext">Slippery will not guess at numbers it cannot read. ' +
-        'Missing: ' + esc(missing.join(', ')) + '. Crop to the slip, avoid glare, and keep the stake, odds and result in frame.</p>'
+        'Type what is missing, or retake the photo with the stake and odds in frame.</p>'
       : '<p class="hinttext">Check it, then confirm. Nothing is saved until you do.</p>') +
     '<div class="btnrow" style="margin-top:11px">' +
     '<button class="btn primary small" data-confirm-slip="1">Confirm</button>' +
     '<button class="btn ghost small" data-dismiss-card="1">Discard</button></div>';
-  card.dataset.ready = missing.length ? '0' : '1';
-  card.dataset.stake = f.stake != null ? String(Math.round(f.stake * 100)) : '';
-  card.dataset.profit = (f.returns != null && f.stake != null)
-    ? String(Math.round(f.returns * 100) - Math.round(f.stake * 100)) : '';
+
+  syncSlipCard(card);
+}
+
+/* Read the card's inputs into its dataset, and gate Confirm on the three
+   fields a bet cannot exist without. Called on render and on every keystroke
+   inside a slip card. */
+function syncSlipCard(card) {
+  const read = k => {
+    const el = card.querySelector('[data-slip="' + k + '"]');
+    return el ? el.value.trim() : '';
+  };
+  const stake = M.parseMoney(read('stake'));
+  const odds = parseFloat(read('odds'));
+  const selection = read('selection');
+
+  card.dataset.selection = selection;
+  card.dataset.event = read('event');
+  card.dataset.book = read('book');
+  card.dataset.market = read('market');
+  card.dataset.stake = stake != null && stake > 0 ? String(stake) : '';
+  card.dataset.odds = Number.isFinite(odds) && odds > 1 ? String(odds) : '';
+
+  const ready = Boolean(card.dataset.stake && card.dataset.odds && selection);
+  card.dataset.ready = ready ? '1' : '0';
+  /* Potential profit, so the Import totals mean something before settlement. */
+  card.dataset.profit = ready
+    ? String(Math.round(Number(card.dataset.stake) * (Number(card.dataset.odds) - 1)))
+    : '';
+
+  const btn = card.querySelector('[data-confirm-slip]');
+  if (btn) {
+    btn.disabled = !ready;
+    btn.title = ready ? '' : 'Selection, stake and odds are needed first';
+  }
+  const tag = card.querySelector('.tagbit');
+  if (tag) {
+    tag.className = 'tagbit ' + (ready ? 'ok' : 'warn');
+    tag.textContent = ready ? 'Looks right' : 'Needs a stake and odds';
+  }
+}
+
+/* Confirm actually writes the bet. This is the step that used to be a
+   toast and a fade: the card collapsed, the counters moved, and nothing was
+   ever stored — which is why importing appeared to work and then left the
+   ledger empty. */
+async function confirmSlip(btn) {
+  const card = btn.closest('.card');
+  if (!card || card.dataset.saving === '1') return;
+  card.dataset.saving = '1';
+  btn.disabled = true;
+  const was = btn.textContent;
+  btn.textContent = 'Saving…';
+
+  const r = await post('/api/bets', {
+    event: card.dataset.event || '',
+    selection: card.dataset.selection || '',
+    market: card.dataset.market || '',
+    book: card.dataset.book || '',
+    odds: card.dataset.odds ? Number(card.dataset.odds) : null,
+    stakePence: Number(card.dataset.stake || 0),
+    source: 'upload'
+  });
+
+  card.dataset.saving = '0';
+  btn.disabled = false;
+  btn.textContent = was;
+
+  if (r.status === 402) { showUpgrade(r.body); return; }
+  if (r.status === 401) { go('setup'); toast('Log in to save this slip.'); return; }
+  if (r.status === 503) { showBackendNotice(r.body); return; }
+  if (!r.ok) { toast(r.body.error || 'That slip could not be saved.'); return; }
+
+  addBet(r.body.bet);
+  invalidateDays();
+  R.renderAll();
+  collapse(card, 'Slip added to your ledger');
+  setTimeout(updateImportTotals, 500);
+}
+
+function showUpgrade(body) {
+  toast('That is all ' + (body && body.freeSlips || 20) + ' free slips used.');
+  go('pricing');
 }
 
 function updateImportTotals() {
@@ -680,12 +769,7 @@ document.addEventListener('click', e => {
   if (c('#dropzone')) { $('slipFile').click(); return; }
   if (c('#otherDrop')) { $('otherError').hidden = false; toast('That file could not be read. Nothing was imported.'); return; }
   if ((el = c('[data-dismiss-card]'))) { collapse(el.closest('.card'), 'Discarded'); setTimeout(updateImportTotals, 500); return; }
-  if ((el = c('[data-confirm-slip]'))) {
-    const card = el.closest('.card');
-    collapse(card, 'Slip added to your ledger');
-    setTimeout(updateImportTotals, 500);
-    return;
-  }
+  if ((el = c('[data-confirm-slip]'))) { confirmSlip(el); return; }
   if (c('#totalsSave')) {
     const btn = c('#totalsSave');
     btn.textContent = 'Totals added'; btn.disabled = true;
@@ -803,6 +887,11 @@ document.addEventListener('input', e => {
     return;
   }
   if (t.closest && t.closest('#totalsGrid')) { sumTotals(); return; }
+  if (t.matches && t.matches('[data-slip]')) {
+    const card = t.closest('.card');
+    if (card) { syncSlipCard(card); updateImportTotals(); }
+    return;
+  }
 });
 
 document.addEventListener('change', e => {
@@ -885,7 +974,7 @@ function renderNewMonth() {
 }
 
 /* ---------------- init ---------------- */
-function init() {
+async function init() {
   setHTML('wizbar', new Array(7).fill('<i></i>').join(''));
   C.renderStatic();
   R.renderMisc();
@@ -902,6 +991,17 @@ function init() {
   syncThemeColor();
   initMotion();
   Auth.init();
+
+  /* Find out who we are before anything can navigate into the app. Until
+     this resolves, sessionChecked is false and go() lets navigation
+     through, so a deep link is never bounced by a race. */
+  const user = await loadSession();
+  if (user) {
+    R.renderAccount(user);
+    await loadLedger();
+    /* Land a signed-in visitor on their dashboard rather than the pitch. */
+    if (S.view === 'landing' && !location.hash) go('dash');
+  }
 
   if (!RM) document.documentElement.classList.add('snap');
 
@@ -927,5 +1027,5 @@ else init();
 /* Expose the grader for console testing, including on a phone. */
 window.slippery = {
   settle, stats: () => stats(S, MS), state: S,
-  ledger: () => LEDGER, pending: () => PENDING, results: () => DEMO_RESULTS
+  ledger: () => LEDGER, pending: () => PENDING, reload: loadLedger
 };

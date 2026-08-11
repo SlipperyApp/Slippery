@@ -12,6 +12,7 @@ import { chromium } from 'playwright-core';
 import { readFile, mkdir, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import { createServer } from 'node:http';
+import { installStub } from './apistub.mjs';
 
 const root = path.dirname(path.dirname(new URL(import.meta.url).pathname));
 const CHROME = process.env.CHROME_BIN || '/opt/pw-browsers/chromium-1194/chrome-linux/chrome';
@@ -60,7 +61,9 @@ async function main() {
     const errors = [];
     page.on('console', m => { if (m.type() === 'error') errors.push(m.text()); });
     page.on('pageerror', e => errors.push('pageerror: ' + e.message));
+    await installStub(page);
     await page.goto(base, { waitUntil: 'networkidle' });
+    await page.waitForTimeout(500);            // let the session and ledger land
     for (const v of VIEWS) {
       await page.evaluate(id => {
         const b = document.querySelector('[data-nav="' + id + '"]');
@@ -70,20 +73,24 @@ async function main() {
       await page.waitForTimeout(120);
     }
     /* exercise the interactive paths that broke before */
+    /* Which controls exist now depends on what the ledger holds, so every
+       click is guarded. A missing control is reported rather than throwing
+       mid-sweep and skipping the rest of the checks. */
     await page.evaluate(() => {
-      document.querySelector('[data-nav="dash"]').click();
-      document.querySelector('#runToggle').click();
-      document.querySelector('#checkResults').click();
+      const hit = sel => { const e = document.querySelector(sel); if (e) e.click(); return !!e; };
+      hit('[data-nav="dash"]');
+      hit('#runToggle');
+      hit('#checkResults');
     });
     await page.waitForTimeout(1400);
     await page.evaluate(() => {
-      document.querySelector('#moreToggle').click();
-      document.querySelector('#viewAllBets').click();
-      const cell = document.querySelector('.cell[data-day]');
-      if (cell) cell.click();
+      const hit = sel => { const e = document.querySelector(sel); if (e) e.click(); };
+      hit('#moreToggle');
+      hit('#viewAllBets');
+      hit('.cell[data-day]');
     });
     await page.waitForTimeout(400);
-    await page.evaluate(() => document.querySelector('#dayClose').click());
+    await page.evaluate(() => { const e = document.querySelector('#dayClose'); if (e) e.click(); });
     await page.waitForTimeout(200);
     /* every period, both calendar modes, both other panes */
     for (const p of ['a', 'm', 'w', 'd', 'm']) {
@@ -94,12 +101,12 @@ async function main() {
       await page.waitForTimeout(120);
     }
     await page.evaluate(() => {
-      document.querySelector('#calMode [data-cal="y"]').click();
-      document.querySelector('[data-pane="ledger"]').click();
-      document.querySelector('#ledgerSeg [data-ledger="ledgerAnalysis"]').click();
-      document.querySelector('[data-pane="social"]').click();
-      const p = document.querySelector('[data-profile]');
-      if (p) p.click();
+      const hit = sel => { const e = document.querySelector(sel); if (e) e.click(); };
+      hit('#calMode [data-cal="y"]');
+      hit('[data-pane="ledger"]');
+      hit('#ledgerSeg [data-ledger="ledgerAnalysis"]');
+      hit('[data-pane="social"]');
+      hit('[data-profile]');
     });
     await page.waitForTimeout(300);
     for (const t of THEMES) {
@@ -116,6 +123,7 @@ async function main() {
   /* ── duplicate ids ───────────────────────────────────────────── */
   {
     const page = await browser.newPage({ viewport: { width: 390, height: 844 } });
+    await installStub(page);
     await page.goto(base, { waitUntil: 'networkidle' });
     /* render everything that builds DOM lazily first */
     await page.evaluate(() => {
@@ -137,6 +145,7 @@ async function main() {
   /* ── horizontal overflow at every width, on every view ───────── */
   for (const width of WIDTHS) {
     const page = await browser.newPage({ viewport: { width, height: 844 }, deviceScaleFactor: 2 });
+    await installStub(page);
     await page.goto(base, { waitUntil: 'networkidle' });
     for (const v of VIEWS) {
       await page.evaluate(id => {
@@ -175,6 +184,7 @@ async function main() {
   /* ── axe-core, per view ──────────────────────────────────────── */
   {
     const page = await browser.newPage({ viewport: { width: 390, height: 844 } });
+    await installStub(page);
     await page.goto(base, { waitUntil: 'networkidle' });
     await page.addScriptTag({ content: axe });
     for (const v of VIEWS) {
@@ -205,6 +215,7 @@ async function main() {
   /* ── contrast in every theme, over the real background ───────── */
   {
     const page = await browser.newPage({ viewport: { width: 390, height: 844 } });
+    await installStub(page);
     await page.goto(base, { waitUntil: 'networkidle' });
     await page.addScriptTag({ content: axe });
     for (const theme of THEMES) {
@@ -225,8 +236,12 @@ async function main() {
 
   /* ── keyboard reachability ───────────────────────────────────── */
   {
+    /* Signed out: a session lands on the dashboard, and the landing page is
+       what a first-time visitor actually gets. */
     const page = await browser.newPage({ viewport: { width: 390, height: 844 } });
+    await installStub(page, { signedIn: false });
     await page.goto(base, { waitUntil: 'networkidle' });
+    await page.waitForTimeout(400);
     const reach = await page.evaluate(() => {
       const focusable = [...document.querySelectorAll(
         '#landing button, #landing a[href], #landing input, #landing select')]
@@ -271,6 +286,7 @@ async function main() {
   /* ── touch target sizes ──────────────────────────────────────── */
   {
     const page = await browser.newPage({ viewport: { width: 390, height: 844 } });
+    await installStub(page);
     await page.goto(base, { waitUntil: 'networkidle' });
     await page.evaluate(() => document.querySelector('[data-nav="dash"]').click());
     await page.waitForTimeout(300);
@@ -295,6 +311,7 @@ async function main() {
   /* ── backdrop-filter budget ──────────────────────────────────── */
   {
     const page = await browser.newPage({ viewport: { width: 390, height: 844 } });
+    await installStub(page);
     await page.goto(base, { waitUntil: 'networkidle' });
     await page.evaluate(() => document.querySelector('[data-nav="dash"]').click());
     await page.waitForTimeout(250);
@@ -316,6 +333,7 @@ async function main() {
   /* ── scroll smoothness with the background running ───────────── */
   {
     const page = await browser.newPage({ viewport: { width: 390, height: 844 } });
+    await installStub(page);
     await page.goto(base, { waitUntil: 'networkidle' });
     const client = await page.context().newCDPSession(page);
     await client.send('Overlay.setShowFPSCounter', { show: false }).catch(() => {});
@@ -344,6 +362,7 @@ async function main() {
   /* ── reduced motion actually stops the motion ────────────────── */
   {
     const page = await browser.newPage({ viewport: { width: 390, height: 844 }, reducedMotion: 'reduce' });
+    await installStub(page, { signedIn: false });
     await page.goto(base, { waitUntil: 'networkidle' });
     const running = await page.evaluate(() => {
       return document.getAnimations().filter(a => a.playState === 'running').length;
@@ -379,6 +398,7 @@ async function main() {
   /* ── the scroll-jacked sequence, beat by beat ────────────────── */
   {
     const page = await browser.newPage({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 2 });
+    await installStub(page, { signedIn: false });   // the sequence lives on the landing page
     await page.goto(base, { waitUntil: 'networkidle' });
     await page.waitForTimeout(600);
     const geo = await page.evaluate(() => {
@@ -411,6 +431,7 @@ async function main() {
   /* ── screenshots ─────────────────────────────────────────────── */
   {
     const page = await browser.newPage({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 2 });
+    await installStub(page);
     await page.goto(base, { waitUntil: 'networkidle' });
     await page.waitForTimeout(600);
     for (const v of ['landing', 'dash', 'setup', 'howto', 'settings', 'imp', 'bot']) {

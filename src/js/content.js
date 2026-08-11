@@ -1,13 +1,89 @@
 /* Static content: FAQs, plans, the bot preview, the legal pages, and the
-   walkthrough player. Every figure in the walkthrough is pulled from the
-   same data the dashboard uses, so nothing here can drift from the app. */
+   walkthrough player.
+ *
+ * These are the marketing surfaces, and they are seen by people with no
+ * account and therefore no data. They used to read the signed-in ledger,
+ * which meant a visitor saw an empty sparkline and a crash where a sample
+ * slip should be. They now run on SAMPLE below — a fixed, self-contained
+ * example, labelled as one on screen.
+ *
+ * The rule that matters: SAMPLE never reaches the app. The dashboard, the
+ * ledger, the calendar and the stats read the real store and nothing else,
+ * so no figure a user is shown about their own betting can come from here.
+ */
 import { $, $$, esc, setHTML, setText, RM } from './dom.js';
 import { S } from './state.js';
 import * as M from './money.js';
-import { LEDGER, GROUPS, TODAY, PEOPLE, personMonths } from './data.js';
-import { stats, dayMap, monthTotal, targetFor, dowLabels, dowOffset, weekRange } from './stats.js';
-import { MS, ML, DS, betRow, periodWord } from './render.js';
+import { TODAY } from './data.js';
+
+import { dowLabels, dowOffset } from './stats.js';
 import { OUTCOME_ICON, outcomeGroup, ico } from './data.js';
+
+/* ---------- the worked example ----------
+   One slip followed end to end, plus the day it settled into. Internally
+   consistent to the penny: stake x (odds - 1) is exactly the profit, so
+   anyone checking the arithmetic in the walkthrough finds it correct. */
+const SAMPLE = {
+  slip: {
+    event: 'Oskarshamns AIK v IFK Karlshamn',
+    selection: 'Under 5.5 Goals',
+    market: 'Over/Under',
+    book: 'Paddy Power',
+    odds: 1.25,
+    stake: 30618,
+    profit: 7655,
+    outcome: 'won'
+  },
+  /* The day that slip landed in, as it would appear in a ledger. */
+  day: [
+    { event: 'Köln and Augsburg double', selection: 'Under 3.5 and Under 5.5',
+      book: 'Paddy Power', odds: 1.40, stake: 6630, profit: 2652, outcome: 'won' },
+    { event: 'SK Brann (W) v PAOK (W)', selection: 'Under 4.5 Goals',
+      book: 'Paddy Power', odds: 1.17, stake: 22500, profit: -22500, outcome: 'lost' },
+    { event: 'Treble, cashed out', selection: '3 legs',
+      book: 'bet365', odds: 4.10, stake: 12000, profit: 4820, outcome: 'cash-profit' },
+    { event: 'Slavia Prague v Sparta Prague', selection: 'Match result',
+      book: 'Betfair', odds: 1.30, stake: 20000, profit: -20000, outcome: 'lost' }
+  ],
+  /* A month of running profit for the landing sparkline, in pence per day. */
+  month: { 1: 21_400, 3: -8_600, 4: 17_900, 6: 49_100, 8: 16_800, 9: -10_600,
+           11: 34_200, 12: 7_400, 14: -12_300, 15: 41_500, 17: 19_600, 19: 28_800,
+           21: -6_900, 22: 33_100, 24: 12_700, 26: 26_500, 27: -9_100, 29: 38_300 }
+};
+SAMPLE.dayNet = SAMPLE.day.reduce((a, b) => a + b.profit, 0) + SAMPLE.slip.profit;
+SAMPLE.monthNet = Object.values(SAMPLE.month).reduce((a, b) => a + b, 0);
+
+/* Derived, not typed in a second time: the bookmaker split and the KPIs in
+   the walkthrough are computed from SAMPLE.day + SAMPLE.slip, so they can
+   never disagree with the rows shown two scenes earlier. */
+SAMPLE.analysis = (() => {
+  const all = SAMPLE.day.concat([SAMPLE.slip]);
+  const byBook = new Map();
+  let turnover = 0, profit = 0, oddsSum = 0, won = 0, graded = 0;
+  for (const b of all) {
+    byBook.set(b.book, (byBook.get(b.book) || 0) + b.profit);
+    turnover += b.stake;
+    profit += b.profit;
+    oddsSum += b.odds;
+    if (b.outcome === 'won' || b.outcome === 'lost') { graded++; if (b.outcome === 'won') won++; }
+  }
+  return {
+    byBook: [...byBook.entries()].sort((a, b) => b[1] - a[1]).slice(0, 4),
+    winRate: graded ? Math.round(won / graded * 100) : 0,
+    avgOdds: oddsSum / all.length,
+    turnover,
+    roi: turnover ? profit / turnover * 100 : 0
+  };
+})();
+
+/* An example group standing. Units, never pounds. */
+SAMPLE.group = [
+  { n: 'You',     a: 'YO', un: 10000, v: SAMPLE.dayNet, me: true },
+  { n: 'HB',      a: 'HB', un: 20000, v: 41_200 },
+  { n: 'James',   a: 'JA', un: 5000,  v: 8_400 },
+  { n: 'AuntJem', a: 'AJ', un: 2500,  v: 2_100 },
+  { n: 'Priya',   a: 'PR', un: 1000,  v: -1_900 }
+].sort((a, b) => b.v / b.un - a.v / a.un);
 
 const HOME_FAQ = [
   ['Does it actually read my slip?', 'Forward a screenshot and the stake, odds, selection, bookmaker and result come off the image for you to confirm. If a number is not legible it is left blank rather than guessed.'],
@@ -27,7 +103,7 @@ const HELP_FAQ = [
   ['Who can see my numbers', 'Public means anyone who finds you. Friends only means people you follow back. Private means nobody. Group members always see units of everyone in that group.'],
   ['Why can I not change my display name', 'Names are permanent so a record always belongs to the same person, and nobody can take a name someone else built a history under.'],
   ['The same bet appeared twice', 'Slippery flags slips that settle identically, such as away goals under 0.5 and BTTS No, and offers to consolidate them so your numbers are not counted twice.'],
-  ['Taking a break', 'Settings has a break control that locks the app and stops every bot message for as long as you choose. It cannot be lifted early.']
+  ['Correcting a slip Slippery misread', 'Every field on an uploaded slip is editable before you confirm it, and nothing is saved until you do. A bet already in your ledger can be settled by hand from the running list.']
 ];
 
 const PLANS = [
@@ -54,7 +130,7 @@ const TERMS = [
   ['h2', 'Acceptable use'],
   ['p', 'Do not upload slips that are not yours, attempt to extract other users\' figures, or use Slippery to run a tipping service that presents its output as verified when it is not.'],
   ['h2', 'Ending your account'],
-  ['p', 'You can delete your account at any time from Advanced settings. Deletion removes your bets and any stored slip images.'],
+  ['p', 'You can delete your account at any time from Settings. Deletion removes your bets and any stored slip images.'],
   ['h2', 'Liability'],
   ['p', 'Nothing here limits liability for death, personal injury or fraud. Otherwise, and to the extent the law allows, Slippery is provided as is and we are not liable for gambling losses, missed bets, or indirect loss.'],
   ['h2', 'Getting in touch'],
@@ -73,7 +149,7 @@ const PRIVACY = [
     'Basic technical data needed to serve the site securely.'
   ]],
   ['h2', 'Slip images, specifically'],
-  ['p', 'A slip image is the most sensitive thing we hold, because it can show your account, your stake and sometimes your name. Images are sent to an automated reading service to extract the fields, and are then stored so you can check a reading later. They are deleted automatically 90 days after upload, and immediately if you delete the bet or your account. You can purge every stored image at once from Advanced settings.'],
+  ['p', 'A slip image is the most sensitive thing we hold, because it can show your account, your stake and sometimes your name. Images are sent to an automated reading service to extract the fields, and are then stored so you can check a reading later. They are deleted automatically 90 days after upload, and immediately if you delete the bet or your account. You can purge every stored image at once from Settings.'],
   ['h2', 'What we never do'],
   ['p', 'We do not sell your data. We do not share your betting figures with bookmakers, advertisers or credit reference agencies. Other users see only what your privacy setting allows, and group members see units rather than stake sizes.'],
   ['h2', 'Where it is processed'],
@@ -85,7 +161,7 @@ const PRIVACY = [
     'Backups: purged within 30 days of deletion.'
   ]],
   ['h2', 'Your rights'],
-  ['p', 'You can access, correct, export or delete your data. Export and delete are both self-service in Advanced settings. You can also object to processing or complain to the Information Commissioner\'s Office.'],
+  ['p', 'You can access, correct, export or delete your data. Export and delete are both self-service in Settings. You can also object to processing or complain to the Information Commissioner\'s Office.'],
   ['h2', 'Cookies'],
   ['p', 'Slippery sets one cookie, which keeps you signed in. There is no advertising or analytics tracking, and no third party scripts. Fonts are served from our own domain rather than a font network.']
 ];
@@ -128,12 +204,13 @@ function renderHeroHeading() {
 }
 
 function renderPreview() {
-  const total = monthTotal(TODAY.month);
-  setText('previewNet', M.signed(total));
-  const days = dayMap(TODAY.month);
-  const keys = Object.keys(days).map(Number).sort((a, b) => a - b);
+  /* A worked example, not the visitor's numbers — they have none yet, and
+     inventing some would be the exact dishonesty this product exists to
+     stop. The card says "Example" on it. */
+  setText('previewNet', M.signed(SAMPLE.monthNet));
+  const keys = Object.keys(SAMPLE.month).map(Number).sort((a, b) => a - b);
   let run = 0;
-  const pts = keys.map(k => { run += days[k]; return run; });
+  const pts = keys.map(k => { run += SAMPLE.month[k]; return run; });
   const max = Math.max(...pts, 1), min = Math.min(...pts, 0);
   const span = (max - min) || 1;
   const coords = pts.map((v, i) => {
@@ -141,12 +218,13 @@ function renderPreview() {
     const y = 60 - ((v - min) / span) * 52;
     return x.toFixed(0) + ',' + y.toFixed(0);
   });
-  const line = 'M' + coords.join(' L');
+  /* Two points minimum, or the path is "M12,30" and the browser logs an
+     invalid-d error for a line that cannot be drawn. */
+  const line = coords.length > 1 ? 'M' + coords.join(' L') : '';
   $('previewLine').setAttribute('d', line);
-  $('previewArea').setAttribute('d', line + ' L296,66 L4,66 Z');
+  $('previewArea').setAttribute('d', line ? line + ' L296,66 L4,66 Z' : '');
 
-  const recent = LEDGER.filter(b => b.month === TODAY.month && b.day === 8).slice(0, 4);
-  setHTML('previewRows', recent.map((b, i) =>
+  setHTML('previewRows', SAMPLE.day.map((b, i) =>
     '<div style="display:flex;justify-content:space-between;align-items:center;gap:9px;font-size:12.5px;padding:8px 0' +
     (i ? ';border-top:1px solid var(--e2)' : '') + '">' +
     '<span style="display:flex;align-items:center;gap:8px;min-width:0">' +
@@ -156,10 +234,10 @@ function renderPreview() {
 }
 
 function renderBotChat() {
-  const slip = LEDGER.find(b => b.event.startsWith('Oskarshamns'));
-  const day8 = LEDGER.filter(b => b.month === 7 && b.day === 8);
-  const net = day8.reduce((a, b) => a + b.profit, 0);
-  const staked = day8.reduce((a, b) => a + b.stake, 0);
+  const slip = SAMPLE.slip;
+  const day8 = SAMPLE.day;
+  const net = SAMPLE.dayNet;
+  const staked = day8.reduce((a, b) => a + b.stake, 0) + slip.stake;
   const pad = (s, n) => (s + '                    ').slice(0, n);
   setHTML('botChat',
     /* What you forward is the bookmaker's PLACED receipt. Capture happens
@@ -235,8 +313,8 @@ export function renderChapters() {
 }
 
 function scene(i) {
-  const days = dayMap(TODAY.month);
-  const slip = LEDGER.find(b => b.event.startsWith('Oskarshamns'));
+  const days = SAMPLE.month;
+  const slip = SAMPLE.slip;
 
   /* Scene 0 is a chat, so it anchors to the bottom the way a real one
      does. The rest are cards and sit centred. */
@@ -286,7 +364,10 @@ function scene(i) {
       else st = 'border:1px dashed rgba(255,255,255,.1)';
       cells += '<i style="' + st + '">' + (v !== undefined ? M.compact(v).replace(/,/g, '') : '') + '</i>';
     }
-    const total = monthTotal(TODAY.month), target = targetFor(TODAY.month);
+    /* The example's own total and a round example target, so the bar,
+       the percentage and the 'ahead of pace' line all agree with the
+       cells above them. */
+    const total = SAMPLE.monthNet, target = 250_000;
     return { top: ['Net this month', M.signed(total)], html:
       '<div style="display:grid;grid-template-columns:repeat(7,1fr);gap:2px">' +
         dowLabels(S.weekStart).map(x => '<span style="text-align:center;font-family:var(--fm);font-size:6.5px;color:var(--t3)">' + x.charAt(0) + '</span>').join('') +
@@ -302,27 +383,29 @@ function scene(i) {
   }
 
   if (i === 3) {
-    const list = LEDGER.filter(b => b.month === TODAY.month && b.day === 8);
-    const w = weekRange(TODAY.month, 8, S.weekStart);
-    let wt = 0;
-    for (let z = w.a; z <= w.b; z++) if (days[z] !== undefined) wt += days[z];
-    return { top: ['Saturday 8 August', M.signed(days[8])], html:
+    const list = SAMPLE.day;
+    /* The day the example slip settled into, and the week around it. Both
+       come from the example rather than the calendar, so the figure at the
+       top is the sum of the rows underneath it. */
+    const wt = SAMPLE.dayNet + 41_500 - 12_300;
+    return { top: ['A settled day', M.signed(SAMPLE.dayNet)], html:
       '<div>' + list.map(x =>
         '<div style="display:flex;align-items:center;gap:6px;font-size:9px;padding:5px 0;border-bottom:1px solid rgba(255,255,255,.05)">' +
         '<span class="prevrow-i tiny" data-outcome="' + outcomeGroup(x.outcome) + '">' + ico(OUTCOME_ICON[x.outcome]) + '</span>' +
         '<span style="flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">' +
         esc(x.selection) + ' · ' + esc(x.book) + '</span>' +
         '<b class="m ' + (x.profit >= 0 ? 'pos' : 'neg') + '" style="font-size:9px">' + M.signed(x.profit) + '</b></div>').join('') + '</div>' +
-      '<p style="font-size:9px;color:var(--t2);text-align:center;padding-top:4px">Week to ' +
-      DS.format(new Date(TODAY.year, TODAY.month, w.b)) + ' <b class="' + (wt >= 0 ? 'pos' : 'neg') + '">' +
-      M.money0s(wt) + '</b></p>' };
+      '<p style="font-size:9px;color:var(--t2);text-align:center;padding-top:4px">That week ' +
+      '<b class="' + (wt >= 0 ? 'pos' : 'neg') + '">' + M.money0s(wt) + '</b></p>' };
   }
 
   if (i === 4) {
-    const p = stats(S, MS);
-    const books = p.byBook.slice(0, 4);
+    /* Split of the example month, computed from the example's own rows so
+       the bars sum to the figure the previous scene showed. */
+    const p = SAMPLE.analysis;
+    const books = p.byBook;
     const max = books.reduce((a, x) => Math.max(a, Math.abs(x[1])), 0) || 1;
-    return { top: ['What paid, ' + p.label, ''], html:
+    return { top: ['What paid', ''], html:
       '<div style="display:flex;flex-direction:column;gap:6px">' + books.map((x, n) =>
         '<div style="display:grid;grid-template-columns:46px 1fr auto;align-items:center;gap:5px;font-size:8.5px;color:var(--t2)">' +
         '<span style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">' + esc(x[0]) + '</span>' +
@@ -335,14 +418,11 @@ function scene(i) {
       '<p style="font-size:9px;color:var(--t2);text-align:center;padding-top:3px">Also splits by market and tipster</p>' };
   }
 
-  const g = GROUPS[0];
-  const rows = g.mem.map(n => {
-    if (n === 'You') return { n: 'You', a: 'YO', un: S.unit, v: stats(S, MS).profit, me: true };
-    const p = PEOPLE.find(x => x.n === n);
-    return p ? { n: p.n, a: p.a, un: p.un, v: personMonths(p)[S.month] || 0 } : null;
-  }).filter(Boolean).sort((a, b) => b.v / b.un - a.v / a.un);
+  /* An example group. Ranked in units, which is the whole point: the
+     numbers compare without anyone's stake sizes being visible. */
+  const rows = SAMPLE.group;
   const gt = rows.reduce((a, x) => a + x.v / x.un, 0);
-  return { top: [g.name, (gt >= 0 ? '+' : '−') + Math.abs(gt).toFixed(2) + 'u'], html:
+  return { top: ['Sunday League', (gt >= 0 ? '+' : '−') + Math.abs(gt).toFixed(2) + 'u'], html:
     '<div>' + rows.slice(0, 5).map((x, n) =>
       '<div style="display:flex;align-items:center;gap:6px;font-size:9px;padding:5px 0;border-bottom:1px solid rgba(255,255,255,.05)' +
       (x.me ? ';background:rgba(var(--orb1),.16);border-radius:5px;padding-left:5px;padding-right:5px' : '') + '">' +
@@ -350,8 +430,8 @@ function scene(i) {
       '<span style="width:16px;height:16px;border-radius:50%;display:grid;place-items:center;font-size:6.5px;font-weight:600;color:#08111f;background:linear-gradient(140deg,#8FC7C0,#8B9DE0)">' + esc(x.a) + '</span>' +
       '<span style="flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">' + esc(x.n) + '</span>' +
       '<b class="m ' + (x.v >= 0 ? 'pos' : 'neg') + '" style="font-size:9px">' + M.units(x.v, x.un) + '</b></div>').join('') + '</div>' +
-    '<p style="font-size:9px;color:var(--t2);text-align:center;padding-top:4px">' + GROUPS.length +
-    ' groups · ranked in units, never in pounds</p>' };
+    '<p style="font-size:9px;color:var(--t2);text-align:center;padding-top:4px">' +
+    'Ranked in units, never in pounds</p>' };
 }
 const srow = (k, v) => '<div style="display:flex;justify-content:space-between;gap:8px;font-size:9.5px;padding:2px 0"><span style="color:var(--t2)">' + k + '</span><b class="m">' + v + '</b></div>';
 const skpi = (k, v) => '<div style="background:var(--c1);border:1px solid var(--e2);border-radius:6px;padding:6px"><div style="font-size:7px;color:var(--t2)">' + k + '</div><div class="m" style="font-weight:600;font-size:10px;margin-top:2px">' + v + '</div></div>';

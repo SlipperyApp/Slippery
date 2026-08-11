@@ -685,6 +685,11 @@
         <p class="mut" style="font-size:13px;margin-top:3px">Add slips, or bring across what you have.</p></div>
       <span class="pillbtn locked m" id="slipCount"></span>
     </div>
+    <div class="backendnotice" id="backendNotice" hidden role="status">
+      <b>Not connected to a database yet</b>
+      <p>Slips can be read, but nothing can be saved until <code id="backendNeeds">DATABASE_URL</code>
+        is set. Your ledger will be empty until then.</p>
+    </div>
     <div class="seg" id="importSeg" role="group" aria-label="Import method" style="margin-bottom:13px">
       <button class="on" data-import="importUpload" aria-pressed="true">Upload</button>
       <button data-import="importTotals" aria-pressed="false">Type totals</button>
@@ -805,12 +810,12 @@
       <h2 class="cardtitle"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21v-1a6 6 0 0 1 6-6h4a6 6 0 0 1 6 6v1"/></svg>Account</h2>
       <div class="fieldrow"><span class="lab">Display name<small>Set at signup, cannot be changed</small></span>
         <span class="pillbtn locked" translate="no" id="accountName"></span></div>
-      <div class="fieldrow"><span class="lab">Email</span><span class="mut m" style="font-size:12px" id="accountEmail">you@example.com</span></div>
+      <div class="fieldrow"><span class="lab">Email</span><span class="mut m" style="font-size:12px" id="accountEmail"></span></div>
       <div class="fieldrow"><span class="lab">Plan</span><label class="sr" for="planSelect">Plan</label>
         <select class="select compact" id="planSelect"><option>Free trial</option><option>Monthly</option><option selected>Yearly</option></select></div>
       <div class="fieldrow"><span class="lab">Slips this month<small id="planLimit">Unlimited on Yearly</small></span>
-        <span class="pillbtn locked m" id="planUsage">126</span></div>
-      <div class="fieldrow"><span class="lab">Verification</span><span class="pillbtn" style="color:var(--s)">Verified</span></div>
+        <span class="pillbtn locked m" id="planUsage">0 of 20</span></div>
+      <div class="fieldrow"><span class="lab">Verification</span><span class="pillbtn" id="verifyState" style="color:var(--s)">Verified</span></div>
       <div class="fieldrow"><span class="lab">Billing</span><button class="pillbtn" data-nav="pricing">Manage</button></div>
     </div>
 

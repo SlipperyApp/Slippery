@@ -1,0 +1,201 @@
+/* /api/bets — the user's ledger.
+ *
+ *   GET    /api/bets                list every bet, newest first
+ *   POST   /api/bets                log one (a confirmed slip, or manual)
+ *   PATCH  /api/bets   {id, ...}    settle it by hand, or cash it out
+ *   DELETE /api/bets   {id}         remove one logged in error
+ *
+ * Money is integer pence on the wire and in the column, exactly as it is in
+ * the browser. There is no float anywhere in the path, because a penny of
+ * rounding drift in a profit-and-loss tracker is a bug the user cannot see
+ * and cannot correct.
+ *
+ * Cash out is only ever a user action. The brief is explicit that it cannot
+ * be detected from a results feed, so it arrives here through PATCH and
+ * nowhere else.
+ */
+import { json, methodGuard, readJson, fail } from './_lib/http.js';
+import { db, ensureSchema, configured } from './_lib/db.js';
+import { sessionUser } from './_lib/auth.js';
+import { cashOutcome, ledgerOutcome, payoutFor } from '../src/js/settlement.js';
+import { limit } from './_lib/rate.js';
+import { clientIp } from './_lib/http.js';
+
+/* The free tier. Counted on the server, because a limit enforced in the
+   browser is a suggestion. */
+const FREE_SLIPS = 20;
+
+export default async function handler(req, res) {
+  if (!methodGuard(req, res, ['GET', 'POST', 'PATCH', 'DELETE'])) return;
+  try {
+    if (!configured()) {
+      return json(res, 503, {
+        error: 'No database is connected yet.', needs: ['DATABASE_URL']
+      });
+    }
+    await ensureSchema();
+    const user = await sessionUser(req);
+    if (!user) return json(res, 401, { error: 'Log in to see your bets.' });
+
+    if (req.method === 'GET') return list(res, user);
+
+    const body = await readJson(req, 256 * 1024);
+    if (req.method === 'POST') return create(req, res, user, body);
+    if (req.method === 'PATCH') return update(res, user, body);
+    return remove(res, user, body);
+  } catch (err) {
+    return fail(res, err, 'Could not reach your ledger.');
+  }
+}
+
+/* ---------------- read ---------------- */
+async function list(res, user) {
+  const sql = db();
+  const rows = await sql`
+    SELECT id, event, selection, market, bookmaker, odds, stake_pence,
+           profit_pence, outcome, status, placed_at, settled_at, settle_reason, source
+    FROM bets WHERE user_id = ${user.id}
+    ORDER BY placed_at DESC LIMIT 2000`;
+  const counted = await sql`
+    SELECT count(*)::int AS n FROM bets WHERE user_id = ${user.id}`;
+  return json(res, 200, {
+    bets: rows.map(shape),
+    total: counted[0].n,
+    freeSlips: FREE_SLIPS,
+    plan: user.plan || 'free'
+  });
+}
+
+/* One shape for the client, so the browser never has to know about column
+   names or numeric-as-string. `odds` comes back from pg as a string. */
+function shape(r) {
+  return {
+    id: r.id,
+    event: r.event || '',
+    selection: r.selection || '',
+    market: r.market || '',
+    book: r.bookmaker || '',
+    odds: r.odds == null ? null : Number(r.odds),
+    stake: r.stake_pence,
+    profit: r.profit_pence == null ? null : r.profit_pence,
+    outcome: r.outcome,
+    status: r.status,
+    placedAt: r.placed_at,
+    settledAt: r.settled_at,
+    reason: r.settle_reason,
+    source: r.source
+  };
+}
+
+/* ---------------- create ---------------- */
+async function create(req, res, user, body) {
+  const problem = betProblem(body);
+  if (problem) return json(res, 400, { error: problem });
+
+  const sql = db();
+  /* The free tier is a count of bets ever logged, not bets currently held,
+     so deleting bets cannot be used to reset it. */
+  if ((user.plan || 'free') === 'free') {
+    const used = await sql`SELECT count(*)::int AS n FROM bets WHERE user_id = ${user.id}`;
+    if (used[0].n >= FREE_SLIPS) {
+      return json(res, 402, {
+        error: 'You have used all ' + FREE_SLIPS + ' free slips.',
+        upgrade: true, used: used[0].n, freeSlips: FREE_SLIPS
+      });
+    }
+  }
+  /* A burst of uploads is normal; a thousand a minute is not. */
+  const ok = await limit('bets:' + user.id, 120, 60);
+  if (!ok) return json(res, 429, { error: 'Slow down a moment and try again.' });
+
+  const stake = Math.round(Number(body.stakePence));
+  const odds = body.odds == null ? null : Number(body.odds);
+  const placedAt = body.placedAt ? new Date(body.placedAt) : new Date();
+
+  const rows = await sql`
+    INSERT INTO bets (user_id, event, selection, market, bookmaker, odds,
+                      stake_pence, status, placed_at, source)
+    VALUES (${user.id}, ${str(body.event)}, ${str(body.selection)}, ${str(body.market)},
+            ${str(body.book)}, ${odds}, ${stake}, 'pending', ${placedAt},
+            ${body.source === 'telegram' ? 'telegram' : 'upload'})
+    RETURNING id, event, selection, market, bookmaker, odds, stake_pence,
+              profit_pence, outcome, status, placed_at, settled_at, settle_reason, source`;
+  return json(res, 201, { bet: shape(rows[0]) });
+}
+
+/* ---------------- settle by hand / cash out ---------------- */
+async function update(res, user, body) {
+  if (!body || !body.id) return json(res, 400, { error: 'Which bet?' });
+  const sql = db();
+  const found = await sql`
+    SELECT id, odds, stake_pence FROM bets
+    WHERE id = ${body.id} AND user_id = ${user.id}`;
+  if (!found.length) return json(res, 404, { error: 'That bet is not in your ledger.' });
+  const bet = found[0];
+
+  let outcome, profit;
+  if (body.kind === 'cash') {
+    /* Cash out. The user tells us what they actually took, and the outcome
+       follows from that against the stake — cash-profit, cash-loss or
+       cash-flat. It is never inferred from a result. */
+    const returned = Math.round(Number(body.returnedPence));
+    if (!Number.isFinite(returned) || returned < 0) {
+      return json(res, 400, { error: 'What did the cash out return?' });
+    }
+    profit = returned - bet.stake_pence;
+    outcome = cashOutcome(profit);
+  } else if (body.kind === 'won' || body.kind === 'lost' || body.kind === 'void') {
+    if (bet.odds == null) return json(res, 400, { error: 'That bet has no odds to settle against.' });
+    /* payoutFor returns the total RETURNED, stake included — profit is the
+       difference. Going through the engine rather than reimplementing the
+       arithmetic is the point: a hand-settled bet and an auto-settled one
+       cannot then disagree by a penny. */
+    const payout = payoutFor(body.kind, bet.stake_pence, Number(bet.odds));
+    profit = payout - bet.stake_pence;
+    outcome = ledgerOutcome(body.kind) || body.kind;
+  } else {
+    return json(res, 400, { error: 'Unknown settlement.' });
+  }
+
+  const rows = await sql`
+    UPDATE bets SET status = 'settled', outcome = ${outcome}, profit_pence = ${profit},
+                    settled_at = now(), settle_reason = 'Settled by you'
+    WHERE id = ${bet.id} AND user_id = ${user.id}
+    RETURNING id, event, selection, market, bookmaker, odds, stake_pence,
+              profit_pence, outcome, status, placed_at, settled_at, settle_reason, source`;
+  return json(res, 200, { bet: shape(rows[0]) });
+}
+
+/* ---------------- delete ---------------- */
+async function remove(res, user, body) {
+  if (!body || !body.id) return json(res, 400, { error: 'Which bet?' });
+  const sql = db();
+  const rows = await sql`
+    DELETE FROM bets WHERE id = ${body.id} AND user_id = ${user.id} RETURNING id`;
+  if (!rows.length) return json(res, 404, { error: 'That bet is not in your ledger.' });
+  return json(res, 200, { deleted: rows[0].id });
+}
+
+/* ---------------- validation ----------------
+   Rejects what is structurally impossible rather than what looks unusual.
+   A £2 bet at 501.0 is rare; a £2 bet at 0.4 is not a bet. */
+export function betProblem(b) {
+  if (!b || typeof b !== 'object') return 'Nothing to log.';
+  const stake = Number(b.stakePence);
+  if (!Number.isFinite(stake) || stake <= 0) return 'A bet needs a stake.';
+  if (stake > 100_000_000) return 'That stake is larger than this tracker supports.';
+  if (Math.round(stake) !== stake) return 'Stakes are whole pence.';
+  if (b.odds != null) {
+    const o = Number(b.odds);
+    if (!Number.isFinite(o) || o <= 1) return 'Decimal odds are greater than 1.';
+    if (o > 5000) return 'Those odds are not readable.';
+  }
+  if (!str(b.selection)) return 'A bet needs a selection.';
+  for (const [k, max] of [['event', 200], ['selection', 200], ['market', 80], ['book', 80]]) {
+    if (b[k] != null && String(b[k]).length > max) return 'The ' + k + ' is too long.';
+  }
+  if (b.placedAt && Number.isNaN(new Date(b.placedAt).getTime())) return 'That is not a date.';
+  return '';
+}
+
+const str = v => (v == null ? null : String(v).trim().slice(0, 200) || null);

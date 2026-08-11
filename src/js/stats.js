@@ -7,7 +7,7 @@
  * screen it is counted here, from records.
  */
 import {
-  LEDGER, DAY_TOTALS, IMPORTED, LIFETIME, TODAY, MONTHS_2026,
+  LEDGER, DAY_TOTALS, IMPORTED, TODAY, monthTotal as monthTotalOf,
   TARGETS, outcomeGroup, betsOn
 } from './data.js';
 
@@ -116,7 +116,9 @@ export function stats(S, MS) {
     cash += IMPORTED.cash;
   }
 
-  const count = all ? LIFETIME.bets : bets.length;
+  /* All time is the ledger plus whatever the user imported. There is no
+     separate lifetime constant to disagree with it. */
+  const count = all ? bets.length + IMPORTED.bets : bets.length;
   const settled = won + lost + cash;
   const graded = won + lost;
 
@@ -158,15 +160,25 @@ export function stats(S, MS) {
   };
 }
 
-/** Lifetime figures, always the same numbers wherever they appear. */
+/** Lifetime figures, always the same numbers wherever they appear.
+    Derived, never stored: ledger + imports, computed the one way. */
 export function lifetime() {
+  let profit = IMPORTED.profit, turnover = IMPORTED.turnover, oddsSum = 0, oddsN = 0;
+  for (const b of LEDGER) {
+    profit += b.profit;
+    turnover += b.stake;
+    if (b.odds > 1) { oddsSum += b.odds; oddsN++; }
+  }
   return {
-    profit: LIFETIME.profit,
-    bets: LIFETIME.bets,
-    turnover: LIFETIME.turnover,
-    roi: LIFETIME.profit / LIFETIME.turnover * 100,
-    avgOdds: LEDGER.reduce((a, b) => a + b.odds, 0) / (LEDGER.length || 1)
+    profit, turnover,
+    bets: LEDGER.length + IMPORTED.bets,
+    roi: turnover ? profit / turnover * 100 : 0,
+    avgOdds: oddsN ? oddsSum / oddsN : 0
   };
 }
 
-export function yearProfit() { return MONTHS_2026.reduce((a, b) => a + b, 0); }
+export function yearProfit() {
+  let t = 0;
+  for (let m = 0; m < 12; m++) t += monthTotalOf(m);
+  return t;
+}

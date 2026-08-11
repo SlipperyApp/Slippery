@@ -50,14 +50,29 @@ export async function extractSlip(file) {
   return body;
 }
 
-export async function post(path, payload) {
-  const res = await fetch(path, {
-    method: 'POST',
-    headers: { 'content-type': 'application/json' },
-    credentials: 'same-origin',
-    body: JSON.stringify(payload)
-  });
+/* One shape for every call: {ok, status, body}. Nothing throws on a 4xx,
+   because a 402 "out of free slips" and a 401 "log in" are both ordinary
+   answers the UI has to render, not exceptions. A genuinely unreachable
+   network is the only throw, and it is turned into ok:false here too so
+   callers never need a try/catch to stay correct. */
+async function send(method, path, payload) {
+  let res;
+  try {
+    res = await fetch(path, {
+      method,
+      headers: payload === undefined ? {} : { 'content-type': 'application/json' },
+      credentials: 'same-origin',
+      body: payload === undefined ? undefined : JSON.stringify(payload)
+    });
+  } catch {
+    return { ok: false, status: 0, offline: true, body: { error: 'You appear to be offline.' } };
+  }
   let body = {};
   try { body = await res.json(); } catch { /* empty body is fine */ }
   return { ok: res.ok, status: res.status, body };
 }
+
+export const get = path => send('GET', path);
+export const post = (path, payload) => send('POST', path, payload || {});
+export const patch = (path, payload) => send('PATCH', path, payload || {});
+export const del = (path, payload) => send('DELETE', path, payload || {});

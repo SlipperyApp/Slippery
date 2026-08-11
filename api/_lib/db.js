@@ -48,9 +48,12 @@ export async function ensureSchema() {
       telegram_id    bigint,
       link_code      text,
       unit_pence     integer NOT NULL DEFAULT 10000,
+      plan           text NOT NULL DEFAULT 'free',
       created_at     timestamptz NOT NULL DEFAULT now(),
       deleted_at     timestamptz
     )`;
+  /* Added after the table shipped, so existing rows need it too. */
+  await sql`ALTER TABLE users ADD COLUMN IF NOT EXISTS plan text NOT NULL DEFAULT 'free'`;
 
   /* The three constraints the product depends on. Partial indexes so a
      deleted account frees its email and name for reuse. */

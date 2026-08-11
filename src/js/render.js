@@ -432,6 +432,16 @@ function groupRows(g) {
 }
 
 export function renderGroups() {
+  /* A new account is in no groups. Show the empty state and stop, rather
+     than indexing GROUPS[S.group] into undefined. */
+  if (!GROUPS.length) {
+    $('groupList').innerHTML =
+      '<div class="emptystate"><div class="t">No groups yet</div>' +
+      '<p>Start one and share the code, or join a friend\'s. Groups rank in ' +
+      'units, so nobody sees anyone\'s stake sizes.</p></div>';
+    $('groupBoard').innerHTML = '';
+    return;
+  }
   $('groupList').innerHTML = GROUPS.map((g, i) => {
     const rows = groupRows(g);
     const place = rows.findIndex(r => r.me) + 1;
@@ -450,7 +460,7 @@ export function renderGroups() {
       '</span><span class="gper">' + periodWord() + '</span></span></span></button>';
   }).join('');
 
-  const g = GROUPS[S.group];
+  const g = GROUPS[S.group] || GROUPS[0];
   const rows = groupRows(g);
   const totalUnits = rows.reduce((a, r) => a + r.v / r.un, 0);
   $('groupBoard').innerHTML =
@@ -645,6 +655,28 @@ export function renderMisc() {
       b.setAttribute('aria-pressed', String(u !== 'custom' && +u === S.unit));
     });
   });
+}
+
+/** Paint the signed-in account onto Settings. Nothing here is invented:
+    every field is what the server returned for this session. */
+export function renderAccount(user) {
+  if (!user) return;
+  S.name = user.name || S.name;
+  if (user.unitPence) S.unit = user.unitPence;
+  setText('accountName', user.name || '');
+  setText('accountEmail', user.email || '');
+  const plan = user.plan || 'free';
+  const sel = $('planSelect');
+  if (sel) sel.value = plan === 'year' ? 'Yearly' : plan === 'month' ? 'Monthly' : 'Free trial';
+  setText('planLimit', plan === 'free' ? '20 slips on the free trial' : 'Unlimited');
+  setText('planUsage', plan === 'free'
+    ? Math.min(LEDGER.length + PENDING.length, 20) + ' of 20'
+    : M.plain(LEDGER.length + PENDING.length));
+  const v = $('verifyState');
+  if (v) {
+    v.textContent = user.emailVerified ? 'Verified' : 'Unverified';
+    v.style.color = user.emailVerified ? 'var(--s)' : 'var(--a)';
+  }
 }
 
 export function renderAll() {

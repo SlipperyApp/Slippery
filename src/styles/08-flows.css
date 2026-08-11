@@ -284,6 +284,33 @@
   & .v{font-family:var(--fm);font-weight:600;font-size:13px;margin-top:4px;
     font-variant-numeric:tabular-nums lining-nums}}
 
+/* An extracted slip, as editable fields. Every value the reader lifted is
+   correctable, and one it could not read is an empty box rather than a dead
+   end — retyping a stake beats rephotographing a slip. */
+.slipgrid{
+  display:grid;grid-template-columns:1fr 1fr;gap:9px;margin:12px 0;
+  & > label:nth-child(-n+2){grid-column:1/-1}
+}
+.slipfield{
+  display:block;
+  & span{display:block;font-size:9.5px;color:var(--t2);letter-spacing:.05em;
+    text-transform:uppercase;margin-bottom:4px}
+  /* 16px minimum: anything smaller and iOS zooms the page on focus and
+     never zooms back out. */
+  & input{width:100%;font-size:16px}
+  & input[data-empty]{border-color:rgba(245,158,11,.5);background:rgba(245,158,11,.06)}
+}
+
+/* Shown when the app is served without a database behind it. Better to say
+   so plainly than to render an app that quietly holds nothing. */
+.backendnotice{
+  border:1px solid rgba(245,158,11,.4);background:rgba(245,158,11,.08);
+  border-radius:13px;padding:13px 15px;margin-bottom:14px;
+  & b{display:block;font-size:13.5px;margin-bottom:4px}
+  & p{margin:0;font-size:12.5px;line-height:1.55;color:var(--t2)}
+  & code{font-family:var(--fm);font-size:12px;color:var(--a)}
+}
+
 .alertcard{padding:15px;margin-bottom:10px;
   border-color:rgba(245,158,11,.42);background:rgba(245,158,11,.06)}
 .alerthead{display:flex;align-items:center;gap:9px;font-weight:600;font-size:14px;color:var(--a);
