@@ -6,6 +6,7 @@
 import { build as esbuild } from 'esbuild';
 import { readFile, writeFile, mkdir, readdir } from 'node:fs/promises';
 import { existsSync } from 'node:fs';
+import { createHash } from 'node:crypto';
 import path from 'node:path';
 
 const root = path.dirname(new URL(import.meta.url).pathname);
@@ -215,8 +216,14 @@ async function main() {
   });
   const js = bundle.outputFiles[0].text;
 
-  const buildId = Date.now().toString(36);
   const page = HEAD({ css: minifyCss(css), js, html, sprite });
+  /* The service worker's cache name must change when the shell changes, or
+     clients keep serving a stale one. Hash the built page rather than
+     stamping the clock: a timestamp changes the file on every build even
+     when nothing else did, which dirties the working tree after a plain
+     `npm run verify` and makes a real change indistinguishable from a
+     rebuild in the diff. */
+  const buildId = createHash('sha256').update(page).digest('hex').slice(0, 12);
 
   await writeFile(out('index.html'), page);
   await writeFile(out('manifest.webmanifest'), JSON.stringify(MANIFEST, null, 2));
