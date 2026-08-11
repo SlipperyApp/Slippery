@@ -10,6 +10,7 @@ import {
   LEDGER, DAY_TOTALS, IMPORTED, TODAY, monthTotal as monthTotalOf,
   TARGETS, outcomeGroup, betsOn
 } from './data.js';
+import { S } from './state.js';
 
 export const DOW = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
@@ -24,8 +25,12 @@ export function weekRange(month, day, weekStart) {
   const dim = new Date(TODAY.year, month + 1, 0).getDate();
   return { a: Math.max(1, day - off), b: Math.min(dim, day - off + 6) };
 }
+/* The target for a month: the one set for it, else the standing target the
+   user chose at setup. Falls back to S.target rather than a hardcoded
+   £2,500, which was a figure nobody had asked for appearing on a brand new
+   account as though it were theirs. */
 export function targetFor(month) {
-  return TARGETS[month] !== undefined ? TARGETS[month] : 250_000;
+  return TARGETS[month] !== undefined ? TARGETS[month] : S.target;
 }
 /* Day totals are COUNTED from the ledger, never held as a separate map.
    The old build kept an AUG{} object alongside the bet list and wrote

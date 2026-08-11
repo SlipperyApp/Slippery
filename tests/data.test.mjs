@@ -1,143 +1,164 @@
-/* Reconciliation tests.
+/* Store and reconciliation tests.
  *
- * The brief requires the demo figures to reconcile:
- *   all time  +£15,079.48 · 2,847 bets · £255,600 turnover · 5.9% ROI
- * The previous build showed "Net all time +£6,339.48" directly above an
- * "All time £15,079" KPI, and two different lifetime ROIs, because the
- * period total summed the 2026 array while the KPI used a separate
- * lifetime constant. These tests make that class of drift impossible.
+ * The demo dataset these used to check is gone. The property it existed to
+ * protect is not, and it is the one that matters most in a profit-and-loss
+ * tracker: every figure the app shows must be the same number seen from a
+ * different angle. A previous build displayed "Net all time +£6,339.48"
+ * directly above an "All time £15,079" KPI, and two different lifetime ROIs,
+ * because the period total summed one array while the KPI read a separate
+ * constant. There is no separate constant any more — everything is derived
+ * from the ledger the server sent — and these tests hold that line.
  */
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import {
-  LEDGER, LEDGER_2026, IMPORTED, LIFETIME, MONTHS_2026, AUGUST_DAYS,
-  DAY_TOTALS, monthTotal, yearTotal, betsOn, TODAY, personMonths, PEOPLE
+  LEDGER, PENDING, IMPORTED, DAY_TOTALS, TODAY,
+  hydrate, setImported, addBet, settleLocal, monthTotal, yearTotal, betsOn
 } from '../src/js/data.js';
+import { lifetime } from '../src/js/stats.js';
 
-test('the 2026 monthly targets sum to the locked year figure', () => {
-  assert.equal(MONTHS_2026.reduce((a, b) => a + b, 0), 633_948);
+/* A day builder, so the fixtures below read as bets rather than as dates. */
+const at = (day, over = {}) => Object.assign({
+  id: 'x' + Math.random().toString(36).slice(2),
+  event: 'Arsenal v Chelsea', selection: 'Over 2.5 Goals', market: 'Over/Under',
+  book: 'bet365', odds: 1.9, stake: 10000, profit: 9000, outcome: 'won',
+  status: 'settled',
+  placedAt: new Date(TODAY.year, TODAY.month, day, 15, 30).toISOString(),
+  source: 'upload'
+}, over);
+
+const load = bets => hydrate({ bets });
+
+test('a fresh store is empty, and says so rather than inventing a figure', () => {
+  load([]);
+  setImported(null);
+  assert.equal(LEDGER.length, 0);
+  assert.equal(PENDING.length, 0);
+  assert.equal(monthTotal(TODAY.month), 0);
+  assert.equal(yearTotal(), 0);
+  const l = lifetime();
+  assert.equal(l.profit, 0);
+  assert.equal(l.bets, 0);
+  assert.equal(l.roi, 0, 'no turnover must not divide by zero');
+  assert.equal(l.avgOdds, 0);
 });
 
-test('the August day map sums to the locked August figure', () => {
-  assert.equal(Object.values(AUGUST_DAYS).reduce((a, b) => a + b, 0), 193_838);
+test('hydrate splits settled from running', () => {
+  load([
+    at(1), at(2),
+    at(3, { status: 'pending', outcome: null, profit: null }),
+    at(4, { status: 'ask', outcome: null, profit: null, reason: 'Abandoned' })
+  ]);
+  assert.equal(LEDGER.length, 2);
+  assert.equal(PENDING.length, 2, 'an asked bet is still running until the user answers');
 });
 
-test('every generated day sums EXACTLY to its day target', () => {
-  for (let m = 0; m < 12; m++) {
-    for (const [d, target] of Object.entries(DAY_TOTALS[m] || {})) {
-      if (m === TODAY.month && +d > TODAY.day) continue;
-      const actual = betsOn(m, +d).reduce((a, b) => a + b.profit, 0);
-      assert.equal(actual, target, `${m + 1}/${d}: bets sum to ${actual}, target ${target}`);
-    }
-  }
+test('every day sums EXACTLY to the bets in it', () => {
+  load([
+    at(4, { profit: 9000 }), at(4, { profit: -5000 }), at(4, { profit: 1234 }),
+    at(9, { profit: -2500 }), at(9, { profit: 40000 })
+  ]);
+  assert.equal(DAY_TOTALS[TODAY.month][4], 9000 - 5000 + 1234);
+  assert.equal(DAY_TOTALS[TODAY.month][9], -2500 + 40000);
+  assert.equal(betsOn(TODAY.month, 4).reduce((a, b) => a + b.profit, 0), DAY_TOTALS[TODAY.month][4]);
 });
 
-test('every month sums EXACTLY to its monthly target', () => {
-  for (let m = 0; m < 12; m++) {
-    assert.equal(monthTotal(m), MONTHS_2026[m], 'month ' + (m + 1));
-  }
+test('the month is exactly the sum of its days, and the year of its months', () => {
+  load([at(2, { profit: 1111 }), at(7, { profit: -222 }), at(19, { profit: 30000 })]);
+  const days = DAY_TOTALS[TODAY.month];
+  const fromDays = Object.values(days).reduce((a, b) => a + b, 0);
+  assert.equal(monthTotal(TODAY.month), fromDays);
+  assert.equal(yearTotal(), fromDays, 'one month of data means the year equals it');
 });
 
-test('August reconciles three ways: days, ledger and the month total', () => {
-  assert.equal(monthTotal(7), 193_838);
-  const fromBets = LEDGER.filter(b => b.month === 7).reduce((a, b) => a + b.profit, 0);
-  assert.equal(fromBets, 193_838);
-  assert.equal(Object.values(AUGUST_DAYS).reduce((a, b) => a + b, 0), 193_838);
+test('all time is the ledger plus imports, and cannot drift from either', () => {
+  load([at(3, { profit: 9000, stake: 10000 }), at(5, { profit: -4000, stake: 4000 })]);
+  setImported({ profit: 1_000_000, turnover: 20_000_000, bets: 2000, won: 1100, lost: 800, cash: 100 });
+
+  const l = lifetime();
+  const ledgerProfit = LEDGER.reduce((a, b) => a + b.profit, 0);
+  const ledgerTurnover = LEDGER.reduce((a, b) => a + b.stake, 0);
+
+  assert.equal(l.profit, ledgerProfit + IMPORTED.profit);
+  assert.equal(l.turnover, ledgerTurnover + IMPORTED.turnover);
+  assert.equal(l.bets, LEDGER.length + IMPORTED.bets);
+  /* The exact figure matters less than the fact that there is only one way
+     to compute it. Recomputing it here by hand must agree. */
+  assert.equal(l.roi, (ledgerProfit + IMPORTED.profit) / (ledgerTurnover + IMPORTED.turnover) * 100);
 });
 
-test('the year reconciles', () => {
-  assert.equal(yearTotal(), 633_948);
-  assert.equal(LEDGER_2026.profit, 633_948);
+test('imports alone still reconcile, with an empty ledger', () => {
+  load([]);
+  setImported({ profit: 500_000, turnover: 10_000_000, bets: 1200, won: 600, lost: 550, cash: 50 });
+  const l = lifetime();
+  assert.equal(l.profit, 500_000);
+  assert.equal(l.bets, 1200);
+  assert.equal(l.turnover, 10_000_000);
 });
 
-test('ledger plus imported history equals the locked lifetime figure exactly', () => {
-  assert.equal(LEDGER_2026.profit + IMPORTED.profit, LIFETIME.profit);
-  assert.equal(LEDGER_2026.bets + IMPORTED.bets, LIFETIME.bets);
-  assert.equal(LEDGER_2026.turnover + IMPORTED.turnover, LIFETIME.turnover);
-  assert.equal(LEDGER_2026.won + IMPORTED.won, LIFETIME.won);
-  assert.equal(LEDGER_2026.lost + IMPORTED.lost, LIFETIME.lost);
-  assert.equal(LEDGER_2026.cash + IMPORTED.cash, LIFETIME.cash);
-});
-
-test('the imported history is plausible, not a negative plug number', () => {
-  for (const k of ['profit', 'turnover', 'bets', 'won', 'lost', 'cash']) {
-    assert.ok(IMPORTED[k] > 0, `imported ${k} came out ${IMPORTED[k]}`);
-  }
-  assert.ok(IMPORTED.bets > LEDGER_2026.bets,
-    'three imported years should hold more bets than the eight months of live ledger');
-});
-
-test('the locked lifetime ROI still reads 5.9%', () => {
-  const roi = LIFETIME.profit / LIFETIME.turnover * 100;
-  assert.equal(roi.toFixed(1), '5.9');
-});
-
-test('lifetime outcome counts add up to the lifetime bet count', () => {
-  assert.equal(LIFETIME.won + LIFETIME.lost + LIFETIME.cash, LIFETIME.bets);
-});
-
-test('every bet is internally consistent', () => {
+test('money stays integer pence through the whole store', () => {
+  load([at(1, { profit: 7655, stake: 30618 }), at(2, { profit: -22500, stake: 22500 })]);
   for (const b of LEDGER) {
-    assert.ok(b.stake > 0, `${b.id} has stake ${b.stake}`);
-    assert.equal(b.stake, Math.trunc(b.stake), `${b.id} stake is not whole pence`);
-    assert.equal(b.profit, Math.trunc(b.profit), `${b.id} profit is not whole pence`);
-    assert.ok(b.odds > 1, `${b.id} has odds ${b.odds}`);
-    if (b.outcome === 'lost') assert.equal(b.profit, -b.stake, `${b.id} lost more than its stake`);
-    if (b.outcome === 'void') assert.equal(b.profit, 0, `${b.id} is void with profit`);
-    if (b.outcome === 'won') assert.ok(b.profit > 0, `${b.id} won nothing`);
-    assert.ok(b.profit >= -b.stake, `${b.id} lost more than the stake`);
+    assert.equal(Number.isInteger(b.profit), true, b.profit + ' is not whole pence');
+    assert.equal(Number.isInteger(b.stake), true, b.stake + ' is not whole pence');
   }
+  assert.equal(Number.isInteger(monthTotal(TODAY.month)), true);
 });
 
-test('a won bet pays out close to stake x odds', () => {
-  /* Not exact to the penny on the generated balancers, which carry odds to
-     4dp, but never off by more than a penny — the row must not look wrong
-     to anyone who checks the arithmetic. */
-  for (const b of LEDGER) {
-    if (b.outcome !== 'won') continue;
-    const implied = Math.round(b.stake * (b.odds - 1));
-    assert.ok(Math.abs(implied - b.profit) <= 1,
-      `${b.id}: ${b.stake}p at ${b.odds} implies ${implied}p, ledger says ${b.profit}p`);
-  }
+test('adding a bet lands it in the right list and moves the day total', () => {
+  load([]);
+  setImported(null);
+  addBet({ id: 'n1', event: 'A v B', selection: 'Over 2.5', stake: 5000, odds: 2,
+           profit: null, outcome: null, status: 'pending',
+           placedAt: new Date(TODAY.year, TODAY.month, 6, 12, 0).toISOString() });
+  assert.equal(PENDING.length, 1);
+  assert.equal(LEDGER.length, 0, 'an unsettled bet is not profit');
+  assert.equal(monthTotal(TODAY.month), 0, 'and must not move the calendar');
 });
 
-test('no bet is dated in the future', () => {
-  for (const b of LEDGER) {
-    assert.ok(b.month < TODAY.month || (b.month === TODAY.month && b.day <= TODAY.day),
-      `${b.id} is dated ${b.day}/${b.month + 1}, after today`);
-  }
+test('settling a running bet moves it, and every view moves with it', () => {
+  load([]);
+  setImported(null);
+  addBet({ id: 'n2', event: 'A v B', selection: 'Over 2.5', stake: 10000, odds: 1.9,
+           profit: null, outcome: null, status: 'pending',
+           placedAt: new Date(TODAY.year, TODAY.month, 8, 12, 0).toISOString() });
+  assert.equal(monthTotal(TODAY.month), 0);
+
+  settleLocal('n2', 'won', 9000);
+  assert.equal(PENDING.length, 0);
+  assert.equal(LEDGER.length, 1);
+  /* The calendar, the month and all time all move together, because they
+     are the same records counted three ways. */
+  assert.equal(DAY_TOTALS[TODAY.month][8], 9000);
+  assert.equal(monthTotal(TODAY.month), 9000);
+  assert.equal(lifetime().profit, 9000);
 });
 
-test('the named August slips survive generation intact', () => {
-  const oska = LEDGER.find(b => b.event.startsWith('Oskarshamns'));
-  assert.ok(oska, 'the walkthrough slip must exist');
-  assert.equal(oska.stake, 30618);
-  assert.equal(oska.profit, 7655);
-  assert.equal(oska.odds, 1.25);
-  assert.equal(oska.outcome, 'won');
+test('a void settles to zero profit with the stake returned', () => {
+  load([]);
+  setImported(null);
+  addBet({ id: 'n3', event: 'A v B', selection: 'Over 2.5', stake: 12000, odds: 2.1,
+           profit: null, outcome: null, status: 'pending',
+           placedAt: new Date(TODAY.year, TODAY.month, 11, 12, 0).toISOString() });
+  settleLocal('n3', 'void', 0);
+  assert.equal(LEDGER[0].outcome, 'void');
+  assert.equal(LEDGER[0].profit, 0, 'void is stake returned, so zero profit');
+  assert.equal(monthTotal(TODAY.month), 0);
 });
 
-test('the ledger is deterministic across reloads', async () => {
-  const again = await import('../src/js/data.js?v=2');
-  assert.equal(again.LEDGER.length, LEDGER.length);
-  assert.equal(again.LEDGER_2026.profit, LEDGER_2026.profit);
-  assert.equal(again.LEDGER_2026.turnover, LEDGER_2026.turnover);
+test('bets from other years do not leak into this year', () => {
+  load([
+    at(3, { profit: 5000 }),
+    at(3, { profit: 999999, placedAt: new Date(TODAY.year - 1, 5, 3, 12, 0).toISOString() })
+  ]);
+  assert.equal(LEDGER.length, 2, 'both are in the ledger');
+  assert.equal(yearTotal(), 5000, 'but only this year counts on this year’s calendar');
 });
 
-test('each person\'s months sum to their own year figure, consistently', () => {
-  for (const p of PEOPLE) {
-    const mo = personMonths(p);
-    const a = mo.reduce((x, y) => x + y, 0);
-    const b = personMonths(p).reduce((x, y) => x + y, 0);
-    assert.equal(a, b, p.n + ' is not stable between calls');
-    assert.ok(Math.abs(a) <= Math.abs(p.all), p.n + ' has a year bigger than their lifetime');
-    assert.equal(mo.slice(TODAY.month + 1).every(v => v === 0), true,
-      p.n + ' has figures for months that have not happened');
-  }
-});
-
-test('turnover only ever counts money actually staked', () => {
-  const t = LEDGER.reduce((a, b) => a + b.stake, 0);
-  assert.equal(t, LEDGER_2026.turnover);
-  assert.ok(t > 0);
+test('TODAY is actually today', () => {
+  const now = new Date();
+  assert.equal(TODAY.year, now.getFullYear());
+  assert.equal(TODAY.month, now.getMonth());
+  assert.equal(TODAY.day, now.getDate());
+  assert.equal(TODAY.dim, new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate());
 });

@@ -43,6 +43,7 @@ async function loadLedger() {
   hydrate(r.body);
   invalidateDays();
   R.renderAll();
+  renderNewMonth();          // depends on the ledger, so it re-runs with it
   return true;
 }
 
@@ -959,12 +960,19 @@ addEventListener('resize', () => { paintSegs(); R.renderGoal(); }, { passive: tr
 
 /* ---------------- new month card ---------------- */
 function renderNewMonth() {
+  /* "July finished £0 against a £2,500 target, and the last three months
+     averaged £0" is a prompt about a history that does not exist. A new
+     account has nothing to review, so there is nothing to ask about. */
+  const card = $('newMonthCard');
   const prev = (TODAY.month + 11) % 12;
   const prevActual = monthTotal(prev);
   const prevTarget = targetFor(prev);
-  let avg = 0, n = 0;
+  let avg = 0, n = 0, history = 0;
+  for (let m = 0; m < TODAY.month; m++) if (monthTotal(m) !== 0) history++;
   for (let m = TODAY.month - 3; m < TODAY.month; m++) if (m >= 0) { avg += monthTotal(m); n++; }
   avg = n ? Math.round(avg / n) : 0;
+  if (card) card.hidden = history === 0;
+  if (!history) return;
   setText('newMonthTitle', 'Happy with your ' + MS.format(new Date(TODAY.year, TODAY.month, 1)) + ' target?');
   setHTML('newMonthBody',
     MS.format(new Date(TODAY.year, prev, 1)) + ' finished <b class="' + (prevActual >= 0 ? 'pos' : 'neg') + '">' +
