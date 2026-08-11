@@ -247,8 +247,6 @@ export function renderHeadline() {
     '<i style="width:8px;height:8px;border-radius:2px;background:' + x[0] + '"></i>' +
     x[1] + ', ' + M.plain(x[2]) + '</span>').join('');
 
-  const bank = $('bankrollNow');
-  if (bank) bank.textContent = M.money0(500000 + life.profit);
 }
 
 function ring(id, pct, offset) {

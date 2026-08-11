@@ -18,7 +18,7 @@ const CHROME = process.env.CHROME_BIN || '/opt/pw-browsers/chromium-1194/chrome-
 const WIDTHS = [320, 390, 430];
 const SHOT_DIR = path.join(root, 'tools', 'screens');
 
-const VIEWS = ['landing', 'setup', 'howto', 'pricing', 'dash', 'imp', 'settings', 'adv', 'bot', 'help', 'terms', 'privacy'];
+const VIEWS = ['landing', 'setup', 'howto', 'pricing', 'dash', 'imp', 'settings', 'bot', 'help', 'terms', 'privacy'];
 const THEMES = ['periwinkle', 'graphite', 'ink', 'tide', 'chalk'];
 
 const MIME = { '.html': 'text/html', '.js': 'text/javascript', '.css': 'text/css',

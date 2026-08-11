@@ -15,7 +15,7 @@ import { extractSlip } from './api.js';
 import * as Auth from './auth.js';
 
 const MS = R.MS;
-const APP_VIEWS = ['dash', 'imp', 'settings', 'adv', 'prof'];
+const APP_VIEWS = ['dash', 'imp', 'settings', 'prof'];
 
 /* ---------------- navigation ---------------- */
 function go(id) {
@@ -28,7 +28,7 @@ function go(id) {
   document.documentElement.classList.toggle('snap', id === 'landing' && !RM);
   $$('.tabbar button').forEach(b => {
     const t = b.getAttribute('data-nav');
-    if (t === id || (id === 'adv' && t === 'settings')) b.setAttribute('aria-current', 'page');
+    if (t === id) b.setAttribute('aria-current', 'page');
     else b.removeAttribute('aria-current');
   });
   scrollTo(0, 0);
@@ -717,11 +717,6 @@ document.addEventListener('click', e => {
     return;
   }
   if (c('#purgeImages')) { toast('All stored slip images deleted'); return; }
-  if (c('#startBreak')) {
-    const len = $('breakLength').value;
-    toast('Break started. Slippery is locked for ' + len + '.');
-    return;
-  }
   if ((el = c('[data-remove-tipster]'))) {
     const n = el.getAttribute('data-remove-tipster');
     const i = TIPSTERS.indexOf(n);
@@ -807,11 +802,6 @@ document.addEventListener('input', e => {
     if (v != null && v > 0) { S.unit = v; R.renderMisc(); drawAll(); }
     return;
   }
-  if (t.id === 'bankroll') {
-    const v = M.parseMoney(t.value);
-    if (v != null) setText('bankrollNow', M.money0(v + stats({ ...S, period: 'a' }, MS).profit));
-    return;
-  }
   if (t.closest && t.closest('#totalsGrid')) { sumTotals(); return; }
 });
 
@@ -828,7 +818,7 @@ document.addEventListener('change', e => {
     toast(t.value + ' plan selected');
   }
   else if (t.id === 'slipFile') { handleFiles(t.files); t.value = ''; }
-  else if (t.id === 'timezone' || t.id === 'exportFormat' || t.id === 'stakeAs' || t.id === 'breakLength') toast(t.value + ' selected');
+  else if (t.id === 'timezone' || t.id === 'exportFormat' || t.id === 'stakeAs') toast(t.value + ' selected');
 });
 
 document.addEventListener('keydown', e => {

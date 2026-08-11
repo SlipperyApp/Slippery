@@ -396,7 +396,18 @@
     place-items:center;background:rgba(var(--orb1),.2);border:1px solid rgba(var(--orb1),.4);
     & svg{width:26px;height:26px;color:var(--s)}}}
 
-.breakcard{
-  border-color:rgba(var(--orb2),.35);background:rgba(var(--orb2),.07);
-  & .h{display:flex;align-items:center;gap:9px;font-weight:600;font-size:14px;
-    & svg{width:16px;height:16px;color:var(--s);flex:0 0 auto}}}
+/* The 18+ notice. One instance, on signup. Amber rather than the loss red,
+   because it is a condition of use and not a loss. */
+.agegate{
+  display:flex;gap:12px;align-items:flex-start;
+  border:1px solid rgba(245,158,11,.38);background:rgba(245,158,11,.09);
+  border-radius:13px;padding:13px 14px;margin-bottom:18px;
+  & p{margin:0;font-size:12.5px;line-height:1.55;color:var(--t2)}
+  & b{color:var(--t1);font-weight:650}
+  & a{color:var(--a);text-decoration:underline;text-underline-offset:2px}
+}
+.agegate-badge{
+  flex:0 0 auto;font-family:var(--fm);font-size:12px;font-weight:700;
+  color:#1b1205;background:var(--a);border-radius:8px;
+  padding:5px 8px;letter-spacing:-.02em;
+}
