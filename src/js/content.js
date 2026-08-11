@@ -93,7 +93,7 @@ const HOME_FAQ = [
   ['Who can see my numbers?', 'Whoever you choose: public, people you follow back, or nobody. Group members always see the units of everyone in that group.'],
   ['What is a unit?', 'Your standard stake. Units let groups rank people without anyone seeing how much money is involved.'],
   ['What does it cost?', 'Free for twenty slips, then £3.49 a month or £29.99 a year.'],
-  ['When is it on the App Store?', 'Not yet. It runs in your browser today, installs to your home screen, and the Telegram bot already works.']
+  ['When is it on the App Store?', 'Coming soon. It runs in your browser today and installs to your home screen from the share sheet, so it behaves like an app already, and the Telegram bot works now. The App Store version follows.']
 ];
 
 const HELP_FAQ = [
@@ -297,11 +297,11 @@ function renderMigrateOptions() {
 /* ---------------- walkthrough player ---------------- */
 export const CHAPTERS = [
   [0, 'A slip arrives', 'Forward any bet slip to the Telegram bot the moment you place it. Screenshot, photo or share sheet, whatever is quicker.'],
-  [3, 'We read it', 'The stake, odds, selection and bookmaker come off the image. Nothing is guessed at.'],
-  [6, 'Your calendar fills', 'Every settled day turns green or red. This is the real August in the demo.'],
+  [3, 'We read it', 'The stake, odds, selection and bookmaker come off the image. Anything it cannot read is left for you to type, never guessed.'],
+  [6, 'Your calendar fills', 'Every settled day turns green or red, scaled by how big the day was. Tap a month or switch to the whole year.'],
   [9, 'Tap any day', 'Open a day to see the slips behind the number, with the running week total.'],
-  [12, 'See what paid', 'Profit splits by bookmaker, market and tipster for whichever period you are on.'],
-  [15, 'Compare in groups', 'Ranked in units so nobody sees your stakes. Two groups here, Sunday League and Ultras.']
+  [12, 'See what paid', 'Profit splits by bookmaker, market and tipster, for whichever period you are looking at.'],
+  [15, 'Compare in groups', 'Start a group, share the code, and everyone is ranked in units — so nobody sees anyone\'s stake sizes.']
 ];
 export const PLAY_LENGTH = 18;
 let playTime = 0, playing = false, timer = null;

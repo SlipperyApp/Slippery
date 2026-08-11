@@ -19,6 +19,11 @@ import { guard } from './_lib/rate.js';
 const MODEL = process.env.EXTRACT_MODEL || 'claude-haiku-4-5';
 const MAX_IMAGE_BYTES = 8 * 1024 * 1024;
 const ALLOWED_MIME = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
+/* A PDF is not an image block. Bookmakers email settlement statements as
+   PDFs and the upload field accepted them, but they were sent as
+   media_type image/jpeg and rejected — so "PDF" was a promise the reader
+   could not keep. They go in a document block instead. */
+const PDF_MIME = 'application/pdf';
 
 /* Structured outputs reject minLength/maximum and require
    additionalProperties:false, so ranges are checked after the call instead. */
@@ -83,11 +88,12 @@ export default async function handler(req, res) {
     if (typeof image !== 'string' || !image) {
       return json(res, 400, { error: 'Send an image as base64 in the "image" field.' });
     }
-    const mediaType = ALLOWED_MIME.includes(mime) ? mime : 'image/jpeg';
+    const isPdf = mime === PDF_MIME;
+    const mediaType = isPdf ? PDF_MIME : (ALLOWED_MIME.includes(mime) ? mime : 'image/jpeg');
     /* base64 is 4 chars per 3 bytes; check before allocating. */
     const approxBytes = Math.floor(image.length * 3 / 4);
     if (approxBytes > MAX_IMAGE_BYTES) {
-      return json(res, 413, { error: 'That image is too large. Under 8MB, please.' });
+      return json(res, 413, { error: 'That file is too large. Under 8MB, please.' });
     }
     if (!/^[A-Za-z0-9+/=]+$/.test(image.slice(0, 256))) {
       return json(res, 400, { error: 'The image field was not valid base64.' });
@@ -102,14 +108,16 @@ export default async function handler(req, res) {
       messages: [{
         role: 'user',
         content: [
-          { type: 'image', source: { type: 'base64', media_type: mediaType, data: image } },
+          isPdf
+            ? { type: 'document', source: { type: 'base64', media_type: PDF_MIME, data: image } }
+            : { type: 'image', source: { type: 'base64', media_type: mediaType, data: image } },
           { type: 'text', text: 'Read this bet slip. Return null for anything you cannot read with certainty.' }
         ]
       }]
     });
 
     if (message.stop_reason === 'refusal') {
-      return json(res, 422, { error: 'The reader declined that image.' });
+      return json(res, 422, { error: 'The reader declined that file.' });
     }
     const text = message.content.find(b => b.type === 'text');
     if (!text) return json(res, 502, { error: 'The reader returned nothing usable.' });

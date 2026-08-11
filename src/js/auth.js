@@ -11,7 +11,13 @@ import { post } from './api.js';
 
 let mode = 'up';
 let pendingEmail = '';
-let serverless = false;   // true when the API says it has no database yet
+/* There is no demo mode any more.
+   Signup used to fake an account when the API reported no database — it
+   accepted 000000 as a verification code and opened a dashboard. That is
+   the one thing this product cannot do: an account that does not exist,
+   holding bets that are not saved, is worse than an honest refusal. When
+   the backend is not connected the flow stops and says which variable is
+   missing. */
 
 const ERR_FIELD = {
   suEmail: 'suEmail', suPw: 'suPw', suPw2: 'suPw2', suName: 'suName',
@@ -106,13 +112,12 @@ export function setMode(m) {
   $('authGo').textContent = m === 'up' ? 'Continue' : 'Log in';
 }
 
-function showDemoNotice(code) {
-  const hint = $('verifyHint');
-  if (!hint) return;
-  hint.hidden = false;
-  hint.innerHTML = code
-    ? 'No database is connected yet, so no email was sent. Your code is <b class="m">' + code + '</b>.'
-    : 'No database is connected yet. Signup is running in demo mode.';
+/* Shown when the API answers 503: the deployment has no database behind it
+   yet. Naming the variable turns a dead end into something the owner can
+   act on. */
+function showNotConnected(target, body) {
+  const needs = (body && body.needs || []).join(', ') || 'DATABASE_URL';
+  showError(target, 'Accounts are not switched on for this deployment yet (' + needs + ' is not set).');
 }
 
 export async function submitStep0(next) {
@@ -142,15 +147,7 @@ async function signup(next) {
   btn.disabled = false;
   btn.textContent = 'Continue';
 
-  if (status === 503) {
-    serverless = true;
-    pendingEmail = email;
-    S.name = name;
-    $('verifyMail').textContent = email;
-    showDemoNotice(body.demoCode || '000000');
-    next();
-    return;
-  }
+  if (status === 503) { showNotConnected('suEmail', body); $('suEmail').focus(); return; }
   if (!ok) {
     /* Uniqueness comes back from the database constraint, so the message
        is authoritative rather than a guess made a moment earlier. */
@@ -180,13 +177,7 @@ async function login(next) {
   btn.disabled = false;
   btn.textContent = 'Log in';
 
-  if (status === 503) {
-    serverless = true;
-    S.name = email.split('@')[0].slice(0, 20);
-    toast('No database connected. Opening the demo dashboard.');
-    document.querySelector('[data-nav="dash"]').click();
-    return;
-  }
+  if (status === 503) { showNotConnected('liEmail', body); $('liEmail').focus(); return; }
   if (!ok) {
     /* One message for both wrong-email and wrong-password: telling them
        apart tells an attacker which addresses have accounts. */
@@ -205,15 +196,6 @@ export async function submitVerify(next) {
     : !/^\d{6}$/.test(code) ? 'The code is six digits.' : '';
   if (!showError('verify', problem)) { $('verifyCode').focus(); return; }
 
-  if (serverless) {
-    if (code !== '000000') {
-      showError('verify', 'In demo mode the code is 000000.');
-      $('verifyCode').focus();
-      return;
-    }
-    next();
-    return;
-  }
 
   const { ok, body } = await post('/api/auth/verify', { email: pendingEmail, code });
   if (!ok) {
@@ -226,7 +208,6 @@ export async function submitVerify(next) {
 }
 
 export async function resend() {
-  if (serverless) { toast('Demo mode: the code is 000000'); return; }
   const { ok, body } = await post('/api/auth/resend', { email: pendingEmail });
   toast(ok ? 'New code sent' : (body.error || 'Could not resend just now'));
 }

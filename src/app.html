@@ -414,7 +414,7 @@
     <div class="reveal" style="margin-bottom:16px">
       <p class="eyebrow">Walkthrough</p>
       <h1 style="font-size:28px;margin-top:6px">See it work.</h1>
-      <p class="lede">The same figures you will see in the demo.</p>
+      <p class="lede">One slip, from the moment you place it to the day it settles. The figures are a worked example.</p>
     </div>
     <div class="phone reveal">
       <div class="phone-shell">
@@ -432,7 +432,7 @@
       <div class="chapters" id="chapters"></div>
     </div>
     <div class="btnrow" style="margin-top:18px">
-      <button class="btn primary" data-nav="dash">Open the demo</button>
+      <button class="btn primary" data-nav="setup">Start free</button>
       <button class="btn ghost" data-nav="setup">Start free</button>
     </div>
   </div>
@@ -700,14 +700,14 @@
       <button class="card dropzone" id="dropzone" type="button">
         <span class="glyph" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 16V4M7 9l5-5 5 5M4 20h16"/></svg></span>
         <span class="t">Drop a slip here, or tap to choose</span>
-        <span class="s">Screenshot, photo, PDF, CSV or Excel</span>
+        <span class="s">Screenshot, photo or PDF. For a CSV of past bets, use Type totals or Other.</span>
       </button>
       <label class="sr" for="slipFile">Choose a slip image</label>
-      <input type="file" id="slipFile" accept="image/png,image/jpeg,image/webp,image/heic,application/pdf" multiple hidden>
+      <input type="file" id="slipFile" accept="image/png,image/jpeg,image/webp,image/heic,image/heif,application/pdf" multiple hidden>
       <div id="uploadResults"></div>
       <div class="quadstat">
         <div><div class="k">Ready</div><div class="v" id="readyCount">0</div></div>
-        <div><div class="k">Needs retake</div><div class="v" style="color:var(--a)" id="retakeCount">0</div></div>
+        <div><div class="k">Needs you</div><div class="v" style="color:var(--a)" id="retakeCount">0</div></div>
         <div><div class="k">Staked</div><div class="v m" id="importStaked">—</div></div>
         <div><div class="k">Profit</div><div class="v m" id="importProfit">—</div></div>
       </div>
@@ -730,17 +730,20 @@
 
     <div id="importOther" hidden>
       <div class="card pad">
-        <div class="cardhead"><span class="title">Other format</span><span class="tagbit warn">Experimental</span></div>
-        <p class="fineprint" style="margin:9px 0 12px">We will try to convert it. If we cannot, you get an error rather than bad data.</p>
+        <div class="cardhead"><span class="title">Bring across a spreadsheet</span></div>
+        <p class="fineprint" style="margin:9px 0 12px">A CSV or TSV exported from your bookmaker
+          or another tracker. Column names are matched automatically. Anything that cannot be
+          read is listed by line rather than imported as a zero.</p>
         <button class="dropzone" id="otherDrop" type="button">
           <span class="glyph" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6M9 15h6"/></svg></span>
-          <span class="t">Drop an unusual file</span><span class="s">Any format, any layout</span>
+          <span class="t">Drop a CSV here, or tap to choose</span>
+          <span class="s">Also accepts TSV and semicolon-separated exports</span>
         </button>
-        <div class="card" id="otherError" hidden style="padding:13px;margin-top:12px;border-color:rgba(252,165,165,.45);background:rgba(252,165,165,.08)">
-          <div class="alerthead" style="color:var(--neg)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 8v5M12 16h.01"/></svg>Could not read that file</div>
-          <p class="hinttext" style="border-top-color:rgba(252,165,165,.22)">Nothing was imported. Try exporting as CSV, or send the slips as screenshots.</p>
-        </div>
+        <label class="sr" for="csvFile">Choose a CSV of past bets</label>
+        <input type="file" id="csvFile" accept=".csv,.tsv,.txt,text/csv,text/tab-separated-values,text/plain" hidden>
+        <div id="csvReport"></div>
       </div>
+    </div>
     </div>
 
     <button class="card" data-nav="bot" style="display:flex;align-items:center;gap:11px;padding:13px;margin-top:16px;width:100%;text-align:left;border-color:rgba(var(--orb2),.3);background:rgba(var(--orb2),.08)">

@@ -18,9 +18,10 @@ export default async function handler(req, res) {
   if (!methodGuard(req, res, ['POST'])) return;
   try {
     if (!configured()) {
+      /* No demo code. An account that does not exist, holding bets that
+         are not saved, is worse than an honest refusal. */
       return json(res, 503, {
-        error: 'No database is connected yet.',
-        demoCode: '000000',
+        error: 'Accounts are not switched on for this deployment yet.',
         needs: ['DATABASE_URL']
       });
     }

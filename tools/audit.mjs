@@ -395,6 +395,155 @@ async function main() {
     await page.close();
   }
 
+  /* ── delegated selectors cannot match <html> or <body> ────────
+     One bare attribute selector in the click handler — [data-theme] —
+     matched every click in the document, because the theme lives on
+     <html data-theme>. closest() walked up to it, the branch returned, and
+     every branch declared after it became dead code: the signup wizard's
+     Continue button, the unit row, the import tabs, both dropzones and
+     Confirm on an imported slip. It is a silent failure — nothing throws,
+     the click just quietly does the wrong thing.
+
+     This reads the source rather than the page, because that is where the
+     mistake is: a selector loose enough to reach the root element. */
+  {
+    const main = await readFile(path.join(root, 'src', 'js', 'main.js'), 'utf8');
+    const page = await browser.newPage({ viewport: { width: 390, height: 844 } });
+    await installStub(page);
+    await page.goto(base, { waitUntil: 'networkidle' });
+
+    const selectors = [...main.matchAll(/\bc\('([^']+)'\)/g)].map(m => m[1]);
+    const reachesRoot = await page.evaluate(list => {
+      const bad = [];
+      for (const sel of list) {
+        try {
+          if (document.documentElement.matches(sel)) bad.push(sel + ' matches <html>');
+          else if (document.body.matches(sel)) bad.push(sel + ' matches <body>');
+        } catch { bad.push(sel + ' is not a valid selector'); }
+      }
+      return bad;
+    }, selectors);
+    for (const b of reachesRoot) {
+      fail('delegation', b + ' — closest() will match it for every click, ' +
+        'and this branch returns, so every branch after it is dead');
+    }
+    await page.close();
+  }
+
+  /* ── import actually imports ──────────────────────────────────
+     The complaint that started this was "I can't import". Confirm used to
+     be a toast and a fade — the card collapsed, the counters moved, and
+     nothing was ever stored. So the check is not that the UI reacts, it is
+     that a POST leaves the browser with the right body. */
+  {
+    const page = await browser.newPage({ viewport: { width: 390, height: 844 } });
+    await installStub(page);
+    const posted = [];
+    page.on('request', r => {
+      if (r.url().includes('/api/bets') && r.method() === 'POST') {
+        try { posted.push(JSON.parse(r.postData() || '{}')); } catch { posted.push({}); }
+      }
+    });
+    await page.goto(base, { waitUntil: 'networkidle' });
+    await page.waitForTimeout(500);
+    await page.evaluate(() => { const e = document.querySelector('[data-nav="imp"]'); if (e) e.click(); });
+    await page.waitForTimeout(200);
+
+    /* A slip the reader can fully make out. */
+    await page.setInputFiles('#slipFile', {
+      name: 'slip.jpg', mimeType: 'image/jpeg', buffer: Buffer.from('not-a-real-jpeg')
+    });
+    await page.waitForTimeout(700);
+
+    const card = await page.evaluate(() => {
+      const c = document.querySelector('#uploadResults .card');
+      if (!c) return null;
+      const btn = c.querySelector('[data-confirm-slip]');
+      return { ready: c.dataset.ready, stake: c.dataset.stake, odds: c.dataset.odds,
+               selection: c.dataset.selection, disabled: btn ? btn.disabled : null };
+    });
+    if (!card) fail('import', 'uploading a slip produced no review card');
+    else {
+      if (card.ready !== '1') fail('import', 'a fully-read slip was not marked ready');
+      if (card.stake !== '2500') fail('import', 'stake read as ' + card.stake + ', expected 2500 pence');
+      if (card.disabled) fail('import', 'Confirm was disabled on a complete slip');
+    }
+
+    await page.evaluate(() => { const b = document.querySelector('[data-confirm-slip]'); if (b) b.click(); });
+    await page.waitForTimeout(600);
+    if (!posted.length) fail('import', 'Confirm did not POST the bet — the slip was never saved');
+    else {
+      const b = posted[0];
+      if (b.stakePence !== 2500) fail('import', 'POSTed stakePence ' + b.stakePence + ', expected 2500');
+      if (Number(b.odds) !== 1.85) fail('import', 'POSTed odds ' + b.odds + ', expected 1.85');
+      if (!b.selection) fail('import', 'POSTed a bet with no selection');
+    }
+
+    /* A slip the reader could only partly make out: Confirm must stay shut
+       until the missing field is typed, then work. */
+    await page.setInputFiles('#slipFile', {
+      name: 'blurry.jpg', mimeType: 'image/jpeg', buffer: Buffer.from('also-not-a-jpeg')
+    });
+    await page.waitForTimeout(700);
+    const gated = await page.evaluate(() => {
+      const cards = document.querySelectorAll('#uploadResults .card');
+      const c = cards[cards.length - 1];
+      const btn = c && c.querySelector('[data-confirm-slip]');
+      return { disabled: btn ? btn.disabled : null, ready: c && c.dataset.ready };
+    });
+    if (gated.disabled !== true) fail('import', 'Confirm was enabled on a slip with no stake');
+
+    await page.evaluate(() => {
+      const cards = document.querySelectorAll('#uploadResults .card');
+      const c = cards[cards.length - 1];
+      const input = c.querySelector('[data-slip="stake"]');
+      input.value = '40.00';
+      input.dispatchEvent(new Event('input', { bubbles: true }));
+    });
+    await page.waitForTimeout(200);
+    const fixed = await page.evaluate(() => {
+      const cards = document.querySelectorAll('#uploadResults .card');
+      const c = cards[cards.length - 1];
+      return { ready: c.dataset.ready, stake: c.dataset.stake,
+               disabled: c.querySelector('[data-confirm-slip]').disabled };
+    });
+    if (fixed.ready !== '1' || fixed.disabled)
+      fail('import', 'typing the missing stake did not unlock Confirm');
+    if (fixed.stake !== '4000') fail('import', 'typed stake became ' + fixed.stake + ', expected 4000 pence');
+
+    /* And the CSV path. */
+    await page.evaluate(() => { const b = document.querySelector('[data-import="importOther"]'); if (b) b.click(); });
+    await page.waitForTimeout(200);
+    await page.setInputFiles('#csvFile', {
+      name: 'history.csv', mimeType: 'text/csv',
+      buffer: Buffer.from(
+        'Date,Event,Selection,Bookmaker,Odds,Stake,Profit\n' +
+        '09/08/2026,Arsenal v Chelsea,Over 2.5 Goals,bet365,1.85,20.00,17.00\n' +
+        '08/08/2026,Molde v Bodo/Glimt,Molde -1,Paddy Power,2.10,12.00,-12.00\n' +
+        '07/08/2026,Broken row,,,,\n')
+    });
+    await page.waitForTimeout(500);
+    const csv = await page.evaluate(() => {
+      const go = document.getElementById('csvGo');
+      return { hasButton: !!go, label: go ? go.textContent : '',
+               report: document.getElementById('csvReport').textContent.slice(0, 200) };
+    });
+    if (!csv.hasButton) fail('import', 'a valid CSV produced no import button: ' + csv.report);
+    else if (!/Import 2 bets/.test(csv.label))
+      fail('import', 'CSV preview offered "' + csv.label + '", expected 2 importable bets');
+
+    const before = posted.length;
+    await page.evaluate(() => { const b = document.getElementById('csvGo'); if (b) b.click(); });
+    await page.waitForTimeout(600);
+    const bulk = posted.slice(before).find(b => Array.isArray(b.bets));
+    if (!bulk) fail('import', 'the CSV import button did not POST the bets');
+    else if (bulk.bets.length !== 2) fail('import', 'POSTed ' + bulk.bets.length + ' bets, expected 2');
+    else if (bulk.bets[0].stakePence !== 2000)
+      fail('import', 'CSV stake became ' + bulk.bets[0].stakePence + ' pence, expected 2000');
+
+    await page.close();
+  }
+
   /* ── the scroll-jacked sequence, beat by beat ────────────────── */
   {
     const page = await browser.newPage({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 2 });

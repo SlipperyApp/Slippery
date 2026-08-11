@@ -89,6 +89,11 @@ function shape(r) {
 
 /* ---------------- create ---------------- */
 async function create(req, res, user, body) {
+  /* A CSV import arrives as {bets:[...]}; a confirmed slip as one bet. Both
+     go through the same validation and the same free-tier count, so an
+     import cannot be used to walk around the limit. */
+  if (Array.isArray(body && body.bets)) return createMany(req, res, user, body.bets);
+
   const problem = betProblem(body);
   if (problem) return json(res, 400, { error: problem });
 
@@ -121,6 +126,70 @@ async function create(req, res, user, body) {
     RETURNING id, event, selection, market, bookmaker, odds, stake_pence,
               profit_pence, outcome, status, placed_at, settled_at, settle_reason, source`;
   return json(res, 201, { bet: shape(rows[0]) });
+}
+
+/* Bulk import. Partial success is the honest outcome: 200 good rows out of
+   210 should land, with the 10 reported by line, rather than the whole file
+   being refused because one row had no stake. */
+const MAX_IMPORT = 1000;
+
+async function createMany(req, res, user, rows) {
+  if (!rows.length) return json(res, 400, { error: 'That file had no bets in it.' });
+  if (rows.length > MAX_IMPORT) {
+    return json(res, 413, { error: 'That is more than ' + MAX_IMPORT + ' bets. Split the file.' });
+  }
+  const ok = await limit('import:' + user.id, 6, 300);
+  if (!ok) return json(res, 429, { error: 'Give the last import a moment to finish.' });
+
+  const sql = db();
+  if ((user.plan || 'free') === 'free') {
+    const used = await sql`SELECT count(*)::int AS n FROM bets WHERE user_id = ${user.id}`;
+    if (used[0].n + rows.length > FREE_SLIPS) {
+      return json(res, 402, {
+        error: 'That import needs ' + rows.length + ' slips and you have ' +
+               Math.max(0, FREE_SLIPS - used[0].n) + ' left on the free tier.',
+        upgrade: true, used: used[0].n, freeSlips: FREE_SLIPS
+      });
+    }
+  }
+
+  const rejected = [];
+  const good = [];
+  rows.forEach((r, i) => {
+    const problem = betProblem(r);
+    if (problem) rejected.push({ line: r.line || i + 1, why: problem });
+    else good.push(r);
+  });
+  if (!good.length) return json(res, 400, { error: 'No row in that file could be imported.', rejected });
+
+  /* An imported row may already be settled — that is the point of importing
+     history — so outcome and profit come across with it. Anything without a
+     result lands as pending and the sweep will grade it. */
+  let inserted = 0;
+  for (const b of good) {
+    const settled = b.outcome && b.profitPence != null;
+    await sql`
+      INSERT INTO bets (user_id, event, selection, market, bookmaker, odds, stake_pence,
+                        profit_pence, outcome, status, placed_at, settled_at, source)
+      VALUES (${user.id}, ${str(b.event)}, ${str(b.selection)}, ${str(b.market)},
+              ${str(b.book)}, ${b.odds == null ? null : Number(b.odds)},
+              ${Math.round(Number(b.stakePence))},
+              ${settled ? Math.round(Number(b.profitPence)) : null},
+              ${settled ? importOutcome(b) : null},
+              ${settled ? 'settled' : 'pending'},
+              ${b.placedAt ? new Date(b.placedAt) : new Date()},
+              ${settled ? new Date(b.placedAt || Date.now()) : null},
+              'import')`;
+    inserted++;
+  }
+  return json(res, 201, { imported: inserted, rejected });
+}
+
+/* A CSV says "cashed out" without saying whether it made money. The six
+   ledger outcomes distinguish those, so the profit decides which one. */
+function importOutcome(b) {
+  if (b.outcome === 'cash') return cashOutcome(b.profitPence);
+  return ['won', 'lost', 'void'].includes(b.outcome) ? b.outcome : null;
 }
 
 /* ---------------- settle by hand / cash out ---------------- */

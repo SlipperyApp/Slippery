@@ -12,6 +12,7 @@ import * as R from './render.js';
 import * as C from './content.js';
 import { initMotion, syncThemeColor } from './motion.js';
 import { extractSlip, get, post, patch } from './api.js';
+import { parseBetsCsv } from './csv.js';
 import * as Auth from './auth.js';
 
 const MS = R.MS;
@@ -494,6 +495,90 @@ async function confirmSlip(btn) {
   setTimeout(updateImportTotals, 500);
 }
 
+/* ---------------- CSV import ----------------
+   Parsed in the browser, so the file never leaves the device unless the
+   user goes ahead, and so a bad file gets an answer instantly instead of
+   after an upload. */
+async function handleCsv(file) {
+  if (!file) return;
+  const report = $('csvReport');
+  report.innerHTML = '<p class="hinttext">Reading ' + esc(file.name) + '…</p>';
+
+  let text;
+  try {
+    text = await file.text();
+  } catch {
+    report.innerHTML = csvError('That file could not be opened.');
+    return;
+  }
+  if (text.length > 4_000_000) {
+    report.innerHTML = csvError('That file is over 4MB. Split it, or export a shorter date range.');
+    return;
+  }
+
+  const { bets, errors, mapped } = parseBetsCsv(text);
+  /* Line numbers travel with the rows, so a server-side rejection can name
+     the same line the file does. */
+  bets.forEach((b, i) => { b.line = i + 2; });
+
+  if (!bets.length) {
+    report.innerHTML = csvError(errors.length ? errors[0].why : 'Nothing in that file looked like a bet.');
+    return;
+  }
+
+  const settled = bets.filter(b => b.outcome).length;
+  const net = bets.reduce((a, b) => a + (b.profitPence || 0), 0);
+  const staked = bets.reduce((a, b) => a + b.stakePence, 0);
+
+  report.innerHTML =
+    '<div class="quadstat">' +
+      '<div><div class="k">Ready</div><div class="v">' + bets.length + '</div></div>' +
+      '<div><div class="k">Skipped</div><div class="v" style="color:var(--a)">' + errors.length + '</div></div>' +
+      '<div><div class="k">Staked</div><div class="v m">' + M.money0(staked) + '</div></div>' +
+      '<div><div class="k">Profit</div><div class="v m ' + (net >= 0 ? 'pos' : 'neg') + '">' +
+        M.signed(net) + '</div></div>' +
+    '</div>' +
+    '<p class="hinttext">Matched columns: ' + esc(mapped.join(', ') || 'none') + '. ' +
+      settled + ' of ' + bets.length + ' already settled; the rest will be graded when they finish.</p>' +
+    (errors.length
+      ? '<details class="disclose"><summary>' + errors.length + ' rows skipped</summary>' +
+        errors.slice(0, 40).map(e => '<p class="hinttext">Line ' + e.line + ': ' + esc(e.why) + '</p>').join('') +
+        '</details>'
+      : '') +
+    '<div class="btnrow" style="margin-top:12px">' +
+      '<button class="btn primary small" id="csvGo">Import ' + bets.length + ' bets</button>' +
+      '<button class="btn ghost small" id="csvCancel">Cancel</button></div>';
+
+  pendingCsv = bets;
+}
+
+let pendingCsv = null;
+const csvError = msg =>
+  '<div class="card" style="padding:13px;margin-top:12px;border-color:rgba(252,165,165,.45);background:rgba(252,165,165,.08)">' +
+  '<div class="alerthead" style="color:var(--neg)">Could not read that file</div>' +
+  '<p class="hinttext" style="border-top-color:rgba(252,165,165,.22)">' + esc(msg) +
+  ' Nothing was imported.</p></div>';
+
+async function runCsvImport(btn) {
+  if (!pendingCsv) return;
+  btn.disabled = true;
+  btn.textContent = 'Importing…';
+  const r = await post('/api/bets', { bets: pendingCsv });
+  btn.disabled = false;
+
+  if (r.status === 402) { showUpgrade(r.body); btn.textContent = 'Import'; return; }
+  if (r.status === 401) { go('setup'); toast('Log in to import.'); return; }
+  if (r.status === 503) { showBackendNotice(r.body); btn.textContent = 'Import'; return; }
+  if (!r.ok) { toast(r.body.error || 'That import did not go through.'); btn.textContent = 'Import'; return; }
+
+  const n = r.body.imported || 0;
+  pendingCsv = null;
+  $('csvReport').innerHTML = '<p class="hinttext">Imported ' + n + ' bets.' +
+    (r.body.rejected && r.body.rejected.length ? ' ' + r.body.rejected.length + ' rows were rejected.' : '') + '</p>';
+  toast(n + ' bets imported');
+  await loadLedger();
+}
+
 function showUpgrade(body) {
   toast('That is all ' + (body && body.freeSlips || 20) + ' free slips used.');
   go('pricing');
@@ -696,7 +781,15 @@ document.addEventListener('click', e => {
       : S.privacy === 'friends' ? 'visible to friends only' : 'public'));
     return;
   }
-  if ((el = c('[data-theme]'))) {
+  /* `button[data-theme]`, NOT `[data-theme]`.
+     The theme lives on <html data-theme="...">, so a bare attribute
+     selector matched every click in the document once closest() walked far
+     enough up — and because this branch returns, it swallowed every branch
+     declared after it. That killed the signup wizard's Continue button, the
+     unit row, the import tabs, both dropzones, and Confirm on an imported
+     slip. Any delegated selector here must be specific enough that it
+     cannot match <html> or <body>. */
+  if ((el = c('button[data-theme]'))) {
     stopThemeIntro();
     applyTheme(el.getAttribute('data-theme'));
     toast((THEMES.find(t => t[0] === S.theme) || [])[1] + ' applied');
@@ -768,9 +861,11 @@ document.addEventListener('click', e => {
     return;
   }
   if (c('#dropzone')) { $('slipFile').click(); return; }
-  if (c('#otherDrop')) { $('otherError').hidden = false; toast('That file could not be read. Nothing was imported.'); return; }
+  if (c('#otherDrop')) { $('csvFile').click(); return; }
   if ((el = c('[data-dismiss-card]'))) { collapse(el.closest('.card'), 'Discarded'); setTimeout(updateImportTotals, 500); return; }
   if ((el = c('[data-confirm-slip]'))) { confirmSlip(el); return; }
+  if ((el = c('#csvGo'))) { runCsvImport(el); return; }
+  if (c('#csvCancel')) { pendingCsv = null; $('csvReport').innerHTML = ''; return; }
   if (c('#totalsSave')) {
     const btn = c('#totalsSave');
     btn.textContent = 'Totals added'; btn.disabled = true;
@@ -908,6 +1003,7 @@ document.addEventListener('change', e => {
     toast(t.value + ' plan selected');
   }
   else if (t.id === 'slipFile') { handleFiles(t.files); t.value = ''; }
+  else if (t.id === 'csvFile') { handleCsv(t.files && t.files[0]); t.value = ''; }
   else if (t.id === 'timezone' || t.id === 'exportFormat' || t.id === 'stakeAs') toast(t.value + ' selected');
 });
 
