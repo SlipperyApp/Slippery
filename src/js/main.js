@@ -209,10 +209,10 @@ function openDay(day) {
   setText('dayTitle', R.DF.format(new Date(TODAY.year, S.month, day)));
   const net = $('dayNet');
   net.textContent = M.signed(v);
-  net.className = 'n ' + (v >= 0 ? 'pos' : 'neg');
+  net.className = 'n ' + M.tone(v);
   setHTML('daySub', (list.length ? list.length + (list.length === 1 ? ' bet' : ' bets') : 'Daily total') +
     ' · week to ' + R.DS.format(new Date(TODAY.year, S.month, w.b)) +
-    ' <b class="' + (weekTotal >= 0 ? 'pos' : 'neg') + '">' + M.money0s(weekTotal) + '</b>');
+    ' <b class="' + M.tone(weekTotal) + '">' + M.money0s(weekTotal) + '</b>');
   setHTML('dayList', list.length
     ? list.map((b, i) => R.betRow(b, i * 40)).join('')
     : '<div class="emptystate"><div class="t">Total carried over</div><p>This day came from an imported total, so there are no slips behind it.</p></div>');
@@ -549,7 +549,7 @@ async function handleCsv(file) {
       '<div><div class="k">Ready</div><div class="v">' + bets.length + '</div></div>' +
       '<div><div class="k">Skipped</div><div class="v" style="color:var(--a)">' + errors.length + '</div></div>' +
       '<div><div class="k">Staked</div><div class="v m">' + M.money0(staked) + '</div></div>' +
-      '<div><div class="k">Profit</div><div class="v m ' + (net >= 0 ? 'pos' : 'neg') + '">' +
+      '<div><div class="k">Profit</div><div class="v m ' + M.tone(net) + '">' +
         M.signed(net) + '</div></div>' +
     '</div>' +
     '<p class="hinttext">Matched columns: ' + esc(mapped.join(', ') || 'none') + '. ' +
@@ -609,7 +609,7 @@ function updateImportTotals() {
   setText('importStaked', staked ? M.money(staked) : '—');
   const p = $('importProfit');
   p.textContent = profit ? M.signed(profit) : '—';
-  p.className = 'v m ' + (profit >= 0 ? 'pos' : 'neg');
+  p.className = 'v m ' + M.tone(profit);
 }
 
 /* ---------------- totals ---------------- */
@@ -634,7 +634,7 @@ function sumTotals() {
     if (v != null) { sum += v; n++; }
   });
   setHTML('totalsSummary', n
-    ? n + ' filled · <b class="' + (sum >= 0 ? 'pos' : 'neg') + '">' + M.money0s(sum) + '</b>'
+    ? n + ' filled · <b class="' + M.tone(sum) + '">' + M.money0s(sum) + '</b>'
     : '—');
 }
 
@@ -1085,7 +1085,7 @@ function renderNewMonth() {
   if (!history) return;
   setText('newMonthTitle', 'Happy with your ' + MS.format(new Date(TODAY.year, TODAY.month, 1)) + ' target?');
   setHTML('newMonthBody',
-    MS.format(new Date(TODAY.year, prev, 1)) + ' finished <b class="' + (prevActual >= 0 ? 'pos' : 'neg') + '">' +
+    MS.format(new Date(TODAY.year, prev, 1)) + ' finished <b class="' + M.tone(prevActual) + '">' +
     M.money0s(prevActual) + '</b> against a <b>' + M.money0(prevTarget) +
     '</b> target. The last three months averaged <b>' + M.money0s(avg) + '</b>.');
   $('newMonthInput').value = (targetFor(TODAY.month) / 100).toFixed(0);

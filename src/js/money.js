@@ -31,10 +31,18 @@ export function money0s(pence) {
 export function signed(pence) {
   return (pence > 0 ? '+' : pence < 0 ? '−' : '') + _fmt2.format(Math.abs(pence) / 100);
 }
+/**
+ * The semantic class for an amount. Zero is neither, and must not be green:
+ * #86EFAC means profit, and a void returns the stake for no profit at all.
+ * Every place that colours money goes through this so the rule holds once.
+ */
+export function tone(pence) {
+  return pence > 0 ? 'pos' : pence < 0 ? 'neg' : 'mut';
+}
 /** +1.94u — profit expressed in the user's unit stake */
 export function units(pence, unitPence) {
   const v = unitPence ? pence / unitPence : 0;
-  return (v >= 0 ? '+' : '−') + Math.abs(v).toFixed(2) + 'u';
+  return (v > 0 ? '+' : v < 0 ? '−' : '') + Math.abs(v).toFixed(2) + 'u';
 }
 /** +5.9% */
 export function pct(n) {

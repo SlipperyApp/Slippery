@@ -230,7 +230,7 @@ function renderPreview() {
     '<span style="display:flex;align-items:center;gap:8px;min-width:0">' +
     '<span class="prevrow-i" data-outcome="' + outcomeGroup(b.outcome) + '">' + ico(OUTCOME_ICON[b.outcome]) + '</span>' +
     '<span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + esc(b.event) + '</span></span>' +
-    '<span class="m ' + (b.profit >= 0 ? 'pos' : 'neg') + '">' + M.signed(b.profit) + '</span></div>').join(''));
+    '<span class="m ' + M.tone(b.profit) + '">' + M.signed(b.profit) + '</span></div>').join(''));
 }
 
 function renderBotChat() {
@@ -269,7 +269,7 @@ function renderBotChat() {
     '<div class="bubble incoming slim">Full time. ' + esc(slip.selection) + ' <b class="pos">won</b>, ' +
       M.signed(slip.profit) + '.</div>' +
 
-    '<div class="bubble incoming slim">Logged. Today: <b class="' + (net >= 0 ? 'pos' : 'neg') + '">' +
+    '<div class="bubble incoming slim">Logged. Today: <b class="' + M.tone(net) + '">' +
       M.signed(net) + '</b> across ' + day8.length + ' bets.</div>' +
 
     '<div class="bubble incoming"><div class="monoblock">8 Aug 2026\n\n' +
@@ -394,9 +394,9 @@ function scene(i) {
         '<span class="prevrow-i tiny" data-outcome="' + outcomeGroup(x.outcome) + '">' + ico(OUTCOME_ICON[x.outcome]) + '</span>' +
         '<span style="flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">' +
         esc(x.selection) + ' · ' + esc(x.book) + '</span>' +
-        '<b class="m ' + (x.profit >= 0 ? 'pos' : 'neg') + '" style="font-size:9px">' + M.signed(x.profit) + '</b></div>').join('') + '</div>' +
+        '<b class="m ' + M.tone(x.profit) + '" style="font-size:9px">' + M.signed(x.profit) + '</b></div>').join('') + '</div>' +
       '<p style="font-size:9px;color:var(--t2);text-align:center;padding-top:4px">That week ' +
-      '<b class="' + (wt >= 0 ? 'pos' : 'neg') + '">' + M.money0s(wt) + '</b></p>' };
+      '<b class="' + M.tone(wt) + '">' + M.money0s(wt) + '</b></p>' };
   }
 
   if (i === 4) {
@@ -411,7 +411,7 @@ function scene(i) {
         '<span style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">' + esc(x[0]) + '</span>' +
         '<i style="height:5px;border-radius:3px;display:block;width:' + (Math.abs(x[1]) / max * 100).toFixed(0) +
         '%;background:' + (x[1] >= 0 ? '#86EFAC' : '#FCA5A5') + '"></i>' +
-        '<b class="m ' + (x[1] >= 0 ? 'pos' : 'neg') + '" style="font-size:8.5px">' + M.money0s(x[1]) + '</b></div>').join('') + '</div>' +
+        '<b class="m ' + M.tone(x[1]) + '" style="font-size:8.5px">' + M.money0s(x[1]) + '</b></div>').join('') + '</div>' +
       '<div style="display:grid;grid-template-columns:repeat(2,1fr);gap:4px;margin-top:6px">' +
       skpi('Win rate', p.winRate + '%') + skpi('Avg odds', p.avgOdds.toFixed(2)) +
       skpi('Turnover', M.money0(p.turnover)) + skpi('ROI', M.pct(p.roi)) + '</div>' +
@@ -429,7 +429,7 @@ function scene(i) {
       '<span style="width:9px;font-family:var(--fm);color:var(--t3)">' + (n + 1) + '</span>' +
       '<span style="width:16px;height:16px;border-radius:50%;display:grid;place-items:center;font-size:6.5px;font-weight:600;color:#08111f;background:linear-gradient(140deg,#8FC7C0,#8B9DE0)">' + esc(x.a) + '</span>' +
       '<span style="flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">' + esc(x.n) + '</span>' +
-      '<b class="m ' + (x.v >= 0 ? 'pos' : 'neg') + '" style="font-size:9px">' + M.units(x.v, x.un) + '</b></div>').join('') + '</div>' +
+      '<b class="m ' + M.tone(x.v) + '" style="font-size:9px">' + M.units(x.v, x.un) + '</b></div>').join('') + '</div>' +
     '<p style="font-size:9px;color:var(--t2);text-align:center;padding-top:4px">' +
     'Ranked in units, never in pounds</p>' };
 }

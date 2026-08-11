@@ -47,7 +47,7 @@ export function betRow(b, delay) {
       (b.viaTelegram ? TELEGRAM : '') + '</div>' +
     '<div class="sub">' + esc(bits.join(' · ')) + '</div></div>' +
     '<div class="right"><div class="stamp">' + esc(stamp) + '</div>' +
-    '<div class="amt ' + (b.profit >= 0 ? 'pos' : 'neg') + '">' + main + '</div>' +
+    '<div class="amt ' + M.tone(b.profit) + '">' + main + '</div>' +
     '<div class="alt">' + alt + '</div></div></div>';
 }
 
@@ -172,7 +172,7 @@ export function renderHeadline() {
 
   const v = $('headlineValue');
   v.textContent = M.signed(p.profit);
-  v.className = 'value m ' + (p.profit >= 0 ? 'pos' : 'neg');
+  v.className = 'value m ' + M.tone(p.profit);
 
   setText('statBets', M.plain(p.bets));
   setText('statUnits', M.units(p.profit, S.unit));
@@ -181,7 +181,7 @@ export function renderHeadline() {
   setText('statAvgOdds', p.avgOdds ? p.avgOdds.toFixed(2) : '—');
   const roi = $('statRoi');
   roi.textContent = M.pct(p.roi);
-  roi.className = p.roi >= 0 ? 'pos' : 'neg';
+  roi.className = M.tone(p.roi);
 
   /* All time reaches past the ledger into imported history. Saying so is
      the difference between a number that reconciles and one that lies. */
@@ -193,18 +193,18 @@ export function renderHeadline() {
   } else note.hidden = true;
 
   $('kpiRow').innerHTML = [
-    ['All time', M.money0s(life.profit), life.profit >= 0 ? 'pos' : 'neg'],
-    ['Units', M.units(life.profit, S.unit), life.profit >= 0 ? 'pos' : 'neg'],
+    ['All time', M.money0s(life.profit), M.tone(life.profit)],
+    ['Units', M.units(life.profit, S.unit), M.tone(life.profit)],
     ['Avg odds', life.avgOdds.toFixed(2), ''],
-    ['ROI, life', M.pct(life.roi), life.roi >= 0 ? 'pos' : 'neg']
+    ['ROI, life', M.pct(life.roi), M.tone(life.roi)]
   ].map(k => '<div class="kpi"><div class="n">' + k[0] + '</div><div class="v ' + k[2] + '">' +
     k[1] + '</div></div>').join('');
 
   $('kpiPair').innerHTML = [
     ['Win rate', p.winRate + '%', ''],
     ['Best run', p.streak + (p.streak === 1 ? ' day' : ' days'), ''],
-    ['Best day', M.money0s(p.best), p.best >= 0 ? 'pos' : 'neg'],
-    ['Worst day', M.money0s(p.worst), p.worst >= 0 ? 'pos' : 'neg']
+    ['Best day', M.money0s(p.best), M.tone(p.best)],
+    ['Worst day', M.money0s(p.worst), M.tone(p.worst)]
   ].map(k => '<div class="kpi"><div class="n">' + k[0] + '</div><div class="v ' + k[2] + '">' +
     k[1] + '</div></div>').join('');
 
@@ -229,10 +229,10 @@ export function renderHeadline() {
   $$('.scoped').forEach(e => { e.textContent = p.label; });
 
   $('ledgerKpis').innerHTML = [
-    ['Net', M.money0s(p.profit), p.profit >= 0 ? 'pos' : 'neg'],
-    ['Units', M.units(p.profit, S.unit), p.profit >= 0 ? 'pos' : 'neg'],
+    ['Net', M.money0s(p.profit), M.tone(p.profit)],
+    ['Units', M.units(p.profit, S.unit), M.tone(p.profit)],
     ['Turnover', M.money0(p.turnover), ''],
-    ['ROI', M.pct(p.roi), p.roi >= 0 ? 'pos' : 'neg']
+    ['ROI', M.pct(p.roi), M.tone(p.roi)]
   ].map(k => '<div class="kpi"><div class="n">' + k[0] + '</div><div class="v ' + k[2] + '">' +
     k[1] + '</div></div>').join('');
 
@@ -375,7 +375,7 @@ function personRow(p, mode) {
   const v = personValue(p);
   const ok = visible(p);
   const val = ok
-    ? '<span class="n ' + (v >= 0 ? 'pos' : 'neg') + '">' + M.units(v, p.un) + '</span>' +
+    ? '<span class="n ' + M.tone(v) + '">' + M.units(v, p.un) + '</span>' +
       '<span class="s">' + M.money0s(v) + '</span>'
     : '<span class="hidden-note">' + LOCK + (p.pv === 'private' ? 'Private' : 'Friends only') + '</span>';
   const tag = '<span class="privacytag ' + p.pv + '">' + p.pv + '</span>';
@@ -418,7 +418,7 @@ export function renderPeople() {
 function duo(title, n, units) {
   return '<div class="duo"><div><div class="k">' + title + '</div><div class="v">' + n + '</div></div>' +
     '<div><div class="k">Combined, ' + periodWord() + '</div><div class="v ' +
-    (units >= 0 ? 'pos' : 'neg') + '">' +
+    M.tone(units) + '">' +
     ((units >= 0 ? '+' : '−') + Math.abs(units).toFixed(2) + 'u') + '</div></div></div>';
 }
 
@@ -439,7 +439,10 @@ export function renderGroups() {
       '<div class="emptystate"><div class="t">No groups yet</div>' +
       '<p>Start one and share the code, or join a friend\'s. Groups rank in ' +
       'units, so nobody sees anyone\'s stake sizes.</p></div>';
+    /* Emptying a .card leaves its border and padding behind as a stray
+       rounded box. Hide the element, not just its contents. */
     $('groupBoard').innerHTML = '';
+    $('groupBoard').hidden = true;
     return;
   }
   $('groupList').innerHTML = GROUPS.map((g, i) => {
@@ -454,20 +457,21 @@ export function renderGroups() {
       '<circle cx="9" cy="8" r="3.2"/><path d="M2.5 21v-1a5 5 0 0 1 5-5h3a5 5 0 0 1 5 5v1"/>' +
       '<path d="M16 3.6a3.2 3.2 0 0 1 0 6.4"/></svg></span>' +
       '<span class="body"><span class="r1"><span class="gname">' + esc(g.name) + '</span>' +
-      '<span class="gval ' + (totalUnits >= 0 ? 'pos' : 'neg') + '">' +
+      '<span class="gval ' + M.tone(totalUnits) + '">' +
       ((totalUnits >= 0 ? '+' : '−') + Math.abs(totalUnits).toFixed(2) + 'u') + '</span></span>' +
       '<span class="r2"><span class="gsub">' + g.mem.length + ' members · you are ' + place + ord +
       '</span><span class="gper">' + periodWord() + '</span></span></span></button>';
   }).join('');
 
   const g = GROUPS[S.group] || GROUPS[0];
+  $('groupBoard').hidden = false;
   const rows = groupRows(g);
   const totalUnits = rows.reduce((a, r) => a + r.v / r.un, 0);
   $('groupBoard').innerHTML =
     '<div class="cardhead"><span class="title">' + esc(g.name) + '</span>' +
     '<span class="meta">' + periodWord() + ' · in units</span></div>' +
     '<div class="duo"><div><div class="k">Group total</div><div class="v ' +
-      (totalUnits >= 0 ? 'pos' : 'neg') + '">' +
+      M.tone(totalUnits) + '">' +
       ((totalUnits >= 0 ? '+' : '−') + Math.abs(totalUnits).toFixed(2) + 'u') + '</div></div>' +
     '<div><div class="k">Members</div><div class="v">' + g.mem.length + '</div></div></div>' +
     rows.map((p, i) =>
@@ -482,7 +486,7 @@ export function renderGroups() {
           '<span style="min-width:0"><span class="nm"><span translate="no">' + esc(p.n) + '</span>' +
           (p.verified ? VERIFIED : '') + '</span>' +
           '<span class="sub" style="display:block">1u = ' + M.money0(p.un) + '</span></span></button>') +
-      '<span class="val"><span class="n ' + (p.v >= 0 ? 'pos' : 'neg') + '">' +
+      '<span class="val"><span class="n ' + M.tone(p.v) + '">' +
       M.units(p.v, p.un) + '</span><span class="s">' + M.money0s(p.v) + '</span></span></div>').join('');
 }
 
@@ -549,13 +553,13 @@ export function renderProfile(name) {
   const maxMo = Math.max(...mo.map(Math.abs)) || 1;
   $('profileBody').innerHTML =
     '<div class="card pad" style="margin-bottom:10px"><p class="eyebrow" style="color:var(--t2)">All time</p>' +
-    '<p class="bignum ' + (p.all >= 0 ? 'pos' : 'neg') + '">' + M.units(p.all, p.un) + '</p>' +
+    '<p class="bignum ' + M.tone(p.all) + '">' + M.units(p.all, p.un) + '</p>' +
     '<p class="mut m" style="font-size:12.5px;margin-top:3px">' + M.money0s(p.all) +
       ' at ' + M.money0(p.un) + ' a unit</p>' +
     '<div class="kpis pair" style="margin:12px 0 0">' +
-      kpi('This month', M.units(thisMonth, p.un), thisMonth >= 0 ? 'pos' : 'neg') +
-      kpi('This year', M.units(yearTotal, p.un), yearTotal >= 0 ? 'pos' : 'neg') +
-      kpi('ROI', M.pct(p.roi), p.roi >= 0 ? 'pos' : 'neg') +
+      kpi('This month', M.units(thisMonth, p.un), M.tone(thisMonth)) +
+      kpi('This year', M.units(yearTotal, p.un), M.tone(yearTotal)) +
+      kpi('ROI', M.pct(p.roi), M.tone(p.roi)) +
       kpi('Bets', M.plain(p.b), '') +
     '</div></div>' +
 
