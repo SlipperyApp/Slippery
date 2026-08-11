@@ -40,9 +40,10 @@ const HEADERS = {
   'Origin': 'https://www.sofascore.com'
 };
 
-/** Opt-in. Unset means the sweep uses football-data.org and nothing changes. */
+/** Default on: it needs no key. Set RESULTS_PROVIDER=football-data to pin
+    the other one. */
 export function configured() {
-  return process.env.RESULTS_PROVIDER === 'sofascore';
+  return process.env.RESULTS_PROVIDER !== 'football-data';
 }
 
 /* SofaScore reports both a coarse `status.type` and a fine `status.code`.

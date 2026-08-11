@@ -352,7 +352,7 @@ export function renderPending() {
       '<input class="field" id="cashIn-' + b.id + '" inputmode="decimal" placeholder="Amount returned…">' +
       '<button class="btn primary" data-cashout="' + b.id + '" style="padding:0 16px">Save</button></div>' +
       '</div>').join('') +
-    '<div class="runfoot"><button class="btn primary full" id="checkResults" style="margin-bottom:12px">Check results now</button>' +
+    '<div class="runfoot">' +
     'Standard markets settle themselves. Anything uncertain comes to you rather than being guessed.</div>';
 }
 

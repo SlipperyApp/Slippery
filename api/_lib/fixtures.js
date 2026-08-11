@@ -18,10 +18,16 @@
 const FD_BASE = 'https://api.football-data.org/v4';
 
 export function configured() {
-  return Boolean(process.env.FOOTBALL_DATA_TOKEN) || sofascoreEnabled();
+  /* SofaScore needs no key, so a deployment with no results configuration
+     at all still settles bets. FOOTBALL_DATA_TOKEN is the fallback, not the
+     requirement it used to be. */
+  return true;
 }
 
-const sofascoreEnabled = () => process.env.RESULTS_PROVIDER === 'sofascore';
+/* SofaScore is the default provider: it publishes period scores, so it can
+   prove the 90-minute score on a knockout tie and football-data.org's free
+   tier cannot. Set RESULTS_PROVIDER=football-data to pin the old one. */
+const sofascoreEnabled = () => process.env.RESULTS_PROVIDER !== 'football-data';
 
 /**
  * Fetch finished fixtures from whichever provider is configured.
@@ -45,7 +51,42 @@ export async function resolveFinished(dateFrom, dateTo) {
                    '), falling back to football-data.org');
     }
   }
+  if (!process.env.FOOTBALL_DATA_TOKEN) {
+    const err = new Error('No results feed could be reached.');
+    err.statusCode = 503;
+    throw err;
+  }
   return { provider: 'football-data', fixtures: await finishedBetween(dateFrom, dateTo) };
+}
+
+/**
+ * Look up single fixtures by name, for bets the day sweep did not match.
+ *
+ * A sweep only sees the days it pulled and the competitions the provider
+ * lists there. A bet on something outside that window would otherwise stay
+ * pending forever, which looks identical to "still running" and is the more
+ * annoying of the two failures. Capped, because this is one request each.
+ *
+ * @param {string[]} eventTexts the `event` field of each unmatched bet
+ * @returns {Promise<Map<string, object>>} eventText -> fixture
+ */
+export async function lookupEach(eventTexts, cap = 8) {
+  const found = new Map();
+  if (!sofascoreEnabled()) return found;      // only SofaScore has a search
+  let sofa;
+  try { sofa = await import('./sofascore.js'); } catch { return found; }
+
+  for (const text of eventTexts.slice(0, cap)) {
+    try {
+      const fx = await sofa.searchEvent(text);
+      if (fx) found.set(text, fx);
+    } catch (err) {
+      /* One blocked or malformed lookup must not abandon the rest, and must
+         not fail the whole settle: the sweep's matches are already good. */
+      if (err.blocked) break;
+    }
+  }
+  return found;
 }
 
 /** Map a football-data.org status onto what the engine understands. */

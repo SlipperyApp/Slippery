@@ -14,12 +14,11 @@
  * be detected from a results feed, so it arrives here through PATCH and
  * nowhere else.
  */
-import { json, methodGuard, readJson, fail } from './_lib/http.js';
+import { json, methodGuard, readJson, fail, clientIp } from './_lib/http.js';
 import { db, ensureSchema, configured } from './_lib/db.js';
 import { sessionUser } from './_lib/auth.js';
 import { cashOutcome, ledgerOutcome, payoutFor } from '../src/js/settlement.js';
 import { limit } from './_lib/rate.js';
-import { clientIp } from './_lib/http.js';
 
 /* The free tier. Counted on the server, because a limit enforced in the
    browser is a suggestion. */

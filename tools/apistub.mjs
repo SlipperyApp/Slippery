@@ -114,6 +114,14 @@ export async function installStub(page, opts = {}) {
     return route.fulfill({ status: 200, contentType: 'application/json', body: '{}' });
   });
 
+  /* The results check. Settles the two plain pending bets and leaves the
+     one the grader asked about, which is the realistic shape of an answer. */
+  await page.route('**/api/settle', route => route.fulfill({
+    status: 200, contentType: 'application/json',
+    body: JSON.stringify({ provider: 'sofascore', checked: 3, fixtures: 412,
+      settled: 1, asked: 1, stillRunning: 1, bets: [] })
+  }));
+
   /* Signup and verification, so the wizard can be driven end to end. */
   await page.route('**/api/auth/signup', route => route.fulfill({
     status: 201, contentType: 'application/json',

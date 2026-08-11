@@ -1,4 +1,4 @@
-const CACHE='slippery-vf907b4b6c1ee';
+const CACHE='slippery-v19b17eee8f5b';
 const SHELL=['/','/index.html','/manifest.webmanifest','/icon.svg',
   '/fonts/fraunces.woff2','/fonts/schibsted-grotesk.woff2','/fonts/spline-sans-mono.woff2'];
 self.addEventListener('install',e=>{

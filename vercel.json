@@ -62,6 +62,18 @@
     "api/**/*.js": {
       "maxDuration": 30,
       "memory": 1024
+    },
+    "api/results.js": {
+      "maxDuration": 60,
+      "memory": 1024
+    },
+    "api/settle.js": {
+      "maxDuration": 60,
+      "memory": 1024
+    },
+    "api/extract.js": {
+      "maxDuration": 45,
+      "memory": 1024
     }
   }
 }

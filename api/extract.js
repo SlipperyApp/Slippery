@@ -33,7 +33,8 @@ const SLIP_SCHEMA = {
   type: 'object',
   additionalProperties: false,
   required: ['readable', 'bet_type', 'selection', 'event', 'bookmaker', 'odds',
-             'stake', 'returns', 'result', 'legs', 'placed_at', 'unreadable_fields', 'notes'],
+             'stake', 'returns', 'result', 'stage', 'kickoff', 'legs', 'placed_at',
+             'unreadable_fields', 'notes'],
   properties: {
     readable: { type: 'boolean' },
     bet_type: { anyOf: [{ type: 'string', enum: ['single', 'multiple', 'bet_builder', 'system'] }, { type: 'null' }] },
@@ -44,6 +45,13 @@ const SLIP_SCHEMA = {
     stake: nullable('number'),
     returns: nullable('number'),
     result: { anyOf: [{ type: 'string', enum: ['won', 'lost', 'void', 'cashed_out', 'open'] }, { type: 'null' }] },
+    /* A slip can be forwarded before kick-off, during the game, or after it
+       settled. Which one it is decides what happens next: a settled slip is
+       graded from the image, an unsettled one is matched to a fixture and
+       watched. Reading it off the slip beats inferring it from whether a
+       result happens to be printed. */
+    stage: { anyOf: [{ type: 'string', enum: ['prematch', 'inplay', 'settled'] }, { type: 'null' }] },
+    kickoff: nullable('string'),
     legs: nullable('integer'),
     placed_at: nullable('string'),
     unreadable_fields: { type: 'array', items: { type: 'string' } },
@@ -65,6 +73,17 @@ Field notes:
   Return the total stake. On an each-way slip that is the combined stake.
 - result: only if the slip states it. An unsettled slip is "open". Never infer
   a result from the presence of a returns figure.
+- stage: where the bet is in its life, from what the slip shows.
+    "prematch" — placed, not started. No score, no clock, often a kick-off time.
+    "inplay"   — in progress. A live score, a match clock, a "cash out" price
+                 that is moving, or wording like "In-Play" or "Live".
+    "settled"  — finished and graded. A result, a returns-paid line, or wording
+                 like Won, Lost, Void, Cashed Out.
+  If the slip does not make it clear, return null. Do not infer "settled"
+  merely because a potential-returns figure is printed — every slip has one.
+- kickoff: the fixture's start time if the slip prints one, ISO 8601 if a date
+  is given, otherwise the time as printed. Null if absent. This is used to
+  find the right fixture, so a wrong value is worse than none.
 - selection: what was actually backed, as printed. Do not normalise or expand
   abbreviations, and do not translate.
 - event: the fixture or market the selection belongs to.

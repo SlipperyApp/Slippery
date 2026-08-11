@@ -108,6 +108,14 @@
     <rect x="4.4" y="10.2" width="15.2" height="10.4" rx="2.4"/>
     <path d="M8 10.2V7.4a4 4 0 0 1 8 0v2.8"/>
   </symbol>
+  <symbol id="i-close" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+          stroke-width="2" stroke-linecap="round">
+    <path d="M6.6 6.6l10.8 10.8M17.4 6.6L6.6 17.4"/>
+  </symbol>
+  <symbol id="i-refresh" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+          stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M20.4 12a8.4 8.4 0 1 1-2.5-6"/><path d="M20.6 4.2v5.2h-5.2"/>
+  </symbol>
   <symbol id="i-arrow-down" viewBox="0 0 24 24" fill="none" stroke="currentColor"
           stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
     <path d="M12 4.6v14.2M6.2 13.4L12 19.2l5.8-5.8"/>

@@ -265,24 +265,42 @@ async function manualSettle(id, kind, cashPence) {
   toast(b.selection + ' settled, ' + M.signed(r.body.bet.profit));
 }
 
-/* Refresh from the server.
-   Settlement is not a client-side act any more: the scheduled sweep grades
-   bets against the results feed and writes the outcome, so "check results"
-   asks the server what it knows rather than running a second grader in the
-   browser that could disagree with the first. */
+/* The refresh button.
+   Asks the server to look up every running bet against the results provider
+   and settle what it can. Settlement is never a client-side act: the same
+   engine runs on the server against the same fixture data, so there is no
+   second grader in the browser to disagree with the first. */
 async function checkResults() {
   const btn = $('checkResults');
-  if (btn) { btn.disabled = true; btn.dataset.was = btn.textContent; btn.textContent = 'Checking…'; }
-  const before = PENDING.length;
-  const loaded = await loadLedger();
-  if (btn) { btn.disabled = false; btn.textContent = btn.dataset.was || 'Check results'; }
-  if (!loaded) return;
-  const settledNow = before - PENDING.length;
-  const asked = PENDING.filter(b => b.status === 'ask').length;
+  const was = btn ? btn.textContent : '';
+  if (btn) { btn.disabled = true; btn.textContent = 'Checking…'; }
+
+  const r = await post('/api/settle');
+
+  if (btn) { btn.disabled = false; btn.textContent = was || 'Check results now'; }
+
+  if (r.status === 401) { go('setup'); toast('Log in to check your bets.'); return; }
+  if (r.status === 429) { toast(r.body.error || 'Just checked. Give it a minute.'); return; }
+  if (r.status === 503) {
+    /* Distinguish "no backend" from "the provider is blocking us" — they
+       need different things from the owner, and neither is the user's
+       fault. */
+    if (r.body.needs) showBackendNotice(r.body);
+    toast(r.body.error || 'Results cannot be checked right now.');
+    return;
+  }
+  if (!r.ok) { toast(r.body.error || 'That check did not go through.'); return; }
+
+  /* Reload rather than patching the store from the response: the server has
+     just become the authority on several bets at once, and re-reading is
+     both simpler and impossible to get subtly wrong. */
+  await loadLedger();
+
+  const b = r.body;
   const bits = [];
-  if (settledNow > 0) bits.push(settledNow + ' settled');
-  if (asked) bits.push(asked + ' need you');
-  if (PENDING.length - asked) bits.push((PENDING.length - asked) + ' still running');
+  if (b.settled) bits.push(b.settled + (b.settled === 1 ? ' settled' : ' settled'));
+  if (b.asked) bits.push(b.asked + ' need you');
+  if (b.stillRunning) bits.push(b.stillRunning + ' still running');
   toast(bits.length ? bits.join(', ') : 'Nothing new yet');
 }
 

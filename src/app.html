@@ -455,7 +455,7 @@
       <div class="card" id="newMonthCard" style="padding:15px;margin-bottom:10px;border-color:rgba(var(--orb2),.4);background:rgba(var(--orb2),.08)">
         <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:9px">
           <span class="eyebrow">New month</span>
-          <button class="pillbtn" id="newMonthDismiss" style="min-height:38px;min-width:38px;padding:4px 9px;justify-content:center" aria-label="Decide later">✕</button>
+          <button class="pillbtn" id="newMonthDismiss" style="min-height:38px;min-width:38px;padding:4px 9px;justify-content:center" aria-label="Decide later"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><use href="#i-close"/></svg></button>
         </div>
         <p style="font-weight:600;font-size:15px;margin-top:7px" id="newMonthTitle"></p>
         <p style="font-size:12.5px;color:var(--t2);margin-top:5px;line-height:1.55" id="newMonthBody"></p>
@@ -506,6 +506,14 @@
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></span>
         </button>
         <div id="runList" hidden></div>
+        <!-- Always visible, not buried inside the collapsed list: the
+             question "did any of these land?" is the reason to look at this
+             card at all, so the answer must not be two taps away. -->
+        <div class="runcheck">
+          <button class="btn ghost small full" id="checkResults">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><use href="#i-refresh"/></svg>
+            Check results now</button>
+        </div>
       </div>
 
       <div class="card pad" style="margin-bottom:10px">
