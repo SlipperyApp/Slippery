@@ -141,6 +141,7 @@ npm run build     src/ → public/index.html   (Vercel runs this)
 npm test          settlement + unit + integration tests
 npm run verify    build, test, then real-browser audit (axe, overflow, screenshots)
 node tools/icons.mjs   re-rasterise the PWA icons and og.png after art changes
+node tools/preview.mjs one self-contained slippery-preview.html to open anywhere
 ```
 
 ## Rules for this codebase
