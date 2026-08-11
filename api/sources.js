@@ -12,6 +12,7 @@
 import { json, methodGuard, fail } from './_lib/http.js';
 import { configured as dbConfigured } from './_lib/db.js';
 import { probeSources } from './_lib/fixtures.js';
+import * as mail from './_lib/mail.js';
 
 export default async function handler(req, res) {
   if (!methodGuard(req, res, ['GET'])) return;
@@ -28,10 +29,14 @@ export default async function handler(req, res) {
         ANTHROPIC_API_KEY: has('ANTHROPIC_API_KEY'),
         TELEGRAM_BOT_TOKEN: has('TELEGRAM_BOT_TOKEN'),
         TELEGRAM_WEBHOOK_SECRET: has('TELEGRAM_WEBHOOK_SECRET'),
+        GMAIL_USER: has('GMAIL_USER'),
+        GMAIL_APP_PASSWORD: has('GMAIL_APP_PASSWORD'),
+        MAIL_FROM: has('MAIL_FROM'),
         RESEND_API_KEY: has('RESEND_API_KEY'),
         FOOTBALL_DATA_TOKEN: has('FOOTBALL_DATA_TOKEN'),
         CRON_SECRET: has('CRON_SECRET')
       },
+      mail: mail.provider(),
       sources: await probeSources()
     });
   } catch (err) {

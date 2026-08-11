@@ -129,7 +129,10 @@ api/            Vercel serverless functions (Node runtime)
   results.js    the cron sweep, same job for everyone every 20 minutes
   extract.js    slip image or PDF -> structured fields, refuses to guess
   telegram.js   the bot webhook
-  _lib/         shared server code (db, auth, mail, rate limiting, feeds)
+  sources.js    diagnostics: which scrapers and vars this deployment has
+  _lib/         shared server code (db, auth, mail/smtp, rate limits, feeds)
+    settling.js the one grader entry point — button, sign-in and cron share it
+    espn.js sofascore.js footballdata.js   the scraper chain, tried in order
 tests/          node:test — run with `npm test`
 build.mjs       inlines src/ into public/index.html
 public/         BUILD OUTPUT — generated, do not hand-edit
@@ -189,3 +192,12 @@ node tools/preview.mjs one self-contained slippery-preview.html to open anywhere
   football-data.org is the automatic fallback for SofaScore's 403s, which
   is what a datacenter IP gets. Neither is a paid feed; if settlement
   becomes load-bearing, buy one.
+- **Vercel's file tracer only follows literal import specifiers.**
+  `await import(someVariable)` compiles fine and then fails in production
+  with `Cannot find module '/var/task/...'`, because the file was never
+  bundled. Import server modules statically and hold them in a table.
+- **Results are scraped, never an API.** `api/_lib/fixtures.js` tries ESPN,
+  then SofaScore, then football-data.org. All three block by IP reputation
+  and every host answers differently, so `GET /api/sources` reports what
+  the running deployment can actually reach. Check it before believing a
+  local probe.

@@ -21,6 +21,19 @@
    separate question, and the answer is /api/sources. */
 export function configured() { return true; }
 
+/* Static imports, deliberately.
+ *
+ * These were `await import(source.module)` with the path in a variable, and
+ * Vercel's file tracer only follows literal specifiers — so espn.js was
+ * never bundled and production answered
+ *   Cannot find module '/var/task/api/_lib/espn.js'
+ * while sofascore.js worked, because one line elsewhere imported it by
+ * literal. A dynamic import with a computed path is invisible to the
+ * bundler. Import them at the top and hold the modules in the table. */
+import * as espn from './espn.js';
+import * as sofascore from './sofascore.js';
+import * as footballdata from './footballdata.js';
+
 /* The scraper chain, in order of preference.
  *
  * The approach is soccerdata's (probberechts/soccerdata): never depend on
@@ -43,9 +56,9 @@ const pinned = () => (process.env.RESULTS_PROVIDER || '').trim().toLowerCase();
 const wanted = name => { const p = pinned(); return !p || p === 'off' ? p !== 'off' : p === name; };
 
 const SOURCES = [
-  { name: 'espn',      module: './espn.js',      enabled: () => wanted('espn') },
-  { name: 'sofascore', module: './sofascore.js', enabled: () => wanted('sofascore') },
-  { name: 'football-data', module: './footballdata.js',
+  { name: 'espn',      mod: espn,      enabled: () => wanted('espn') },
+  { name: 'sofascore', mod: sofascore, enabled: () => wanted('sofascore') },
+  { name: 'football-data', mod: footballdata,
     enabled: () => wanted('football-data') && Boolean(process.env.FOOTBALL_DATA_TOKEN),
     acceptEmpty: true }
 ];
@@ -65,8 +78,7 @@ export async function resolveFinished(dateFrom, dateTo) {
   for (const source of SOURCES) {
     if (!source.enabled()) continue;
     try {
-      const mod = await import(source.module);
-      const fixtures = await mod.finishedBetween(dateFrom, dateTo);
+      const fixtures = await source.mod.finishedBetween(dateFrom, dateTo);
       if (fixtures.length || source.acceptEmpty) {
         return { provider: source.name, fixtures, tried };
       }
@@ -91,8 +103,7 @@ export async function probeSources() {
   for (const source of SOURCES) {
     if (!source.enabled()) { out.push({ name: source.name, ok: false, why: 'not configured' }); continue; }
     try {
-      const mod = await import(source.module);
-      out.push(Object.assign({ name: source.name }, await mod.reachable()));
+      out.push(Object.assign({ name: source.name }, await source.mod.reachable()));
     } catch (err) {
       out.push({ name: source.name, ok: false, why: err.message });
     }
@@ -116,12 +127,10 @@ export async function lookupEach(eventTexts, cap = 8) {
   /* Only SofaScore has a search endpoint. If it is pinned off or blocked
      this quietly returns nothing and the sweep's own matches stand. */
   if (pinned() && pinned() !== 'sofascore') return found;
-  let sofa;
-  try { sofa = await import('./sofascore.js'); } catch { return found; }
 
   for (const text of eventTexts.slice(0, cap)) {
     try {
-      const fx = await sofa.searchEvent(text);
+      const fx = await sofascore.searchEvent(text);
       if (fx) found.set(text, fx);
     } catch (err) {
       /* One blocked or malformed lookup must not abandon the rest, and must

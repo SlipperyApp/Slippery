@@ -2,6 +2,13 @@
 import { json, methodGuard, fail } from '../_lib/http.js';
 import { configured, ensureSchema } from '../_lib/db.js';
 import { sessionUser } from '../_lib/auth.js';
+import { limit } from '../_lib/rate.js';
+import { settleForUser } from '../_lib/settling.js';
+
+async function settleQuietly(req, user) {
+  if (!(await limit('signin-settle:' + user.id, 1, 600))) return;
+  await settleForUser(user.id);
+}
 
 export default async function handler(req, res) {
   if (!methodGuard(req, res, ['GET'])) return;
@@ -10,6 +17,18 @@ export default async function handler(req, res) {
     await ensureSchema();
     const user = await sessionUser(req);
     if (!user) return json(res, 200, { user: null, configured: true });
+
+    /* Settle on sign-in.
+       Someone opening the app after a Saturday afternoon expects their bets
+       to have moved. Waiting for them to find the refresh button, or for the
+       daily sweep, is a worse answer than looking now. It is rate limited to
+       once every ten minutes per user so a reload does not re-scrape, and it
+       is deliberately not awaited: the session must return immediately, and
+       the ledger request that follows a moment later picks up whatever
+       landed. A failed lookup is invisible here and that is correct — the
+       refresh button reports properly when someone asks explicitly. */
+    settleQuietly(req, user).catch(() => { /* never blocks the session */ });
+
     return json(res, 200, {
       configured: true,
       user: {
