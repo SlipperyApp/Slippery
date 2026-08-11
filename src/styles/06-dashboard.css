@@ -123,7 +123,14 @@
   transition:background var(--tf);
   &+.betrow{border-top:1px solid var(--e2)}
   &:hover{background:rgba(255,255,255,.028)}
-  & .icon{font-size:12.5px;width:26px;text-align:center;flex:0 0 auto;letter-spacing:-1px}
+  & .icon{width:26px;flex:0 0 auto;display:flex;justify-content:center;
+    & .ico{width:19px;height:19px}}
+  /* The glyph carries the outcome's semantic colour, which is the whole
+     reason these are SVG and not emoji. */
+  &[data-outcome=won] .icon{color:var(--pos)}
+  &[data-outcome=lost] .icon{color:var(--neg)}
+  &[data-outcome=cash] .icon{color:var(--s)}
+  &[data-outcome=void] .icon{color:var(--t2)}
   & .mid{flex:1;min-width:0}
   & .ev{font-size:13px;font-weight:550;display:flex;align-items:center;gap:5px;min-width:0;
     & span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}

@@ -7,7 +7,7 @@ import * as M from './money.js';
 import { LEDGER, GROUPS, TODAY, PEOPLE, personMonths } from './data.js';
 import { stats, dayMap, monthTotal, targetFor, dowLabels, dowOffset, weekRange } from './stats.js';
 import { MS, ML, DS, betRow, periodWord } from './render.js';
-import { OUTCOME_ICON } from './data.js';
+import { OUTCOME_ICON, outcomeGroup, ico } from './data.js';
 
 const HOME_FAQ = [
   ['Does it actually read my slip?', 'Forward a screenshot and the stake, odds, selection, bookmaker and result come off the image for you to confirm. If a number is not legible it is left blank rather than guessed.'],
@@ -150,7 +150,7 @@ function renderPreview() {
     '<div style="display:flex;justify-content:space-between;align-items:center;gap:9px;font-size:12.5px;padding:8px 0' +
     (i ? ';border-top:1px solid var(--e2)' : '') + '">' +
     '<span style="display:flex;align-items:center;gap:8px;min-width:0">' +
-    '<span aria-hidden="true" style="letter-spacing:-1px">' + OUTCOME_ICON[b.outcome] + '</span>' +
+    '<span class="prevrow-i" data-outcome="' + outcomeGroup(b.outcome) + '">' + ico(OUTCOME_ICON[b.outcome]) + '</span>' +
     '<span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + esc(b.event) + '</span></span>' +
     '<span class="m ' + (b.profit >= 0 ? 'pos' : 'neg') + '">' + M.signed(b.profit) + '</span></div>').join(''));
 }
@@ -289,7 +289,7 @@ function scene(i) {
     return { top: ['Saturday 8 August', M.signed(days[8])], html:
       '<div>' + list.map(x =>
         '<div style="display:flex;align-items:center;gap:6px;font-size:9px;padding:5px 0;border-bottom:1px solid rgba(255,255,255,.05)">' +
-        '<span style="width:20px;text-align:center;font-size:8px" aria-hidden="true">' + OUTCOME_ICON[x.outcome] + '</span>' +
+        '<span class="prevrow-i tiny" data-outcome="' + outcomeGroup(x.outcome) + '">' + ico(OUTCOME_ICON[x.outcome]) + '</span>' +
         '<span style="flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">' +
         esc(x.selection) + ' · ' + esc(x.book) + '</span>' +
         '<b class="m ' + (x.profit >= 0 ? 'pos' : 'neg') + '" style="font-size:9px">' + M.signed(x.profit) + '</b></div>').join('') + '</div>' +

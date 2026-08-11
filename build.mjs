@@ -101,7 +101,7 @@ function minifyCss(css) {
     .trim();
 }
 
-const HEAD = ({ css, js, html }) => `<!DOCTYPE html>
+const HEAD = ({ css, js, html, sprite }) => `<!DOCTYPE html>
 <html lang="en-GB" data-theme="periwinkle">
 <head>
 <meta charset="UTF-8">
@@ -122,9 +122,15 @@ const HEAD = ({ css, js, html }) => `<!DOCTYPE html>
 <meta property="og:title" content="Slippery, bet slip tracker">
 <meta property="og:description" content="Send a slip when you place it. Slippery reads it, tracks it, and settles it into your profit and loss.">
 <meta property="og:type" content="website">
+<meta property="og:image" content="/og.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="Slippery. Don't let your profit slip.">
+<meta name="twitter:card" content="summary_large_image">
 <style>${css}</style>
 </head>
 <body>
+${sprite}
 ${html}
 <script>${js}</script>
 </body>
@@ -190,6 +196,13 @@ async function main() {
 
   const { css, classCount, fileCount } = await collectCss();
   const html = await readFile(src('app.html'), 'utf8');
+  /* The sprite has to be a real, rendered element — `display:none` on an
+     SVG stops Safari resolving <use> into it. Hence the 0x0 clip instead. */
+  const sprite = (await readFile(src('icons.svg'), 'utf8'))
+    .replace(/<!--[\s\S]*?-->/g, '')
+    .replace(/\n\s*/g, '')
+    .replace('class="sprite"', 'style="position:absolute;width:0;height:0;overflow:hidden"')
+    .trim();
 
   const bundle = await esbuild({
     entryPoints: [src('js/main.js')],
@@ -203,7 +216,7 @@ async function main() {
   const js = bundle.outputFiles[0].text;
 
   const buildId = Date.now().toString(36);
-  const page = HEAD({ css: minifyCss(css), js, html });
+  const page = HEAD({ css: minifyCss(css), js, html, sprite });
 
   await writeFile(out('index.html'), page);
   await writeFile(out('manifest.webmanifest'), JSON.stringify(MANIFEST, null, 2));

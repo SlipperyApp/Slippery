@@ -53,6 +53,23 @@ p{text-wrap:pretty}
 .mut{color:var(--t2)}
 .dim{color:var(--t3)}
 
+/* Sprite glyph. Sized in em so an icon always matches the text beside it,
+   and coloured by currentColor so the semantic tokens reach it. */
+.ico{width:1.15em;height:1.15em;flex:0 0 auto;vertical-align:-.22em}
+
+/* Outcome marker in the compact preview rows — landing card and the bot
+   chat mock. Same glyphs as the ledger, same semantic colours, smaller. */
+.prevrow-i{
+  display:flex;align-items:center;flex:0 0 auto;
+  & .ico{width:16px;height:16px}
+  &.tiny{width:20px;justify-content:center;
+    & .ico{width:11px;height:11px}}
+  &[data-outcome=won]{color:var(--pos)}
+  &[data-outcome=lost]{color:var(--neg)}
+  &[data-outcome=cash]{color:var(--s)}
+  &[data-outcome=void]{color:var(--t2)}
+}
+
 .sr{position:absolute;width:1px;height:1px;overflow:hidden;
   clip:rect(0 0 0 0);clip-path:inset(50%);white-space:nowrap}
 .skip{position:absolute;left:-9999px;top:8px;z-index:99;background:var(--p);color:#fff;

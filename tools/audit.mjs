@@ -349,6 +349,62 @@ async function main() {
       return document.getAnimations().filter(a => a.playState === 'running').length;
     });
     if (running > 0) fail('reduced-motion', running + ' animations still running under prefers-reduced-motion');
+
+    /* The pinned sequence must not merely animate less — it must stop
+       pinning. Someone who asked the OS for less motion should not be
+       made to scroll three viewport heights through a stuck stage. */
+    const jack = await page.evaluate(() => {
+      const track = document.querySelector('.jack-track');
+      const stage = document.querySelector('.jack-stage');
+      if (!track || !stage) return null;
+      return {
+        track: getComputedStyle(track).display,
+        stage: getComputedStyle(stage).position,
+        scenes: [...document.querySelectorAll('.jk-scene')]
+          .map(s => Math.round(parseFloat(getComputedStyle(s).opacity) * 100)),
+        summary: getComputedStyle(document.querySelector('.jack-sum')).display
+      };
+    });
+    if (jack) {
+      if (jack.track !== 'none') fail('reduced-motion', 'the scroll-jack track still occupies ' + jack.track);
+      if (jack.stage !== 'static') fail('reduced-motion', 'the scroll-jack stage is still ' + jack.stage);
+      if (jack.scenes.some(o => o !== 100))
+        fail('reduced-motion', 'scenes are still progress-driven: opacities ' + jack.scenes.join(', '));
+      if (jack.summary !== 'block') fail('reduced-motion', 'no static summary replaces the sequence copy');
+    }
+    await page.screenshot({ path: path.join(SHOT_DIR, 'jack-reduced.png'), fullPage: false });
+    await page.close();
+  }
+
+  /* ── the scroll-jacked sequence, beat by beat ────────────────── */
+  {
+    const page = await browser.newPage({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 2 });
+    await page.goto(base, { waitUntil: 'networkidle' });
+    await page.waitForTimeout(600);
+    const geo = await page.evaluate(() => {
+      const t = document.querySelector('.jack-track');
+      if (!t) return null;
+      return { top: t.getBoundingClientRect().top + scrollY, span: t.offsetHeight - innerHeight };
+    });
+    if (geo) {
+      for (const [i, frac] of [[1, 0], [2, 0.5], [3, 1]]) {
+        /* html.snap sets scroll-behavior:smooth, so a plain scrollTo
+           animates and the screenshot lands mid-flight. Jump instead. */
+        await page.evaluate(y => { document.documentElement.style.scrollBehavior = 'auto'; scrollTo(0, y); },
+          geo.top + geo.span * frac);
+        await page.waitForTimeout(650);
+        const beat = await page.evaluate(n => {
+          const el = document.getElementById('jack');
+          const a = getComputedStyle(el).getPropertyValue('--a' + n).trim();
+          return { lead: parseFloat(a), scene: el.dataset.scene, h: document.getElementById('jackH').textContent };
+        }, i);
+        if (!(beat.lead > 0.95))
+          fail('scroll-jack', 'beat ' + i + ' should be fully present at its own snap point, measured ' + beat.lead);
+        if (beat.scene !== String(i - 1))
+          fail('scroll-jack', 'beat ' + i + ' reports scene ' + beat.scene);
+        await page.screenshot({ path: path.join(SHOT_DIR, 'jack-' + i + '.png') });
+      }
+    }
     await page.close();
   }
 

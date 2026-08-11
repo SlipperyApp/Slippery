@@ -19,6 +19,66 @@ let bands = [];
 let ticking = false;
 let lastY = -1;
 
+/* ── the scroll-jacked sequence ──
+   Geometry is measured once and on resize, never inside the scroll
+   handler. Reading offsetTop while scrolling forces a synchronous
+   reflow every frame, which is precisely how a compositor-only
+   animation ends up back on the main thread. */
+const jack = {
+  el: null, track: null, caps: [], h: null, p: null, n: null,
+  top: 0, span: 1, scene: -1, swapping: false
+};
+
+function measureJack() {
+  if (!jack.el) return;
+  const r = jack.track.getBoundingClientRect();
+  jack.top = r.top + (window.scrollY || 0);
+  /* The stage is one viewport tall and sticks, so the distance actually
+     available to the sequence is the track minus that viewport. */
+  jack.span = Math.max(1, jack.track.offsetHeight - window.innerHeight);
+}
+
+/* Presence of a scene whose beat centre is `c`, given progress `p`.
+   One beat either side, clamped — so exactly one scene is solid at each
+   snap point and neighbours cross-fade between them. */
+const clamp = (v, lo, hi) => v < lo ? lo : v > hi ? hi : v;
+
+function paintJack(y) {
+  if (!jack.el) return;
+  const p = clamp((y - jack.top) / jack.span, 0, 1);
+  const st = jack.el.style;
+  for (let i = 0; i < 3; i++) {
+    const s = clamp((p - i / 2) * 2, -1, 1);          /* signed position  */
+    st.setProperty('--s' + (i + 1), s.toFixed(4));
+    st.setProperty('--a' + (i + 1), (1 - Math.abs(s)).toFixed(4));
+  }
+  const scene = clamp(Math.round(p * 2), 0, 2);
+  if (scene !== jack.scene) swapCaption(scene);
+}
+
+/* The caption is text, so it cannot cross-fade on the compositor the way
+   the scenes do. Fade it out, swap, fade it back — 200ms each way, which
+   is short enough not to lag the scene behind it. */
+function swapCaption(scene) {
+  jack.scene = scene;
+  jack.el.setAttribute('data-scene', String(scene));
+  const step = jack.caps[scene];
+  if (!step) return;
+  const write = () => {
+    jack.n.textContent = '0' + (scene + 1);
+    jack.h.textContent = step.getAttribute('data-h');
+    jack.p.textContent = step.getAttribute('data-p');
+  };
+  if (jack.swapping) { write(); return; }
+  jack.swapping = true;
+  jack.el.style.setProperty('--fade', '0');
+  setTimeout(() => {
+    write();
+    jack.el.style.setProperty('--fade', '1');
+    jack.swapping = false;
+  }, 190);
+}
+
 function paint(y) {
   for (let i = 0; i < bands.length; i++) {
     const b = bands[i];
@@ -27,6 +87,7 @@ function paint(y) {
        the animation supplies the idle motion, this supplies parallax. */
     b.el.style.setProperty('--parallax', (y * b.rate).toFixed(2) + 'px');
   }
+  paintJack(y);
 }
 
 function onScroll() {
@@ -56,14 +117,32 @@ function installTopbarShadow() {
 
 export function initMotion() {
   installTopbarShadow();
+  /* Reduced motion: no parallax, no pinned sequence. CSS has already
+     collapsed the track and stacked the scenes, so there is nothing for
+     a scroll handler to drive and none is installed. */
   if (RM) return;
 
   bands = $$('.sky-silk [data-parallax]').map(el => ({
     el,
     rate: parseFloat(el.getAttribute('data-parallax')) || 0
   }));
-  if (!bands.length) return;
 
+  const el = $('jack');
+  if (el) {
+    jack.el = el;
+    jack.track = el.querySelector('.jack-track');
+    jack.caps = $$('.jack-step', el);
+    jack.h = $('jackH'); jack.p = $('jackP'); jack.n = $('jackN');
+    jack.el.setAttribute('data-scene', '0');
+    measureJack();
+    /* The web fonts land after first paint and change the track's
+       position; re-measure rather than run the sequence against stale
+       geometry. Same for orientation changes and the iOS toolbar. */
+    addEventListener('resize', measureJack, { passive: true });
+    if (document.fonts && document.fonts.ready) document.fonts.ready.then(measureJack);
+  }
+
+  if (!bands.length && !jack.el) return;
   addEventListener('scroll', onScroll, { passive: true });
   paint(window.scrollY || 0);
 }

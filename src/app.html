@@ -40,7 +40,7 @@
     <span class="mark" aria-hidden="true"></span><span>Slipp<i>ery</i></span>
   </button>
   <button class="pillbtn link" data-nav="settings">
-    <svg viewBox="0 0 24 24" fill="currentColor" width="12" height="12" aria-hidden="true"><path d="M21.9 4.3l-3.1 14.9c-.2 1-.9 1.3-1.8.8l-4.9-3.6-2.4 2.3c-.3.3-.5.5-1 .5l.4-5 9.1-8.2c.4-.4-.1-.6-.6-.2L4.3 13.2l-4.8-1.5c-1-.3-1-1 .2-1.5L20.6 2.3c.9-.3 1.6.2 1.3 2z"/></svg>
+    <svg viewBox="0 0 24 24" width="12" height="12" aria-hidden="true"><use href="#i-telegram"/></svg>
     Linked
   </button>
 </header>
@@ -61,7 +61,7 @@
       </div>
       <div class="badges reveal">
         <span class="badge-pill">
-          <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M17.05 12.5c0-2.1 1.7-3.1 1.8-3.2-1-1.4-2.5-1.6-3-1.7-1.3-.1-2.5.8-3.1.8-.6 0-1.6-.8-2.7-.8-1.4 0-2.7.8-3.4 2-1.5 2.5-.4 6.2 1 8.2.7 1 1.5 2.1 2.6 2 1-.04 1.4-.65 2.7-.65s1.6.65 2.7.63c1.1-.02 1.8-1 2.5-2 .8-1.1 1.1-2.2 1.1-2.3-.02-.01-2.2-.85-2.2-3.03zM15 5.4c.6-.7 1-1.7.9-2.7-.85.04-1.9.57-2.5 1.27-.55.62-1.03 1.63-.9 2.6.95.07 1.9-.48 2.5-1.17z"/></svg>
+          <svg viewBox="0 0 24 24" aria-hidden="true"><use href="#i-apple"/></svg>
           <span><small>Coming soon to the</small><b>App Store</b></span>
         </span>
         <span class="badge-pill"><b>20 free slips</b></span>
@@ -89,7 +89,98 @@
       <p class="eyebrow reveal">How it works</p>
       <h2 class="reveal">Capture it when you place it.</h2>
       <p class="lede reveal">Forward a slip to the bot the moment you place the bet. Slippery reads the stake, odds and selection off the image, watches the game, and settles it for you. Logging at placement is the whole point: it is what stops a tracker quietly becoming a highlight reel.</p>
-      <button class="btn ghost reveal" style="margin-top:16px" data-nav="howto">Watch the walkthrough</button>
+    </div>
+  </div>
+
+  <!-- ══════ the scroll-jacked sequence ══════
+       The page is pinned for three viewport heights and the scroll wheel
+       drives the story instead of the scroll position. What makes this
+       version safe is that the scrollbar never lies: the track really is
+       340svh tall, the stage is `position:sticky` inside it, and scroll
+       progress maps to `--p`. Flicking hard still carries you straight
+       through — nothing is intercepted, nothing is animated on a timer,
+       and prefers-reduced-motion drops the whole thing to three stacked
+       cards. -->
+  <div class="jack" id="jack" aria-label="How a slip becomes a settled bet">
+    <div class="jack-stage">
+      <div class="jack-inner">
+
+        <div class="jack-scenes" aria-hidden="true">
+          <!-- 1. the slip -->
+          <div class="jk-scene s1">
+            <div class="jk-slip">
+              <div class="jk-slip-top"><span class="jk-slip-book">Paddy Power</span><span class="jk-slip-ref">O/9241</span></div>
+              <div class="jk-slip-leg"><b>Under 5.5 Goals</b><span>Oskarshamns AIK v IFK Karlshamn</span></div>
+              <div class="jk-slip-leg"><b>Under 3.5 Goals</b><span>Köln v Augsburg</span></div>
+              <div class="jk-slip-foot"><span>Stake <b class="tnum">£306.18</b></span><span>Odds <b class="tnum">1.25</b></span></div>
+            </div>
+          </div>
+          <!-- 2. the bot reads it -->
+          <div class="jk-scene s2">
+            <div class="jk-bubble">
+              <p class="jk-bh">Slip read</p>
+              <dl class="jk-readout">
+                <div><dt>Stake</dt><dd class="tnum">£306.18</dd></div>
+                <div><dt>Odds</dt><dd class="tnum">1.25</dd></div>
+                <div><dt>Returns</dt><dd class="tnum">£382.73</dd></div>
+                <div><dt>Book</dt><dd>Paddy Power</dd></div>
+              </dl>
+              <p class="jk-bq">Tracking it. I will settle it at full time.</p>
+            </div>
+          </div>
+          <!-- 3. it settles onto the calendar -->
+          <div class="jk-scene s3">
+            <div class="jk-cal">
+              <span class="jk-c"></span><span class="jk-c up"></span><span class="jk-c dn"></span><span class="jk-c"></span><span class="jk-c up"></span>
+              <span class="jk-c up"></span><span class="jk-c"></span><span class="jk-c up"></span><span class="jk-c dn"></span><span class="jk-c"></span>
+              <span class="jk-c"></span><span class="jk-c up"></span><span class="jk-c up"></span><span class="jk-c"></span><span class="jk-c dn"></span>
+              <span class="jk-c dn"></span><span class="jk-c"></span><span class="jk-c up big"></span><span class="jk-c"></span><span class="jk-c"></span>
+              <p class="jk-settled"><span class="jk-settled-l">Settled</span><b class="pos tnum">+£76.55</b></p>
+            </div>
+          </div>
+        </div>
+
+        <div class="jack-copy">
+          <!-- Progress. Each segment fills with its own scene's presence, so
+               the rail is the same number the scenes are reading — there is
+               no second source of truth to drift. -->
+          <div class="jack-rail" aria-hidden="true">
+            <span class="jack-tick"><i></i></span>
+            <span class="jack-tick"><i></i></span>
+            <span class="jack-tick"><i></i></span>
+          </div>
+          <p class="jack-step-n"><span class="tnum" id="jackN">01</span> <em>/ 03</em></p>
+          <h2 class="jack-h" id="jackH">You place the bet.</h2>
+          <p class="jack-p" id="jackP">Screenshot the slip and forward it to the bot. That is the entire capture step, and it happens before you know the result.</p>
+          <!-- Shown only under prefers-reduced-motion, where the sequence
+               does not pin and the three beats are simply stacked. The
+               scenes are decorative, so one summary is the whole story. -->
+          <div class="jack-sum">
+            <h2>Three beats, one slip.</h2>
+            <p>You place the bet and forward the slip. Slippery lifts the stake, odds, selection and bookmaker off the image. At full time it grades the bet on the 90-minute score and lands it on your calendar — and anything ambiguous asks you rather than guessing.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- The scroll track. Each step is one viewport tall and snaps, so the
+         sequence advances in three deliberate beats rather than smearing. -->
+    <div class="jack-track">
+      <div class="jack-step" data-step="0"
+           data-h="You place the bet."
+           data-p="Screenshot the slip and forward it to the bot. That is the entire capture step, and it happens before you know the result."></div>
+      <div class="jack-step" data-step="1"
+           data-h="Slippery reads it."
+           data-p="Stake, odds, selection, bookmaker and every leg, lifted off the image. You confirm once and it is logged."></div>
+      <div class="jack-step" data-step="2"
+           data-h="It settles itself."
+           data-p="At full time the bet is graded on the 90-minute score and lands on your calendar. Anything ambiguous asks you rather than guessing."></div>
+    </div>
+  </div>
+
+  <div class="wrap">
+    <div class="section">
+      <button class="btn ghost reveal" data-nav="howto">Watch the walkthrough</button>
     </div>
 
     <div class="section snap-point" id="secGet">
@@ -108,7 +199,7 @@
     </div>
 
     <div class="card telegramcta reveal snap-point">
-      <div class="glyph" aria-hidden="true"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M21.9 4.3l-3.1 14.9c-.2 1-.9 1.3-1.8.8l-4.9-3.6-2.4 2.3c-.3.3-.5.5-1 .5l.4-5 9.1-8.2c.4-.4-.1-.6-.6-.2L4.3 13.2l-4.8-1.5c-1-.3-1-1 .2-1.5L20.6 2.3c.9-.3 1.6.2 1.3 2z"/></svg></div>
+      <div class="glyph" aria-hidden="true"><svg viewBox="0 0 24 24"><use href="#i-telegram"/></svg></div>
       <h2>It is already in your Telegram</h2>
       <p>Forward a slip, tap confirm, done.</p>
       <button class="btn primary" data-nav="bot">Preview the bot</button>
@@ -282,7 +373,7 @@
 
     <div class="step" data-step="5">
       <div class="card settingcard">
-        <div class="stepglyph" aria-hidden="true"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M21.9 4.3l-3.1 14.9c-.2 1-.9 1.3-1.8.8l-4.9-3.6-2.4 2.3c-.3.3-.5.5-1 .5l.4-5 9.1-8.2c.4-.4-.1-.6-.6-.2L4.3 13.2l-4.8-1.5c-1-.3-1-1 .2-1.5L20.6 2.3c.9-.3 1.6.2 1.3 2z"/></svg></div>
+        <div class="stepglyph" aria-hidden="true"><svg viewBox="0 0 24 24"><use href="#i-telegram"/></svg></div>
         <h2>Connect Telegram</h2>
         <p class="stepnote">Forward slips and they land here.</p>
         <p class="linkcode" translate="no" id="linkCode">SLIP-7F3A</p>
@@ -640,7 +731,7 @@
     </div>
 
     <button class="card" data-nav="bot" style="display:flex;align-items:center;gap:11px;padding:13px;margin-top:16px;width:100%;text-align:left;border-color:rgba(var(--orb2),.3);background:rgba(var(--orb2),.08)">
-      <svg viewBox="0 0 24 24" fill="currentColor" style="width:20px;height:20px;color:var(--s);flex:0 0 auto" aria-hidden="true"><path d="M21.9 4.3l-3.1 14.9c-.2 1-.9 1.3-1.8.8l-4.9-3.6-2.4 2.3c-.3.3-.5.5-1 .5l.4-5 9.1-8.2c.4-.4-.1-.6-.6-.2L4.3 13.2l-4.8-1.5c-1-.3-1-1 .2-1.5L20.6 2.3c.9-.3 1.6.2 1.3 2z"/></svg>
+      <svg viewBox="0 0 24 24" style="width:20px;height:20px;color:var(--s);flex:0 0 auto" aria-hidden="true"><use href="#i-telegram"/></svg>
       <span><span style="font-size:13px;font-weight:600;display:block">Faster: forward it to the bot</span>
       <span style="font-size:11.5px;color:var(--t2)">Send a slip on Telegram and it lands here</span></span>
     </button>
@@ -665,7 +756,7 @@
     </div>
 
     <div class="card settingcard">
-      <h2 class="cardtitle"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M21.9 4.3l-3.1 14.9c-.2 1-.9 1.3-1.8.8l-4.9-3.6-2.4 2.3c-.3.3-.5.5-1 .5l.4-5 9.1-8.2c.4-.4-.1-.6-.6-.2L4.3 13.2l-4.8-1.5c-1-.3-1-1 .2-1.5L20.6 2.3c.9-.3 1.6.2 1.3 2z"/></svg>Telegram bot</h2>
+      <h2 class="cardtitle"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="#i-telegram"/></svg>Telegram bot</h2>
       <div class="livedot"><i aria-hidden="true"></i><span>Connected since 12 August 2024</span></div>
       <p class="linkcode" translate="no">SLIP-7F3A</p>
       <div class="fieldrow"><span class="lab">Daily summary</span>

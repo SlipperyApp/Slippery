@@ -69,12 +69,20 @@ export const OUTCOME_LABEL = {
   'won': 'Won', 'lost': 'Lost', 'void': 'Void',
   'cash-profit': 'Cashed out', 'cash-loss': 'Cashed out', 'cash-flat': 'Cashed out'
 };
-/* Emoji are decorative only; every row also carries a text outcome for
-   screen readers, because an emoji alone is not a label. */
+/* Sprite ids, not emoji. An emoji rasterises from the system font, so it
+   cannot take #86EFAC or #FCA5A5 — the two colours the brief fixes as
+   semantic — and it renders differently on every platform. These are
+   decorative; every row also carries OUTCOME_LABEL as real text, because
+   an icon alone is not a label. */
 export const OUTCOME_ICON = {
-  'won': '✅', 'lost': '❌', 'void': '↩',
-  'cash-profit': '💰', 'cash-loss': '💰', 'cash-flat': '💰'
+  'won': 'i-won', 'lost': 'i-lost', 'void': 'i-void',
+  'cash-profit': 'i-cash', 'cash-loss': 'i-cash', 'cash-flat': 'i-cash'
 };
+/** Markup for one sprite glyph. `tone` maps onto the semantic colours. */
+export function ico(id, cls) {
+  return '<svg class="ico' + (cls ? ' ' + cls : '') + '" viewBox="0 0 24 24" ' +
+         'aria-hidden="true" focusable="false"><use href="#' + id + '"/></svg>';
+}
 export function outcomeGroup(o) { return o.startsWith('cash') ? 'cash' : o; }
 
 /* ---------- deterministic PRNG ----------

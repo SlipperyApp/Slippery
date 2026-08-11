@@ -5,7 +5,7 @@ import { S } from './state.js';
 import * as M from './money.js';
 import {
   LEDGER, PENDING, PEOPLE, GROUPS, TODAY, THEMES, THEME_BG, BOOKS, TIPSTERS,
-  OUTCOME_ICON, OUTCOME_LABEL, outcomeGroup, personMonths, personDays, IMPORTED
+  OUTCOME_ICON, OUTCOME_LABEL, outcomeGroup, personMonths, personDays, IMPORTED, ico
 } from './data.js';
 import {
   stats, lifetime, dayMap, monthTotal, dowLabels, dowOffset, weekRange, targetFor
@@ -17,7 +17,7 @@ export const DF = new Intl.DateTimeFormat('en-GB', { weekday: 'long', day: 'nume
 export const DS = new Intl.DateTimeFormat('en-GB', { day: 'numeric', month: 'short' });
 
 const VERIFIED = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" role="img" aria-label="Verified"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="M9 12l2 2 4-4"/></svg>';
-const TELEGRAM = '<svg viewBox="0 0 24 24" fill="currentColor" role="img" aria-label="Logged via Telegram"><path d="M21.9 4.3l-3.1 14.9c-.2 1-.9 1.3-1.8.8l-4.9-3.6-2.4 2.3c-.3.3-.5.5-1 .5l.4-5 9.1-8.2c.4-.4-.1-.6-.6-.2L4.3 13.2l-4.8-1.5c-1-.3-1-1 .2-1.5L20.6 2.3c.9-.3 1.6.2 1.3 2z"/></svg>';
+const TELEGRAM = '<svg viewBox="0 0 24 24" role="img" aria-label="Logged via Telegram"><use href="#i-telegram"/></svg>';
 const LOCK = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg>';
 
 const odds = d => M.odds(d, S.oddsFormat);
@@ -41,7 +41,7 @@ export function betRow(b, delay) {
   const hay = (b.event + ' ' + bits.join(' ')).toLowerCase();
   return '<div class="betrow" data-outcome="' + grp + '" data-haystack="' + esc(hay) + '"' +
     (delay ? ' style="animation-delay:' + delay + 'ms"' : '') + '>' +
-    '<span class="icon" aria-hidden="true">' + OUTCOME_ICON[b.outcome] + '</span>' +
+    '<span class="icon" aria-hidden="true">' + ico(OUTCOME_ICON[b.outcome]) + '</span>' +
     '<span class="sr">' + OUTCOME_LABEL[b.outcome] + '.</span>' +
     '<div class="mid"><div class="ev"><span>' + esc(b.event) + '</span>' +
       (b.viaTelegram ? TELEGRAM : '') + '</div>' +
@@ -84,10 +84,10 @@ export function renderLedger() {
   const count = r => pool.filter(b => outcomeGroup(b.outcome) === r).length;
   $('betFilters').innerHTML = [
     ['all', 'All ' + pool.length],
-    ['won', '✅ Won ' + count('won')],
-    ['lost', '❌ Lost ' + count('lost')],
-    ['cash', '💰 Cashed ' + count('cash')],
-    ['void', '↩ Void ' + count('void')]
+    ['won', ico('i-won', 'pos') + 'Won ' + count('won')],
+    ['lost', ico('i-lost', 'neg') + 'Lost ' + count('lost')],
+    ['cash', ico('i-cash') + 'Cashed ' + count('cash')],
+    ['void', ico('i-void') + 'Void ' + count('void')]
   ].map(x => '<button class="chip" data-filter="' + x[0] + '" aria-pressed="' +
     (S.filter === x[0]) + '">' + x[1] + '</button>').join('');
 }
