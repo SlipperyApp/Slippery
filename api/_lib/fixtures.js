@@ -15,19 +15,40 @@
  * that includes extra time. That is the single most valuable line in here.
  */
 
-const FD_BASE = 'https://api.football-data.org/v4';
 
-export function configured() {
-  /* SofaScore needs no key, so a deployment with no results configuration
-     at all still settles bets. FOOTBALL_DATA_TOKEN is the fallback, not the
-     requirement it used to be. */
-  return true;
-}
+/* Always true: the scrapers need no key, so a deployment with nothing
+   configured still settles bets. Whether a given host can reach them is a
+   separate question, and the answer is /api/sources. */
+export function configured() { return true; }
 
-/* SofaScore is the default provider: it publishes period scores, so it can
-   prove the 90-minute score on a knockout tie and football-data.org's free
-   tier cannot. Set RESULTS_PROVIDER=football-data to pin the old one. */
-const sofascoreEnabled = () => process.env.RESULTS_PROVIDER !== 'football-data';
+/* The scraper chain, in order of preference.
+ *
+ * The approach is soccerdata's (probberechts/soccerdata): never depend on
+ * one site, keep several scrapers behind one interface, and let whichever is
+ * reachable answer. soccerdata is Python and cannot run in a Node function,
+ * so this borrows the shape, not the code.
+ *
+ * Order is by data quality, and quality here means one thing: can it prove
+ * the 90-minute score on a tie that went to extra time? ESPN can, from its
+ * per-period linescores. SofaScore can, from normaltime. football-data.org's
+ * free tier cannot, and so it sits last and mostly returns "ask".
+ *
+ * All of these are blocked by IP reputation rather than by policy, and each
+ * host gets a different answer — ESPN and SofaScore both refuse this
+ * development machine. That is precisely why it is a chain and why
+ * /api/sources exists: production can be asked directly.
+ *
+ * RESULTS_PROVIDER pins one source by name when you want to. */
+const pinned = () => (process.env.RESULTS_PROVIDER || '').trim().toLowerCase();
+const wanted = name => { const p = pinned(); return !p || p === 'off' ? p !== 'off' : p === name; };
+
+const SOURCES = [
+  { name: 'espn',      module: './espn.js',      enabled: () => wanted('espn') },
+  { name: 'sofascore', module: './sofascore.js', enabled: () => wanted('sofascore') },
+  { name: 'football-data', module: './footballdata.js',
+    enabled: () => wanted('football-data') && Boolean(process.env.FOOTBALL_DATA_TOKEN),
+    acceptEmpty: true }
+];
 
 /**
  * Fetch finished fixtures from whichever provider is configured.
@@ -40,23 +61,43 @@ const sofascoreEnabled = () => process.env.RESULTS_PROVIDER !== 'football-data';
  * between "settled a bit later than ideal" and "silently stopped settling".
  */
 export async function resolveFinished(dateFrom, dateTo) {
-  if (sofascoreEnabled()) {
+  const tried = [];
+  for (const source of SOURCES) {
+    if (!source.enabled()) continue;
     try {
-      const sofa = await import('./sofascore.js');
-      return { provider: 'sofascore', fixtures: await sofa.finishedBetween(dateFrom, dateTo) };
+      const mod = await import(source.module);
+      const fixtures = await mod.finishedBetween(dateFrom, dateTo);
+      if (fixtures.length || source.acceptEmpty) {
+        return { provider: source.name, fixtures, tried };
+      }
+      tried.push(source.name + ': no fixtures');
     } catch (err) {
-      if (!process.env.FOOTBALL_DATA_TOKEN) throw err;
-      /* Blocked or broken. Say which, once, then carry on with the fallback. */
-      console.warn('sofascore unavailable (' + (err.blocked ? 'blocked' : err.message) +
-                   '), falling back to football-data.org');
+      /* Blocked is the expected failure — these are scrapers and they are
+         blocked by IP reputation, which differs per host. Record it and try
+         the next one rather than giving up on settlement entirely. */
+      tried.push(source.name + ': ' + (err.blocked ? 'blocked' : err.message));
     }
   }
-  if (!process.env.FOOTBALL_DATA_TOKEN) {
-    const err = new Error('No results feed could be reached.');
-    err.statusCode = 503;
-    throw err;
+  const err = new Error('No results source could be reached (' + tried.join('; ') + ').');
+  err.statusCode = 503;
+  err.tried = tried;
+  err.blocked = tried.every(t => /blocked/.test(t));
+  throw err;
+}
+
+/** Ask every source whether this host can reach it. Diagnostics only. */
+export async function probeSources() {
+  const out = [];
+  for (const source of SOURCES) {
+    if (!source.enabled()) { out.push({ name: source.name, ok: false, why: 'not configured' }); continue; }
+    try {
+      const mod = await import(source.module);
+      out.push(Object.assign({ name: source.name }, await mod.reachable()));
+    } catch (err) {
+      out.push({ name: source.name, ok: false, why: err.message });
+    }
   }
-  return { provider: 'football-data', fixtures: await finishedBetween(dateFrom, dateTo) };
+  return out;
 }
 
 /**
@@ -72,7 +113,9 @@ export async function resolveFinished(dateFrom, dateTo) {
  */
 export async function lookupEach(eventTexts, cap = 8) {
   const found = new Map();
-  if (!sofascoreEnabled()) return found;      // only SofaScore has a search
+  /* Only SofaScore has a search endpoint. If it is pinned off or blocked
+     this quietly returns nothing and the sweep's own matches stand. */
+  if (pinned() && pinned() !== 'sofascore') return found;
   let sofa;
   try { sofa = await import('./sofascore.js'); } catch { return found; }
 
@@ -87,99 +130,6 @@ export async function lookupEach(eventTexts, cap = 8) {
     }
   }
   return found;
-}
-
-/** Map a football-data.org status onto what the engine understands. */
-function mapStatus(fd) {
-  switch (fd) {
-    case 'FINISHED':  return 'FT';
-    case 'AWARDED':   return 'AWARDED';
-    case 'POSTPONED': return 'POSTPONED';
-    case 'CANCELLED': return 'CANCELLED';
-    case 'SUSPENDED': return 'SUSPENDED';
-    case 'IN_PLAY':
-    case 'PAUSED':
-    case 'TIMED':
-    case 'SCHEDULED': return 'SCHEDULED';
-    default:          return String(fd || 'UNKNOWN');
-  }
-}
-
-/**
- * Normalise one football-data.org match.
- * @returns fixture in engine shape, or null if unusable
- */
-export function normalise(match) {
-  if (!match || !match.score) return null;
-  const score = match.score;
-  const ft = score.fullTime || {};
-  const ht = score.halfTime || {};
-  const status = mapStatus(match.status);
-
-  const fixture = {
-    id: String(match.id),
-    status,
-    home: match.homeTeam && (match.homeTeam.shortName || match.homeTeam.name),
-    away: match.awayTeam && (match.awayTeam.shortName || match.awayTeam.name),
-    kickoff: match.utcDate
-  };
-
-  if (typeof ft.home === 'number' && typeof ft.away === 'number') {
-    fixture.hg = ft.home;
-    fixture.ag = ft.away;
-  }
-  if (typeof ht.home === 'number' && typeof ht.away === 'number') {
-    fixture.hth = ht.home;
-    fixture.hta = ht.away;
-  }
-
-  /* Extra time and penalties.
-     football-data.org's `fullTime` on a knockout tie is the score AFTER extra
-     time, and `regularTime` is not on the free tier. So when the match went
-     beyond 90 minutes we mark it AET and deliberately do NOT supply ft90h /
-     ft90a — the engine then returns {status:'ask'} rather than settling a
-     "90 minutes only" market on a score that includes extra time.
-     Do not be tempted to derive a 90-minute score from halfTime; it is only
-     the first half. */
-  const wentToExtraTime =
-    (score.duration && score.duration !== 'REGULAR') ||
-    score.extraTime && typeof score.extraTime.home === 'number' ||
-    score.penalties && typeof score.penalties.home === 'number';
-
-  if (status === 'FT' && wentToExtraTime) {
-    fixture.status = 'AET';
-    if (score.regularTime && typeof score.regularTime.home === 'number' &&
-        typeof score.regularTime.away === 'number') {
-      /* Present on paid tiers. When we have it, 90-minute settlement is
-         provable and the engine can grade normally. */
-      fixture.ft90h = score.regularTime.home;
-      fixture.ft90a = score.regularTime.away;
-    }
-  }
-  return fixture;
-}
-
-/** Fetch finished matches in a date window. Dates are YYYY-MM-DD. */
-export async function finishedBetween(dateFrom, dateTo) {
-  if (!configured()) {
-    const err = new Error('No results feed is configured.');
-    err.statusCode = 503;
-    throw err;
-  }
-  const url = FD_BASE + '/matches?dateFrom=' + dateFrom + '&dateTo=' + dateTo;
-  const res = await fetch(url, { headers: { 'X-Auth-Token': process.env.FOOTBALL_DATA_TOKEN } });
-  if (res.status === 429) {
-    const err = new Error('The results feed is rate limiting us. Try again shortly.');
-    err.statusCode = 429;
-    throw err;
-  }
-  if (!res.ok) {
-    const err = new Error('The results feed returned ' + res.status + '.');
-    err.statusCode = 502;
-    throw err;
-  }
-  const body = await res.json();
-  return (body.matches || []).map(normalise).filter(Boolean);
 }
 
 /* Match a stored bet to a fixture by team names. The engine already has

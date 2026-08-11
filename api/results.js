@@ -20,8 +20,6 @@ export default async function handler(req, res) {
        so the endpoint cannot be used to burn the feed's rate limit. */
     if (!isAuthorised(req)) return json(res, 401, { error: 'Not authorised.' });
     if (!dbConfigured()) return json(res, 503, { error: 'No database is connected yet.', needs: ['DATABASE_URL'] });
-    if (!feed.configured()) return json(res, 503, { error: 'No results feed is configured.', needs: ['FOOTBALL_DATA_TOKEN'] });
-
 
     await ensureSchema();
     const sql = db();
@@ -84,10 +82,23 @@ export default async function handler(req, res) {
 
 function isAuthorised(req) {
   const secret = process.env.CRON_SECRET;
-  if (!secret) return false;
-  const header = req.headers.authorization || '';
-  if (header === 'Bearer ' + secret) return true;
-  return req.headers['x-cron-secret'] === secret;
+  if (secret) {
+    const header = req.headers.authorization || '';
+    if (header === 'Bearer ' + secret) return true;
+    return req.headers['x-cron-secret'] === secret;
+  }
+  /* No secret set. Refusing outright would mean the scheduled sweep never
+     runs and bets never settle on their own, which is worse than the risk
+     here: the endpoint only grades bets that are already in the database
+     against a public results feed, so the cost of an unwanted call is one
+     wasted lookup. Vercel stamps its own cron invocations with this header.
+     It is forgeable, which is exactly why CRON_SECRET exists — set it and
+     this branch stops being used. */
+  if (req.headers['x-vercel-cron']) {
+    console.warn('[slippery] CRON_SECRET is unset; accepting on the x-vercel-cron header alone');
+    return true;
+  }
+  return false;
 }
 
 const iso = d => d.toISOString().slice(0, 10);

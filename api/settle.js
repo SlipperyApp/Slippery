@@ -34,13 +34,6 @@ export default async function handler(req, res) {
     const user = await sessionUser(req);
     if (!user) return json(res, 401, { error: 'Log in to check your bets.' });
 
-    if (!feed.configured()) {
-      return json(res, 503, {
-        error: 'No results feed is configured yet, so bets cannot be settled automatically.',
-        needs: ['RESULTS_PROVIDER or FOOTBALL_DATA_TOKEN']
-      });
-    }
-
     /* The feed is rate limited and this is a button someone can hold down.
        Six checks in five minutes is generous for a human and useless for a
        script. */
@@ -80,8 +73,9 @@ export default async function handler(req, res) {
          not, and telling someone "nothing settled" would be a lie. */
       return json(res, 503, {
         error: err.blocked
-          ? 'The results provider is refusing requests from the server right now. Your bets are safe; this will retry automatically.'
-          : 'The results feed could not be reached. Nothing was changed.'
+          ? 'Every results source is refusing requests from the server right now. Your bets are safe, and the scheduled check keeps trying.'
+          : 'No results source could be reached. Nothing was changed.',
+        tried: err.tried || []
       });
     }
 

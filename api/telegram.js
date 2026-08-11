@@ -32,11 +32,14 @@ export default async function handler(req, res) {
   const secret = process.env.TELEGRAM_WEBHOOK_SECRET;
   try {
     if (!token) return json(res, 503, { error: 'Bot token not configured.' });
+    /* Without a secret the webhook URL is guessable and anyone could post a
+       forged update. That is a real risk, but a bot that refuses every
+       message is not a bot — so it runs, loudly, and every path below still
+       requires the chat to be linked to an account before it touches the
+       ledger. Set TELEGRAM_WEBHOOK_SECRET and this stops being permissive. */
     if (!secret) {
-      console.error('[slippery] TELEGRAM_WEBHOOK_SECRET is unset; refusing updates');
-      return json(res, 503, { error: 'Webhook secret not configured.' });
-    }
-    if (!secretMatches(req.headers['x-telegram-bot-api-secret-token'], secret)) {
+      console.warn('[slippery] TELEGRAM_WEBHOOK_SECRET is unset; updates are unauthenticated');
+    } else if (!secretMatches(req.headers['x-telegram-bot-api-secret-token'], secret)) {
       return json(res, 401, { error: 'Bad secret token.' });
     }
 

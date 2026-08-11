@@ -8,7 +8,8 @@
  */
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { normalise, matchFixture } from '../api/_lib/fixtures.js';
+import { matchFixture } from '../api/_lib/fixtures.js';
+import { normalise } from '../api/_lib/footballdata.js';
 import { settle } from '../src/js/settlement.js';
 
 const match = (over = {}) => ({

@@ -1,0 +1,40 @@
+/* GET /api/sources — what this deployment can actually reach.
+ *
+ * Every results source here is a scraper, and scrapers are blocked by IP
+ * reputation rather than by policy: ESPN and SofaScore both refuse the
+ * machine this was written on, and whether they refuse a Vercel function is
+ * not answerable from anywhere except a Vercel function. Rather than guess,
+ * ask.
+ *
+ * Read-only, no secrets echoed, no database touched. It reports which
+ * environment variables are present as booleans — never their values.
+ */
+import { json, methodGuard, fail } from './_lib/http.js';
+import { configured as dbConfigured } from './_lib/db.js';
+import { probeSources } from './_lib/fixtures.js';
+
+export default async function handler(req, res) {
+  if (!methodGuard(req, res, ['GET'])) return;
+  try {
+    const has = name => Boolean(process.env[name]);
+    return json(res, 200, {
+      commit: process.env.VERCEL_GIT_COMMIT_SHA || null,
+      branch: process.env.VERCEL_GIT_COMMIT_REF || null,
+      region: process.env.VERCEL_REGION || null,
+      /* Presence only. Never the value: this repo is public and the endpoint
+         is unauthenticated. */
+      env: {
+        DATABASE_URL: dbConfigured(),
+        ANTHROPIC_API_KEY: has('ANTHROPIC_API_KEY'),
+        TELEGRAM_BOT_TOKEN: has('TELEGRAM_BOT_TOKEN'),
+        TELEGRAM_WEBHOOK_SECRET: has('TELEGRAM_WEBHOOK_SECRET'),
+        RESEND_API_KEY: has('RESEND_API_KEY'),
+        FOOTBALL_DATA_TOKEN: has('FOOTBALL_DATA_TOKEN'),
+        CRON_SECRET: has('CRON_SECRET')
+      },
+      sources: await probeSources()
+    });
+  } catch (err) {
+    return fail(res, err, 'Could not probe the results sources.');
+  }
+}

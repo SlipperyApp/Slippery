@@ -191,3 +191,14 @@ export async function searchEvent(eventText) {
     .filter(Boolean);
   return findExact(eventText, events);
 }
+
+/** One cheap request, to report whether this host can reach SofaScore. */
+export async function reachable() {
+  try {
+    const body = await get('/sport/football/scheduled-events/' +
+      new Date().toISOString().slice(0, 10));
+    return { ok: true, events: (body.events || []).length };
+  } catch (err) {
+    return { ok: false, why: err.blocked ? 'blocked (' + err.statusCode + ')' : err.message };
+  }
+}

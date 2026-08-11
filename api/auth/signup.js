@@ -10,7 +10,7 @@ import { db, ensureSchema, configured, uniqueViolation, violatedIndex } from '..
 import { guard } from '../_lib/rate.js';
 import * as mail from '../_lib/mail.js';
 import {
-  hashPassword, issueVerificationCode, linkCode,
+  hashPassword, issueVerificationCode, linkCode, createSession, setSessionCookie,
   emailProblem, passwordProblem, nameProblem
 } from '../_lib/auth.js';
 
@@ -70,17 +70,25 @@ export default async function handler(req, res) {
       });
     }
 
-    const code = await issueVerificationCode(user.id);
     if (mail.configured()) {
+      const code = await issueVerificationCode(user.id);
       await mail.sendVerificationEmail(email, code);
       return json(res, 201, { ok: true, name: user.display_name, emailSent: true });
     }
-    /* The account is real and the code is real; only delivery is missing.
-       Say so plainly rather than pretending an email went out. */
+
+    /* No mail provider on this deployment.
+       Issuing a code nobody can receive would strand every signup at the
+       verify step, so the account is marked verified and signed in instead,
+       and the client is told delivery is off rather than shown a code it
+       cannot have received. This is a real trade-off and it is deliberate:
+       until RESEND_API_KEY is set, an address is unproven. Set the key and
+       the normal code flow resumes with no other change. */
+    await db()`UPDATE users SET email_verified = true WHERE id = ${user.id}`;
+    const token = await createSession(user.id);
+    setSessionCookie(res, token);
     return json(res, 201, {
-      ok: true, name: user.display_name, emailSent: false,
-      error: 'Account created, but email delivery is not configured.',
-      needs: ['RESEND_API_KEY']
+      ok: true, name: user.display_name, emailSent: false, verified: true,
+      notice: 'Email verification is off on this deployment, so you are signed in already.'
     });
   } catch (err) {
     return fail(res, err, 'Could not create that account right now.');

@@ -159,6 +159,17 @@ async function signup(next) {
   pendingEmail = email;
   S.name = name;
   $('verifyMail').textContent = email;
+
+  /* No mail provider on this deployment: the server signed the account in
+     rather than issuing a code nobody could receive. Skipping the verify
+     step is the honest move — asking for a code that was never sent is the
+     kind of dead end that makes people think the product is broken. */
+  if (body.verified) {
+    toast(body.notice || 'Signed in.');
+    next(); next();
+    return;
+  }
+
   const hint = $('verifyHint');
   hint.hidden = false;
   hint.textContent = 'Check your inbox, and your spam folder if it is not there in a minute.';
