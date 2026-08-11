@@ -430,6 +430,53 @@ async function main() {
     await page.close();
   }
 
+  /* ── the app survives an opaque origin ────────────────────────
+     WebKit throws SecurityError from pushState whenever the page has an
+     opaque origin — a file:// URL, a sandboxed iframe, and the capacitor://
+     scheme an App Store wrapper would use. Chromium tolerates it, which is
+     exactly why this shipped: the routing threw inside go(), after the view
+     classes were toggled but before reveal(), so the page half-rendered into
+     a mostly blank screen with every .reveal still at opacity 0, and init
+     aborted. It looked like "the app is broken" and logged nothing a normal
+     audit would catch.
+
+     Reproduced by making pushState throw the way WebKit does, since a real
+     opaque origin cannot be simulated any other way here. */
+  {
+    const page = await browser.newPage({ viewport: { width: 390, height: 844 } });
+    await installStub(page);
+    const errors = [];
+    page.on('pageerror', e => errors.push(e.message));
+    await page.addInitScript(() => {
+      const boom = () => { throw new DOMException('The operation is insecure.', 'SecurityError'); };
+      history.pushState = boom;
+      history.replaceState = boom;
+    });
+    await page.goto(base, { waitUntil: 'networkidle' });
+    await page.waitForTimeout(700);
+
+    const state = await page.evaluate(() => {
+      const on = document.querySelector('.view.on');
+      const reveals = [...document.querySelectorAll('.view.on .reveal')];
+      return {
+        view: on ? on.id : null,
+        rows: document.querySelectorAll('#recentBets .betrow').length,
+        hidden: reveals.filter(e => getComputedStyle(e).opacity === '0').length,
+        reveals: reveals.length
+      };
+    });
+    if (errors.length) fail('opaque-origin', 'threw where the URL cannot be changed: ' + errors[0]);
+    if (state.view !== 'dash') fail('opaque-origin', 'did not reach the dashboard, stopped on ' + state.view);
+    if (!state.rows) fail('opaque-origin', 'the ledger rendered no rows — init aborted');
+
+    /* And navigation still works without the URL following it. */
+    await page.evaluate(() => { const b = document.querySelector('[data-nav="imp"]'); if (b) b.click(); });
+    await page.waitForTimeout(250);
+    const moved = await page.evaluate(() => (document.querySelector('.view.on') || {}).id);
+    if (moved !== 'imp') fail('opaque-origin', 'navigation stopped working, stuck on ' + moved);
+    await page.close();
+  }
+
   /* ── views are addressable and back works ─────────────────────
      Nothing wrote to history, so the back button did nothing: on an
      installed PWA that means Android's hardware back exits the app from the

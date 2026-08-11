@@ -86,11 +86,18 @@ function go(id, fromHistory) {
     else b.removeAttribute('aria-current');
   });
   if (!fromHistory) {
-    const url = id === 'landing' ? location.pathname : location.pathname + '#' + id;
-    /* Replace rather than push when re-entering the same view, so tapping a
-       tab twice does not need two presses of back to undo. */
-    if (prev === id) history.replaceState({ view: id }, '', url);
-    else history.pushState({ view: id }, '', url);
+    /* WebKit throws SecurityError from pushState whenever the page has an
+       opaque origin — a file:// URL, a sandboxed iframe, and the
+       capacitor:// scheme an App Store wrapper would use. It is a URL
+       nicety, not a feature worth taking the whole app down for, so it
+       fails quietly and navigation carries on without it. */
+    try {
+      const url = id === 'landing' ? location.pathname : location.pathname + '#' + id;
+      /* Replace rather than push when re-entering the same view, so tapping
+         a tab twice does not need two presses of back to undo. */
+      if (prev === id) history.replaceState({ view: id }, '', url);
+      else history.pushState({ view: id }, '', url);
+    } catch { /* no addressable URL here; the view still changes */ }
   }
   scrollTo(0, 0);
   reveal(view);

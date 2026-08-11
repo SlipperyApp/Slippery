@@ -5,3 +5,7 @@ node_modules/
 !.env.example
 *.log
 tools/screens/
+
+# Generated preview builds — rebuild with `node tools/preview.mjs`
+slippery-preview.html
+slippery-artifact.html

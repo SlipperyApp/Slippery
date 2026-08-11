@@ -201,6 +201,30 @@ async function main() {
   const out = path.join(root, 'slippery-preview.html');
   await writeFile(out, html);
   console.log('  wrote slippery-preview.html  ' + (html.length / 1024).toFixed(0) + 'kB, self-contained');
+
+  /* ---- the hosted variant ----
+     Opening a .html from the iOS Files app usually downloads it rather than
+     running it, so the phone needs a URL. An artifact page is wrapped in
+     its own <head>/<body>, so the document scaffolding is stripped and only
+     the style, the sprite, the markup and the scripts survive. */
+  const head = html.slice(html.indexOf('<style>'), html.indexOf('</head>'));
+  const body = html.slice(html.indexOf('<body>') + 6, html.lastIndexOf('</body>'));
+  const page =
+    '<title>Slippery — bet slip tracker</title>\n' +
+    head +
+    /* The app is dark by deliberate choice: a light theme was tried and
+       rejected because #86EFAC profit green measures 1.07:1 on beige. The
+       host paints its own ground in the viewer's theme, and .sky sits at
+       z-index:-1, so body must paint the background itself or the page
+       borrows whatever is behind it. */
+    '<style>\n' +
+    'html,body{background:#0B1020;color-scheme:dark;min-height:100%}\n' +
+    'body{margin:0;color:#F1F5F9}\n' +
+    '</style>\n' +
+    body;
+  const outA = path.join(root, 'slippery-artifact.html');
+  await writeFile(outA, page);
+  console.log('  wrote slippery-artifact.html ' + (page.length / 1024).toFixed(0) + 'kB, for hosting');
 }
 
 main().catch(err => { console.error(err); process.exit(1); });
