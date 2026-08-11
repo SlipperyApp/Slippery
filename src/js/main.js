@@ -95,7 +95,6 @@ function go(id, fromHistory) {
   scrollTo(0, 0);
   reveal(view);
   paintSegs(view);
-  if (id === 'howto') { C.seek(0); C.play(); } else C.pause();
   if (id === 'setup' && prev !== 'setup') wizardStep(0);
   if (id === 'dash') R.renderAll();
   announce(view.getAttribute('aria-label') || id);
@@ -943,17 +942,6 @@ document.addEventListener('click', e => {
     return;
   }
 
-  if (c('#playToggle')) { C.toggle(); return; }
-  if ((el = c('[data-chapter]'))) {
-    C.seek(C.CHAPTERS[+el.getAttribute('data-chapter')][0]);
-    if (!C.isPlaying()) C.play();
-    return;
-  }
-  if ((el = c('#scrubber'))) {
-    const r = el.getBoundingClientRect();
-    C.seek((e.clientX - r.left) / r.width * C.PLAY_LENGTH);
-    return;
-  }
 
   if (c('#newMonthKeep')) { $('newMonthCard').hidden = true; toast('Target kept at ' + M.money0(targetFor(TODAY.month))); return; }
   if (c('#newMonthDismiss')) { $('newMonthCard').hidden = true; toast('We will ask again tomorrow'); return; }
@@ -1023,11 +1011,6 @@ document.addEventListener('change', e => {
 
 document.addEventListener('keydown', e => {
   if (e.key === 'Escape') { closeDay(); return; }
-  if (e.target.id === 'scrubber') {
-    if (e.key === 'ArrowRight') { e.preventDefault(); C.seek(+e.target.getAttribute('aria-valuenow') + 1); }
-    if (e.key === 'ArrowLeft') { e.preventDefault(); C.seek(+e.target.getAttribute('aria-valuenow') - 1); }
-    if (e.key === ' ' || e.key === 'Enter') { e.preventDefault(); C.toggle(); }
-  }
 });
 
 /* drag and drop onto the upload zone */
@@ -1103,7 +1086,6 @@ async function init() {
   $('targetSettings').value = (S.target / 100).toFixed(0);
   drawAll();
   renderNewMonth();
-  C.paintPlayer();
   paintSegs();
   reveal();
   syncThemeColor();

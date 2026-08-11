@@ -180,7 +180,7 @@
 
   <div class="wrap">
     <div class="section">
-      <button class="btn ghost reveal" data-nav="howto">Watch the walkthrough</button>
+      <button class="btn ghost reveal" data-nav="howto">See how it works</button>
     </div>
 
     <div class="section snap-point" id="secGet">
@@ -202,7 +202,7 @@
       <div class="glyph" aria-hidden="true"><svg viewBox="0 0 24 24"><use href="#i-telegram"/></svg></div>
       <h2>It is already in your Telegram</h2>
       <p>Forward a slip, tap confirm, done.</p>
-      <button class="btn primary" data-nav="bot">Preview the bot</button>
+      <button class="btn primary" data-nav="howto">See how it works</button>
     </div>
 
     <div class="section snap-point" id="secFaq">
@@ -223,7 +223,6 @@
         <button data-nav="pricing">Pricing</button>
         <button data-nav="howto">How it works</button>
         <button data-nav="setup">Create account</button>
-        <button data-nav="bot">Telegram bot</button>
         <button data-nav="help">Help</button>
         <button data-nav="terms">Terms</button>
         <button data-nav="privacy">Privacy</button>
@@ -408,32 +407,23 @@
   </div>
 </section>
 
-<!-- ══════════════ WALKTHROUGH ══════════════ -->
-<section class="view" id="howto" aria-label="Walkthrough">
+<!-- ══════════════ HOW IT WORKS ══════════════
+     One explainer, not three. This page, the Telegram preview and the
+     landing "how it works" section all told the same story, so the other
+     two are gone and every link points here. A guide you can scroll and
+     screenshot beats a fake video player you have to sit through: nothing
+     to press, nothing to wait for, and each step is readable at a glance. -->
+<section class="view" id="howto" aria-label="How it works">
   <div class="wrap nar page-lede">
-    <div class="reveal" style="margin-bottom:16px">
-      <p class="eyebrow">Walkthrough</p>
-      <h1 style="font-size:28px;margin-top:6px">See it work.</h1>
-      <p class="lede">One slip, from the moment you place it to the day it settles. The figures are a worked example.</p>
+    <div class="reveal" style="margin-bottom:18px">
+      <p class="eyebrow">How it works</p>
+      <h1 style="font-size:28px;margin-top:6px">Five steps, start to settled.</h1>
+      <p class="lede">One slip followed the whole way. The figures are a worked example.</p>
     </div>
-    <div class="phone reveal">
-      <div class="phone-shell">
-        <div class="phone-screen">
-          <div class="phone-top"><span class="l" id="sceneTitle">Telegram</span><span class="r" id="sceneValue"></span></div>
-          <div class="phone-body" id="sceneBody"></div>
-        </div>
-      </div>
-      <div class="playerbar">
-        <button class="playbtn" id="playToggle" aria-label="Play walkthrough"></button>
-        <div class="scrubber" id="scrubber" role="slider" tabindex="0" aria-label="Walkthrough position" aria-valuemin="0" aria-valuemax="18" aria-valuenow="0"><i id="scrubFill"></i></div>
-        <span class="m" style="font-size:10.5px;color:var(--t2)" id="playTime">0:00 / 0:18</span>
-      </div>
-      <p class="playercap" id="playerCaption"></p>
-      <div class="chapters" id="chapters"></div>
-    </div>
-    <div class="btnrow" style="margin-top:18px">
+    <ol class="guide" id="guideSteps"></ol>
+    <div class="btnrow" style="margin-top:22px">
       <button class="btn primary" data-nav="setup">Start free</button>
-      <button class="btn ghost" data-nav="setup">Start free</button>
+      <button class="btn ghost" data-nav="pricing">See pricing</button>
     </div>
   </div>
 </section>
@@ -746,7 +736,7 @@
     </div>
     </div>
 
-    <button class="card" data-nav="bot" style="display:flex;align-items:center;gap:11px;padding:13px;margin-top:16px;width:100%;text-align:left;border-color:rgba(var(--orb2),.3);background:rgba(var(--orb2),.08)">
+    <button class="card" data-nav="howto" style="display:flex;align-items:center;gap:11px;padding:13px;margin-top:16px;width:100%;text-align:left;border-color:rgba(var(--orb2),.3);background:rgba(var(--orb2),.08)">
       <svg viewBox="0 0 24 24" style="width:20px;height:20px;color:var(--s);flex:0 0 auto" aria-hidden="true"><use href="#i-telegram"/></svg>
       <span><span style="font-size:13px;font-weight:600;display:block">Faster: forward it to the bot</span>
       <span style="font-size:11.5px;color:var(--t2)">Send a slip on Telegram and it lands here</span></span>
@@ -881,25 +871,6 @@
       <div class="fieldrow"><span class="lab">Timezone</span><label class="sr" for="timezone">Timezone</label>
         <select class="select compact" id="timezone"><option>Europe/London</option><option>Europe/Dublin</option><option>UTC</option></select></div>
     </div>
-  </div>
-</section>
-
-<!-- ══════════════ BOT PREVIEW ══════════════ -->
-<section class="view" id="bot" aria-label="Telegram bot">
-  <div class="wrap nar page-lede">
-    <div class="reveal" style="margin-bottom:14px">
-      <p class="eyebrow">Telegram bot</p>
-      <h1 style="font-size:26px;margin-top:6px">Forward. Confirm. Done.</h1>
-    </div>
-    <div class="card flush reveal" style="max-width:420px;margin:0 auto">
-      <div style="display:flex;align-items:center;gap:10px;padding:12px 15px;border-bottom:1px solid var(--e1);background:rgba(255,255,255,.05)">
-        <span class="avatar" aria-hidden="true">S</span>
-        <div><div style="font-weight:600;font-size:13.5px" translate="no">Slippery Bot</div>
-          <div class="pos" style="font-size:10.5px">online</div></div>
-      </div>
-      <div class="chatlog" id="botChat"></div>
-    </div>
-    <div style="text-align:center;margin-top:16px"><button class="btn ghost" data-nav="dash">See the dashboard</button></div>
   </div>
 </section>
 

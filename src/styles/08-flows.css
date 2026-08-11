@@ -216,45 +216,47 @@
   & i.on{background:var(--s);transform:scale(1.35)}}
 
 /* walkthrough player */
-.phone{max-width:312px;margin:0 auto}
-.phone-shell{border-radius:32px;padding:8px;
-  background:linear-gradient(150deg,#2a3350,#161d2f);border:1px solid var(--e1);
-  box-shadow:0 22px 54px rgba(0,0,0,.5)}
-.phone-screen{position:relative;aspect-ratio:9/11.6;border-radius:25px;overflow:hidden;
-  background:var(--bg);border:1px solid var(--e2);display:flex;flex-direction:column}
+/* ---------- the how-it-works guide ----------
+   Five steps, each a heading and the panel it describes. Static, so there
+   is nothing to press and nothing to wait for — the reader gets the whole
+   story by scrolling, and can screenshot any step of it. */
+.guide{list-style:none;counter-reset:none;display:flex;flex-direction:column;gap:26px;margin:0;padding:0}
+.guidestep{
+  display:flex;flex-direction:column;gap:13px;
+}
+.guidehead{
+  display:flex;gap:13px;align-items:flex-start;
+  & h2{font-size:18px;letter-spacing:-.02em;margin:0}
+  & p{margin:6px 0 0;font-size:13.5px;line-height:1.6;color:var(--t2)}
+}
+.guiden{
+  flex:0 0 auto;width:29px;height:29px;border-radius:9px;
+  display:grid;place-items:center;margin-top:1px;
+  font-family:var(--fm);font-size:13px;font-weight:600;color:#08111f;
+  background:linear-gradient(140deg,var(--p),var(--s));
+}
+/* The panel. A device frame without the phone drawing: the bezel added
+   nothing except 40px of padding on a 390px screen. */
+.guideshot{
+  border:1px solid var(--e1);border-radius:16px;overflow:hidden;
+  background:rgba(8,13,24,.55);
+  box-shadow:0 14px 34px rgba(0,0,0,.3);
+  margin-left:42px;
+}
+@media (max-width:420px){.guideshot{margin-left:0}}
+.guidebody{
+  padding:14px;display:flex;flex-direction:column;gap:7px;min-height:150px;
+  justify-content:center;
+  /* A chat fills from the bottom, the way a real one does. */
+  &.chat{justify-content:flex-end}
+}
 .phone-top{
-  flex:0 0 auto;display:flex;align-items:center;justify-content:space-between;gap:8px;
-  padding:12px 13px 10px;border-bottom:1px solid var(--e2);font-size:10px;
-  & .l{font-family:var(--fm);color:var(--t2);letter-spacing:.04em;text-transform:uppercase}
-  & .r{font-family:var(--fm);font-weight:600;font-size:11.5px;
+  display:flex;align-items:center;justify-content:space-between;gap:8px;
+  padding:11px 14px;border-bottom:1px solid var(--e2);font-size:10px;
+  background:rgba(255,255,255,.03);
+  & .l{font-family:var(--fm);color:var(--t2);letter-spacing:.06em;text-transform:uppercase}
+  & .r{font-family:var(--fm);font-weight:600;font-size:12px;
     font-variant-numeric:tabular-nums lining-nums}}
-.phone-body{flex:1;min-height:0;padding:11px 12px;position:relative;overflow:hidden}
-.scene{
-  position:absolute;inset:11px 12px;opacity:0;transform:translateY(6px);pointer-events:none;
-  transition:opacity 360ms var(--ez),transform 360ms var(--ez);
-  display:flex;flex-direction:column;gap:7px;justify-content:center;
-  &.on{opacity:1;transform:none}
-  /* A chat fills from the bottom. Centring it left a third of the screen
-     empty above the first message, which no messaging app does. */
-  &.chat{justify-content:flex-end}}
-.playerbar{display:flex;align-items:center;gap:10px;margin-top:14px}
-.playbtn{width:38px;height:38px;flex:0 0 auto;border-radius:50%;display:grid;place-items:center;
-  background:linear-gradient(135deg,var(--p),var(--s));color:#08111f;
-  box-shadow:0 5px 15px rgba(var(--orb1),.3);
-  transition:transform var(--tf);&:active{transform:scale(.93)}
-  & svg{width:15px;height:15px}}
-.scrubber{flex:1;height:4px;border-radius:3px;background:rgba(255,255,255,.1);
-  position:relative;cursor:pointer;
-  & i{position:absolute;inset:0;width:0;border-radius:3px;
-    background:linear-gradient(90deg,var(--p),var(--s))}}
-.playercap{font-size:12.5px;color:var(--t2);line-height:1.6;margin-top:12px;min-height:40px}
-.chapters{display:flex;flex-direction:column;gap:1px;margin-top:8px;
-  & button{display:flex;align-items:center;gap:10px;padding:9px 10px;border-radius:9px;
-    font-size:12.5px;color:var(--t2);text-align:left;min-height:40px;
-    transition:background var(--tf),color var(--tf);
-    &[aria-current=true]{background:var(--c2);color:var(--t1)}
-    & .t{font-family:var(--fm);font-size:10.5px;color:var(--t2);flex:0 0 auto}
-    &[aria-current=true] .t{color:var(--s)}}}
 
 /* import */
 .dropzone{

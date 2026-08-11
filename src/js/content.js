@@ -193,7 +193,7 @@ export function renderStatic() {
   renderPreview();
   renderBotChat();
   renderMigrateOptions();
-  renderChapters();
+  renderGuide();
 }
 
 function renderHeroHeading() {
@@ -294,25 +294,27 @@ function renderMigrateOptions() {
     o[3] + '</svg></span><span><span class="t">' + o[1] + '</span><span class="s">' + o[2] + '</span></span></button>').join(''));
 }
 
-/* ---------------- walkthrough player ---------------- */
-export const CHAPTERS = [
-  [0, 'A slip arrives', 'Forward any bet slip to the Telegram bot the moment you place it. Screenshot, photo or share sheet, whatever is quicker.'],
-  [3, 'We read it', 'The stake, odds, selection and bookmaker come off the image. Anything it cannot read is left for you to type, never guessed.'],
-  [6, 'Your calendar fills', 'Every settled day turns green or red, scaled by how big the day was. Tap a month or switch to the whole year.'],
-  [9, 'Tap any day', 'Open a day to see the slips behind the number, with the running week total.'],
-  [12, 'See what paid', 'Profit splits by bookmaker, market and tipster, for whichever period you are looking at.'],
-  [15, 'Compare in groups', 'Start a group, share the code, and everyone is ranked in units — so nobody sees anyone\'s stake sizes.']
+/* ---------------- the how-it-works guide ----------------
+   Five steps, each with the panel it describes, all on screen at once.
+   This replaces a fake video player with a scrubber, a clock and six
+   chapters: there was nothing to play, so the controls were decoration
+   that made the reader wait for information a screenshot gives instantly.
+   It is also one page instead of three — the Telegram preview and the
+   landing section told the same story. */
+const STEPS = [
+  ['Place the bet, then forward the slip',
+   'Screenshot your bookmaker\'s confirmation and send it to the bot. Pre-match, in-play or already settled — all three work, and capturing at placement is what stops a tracker quietly becoming a highlight reel.'],
+  ['Slippery reads it',
+   'Stake, odds, selection, bookmaker and every leg come off the image. Anything it cannot read is left blank for you to type rather than guessed at.'],
+  ['It tracks and settles itself',
+   'Standard markets grade on the 90-minute score as soon as the result is in. Anything ambiguous — a bet builder, an abandoned game, a quarter-line inside an acca — comes back to you instead of being guessed.'],
+  ['Your calendar fills in',
+   'Every settled day turns green or red, scaled by how big the day was. Tap a day to see the slips behind the number, or switch to the whole year.'],
+  ['See what actually pays',
+   'Profit split by bookmaker, market and tipster for whichever period you are on. Start a group and everyone is ranked in units, so nobody sees anyone\'s stake sizes.']
 ];
-export const PLAY_LENGTH = 18;
-let playTime = 0, playing = false, timer = null;
 
-export function renderChapters() {
-  setHTML('chapters', CHAPTERS.map((c, i) =>
-    '<button data-chapter="' + i + '" aria-current="' + (i === 0) + '"><span class="t">0:' +
-    String(c[0]).padStart(2, '0') + '</span>' + esc(c[1]) + '</button>').join(''));
-}
-
-function scene(i) {
+function panel(i) {
   const days = SAMPLE.month;
   const slip = SAMPLE.slip;
 
@@ -436,6 +438,27 @@ function scene(i) {
 const srow = (k, v) => '<div style="display:flex;justify-content:space-between;gap:8px;font-size:9.5px;padding:2px 0"><span style="color:var(--t2)">' + k + '</span><b class="m">' + v + '</b></div>';
 const skpi = (k, v) => '<div style="background:var(--c1);border:1px solid var(--e2);border-radius:6px;padding:6px"><div style="font-size:7px;color:var(--t2)">' + k + '</div><div class="m" style="font-weight:600;font-size:10px;margin-top:2px">' + v + '</div></div>';
 
+/** Render the whole guide: five steps, each with its panel. */
+export function renderGuide() {
+  const el = $('guideSteps');
+  if (!el) return;
+  el.innerHTML = STEPS.map((step, i) => {
+    const p = panel(i);
+    return '<li class="guidestep">' +
+      '<div class="guidehead">' +
+        '<span class="guiden" aria-hidden="true">' + (i + 1) + '</span>' +
+        '<div><h2>' + esc(step[0]) + '</h2><p>' + esc(step[1]) + '</p></div>' +
+      '</div>' +
+      '<div class="guideshot">' +
+        '<div class="phone-top"><span class="l">' + esc(p.top[0]) + '</span>' +
+          '<span class="r ' + (p.top[1] && p.top[1].charAt(0) === '−' ? 'neg'
+            : p.top[1] && p.top[1].charAt(0) === '+' ? 'pos' : '') + '">' +
+          esc(p.top[1] || '') + '</span></div>' +
+        '<div class="guidebody' + (p.cls ? ' ' + p.cls : '') + '">' + p.html + '</div>' +
+      '</div></li>';
+  }).join('');
+}
+
 function paintScene() {
   let idx = 0;
   CHAPTERS.forEach((c, i) => { if (playTime >= c[0]) idx = i; });
@@ -456,36 +479,4 @@ function paintScene() {
   $$('#chapters button').forEach((b, i) => b.setAttribute('aria-current', String(i === idx)));
 }
 
-export function paintPlayer() {
-  $('scrubFill').style.width = (playTime / PLAY_LENGTH * 100) + '%';
-  const sc = $('scrubber');
-  sc.setAttribute('aria-valuenow', String(Math.floor(playTime)));
-  sc.setAttribute('aria-valuetext', 'Chapter ' + (CHAPTERS.filter(c => playTime >= c[0]).length) + ' of ' + CHAPTERS.length);
-  setText('playTime', '0:' + String(Math.floor(playTime)).padStart(2, '0') + ' / 0:' + PLAY_LENGTH);
-  paintScene();
-}
-function playIcon() {
-  $('playToggle').innerHTML = playing
-    ? '<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M7 5h4v14H7zM13 5h4v14h-4z"/></svg>'
-    : '<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M8 5v14l11-7z"/></svg>';
-  $('playToggle').setAttribute('aria-label', playing ? 'Pause walkthrough' : 'Play walkthrough');
-}
-export function play() {
-  if (RM) { paintPlayer(); return; }
-  playing = true; playIcon();
-  clearInterval(timer);
-  timer = setInterval(() => {
-    playTime += 0.25;
-    if (playTime >= PLAY_LENGTH) playTime = 0;
-    paintPlayer();
-  }, 250);
-}
-export function pause() { playing = false; clearInterval(timer); timer = null; playIcon(); }
-export function toggle() { playing ? pause() : play(); }
-export function seek(t) {
-  playTime = Math.max(0, Math.min(PLAY_LENGTH, t));
-  $('sceneBody').removeAttribute('data-scene');
-  paintPlayer();
-}
-export function restart() { playTime = 0; $('sceneBody').removeAttribute('data-scene'); paintPlayer(); play(); }
 export function isPlaying() { return playing; }

@@ -19,7 +19,7 @@ const CHROME = process.env.CHROME_BIN || '/opt/pw-browsers/chromium-1194/chrome-
 const WIDTHS = [320, 390, 430];
 const SHOT_DIR = path.join(root, 'tools', 'screens');
 
-const VIEWS = ['landing', 'setup', 'howto', 'pricing', 'dash', 'imp', 'settings', 'bot', 'help', 'terms', 'privacy'];
+const VIEWS = ['landing', 'setup', 'howto', 'pricing', 'dash', 'imp', 'settings', 'help', 'terms', 'privacy'];
 const THEMES = ['periwinkle', 'graphite', 'ink', 'tide', 'chalk'];
 
 const MIME = { '.html': 'text/html', '.js': 'text/javascript', '.css': 'text/css',
@@ -679,7 +679,7 @@ async function main() {
     await installStub(page);
     await page.goto(base, { waitUntil: 'networkidle' });
     await page.waitForTimeout(600);
-    for (const v of ['landing', 'dash', 'setup', 'howto', 'settings', 'imp', 'bot']) {
+    for (const v of ['landing', 'dash', 'setup', 'howto', 'settings', 'imp']) {
       await page.evaluate(id => {
         const b = document.querySelector('[data-nav="' + id + '"]');
         if (b) b.click();
