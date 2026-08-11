@@ -430,6 +430,56 @@ async function main() {
     await page.close();
   }
 
+  /* ── the signup wizard advances ───────────────────────────────
+     It sits below the broken [data-theme] branch, so Continue did nothing
+     at all: filling the form and pressing it applied a colour scheme. A
+     signup flow that cannot advance is the whole product, so it is worth a
+     check that presses the real button and watches the step change. */
+  {
+    const page = await browser.newPage({ viewport: { width: 390, height: 844 } });
+    await installStub(page, { signedIn: false });
+    await page.goto(base, { waitUntil: 'networkidle' });
+    await page.waitForTimeout(400);
+    await page.evaluate(() => document.querySelector('[data-nav="setup"]').click());
+    await page.waitForTimeout(250);
+
+    const step = () => page.evaluate(() => {
+      const on = document.querySelector('#setup .step.on');
+      return on ? on.getAttribute('data-step') : null;
+    });
+    if (await step() !== '0') fail('signup', 'setup did not open on the first step');
+
+    /* Continue with an empty form must NOT advance — that is the validation
+       working, and it is also how we know the click is being handled at
+       all rather than silently swallowed. */
+    await page.evaluate(() => document.getElementById('authGo').click());
+    await page.waitForTimeout(250);
+    if (await step() !== '0') fail('signup', 'an empty form advanced past step 0');
+    const flagged = await page.evaluate(() =>
+      !document.getElementById('suEmailErr').hidden);
+    if (!flagged) fail('signup', 'Continue on an empty form neither advanced nor complained — ' +
+      'the click is being swallowed before it reaches the handler');
+
+    await page.evaluate(() => {
+      const set = (id, v) => {
+        const el = document.getElementById(id);
+        el.value = v;
+        el.dispatchEvent(new Event('input', { bubbles: true }));
+      };
+      set('suEmail', 'darius@example.com');
+      set('suPw', 'Correct-Horse-9');
+      set('suPw2', 'Correct-Horse-9');
+      set('suName', 'DariusOdds');
+      const age = document.getElementById('ageOk');
+      age.checked = true;
+      age.dispatchEvent(new Event('change', { bubbles: true }));
+    });
+    await page.evaluate(() => document.getElementById('authGo').click());
+    await page.waitForTimeout(700);
+    if (await step() !== '1') fail('signup', 'a valid form did not advance to the verify step');
+    await page.close();
+  }
+
   /* ── import actually imports ──────────────────────────────────
      The complaint that started this was "I can't import". Confirm used to
      be a toast and a fade — the card collapsed, the counters moved, and

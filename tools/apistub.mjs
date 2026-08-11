@@ -111,6 +111,19 @@ export async function installStub(page, opts = {}) {
     return route.fulfill({ status: 200, contentType: 'application/json', body: '{}' });
   });
 
+  /* Signup and verification, so the wizard can be driven end to end. */
+  await page.route('**/api/auth/signup', route => route.fulfill({
+    status: 201, contentType: 'application/json',
+    body: JSON.stringify({ ok: true, name: 'DariusOdds', emailVerified: false })
+  }));
+  await page.route('**/api/auth/verify', route => route.fulfill({
+    status: 200, contentType: 'application/json',
+    body: JSON.stringify({ ok: true, user: USER })
+  }));
+  await page.route('**/api/auth/resend', route => route.fulfill({
+    status: 200, contentType: 'application/json', body: JSON.stringify({ ok: true })
+  }));
+
   /* The slip reader. Returns one legible slip and one the reader could only
      partly make out, which is the case the editable fields exist for. */
   let extractCall = 0;
