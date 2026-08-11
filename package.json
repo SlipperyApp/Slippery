@@ -9,6 +9,7 @@
     "verify": "node build.mjs && node --test \"tests/**/*.test.mjs\" && node tools/audit.mjs"
   },
   "dependencies": {
+    "@anthropic-ai/sdk": "^0.116.0",
     "@neondatabase/serverless": "^0.10.4"
   },
   "devDependencies": {

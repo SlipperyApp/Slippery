@@ -68,22 +68,31 @@
    writes only a transform on these two <g> elements. */
 .sky-silk{
   position:absolute;left:-12%;right:-12%;top:-6%;height:64vh;
-  opacity:.46;filter:blur(26px);
+  opacity:.5;
   -webkit-mask-image:radial-gradient(120% 62% at 50% 24%,#000 18%,transparent 72%);
-  mask-image:radial-gradient(120% 62% at 50% 24%,#000 18%,transparent 72%);
-  & svg{width:100%;height:100%;display:block}
-  & g{will-change:transform}
-  /* outer group: scroll parallax, written by motion.js as a custom
-     property so the handler never touches the transform the keyframe owns */
-  & [data-parallax]{transform:translate3d(0,var(--parallax,0px),0)}
-  & .band1{animation:silk1 34s ease-in-out infinite}
-  & .band2{animation:silk2 44s ease-in-out infinite}}
+  mask-image:radial-gradient(120% 62% at 50% 24%,#000 18%,transparent 72%)}
+
+/* Outer: scroll parallax only, written by motion.js as a custom property so
+   the handler never touches the transform a keyframe owns. */
+.sky-band{position:absolute;inset:0;will-change:transform;
+  transform:translate3d(0,var(--parallax,0px),0)}
+
+/* Inner: the drift. The blur is INSIDE the SVG, not a CSS filter on this
+   element — a live filter is recomputed every scroll frame and cost 30fps;
+   a pre-blurred background is rasterised once and only composited after. */
+.sky-band-in{
+  position:absolute;inset:0;will-change:transform;
+  background-repeat:no-repeat;background-size:100% 100%;
+  &.b1{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1200 620' preserveAspectRatio='none'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='1' y2='0'%3E%3Cstop offset='0' stop-color='%235D76CB'/%3E%3Cstop offset='.4' stop-color='%2338BDF8'/%3E%3Cstop offset='.75' stop-color='%238FC7C0'/%3E%3Cstop offset='1' stop-color='%238B5CF6'/%3E%3C/linearGradient%3E%3Cfilter id='b' x='-25%25' y='-25%25' width='150%25' height='150%25'%3E%3CfeGaussianBlur stdDeviation='38'/%3E%3C/filter%3E%3C/defs%3E%3Cpath d='M-120,300 C160,175 340,430 620,300 C900,175 1060,415 1340,285 L1340,460 C1060,590 900,350 620,478 C340,606 160,366 -120,494 Z' fill='url(%23g)' opacity='1' filter='url(%23b)'/%3E%3C/svg%3E");
+    animation:silk1 34s ease-in-out infinite}
+  &.b2{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1200 620' preserveAspectRatio='none'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='1' y2='0'%3E%3Cstop offset='0' stop-color='%238B5CF6'/%3E%3Cstop offset='.55' stop-color='%235D76CB'/%3E%3Cstop offset='1' stop-color='%238FC7C0'/%3E%3C/linearGradient%3E%3Cfilter id='b' x='-25%25' y='-25%25' width='150%25' height='150%25'%3E%3CfeGaussianBlur stdDeviation='38'/%3E%3C/filter%3E%3C/defs%3E%3Cpath d='M-120,175 C180,80 340,320 660,190 C980,64 1120,300 1340,175 L1340,285 C1120,412 980,175 660,300 C340,430 180,190 -120,300 Z' fill='url(%23g)' opacity='.7' filter='url(%23b)'/%3E%3C/svg%3E");
+    animation:silk2 44s ease-in-out infinite}}
 @keyframes silk1{
-  0%,100%{transform:translate3d(0,0,0)}
-  50%{transform:translate3d(-34px,16px,0) scaleY(1.16)}}
+  0%,100%{transform:translate3d(0,0,0);opacity:1}
+  50%{transform:translate3d(-38px,26px,0);opacity:.72}}
 @keyframes silk2{
-  0%,100%{transform:translate3d(0,5px,0) scaleY(1.08)}
-  50%{transform:translate3d(36px,-14px,0) scaleY(.9)}}
+  0%,100%{transform:translate3d(0,8px,0);opacity:.82}
+  50%{transform:translate3d(40px,-22px,0);opacity:1}}
 
 /* Grain. Breaks up the gradient banding that large soft fields show on
    OLED phones. Fixed layer, transform-animated, so it composites. */
@@ -107,7 +116,7 @@
   background:linear-gradient(180deg,transparent 52%,rgba(0,0,0,.30) 100%)}
 
 @media (prefers-reduced-motion:reduce){
-  .sky-orb,.sky-grain,.sky-silk .band1,.sky-silk .band2{animation:none}
+  .sky-orb,.sky-grain,.sky-band-in{animation:none}
   .sky-grain{opacity:.02}
 }
 /* Save-Data and low-power: drop the most expensive layers entirely. */
