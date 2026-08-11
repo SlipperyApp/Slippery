@@ -50,7 +50,9 @@ export function pct(n) {
 }
 /** +1.9k for calendar cells, where space is 40px */
 export function compact(pence) {
-  const a = Math.abs(pence) / 100, s = pence > 0 ? '+' : '−';
+  /* Zero gets no sign. "−0" appeared on every calendar day whose bets all
+     voided, which reads as a small loss and is not one. */
+  const a = Math.abs(pence) / 100, s = pence > 0 ? '+' : pence < 0 ? '−' : '';
   if (a >= 1e4) { const k = a / 1e3; return s + (k >= 99.95 ? Math.round(k) : k.toFixed(1)) + 'k'; }
   return s + Math.round(a).toLocaleString('en-GB');
 }

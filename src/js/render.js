@@ -115,11 +115,15 @@ export function renderCalendar() {
       const past = S.month < TODAY.month || (S.month === TODAY.month && d < TODAY.day);
       const cls = has ? 'hasbets' : isToday ? '' : past ? 'nobets' : 'future';
       let style = 'animation-delay:' + Math.min(d * 9, 300) + 'ms';
-      if (has) {
+      if (has && v !== 0) {
         const r = Math.min(1, Math.abs(v) / max);
         const rgb = v > 0 ? '134,239,172' : '252,165,165';
         style += ';background:rgba(' + rgb + ',' + (0.1 + r * 0.24).toFixed(3) +
                  ');border-color:rgba(' + rgb + ',' + (0.26 + r * 0.3).toFixed(3) + ')';
+      } else if (has) {
+        /* A day whose bets all voided: bets were placed, no money moved.
+           Neither green nor red — both would be a lie about the day. */
+        style += ';background:rgba(255,255,255,.06);border-color:rgba(255,255,255,.14)';
       }
       const label = has
         ? DS.format(new Date(TODAY.year, S.month, d)) + ', ' + M.signed(v)
@@ -128,7 +132,7 @@ export function renderCalendar() {
         (S.focus === d && has ? ' picked' : '') + '" style="' + style + '"' +
         (has ? ' data-day="' + d + '"' : ' disabled') +
         ' aria-label="' + esc(label) + '">' +
-        (has ? '<span class="amt ' + (v > 0 ? 'pos' : 'neg') + '" aria-hidden="true">' +
+        (has ? '<span class="amt ' + M.tone(v) + '" aria-hidden="true">' +
           M.compact(v) + '</span>' : '') +
         '<span class="dnum" aria-hidden="true">' + d + '</span></button>';
     }
@@ -150,7 +154,7 @@ export function renderCalendar() {
         (m === TODAY.month ? ' today' : '') + '" style="' + style + '"' +
         (v ? ' data-month="' + m + '"' : ' disabled') +
         ' aria-label="' + name + ', ' + (v ? M.signed(v) : 'no bets') + '">' +
-        (v ? '<span class="amt ' + (v > 0 ? 'pos' : 'neg') + '" aria-hidden="true">' +
+        (v ? '<span class="amt ' + M.tone(v) + '" aria-hidden="true">' +
           M.compact(v) + '</span>' : '') +
         '<span class="dnum" aria-hidden="true">' + name + '</span></button>';
     });
@@ -506,7 +510,7 @@ function miniCal(p, m) {
     let style = '';
     if (v !== undefined) {
       const r = Math.min(1, Math.abs(v) / max);
-      style = 'background:rgba(' + (v > 0 ? '134,239,172' : '252,165,165') + ',' +
+      style = 'background:rgba(' + (v >= 0 ? '134,239,172' : '252,165,165') + ',' +
         (0.14 + r * 0.3).toFixed(2) + ')';
     }
     h += '<i style="' + style + '"></i>';

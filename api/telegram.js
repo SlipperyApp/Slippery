@@ -16,6 +16,12 @@
 import { timingSafeEqual } from 'node:crypto';
 import { json, methodGuard, readJson, fail } from './_lib/http.js';
 import { db, ensureSchema, configured as dbConfigured } from './_lib/db.js';
+import { cashOutcome } from '../src/js/settlement.js';
+
+/* The free tier, counted here as well as in /api/bets — the bot is a second
+   door into the same ledger, and a limit enforced at only one door is not a
+   limit. */
+const FREE_SLIPS = 20;
 
 const API = token => 'https://api.telegram.org/bot' + token + '/';
 const MAX_PHOTO_BYTES = 8 * 1024 * 1024;
@@ -53,7 +59,7 @@ export default async function handler(req, res) {
       return json(res, 200, { ok: true });
     }
     if (message.photo || isImageDocument(message.document)) {
-      await handleSlip(token, chatId, message);
+      await handleSlip(token, chatId, message, message.from);
       return json(res, 200, { ok: true });
     }
     /* Everything else: say what the bot actually wants, rather than going
@@ -180,7 +186,7 @@ async function withAccount(token, chatId, from, fn) {
   await fn(rows[0]);
 }
 
-async function handleSlip(token, chatId, message) {
+async function handleSlip(token, chatId, message, from) {
   await send(token, chatId, 'Reading your slip…');
 
   const fileId = message.photo
@@ -231,30 +237,143 @@ async function handleSlip(token, chatId, message) {
     line('Bookmaker', f.bookmaker)
   ].join('\n');
 
+  /* Where the bet is in its life. Read off the slip, never inferred from
+     the presence of a returns figure — every slip prints one. */
+  const stageLine = f.stage === 'settled' ? '\nAlready settled on the slip.'
+    : f.stage === 'inplay' ? '\nIn play. I will settle it at full time.'
+    : f.stage === 'prematch' ? '\nNot started. I will settle it at full time.'
+    : '';
+
+  /* Park the reading. A Telegram callback carries 64 bytes, which is not
+     enough to send a whole slip back, so Confirm gets a row id and reads
+     the rest from the database. Before this the button replied "Logged"
+     and stored nothing. */
+  let draftId = null;
+  if (!missing.length && dbConfigured()) {
+    try {
+      await ensureSchema();
+      const rows = await db()`
+        SELECT id FROM users WHERE telegram_id = ${from && from.id} AND deleted_at IS NULL`;
+      if (rows.length) {
+        const draft = await db()`
+          INSERT INTO slip_drafts (user_id, chat_id, fields)
+          VALUES (${rows[0].id}, ${chatId}, ${JSON.stringify(f)}) RETURNING id`;
+        draftId = draft[0].id;
+      }
+    } catch (err) {
+      console.error('[slippery] could not park slip draft:', err.message);
+    }
+  }
+
+  const keyboard = missing.length
+    ? [[{ text: 'Edit', callback_data: 'edit' }, { text: 'Retake', callback_data: 'retake' }]]
+    : draftId
+      ? [[{ text: 'Confirm', callback_data: 'ok:' + draftId }, { text: 'Discard', callback_data: 'no:' + draftId }]]
+      : [[{ text: 'Edit', callback_data: 'edit' }]];
+
   await send(token, chatId,
-    (missing.length ? '*Read it, but some fields are missing.*\n\n' : '*Slip read.*\n\n') + body +
+    (missing.length ? '*Read it, but some fields are missing.*\n\n' : '*Slip read.*\n\n') + body + stageLine +
     (missing.length
       ? '\n\nI left ' + missing.join(', ') + ' blank rather than guess. ' +
         'Tap Edit to fill them in, or send a clearer photo.'
-      : '\n\nConfirm to log it, or Edit to change something.'),
-    {
-      inline_keyboard: [[
-        { text: missing.length ? '✏️ Edit' : '✅ Confirm', callback_data: missing.length ? 'edit' : 'confirm' },
-        { text: missing.length ? '🔁 Retake' : '✏️ Edit', callback_data: missing.length ? 'retake' : 'edit' }
-      ]]
-    });
+      : draftId
+        ? '\n\nConfirm to log it. Nothing is saved until you do.'
+        : '\n\nLink this chat from Settings and I can log it for you.'),
+    { inline_keyboard: keyboard });
 }
 
 async function handleCallback(token, callback) {
   const chatId = callback.message && callback.message.chat && callback.message.chat.id;
   await tg(token, 'answerCallbackQuery', { callback_query_id: callback.id });
   if (!chatId) return;
+
+  const data = String(callback.data || '');
+  if (data.startsWith('ok:')) return confirmDraft(token, chatId, data.slice(3), callback.from);
+  if (data.startsWith('no:')) {
+    if (dbConfigured()) {
+      try { await db()`DELETE FROM slip_drafts WHERE id = ${data.slice(3)}`; } catch { /* already gone */ }
+    }
+    await send(token, chatId, 'Discarded. Nothing was logged.');
+    return;
+  }
+
   const replies = {
-    confirm: 'Logged. It is on your calendar now, and I will settle it when the game finishes.',
     edit: 'Send the corrected value as a message, for example `stake 25` or `odds 2.10`.',
     retake: 'Send a clearer photo whenever you are ready.'
   };
-  await send(token, chatId, replies[callback.data] || 'Done.');
+  await send(token, chatId, replies[data] || 'Done.');
+}
+
+/* Turn a parked reading into a real bet. The one place the bot writes to
+   the ledger, so it is the one place the free tier and the settled-slip
+   rules have to hold — and they are the same rules /api/bets applies. */
+async function confirmDraft(token, chatId, draftId, from) {
+  if (!dbConfigured()) {
+    await send(token, chatId, 'This deployment has no database yet, so I cannot log that.');
+    return;
+  }
+  try {
+    await ensureSchema();
+    const sql = db();
+    const rows = await sql`
+      SELECT d.id, d.fields, d.user_id, u.plan
+      FROM slip_drafts d JOIN users u ON u.id = d.user_id
+      WHERE d.id = ${draftId} AND u.deleted_at IS NULL`;
+    if (!rows.length) { await send(token, chatId, 'That slip has already been dealt with.'); return; }
+
+    const { fields: f, user_id: userId, plan } = rows[0];
+    if ((plan || 'free') === 'free') {
+      const used = await sql`SELECT count(*)::int AS n FROM bets WHERE user_id = ${userId}`;
+      if (used[0].n >= FREE_SLIPS) {
+        await send(token, chatId, 'That is all ' + FREE_SLIPS +
+          ' free slips used. Upgrade in the app and send it again.');
+        return;
+      }
+    }
+
+    const stake = Math.round(Number(f.stake) * 100);
+    const odds = f.odds == null ? null : Number(f.odds);
+    const result = f.result && f.result !== 'open' ? f.result : null;
+    /* Profit from the returns the slip printed, not recomputed from the
+       odds: on a partially cashed out or each-way slip the printed figure
+       is right and the arithmetic is not. */
+    const returns = f.returns == null ? null : Math.round(Number(f.returns) * 100);
+    let outcome = null, profit = null;
+    if (result) {
+      outcome = result === 'cashed_out'
+        ? cashOutcome((returns == null ? stake : returns) - stake)
+        : ['won', 'lost', 'void'].includes(result) ? result : null;
+      profit = returns != null ? returns - stake
+        : result === 'lost' ? -stake
+        : result === 'void' ? 0
+        : odds ? Math.round(stake * (odds - 1)) : null;
+      if (profit == null) outcome = null;
+    }
+
+    await sql`
+      INSERT INTO bets (user_id, event, selection, market, bookmaker, odds, stake_pence,
+                        profit_pence, outcome, status, placed_at, settled_at,
+                        settle_reason, source)
+      VALUES (${userId}, ${f.event || null}, ${f.selection || null}, ${f.market || null},
+              ${f.bookmaker || null}, ${odds}, ${stake},
+              ${outcome ? profit : null}, ${outcome},
+              ${outcome ? 'settled' : 'pending'}, now(),
+              ${outcome ? new Date() : null},
+              ${outcome ? 'Result read from the slip' : null}, 'telegram')`;
+    await sql`DELETE FROM slip_drafts WHERE id = ${draftId}`;
+
+    const net = await sql`
+      SELECT COALESCE(sum(profit_pence), 0)::int AS net, count(*)::int AS n
+      FROM bets WHERE user_id = ${userId} AND settled_at::date = now()::date`;
+
+    await send(token, chatId, outcome
+      ? 'Logged as *' + outcome.replace('cash-', 'cashed ') + '*, ' + money(profit) +
+        '.\n\nToday: *' + money(net[0].net) + '* across ' + net[0].n + ' settled bets.'
+      : 'Logged. It is on your calendar now, and I will settle it when the game finishes.');
+  } catch (err) {
+    console.error('[slippery] confirmDraft failed:', err.message);
+    await send(token, chatId, 'Something went wrong saving that. Nothing was logged — try again.');
+  }
 }
 
 /* ---- Telegram helpers ---- */

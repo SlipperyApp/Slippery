@@ -132,6 +132,21 @@ export async function ensureSchema() {
     )`;
   await sql`CREATE INDEX IF NOT EXISTS slips_purge_idx ON slips (purge_after)`;
 
+  /* A slip read from Telegram, waiting for the user to press Confirm.
+     Telegram callbacks carry at most 64 bytes, which is not enough to send
+     a whole reading back — so the reading is parked here and the callback
+     carries only this row's id. Without it the bot's Confirm button had
+     nothing to log and the bet was silently dropped. */
+  await sql`
+    CREATE TABLE IF NOT EXISTS slip_drafts (
+      id         uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+      user_id    uuid NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      chat_id    bigint,
+      fields     jsonb NOT NULL,
+      created_at timestamptz NOT NULL DEFAULT now()
+    )`;
+  await sql`CREATE INDEX IF NOT EXISTS slip_drafts_user_idx ON slip_drafts (user_id, created_at DESC)`;
+
   _ready = true;
 }
 
