@@ -12,8 +12,11 @@
     "@neondatabase/serverless": "^0.10.4"
   },
   "devDependencies": {
-    "playwright-core": "^1.49.1",
-    "axe-core": "^4.10.2"
+    "axe-core": "^4.10.2",
+    "esbuild": "^0.28.2",
+    "playwright-core": "^1.49.1"
   },
-  "engines": { "node": ">=20" }
+  "engines": {
+    "node": ">=20"
+  }
 }

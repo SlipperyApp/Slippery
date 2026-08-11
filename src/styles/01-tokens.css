@@ -1,0 +1,80 @@
+/* ============================================================
+   TOKENS
+   Themes only ever change hue. Profit green and loss red are
+   semantic and identical in every theme — locked by the brief.
+   No theme accent may sit near either, which is why there is no
+   green or red theme.
+   ============================================================ */
+:root{
+  /* semantic, never theme-dependent */
+  --pos:#86EFAC;
+  --neg:#FCA5A5;
+  --warn:#F59E0B;
+
+  /* theme: periwinkle */
+  --p:#5D76CB;          /* primary */
+  --s:#7DD3FC;          /* secondary / link */
+  --a:#F59E0B;          /* attention */
+  --bg:#0B1020;
+  --glow:#182238;
+  --orb1:93,118,203;
+  --orb2:56,189,248;
+  --orb3:143,199,192;
+
+  /* text */
+  --t1:#F1F5F9;
+  --t2:#98A6BC;
+  --t3:#8B99B0;
+
+  /* surfaces */
+  --c1:rgba(255,255,255,.045);
+  --c2:rgba(255,255,255,.075);
+  --e1:rgba(255,255,255,.10);
+  --e2:rgba(255,255,255,.055);
+  --card:rgba(19,27,45,.66);
+  --card-hi:rgba(255,255,255,.055);
+
+  /* type */
+  --fd:'Fraunces',Georgia,'Times New Roman',serif;
+  --fu:'Schibsted Grotesk',system-ui,-apple-system,sans-serif;
+  --fm:'Spline Sans Mono',ui-monospace,Menlo,monospace;
+
+  /* rhythm — everything is a multiple of 4 */
+  --r:16px;
+  --r-sm:10px;
+  --r-lg:22px;
+
+  /* motion */
+  --tf:140ms;
+  --tb:240ms;
+  --ts:420ms;
+  --ez:cubic-bezier(.22,.61,.36,1);
+  --ex:cubic-bezier(.16,1,.3,1);
+  --eg:cubic-bezier(.34,1.4,.64,1);
+}
+
+html[data-theme=graphite]{
+  --p:#7C8DA6;--s:#B4C4DA;--a:#FBBF24;
+  --bg:#101419;--glow:#1E2530;
+  --orb1:124,141,166;--orb2:180,196,218;--orb3:150,160,175;
+  --card:rgba(28,34,44,.68);
+}
+html[data-theme=ink]{
+  --p:#7C79A0;--s:#B3AAD8;--a:#7DD3FC;
+  --bg:#08080C;--glow:#16161F;
+  --orb1:124,121,160;--orb2:179,170,216;--orb3:106,102,140;
+  --card:rgba(21,21,29,.70);
+}
+html[data-theme=tide]{
+  --p:#3E93B5;--s:#8FD4EC;--a:#FBBF24;
+  --bg:#061620;--glow:#123039;
+  --orb1:62,147,181;--orb2:143,212,236;--orb3:80,170,170;
+  --card:rgba(17,41,52,.68);
+}
+html[data-theme=chalk]{
+  --p:#A8998A;--s:#EADFC9;--a:#7DD3FC;
+  --bg:#17140F;--glow:#2C2820;
+  --orb1:168,153,138;--orb2:234,223,201;--orb3:150,140,120;
+  --card:rgba(41,37,29,.70);
+  --t2:#B4A996;--t3:#9E9382;
+}

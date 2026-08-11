@@ -1,0 +1,101 @@
+/* ============================================================
+   SHELL — header, bottom nav, view transitions
+   BACKDROP-FILTER BUDGET: exactly two elements in the whole app
+   carry one, .topbar and .tabbar, and only one topbar variant is
+   ever in the DOM tree at a time. iPhone stutters past ~3.
+   ============================================================ */
+.topbar{
+  position:sticky;top:0;z-index:40;
+  display:flex;align-items:center;justify-content:space-between;gap:12px;
+  padding:10px 16px;
+  background:color-mix(in srgb,var(--bg) 74%,transparent);
+  border-bottom:1px solid var(--e2);
+  -webkit-backdrop-filter:blur(18px) saturate(150%);
+  backdrop-filter:blur(18px) saturate(150%);
+  transition:box-shadow var(--tb) var(--ez),border-color var(--tb);
+  &.scrolled{box-shadow:0 8px 26px rgba(0,0,0,.34);border-bottom-color:var(--e1)}}
+
+.tabbar{
+  position:fixed;inset:auto 0 0 0;z-index:40;
+  display:none;justify-content:space-around;
+  padding:6px 8px calc(6px + env(safe-area-inset-bottom));
+  background:color-mix(in srgb,var(--bg) 84%,transparent);
+  border-top:1px solid var(--e1);
+  -webkit-backdrop-filter:blur(20px) saturate(150%);
+  backdrop-filter:blur(20px) saturate(150%)}
+body.in-app .tabbar{display:flex}
+.tabbar button{
+  display:flex;flex-direction:column;align-items:center;gap:3px;
+  color:var(--t3);font-size:10.5px;font-weight:550;
+  padding:7px 18px;border-radius:12px;min-height:48px;
+  transition:color var(--tb),background var(--tb);
+  & svg{width:21px;height:21px;transition:transform var(--tb) var(--eg)}
+  &[aria-current]{color:var(--s);background:rgba(var(--orb2),.12);
+    & svg{transform:translateY(-2px)}}}
+
+.brand{
+  display:flex;align-items:center;gap:9px;
+  font-family:var(--fd);font-weight:700;font-size:18px;letter-spacing:-.03em;
+  padding:4px;border-radius:10px;
+  & .mark{width:28px;height:28px;border-radius:9px;flex:0 0 auto;
+    background:linear-gradient(140deg,var(--p),var(--s));
+    box-shadow:inset 0 1px 0 rgba(255,255,255,.3);
+    transition:transform 480ms var(--eg)}
+  &:hover .mark{transform:rotate(-8deg) scale(1.07)}
+  & i{font-style:normal;background:linear-gradient(112deg,var(--p),var(--s));
+    -webkit-background-clip:text;background-clip:text;color:transparent}}
+.topbar-right{display:flex;align-items:center;gap:6px}
+
+body.in-app .site-only{display:none}
+body:not(.in-app) .app-only{display:none}
+
+/* views */
+.view{display:none;padding:18px 0 34px;
+  &.on{display:block;animation:viewin var(--ts) var(--ex)}}
+body.in-app .view.on{padding-bottom:92px}
+@keyframes viewin{from{opacity:0;transform:translate3d(0,10px,0)}to{opacity:1;transform:none}}
+
+/* scroll reveal */
+.reveal{opacity:0;transform:translate3d(0,16px,0);
+  transition:opacity var(--ts) var(--ez),transform var(--ts) var(--ez);
+  &.shown{opacity:1;transform:none}}
+@media (prefers-reduced-motion:reduce){.reveal{opacity:1;transform:none}}
+
+/* proximity snap on the landing only. Mandatory snap traps users, so it
+   was tried and rejected; proximity gives the same rhythm without the trap. */
+html.snap{scroll-snap-type:y proximity;scroll-behavior:smooth}
+html.snap .snap-point{scroll-snap-align:start;scroll-margin-top:62px}
+@media (prefers-reduced-motion:reduce){html.snap{scroll-snap-type:none;scroll-behavior:auto}}
+
+/* toasts */
+.toasts{position:fixed;inset:auto 0 0 0;z-index:60;
+  display:flex;flex-direction:column;align-items:center;gap:7px;
+  padding:0 16px calc(80px + env(safe-area-inset-bottom));pointer-events:none}
+body:not(.in-app) .toasts{padding-bottom:calc(18px + env(safe-area-inset-bottom))}
+.toast{
+  max-width:420px;width:100%;font-size:13.5px;padding:11px 15px;border-radius:12px;
+  background:color-mix(in srgb,var(--glow) 82%,var(--bg));
+  border:1px solid var(--e1);box-shadow:0 12px 30px rgba(0,0,0,.46);
+  animation:toastin 240ms var(--ex);
+  &.leaving{animation:toastout 200ms var(--ez) forwards}}
+@keyframes toastin{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
+@keyframes toastout{to{opacity:0;transform:translateY(8px)}}
+
+/* bottom sheet. Deliberately opaque: a third backdrop-filter here is
+   what tipped scrolling into stutter on a real iPhone. */
+.scrim{position:fixed;inset:0;z-index:50;background:rgba(4,8,16,.62);display:none;
+  &.on{display:block;animation:fadein 200ms var(--ez)}}
+@keyframes fadein{from{opacity:0}to{opacity:1}}
+.sheet{
+  position:fixed;inset:auto 0 0 0;z-index:51;
+  max-height:76svh;overflow-y:auto;overscroll-behavior:contain;
+  border-radius:22px 22px 0 0;
+  padding:14px 16px calc(20px + env(safe-area-inset-bottom));
+  display:none;
+  background:color-mix(in srgb,var(--glow) 76%,var(--bg));
+  border:1px solid var(--e1);border-bottom:0;
+  box-shadow:0 -18px 50px rgba(0,0,0,.5);
+  &.on{display:block;animation:sheetup 320ms var(--ex)}
+  & .grip{width:36px;height:4px;border-radius:3px;background:rgba(255,255,255,.24);
+    margin:0 auto 12px}}
+@keyframes sheetup{from{transform:translateY(100%)}to{transform:none}}

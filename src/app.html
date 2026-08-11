@@ -1,0 +1,905 @@
+<a class="skip" href="#main">Skip to content</a>
+
+<!-- The living background. Everything inside is decorative and contained. -->
+<div class="sky" aria-hidden="true">
+  <div class="sky-wash"></div>
+  <div class="sky-orb o1"></div>
+  <div class="sky-orb o2"></div>
+  <div class="sky-orb o3"></div>
+  <div class="sky-silk">
+    <svg viewBox="0 0 1200 620" preserveAspectRatio="none" focusable="false">
+      <defs>
+        <linearGradient id="silkA" x1="0" y1="0" x2="1" y2="0">
+          <stop offset="0" stop-color="#5D76CB"/><stop offset=".4" stop-color="#38BDF8"/>
+          <stop offset=".75" stop-color="#8FC7C0"/><stop offset="1" stop-color="#8B5CF6"/>
+        </linearGradient>
+        <linearGradient id="silkB" x1="0" y1="0" x2="1" y2="0">
+          <stop offset="0" stop-color="#8B5CF6"/><stop offset=".55" stop-color="#5D76CB"/>
+          <stop offset="1" stop-color="#8FC7C0"/>
+        </linearGradient>
+      </defs>
+      <!-- Two nested groups on purpose: the outer one carries scroll
+           parallax from motion.js, the inner one carries the CSS drift
+           keyframe. On one element they would overwrite each other. -->
+      <g data-parallax="0.12"><g class="band1">
+        <path d="M-120,300 C160,175 340,430 620,300 C900,175 1060,415 1340,285 L1340,460 C1060,590 900,350 620,478 C340,606 160,366 -120,494 Z" fill="url(#silkA)"/>
+      </g></g>
+      <g data-parallax="-0.07"><g class="band2">
+        <path d="M-120,175 C180,80 340,320 660,190 C980,64 1120,300 1340,175 L1340,285 C1120,412 980,175 660,300 C340,430 180,190 -120,300 Z" fill="url(#silkB)" opacity=".7"/>
+      </g></g>
+    </svg>
+  </div>
+  <div class="sky-grain"></div>
+  <div class="sky-vig"></div>
+</div>
+
+<header class="topbar site-only" id="topbarSite">
+  <button class="brand" data-nav="landing" aria-label="Slippery home">
+    <span class="mark" aria-hidden="true"></span><span>Slipp<i>ery</i></span>
+  </button>
+  <div class="topbar-right">
+    <nav class="anchors" aria-label="Page sections">
+      <button data-anchor="secHow">How</button>
+      <button data-anchor="secGet">Features</button>
+      <button data-anchor="secFaq">FAQ</button>
+    </nav>
+    <button class="btn primary small" data-nav="setup">Start free</button>
+  </div>
+</header>
+
+<header class="topbar app-only" id="topbarApp">
+  <button class="brand" data-nav="landing" aria-label="Slippery home">
+    <span class="mark" aria-hidden="true"></span><span>Slipp<i>ery</i></span>
+  </button>
+  <button class="pillbtn link" data-nav="settings">
+    <svg viewBox="0 0 24 24" fill="currentColor" width="12" height="12" aria-hidden="true"><path d="M21.9 4.3l-3.1 14.9c-.2 1-.9 1.3-1.8.8l-4.9-3.6-2.4 2.3c-.3.3-.5.5-1 .5l.4-5 9.1-8.2c.4-.4-.1-.6-.6-.2L4.3 13.2l-4.8-1.5c-1-.3-1-1 .2-1.5L20.6 2.3c.9-.3 1.6.2 1.3 2z"/></svg>
+    Linked
+  </button>
+</header>
+
+<main id="main">
+<p class="sr" aria-live="polite" id="announcer"></p>
+
+<!-- ══════════════ LANDING ══════════════ -->
+<section class="view on" id="landing" aria-label="Home">
+  <div class="hero page-lede">
+    <div class="wrap">
+      <p class="eyebrow reveal">Bet slip tracker</p>
+      <h1 id="heroHeading"></h1>
+      <p class="sell reveal">Send a slip when you place it. Slippery reads it, tracks it, and settles it into your profit and loss.</p>
+      <div class="herocta reveal">
+        <button class="btn primary" data-nav="setup">Start free</button>
+        <button class="btn ghost" data-nav="howto">See how it works</button>
+      </div>
+      <div class="badges reveal">
+        <span class="badge-pill">
+          <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M17.05 12.5c0-2.1 1.7-3.1 1.8-3.2-1-1.4-2.5-1.6-3-1.7-1.3-.1-2.5.8-3.1.8-.6 0-1.6-.8-2.7-.8-1.4 0-2.7.8-3.4 2-1.5 2.5-.4 6.2 1 8.2.7 1 1.5 2.1 2.6 2 1-.04 1.4-.65 2.7-.65s1.6.65 2.7.63c1.1-.02 1.8-1 2.5-2 .8-1.1 1.1-2.2 1.1-2.3-.02-.01-2.2-.85-2.2-3.03zM15 5.4c.6-.7 1-1.7.9-2.7-.85.04-1.9.57-2.5 1.27-.55.62-1.03 1.63-.9 2.6.95.07 1.9-.48 2.5-1.17z"/></svg>
+          <span><small>Coming soon to the</small><b>App Store</b></span>
+        </span>
+        <span class="badge-pill"><b>20 free slips</b></span>
+      </div>
+      <div class="card previewcard flush reveal">
+        <div class="gradientline"></div>
+        <div style="padding:15px">
+          <p class="eyebrow" style="color:var(--t2)">Net this month</p>
+          <p class="bignum pos m" id="previewNet"></p>
+          <svg viewBox="0 0 300 66" preserveAspectRatio="none" style="width:100%;display:block;margin-top:10px" role="img" aria-label="Profit trending upward across the month">
+            <defs><linearGradient id="sparkFill" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0" stop-color="#38BDF8" stop-opacity=".28"/>
+              <stop offset="1" stop-color="#38BDF8" stop-opacity="0"/></linearGradient></defs>
+            <path id="previewArea" fill="url(#sparkFill)"/>
+            <path id="previewLine" fill="none" stroke="#8B9DE0" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+          <div id="previewRows" style="margin-top:10px"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="wrap">
+    <div class="section snap-point" id="secHow">
+      <p class="eyebrow reveal">How it works</p>
+      <h2 class="reveal">Capture it when you place it.</h2>
+      <p class="lede reveal">Forward a slip to the bot the moment you place the bet. Slippery reads the stake, odds and selection off the image, watches the game, and settles it for you. Logging at placement is the whole point: it is what stops a tracker quietly becoming a highlight reel.</p>
+      <button class="btn ghost reveal" style="margin-top:16px" data-nav="howto">Watch the walkthrough</button>
+    </div>
+
+    <div class="section snap-point" id="secGet">
+      <p class="eyebrow reveal">What you get</p>
+      <h2 class="reveal">Your real numbers.</h2>
+      <div class="card feature reveal">
+        <div class="glyph" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="17" rx="2"/><path d="M3 9h18M8 2v4M16 2v4"/></svg></div>
+        <h3>Profit calendar and analytics</h3>
+        <p>Green days, red days, a target with a pace marker, and profit split by bookmaker, market and tipster.</p>
+      </div>
+      <div class="card feature premium reveal">
+        <div class="glyph" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 21h8M12 17v4"/><path d="M7 4h10v5a5 5 0 0 1-10 0z"/><path d="M17 5h3v2a3 3 0 0 1-3 3M7 5H4v2a3 3 0 0 0 3 3"/></svg></div>
+        <h3>Groups and following</h3>
+        <p>Start a group, follow people whose numbers you rate, and choose who sees yours. Ranked in units, so nobody sees anyone's stake sizes.</p>
+      </div>
+    </div>
+
+    <div class="card telegramcta reveal snap-point">
+      <div class="glyph" aria-hidden="true"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M21.9 4.3l-3.1 14.9c-.2 1-.9 1.3-1.8.8l-4.9-3.6-2.4 2.3c-.3.3-.5.5-1 .5l.4-5 9.1-8.2c.4-.4-.1-.6-.6-.2L4.3 13.2l-4.8-1.5c-1-.3-1-1 .2-1.5L20.6 2.3c.9-.3 1.6.2 1.3 2z"/></svg></div>
+      <h2>It is already in your Telegram</h2>
+      <p>Forward a slip, tap confirm, done.</p>
+      <button class="btn primary" data-nav="bot">Preview the bot</button>
+    </div>
+
+    <div class="section snap-point" id="secFaq">
+      <p class="eyebrow reveal">Questions</p>
+      <h2 class="reveal">The ones people ask.</h2>
+      <div class="reveal" id="homeFaq" style="margin-top:14px"></div>
+    </div>
+
+    <div class="founder reveal">
+      <span class="ring" aria-hidden="true">Z</span>
+      <span class="role">Founded by</span>
+      <span class="nm"><span translate="no">Zhang et al.</span>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" role="img" aria-label="Verified"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="M9 12l2 2 4-4"/></svg></span>
+    </div>
+
+    <div class="footer">
+      <nav aria-label="Footer">
+        <button data-nav="pricing">Pricing</button>
+        <button data-nav="howto">How it works</button>
+        <button data-nav="setup">Create account</button>
+        <button data-nav="bot">Telegram bot</button>
+        <button data-nav="help">Help</button>
+        <button data-nav="terms">Terms</button>
+        <button data-nav="privacy">Privacy</button>
+      </nav>
+      <p class="fineprint" style="margin:0 auto">Slippery tracks bets. It does not accept them and never handles money.
+        18+ only. When the fun stops, stop. <a href="https://www.begambleaware.org" rel="noopener noreferrer" target="_blank" style="color:var(--s)">BeGambleAware.org</a></p>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════ SETUP ══════════════ -->
+<section class="view" id="setup" aria-label="Create your account">
+  <div class="wrap nar">
+    <h1 class="sr">Create your Slippery account</h1>
+    <div class="wizbar" id="wizbar" aria-hidden="true"></div>
+
+    <div class="step on" data-step="0">
+      <div class="card settingcard">
+        <div class="stepglyph" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="8" r="4"/><path d="M4 21v-1a6 6 0 0 1 6-6h4a6 6 0 0 1 6 6v1"/></svg></div>
+        <div class="seg" id="authSeg" role="group" aria-label="Account" style="margin-bottom:16px">
+          <button class="on" data-auth="up" aria-pressed="true">Create account</button>
+          <button data-auth="in" aria-pressed="false">Log in</button>
+        </div>
+
+        <div id="authSignup">
+          <h2>Create your account</h2>
+          <p class="stepnote">One minute and you are in.</p>
+          <label class="label" for="suEmail">Email</label>
+          <input class="field" id="suEmail" type="email" autocomplete="email" spellcheck="false" placeholder="you@example.com" aria-describedby="suEmailErr">
+          <p class="formerr" id="suEmailErr" hidden></p>
+          <label class="label" for="suPw">Password</label>
+          <input class="field" id="suPw" type="password" autocomplete="new-password" placeholder="Create a password…" aria-describedby="suPwErr">
+          <p class="formerr" id="suPwErr" hidden></p>
+          <ul class="pwrules" id="pwRules" aria-live="polite">
+            <li data-rule="len"><i aria-hidden="true"></i>12 characters or more</li>
+            <li data-rule="cap"><i aria-hidden="true"></i>One capital letter</li>
+            <li data-rule="sym"><i aria-hidden="true"></i>One special character</li>
+          </ul>
+          <label class="label" for="suPw2">Confirm password</label>
+          <input class="field" id="suPw2" type="password" autocomplete="new-password" placeholder="Type it again…" aria-describedby="suPw2Err">
+          <p class="formerr" id="suPw2Err" hidden></p>
+          <label class="label" for="suName">Display name <span class="hint">permanent, 20 max</span></label>
+          <div style="display:flex;gap:8px">
+            <input class="field" id="suName" autocomplete="username" spellcheck="false" maxlength="20" placeholder="For example DariusOdds…" aria-describedby="suNameErr nameStatus">
+            <button class="btn ghost" id="suggestName" style="padding:0 15px;white-space:nowrap">Suggest</button>
+          </div>
+          <p class="stepnote" id="nameStatus" aria-live="polite" style="margin:8px 0 0;font-size:12.5px">Three characters or more, letters and numbers.</p>
+          <p class="formerr" id="suNameErr" hidden></p>
+          <label class="fieldrow" for="ageOk" style="margin-top:14px;cursor:pointer">
+            <span class="lab">I am 18 or over<small>Slippery is strictly for adults</small></span>
+            <input type="checkbox" id="ageOk" style="width:22px;height:22px;flex:0 0 auto;accent-color:var(--p)">
+          </label>
+          <p class="formerr" id="ageOkErr" hidden></p>
+          <p class="fineprint" style="margin-top:12px">By continuing you agree to the
+            <button class="pillbtn link" style="padding:0;min-height:0;background:none;border:none" data-nav="terms">Terms</button> and
+            <button class="pillbtn link" style="padding:0;min-height:0;background:none;border:none" data-nav="privacy">Privacy Policy</button>.</p>
+        </div>
+
+        <div id="authLogin" hidden>
+          <h2>Welcome back</h2>
+          <p class="stepnote">Log in to pick up where you left off.</p>
+          <label class="label" for="liEmail">Email</label>
+          <input class="field" id="liEmail" type="email" autocomplete="email" spellcheck="false" placeholder="you@example.com" aria-describedby="liEmailErr">
+          <p class="formerr" id="liEmailErr" hidden></p>
+          <label class="label" for="liPw">Password</label>
+          <input class="field" id="liPw" type="password" autocomplete="current-password" placeholder="Your password…" aria-describedby="liPwErr">
+          <p class="formerr" id="liPwErr" hidden></p>
+          <button class="pillbtn link" id="forgotPw" style="margin-top:13px">Forgotten your password?</button>
+        </div>
+      </div>
+      <div class="stepnav"><button class="btn primary" id="authGo" data-wizard="1">Continue</button></div>
+    </div>
+
+    <div class="step" data-step="1">
+      <div class="card settingcard">
+        <div class="stepglyph" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 6h16v12H4z"/><path d="M4 7l8 6 8-6"/></svg></div>
+        <h2>Check your email</h2>
+        <p class="stepnote">We sent a six digit code to <b id="verifyMail">your inbox</b>. It expires in ten minutes.</p>
+        <label class="sr" for="verifyCode">Verification code</label>
+        <input class="field codeinput" id="verifyCode" inputmode="numeric" maxlength="6" autocomplete="one-time-code" placeholder="000000" aria-describedby="verifyErr">
+        <p class="formerr" id="verifyErr" hidden></p>
+        <div class="notice" id="verifyHint" hidden></div>
+        <div style="display:flex;gap:9px;margin-top:13px">
+          <button class="pillbtn link" id="verifyResend">Resend code</button>
+          <button class="pillbtn" id="verifyChange">Change email</button>
+        </div>
+      </div>
+      <div class="stepnav">
+        <button class="btn ghost" data-wizard="-1">Back</button>
+        <button class="btn primary" data-wizard="1">Verify</button>
+      </div>
+    </div>
+
+    <div class="step" data-step="2">
+      <div class="card settingcard">
+        <div class="stepglyph" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 1v22M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg></div>
+        <h2>Units and target</h2>
+        <p class="stepnote">A unit is your standard stake. The target is what you are chasing.</p>
+        <p class="label">Unit size</p>
+        <div class="unitrow" id="unitRowSetup" role="group" aria-label="Unit size">
+          <button data-unit="1000">£10</button><button data-unit="2000">£20</button>
+          <button data-unit="5000">£50</button><button data-unit="10000" aria-pressed="true">£100</button>
+          <button data-unit="custom">Custom</button>
+        </div>
+        <label class="sr" for="unitCustomSetup">Custom unit</label>
+        <input class="field" id="unitCustomSetup" inputmode="decimal" placeholder="For example 35…" hidden>
+        <p class="fineprint" style="margin-top:8px" id="unitExample"></p>
+        <div class="fieldrow" style="margin-top:13px">
+          <span class="lab" id="targetLabel">Monthly target</span>
+          <label class="sr" for="targetSetup">Target amount</label>
+          <input class="field compact m" id="targetSetup" inputmode="decimal" value="2500">
+        </div>
+        <div class="targetlist" id="targetListSetup"></div>
+      </div>
+      <div class="stepnav">
+        <button class="btn ghost" data-wizard="-1">Back</button>
+        <button class="btn primary" data-wizard="1">Continue</button>
+      </div>
+    </div>
+
+    <div class="step" data-step="3">
+      <div class="card settingcard">
+        <div class="stepglyph" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg></div>
+        <h2>Bring your history</h2>
+        <p class="stepnote">Move it across and this becomes your only ledger.</p>
+        <div class="optionlist" id="migrateList"></div>
+      </div>
+      <div class="stepnav">
+        <button class="btn ghost" data-wizard="-1">Back</button>
+        <button class="btn primary" data-wizard="1">Continue</button>
+      </div>
+      <button class="btn ghost full" data-wizard="1" style="margin-top:9px">Skip for now</button>
+    </div>
+
+    <div class="step" data-step="4">
+      <div class="card settingcard">
+        <div class="stepglyph" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg></div>
+        <h2>Who can see your figures?</h2>
+        <p class="stepnote">You can change this whenever you like.</p>
+        <div class="optionlist" id="privacySetup"></div>
+      </div>
+      <div class="stepnav">
+        <button class="btn ghost" data-wizard="-1">Back</button>
+        <button class="btn primary" data-wizard="1">Continue</button>
+      </div>
+    </div>
+
+    <div class="step" data-step="5">
+      <div class="card settingcard">
+        <div class="stepglyph" aria-hidden="true"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M21.9 4.3l-3.1 14.9c-.2 1-.9 1.3-1.8.8l-4.9-3.6-2.4 2.3c-.3.3-.5.5-1 .5l.4-5 9.1-8.2c.4-.4-.1-.6-.6-.2L4.3 13.2l-4.8-1.5c-1-.3-1-1 .2-1.5L20.6 2.3c.9-.3 1.6.2 1.3 2z"/></svg></div>
+        <h2>Connect Telegram</h2>
+        <p class="stepnote">Forward slips and they land here.</p>
+        <p class="linkcode" translate="no" id="linkCode">SLIP-7F3A</p>
+        <button class="btn primary full" id="telegramLink">Open Telegram and link</button>
+        <div class="livedot" id="telegramLinked" hidden><i aria-hidden="true"></i><span>Linked</span></div>
+      </div>
+      <div class="stepnav">
+        <button class="btn ghost" data-wizard="-1">Back</button>
+        <button class="btn primary" data-wizard="1">Continue</button>
+      </div>
+      <button class="btn ghost full" data-wizard="1" style="margin-top:9px">Skip for now</button>
+    </div>
+
+    <div class="step" data-step="6">
+      <div class="card settingcard" style="text-align:center">
+        <svg class="tick" viewBox="0 0 60 60" role="img" aria-label="Setup complete"><circle cx="30" cy="30" r="26"/><path d="M18 31l8 8 16-17"/></svg>
+        <h2>You are set up</h2>
+        <p class="stepnote">One last thing, pick how it looks.</p>
+        <div style="text-align:left"><div class="swatches" id="swatchesSetup" role="group" aria-label="Colour scheme"></div></div>
+        <div style="text-align:left;margin-top:14px" id="setupSummary"></div>
+      </div>
+      <button class="btn primary full" data-nav="dash" style="margin-top:12px">Open dashboard</button>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════ WALKTHROUGH ══════════════ -->
+<section class="view" id="howto" aria-label="Walkthrough">
+  <div class="wrap nar page-lede">
+    <div class="reveal" style="margin-bottom:16px">
+      <p class="eyebrow">Walkthrough</p>
+      <h1 style="font-size:28px;margin-top:6px">See it work.</h1>
+      <p class="lede">The same figures you will see in the demo.</p>
+    </div>
+    <div class="phone reveal">
+      <div class="phone-shell">
+        <div class="phone-screen">
+          <div class="phone-top"><span class="l" id="sceneTitle">Telegram</span><span class="r" id="sceneValue"></span></div>
+          <div class="phone-body" id="sceneBody"></div>
+        </div>
+      </div>
+      <div class="playerbar">
+        <button class="playbtn" id="playToggle" aria-label="Play walkthrough"></button>
+        <div class="scrubber" id="scrubber" role="slider" tabindex="0" aria-label="Walkthrough position" aria-valuemin="0" aria-valuemax="18" aria-valuenow="0"><i id="scrubFill"></i></div>
+        <span class="m" style="font-size:10.5px;color:var(--t2)" id="playTime">0:00 / 0:18</span>
+      </div>
+      <p class="playercap" id="playerCaption"></p>
+      <div class="chapters" id="chapters"></div>
+    </div>
+    <div class="btnrow" style="margin-top:18px">
+      <button class="btn primary" data-nav="dash">Open the demo</button>
+      <button class="btn ghost" data-nav="setup">Start free</button>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════ PRICING ══════════════ -->
+<section class="view" id="pricing" aria-label="Pricing">
+  <div class="wrap nar page-lede">
+    <div class="reveal" style="text-align:center;margin-bottom:16px">
+      <p class="eyebrow">Pricing</p>
+      <h1 style="font-size:28px;margin-top:6px">Cheap on purpose.</h1>
+      <p class="mut" style="font-size:13.5px;margin-top:6px">Unlimited slips on any paid plan.</p>
+    </div>
+    <div id="planList"></div>
+    <p class="fineprint" style="margin-top:16px">Prices in GBP. Slippery is an analytics tool, not a bookmaker, and never handles stakes or winnings. 18+ only.</p>
+  </div>
+</section>
+
+<!-- ══════════════ DASHBOARD ══════════════ -->
+<section class="view" id="dash" aria-label="Dashboard">
+  <div class="wrap">
+    <h1 class="sr">Your dashboard</h1>
+    <div class="subnav"><div class="inner" id="subnav" role="tablist" aria-label="Dashboard sections">
+      <button role="tab" aria-selected="true" aria-controls="paneOverview" id="tabOverview" data-pane="overview">Overview</button>
+      <button role="tab" aria-selected="false" aria-controls="paneLedger" id="tabLedger" data-pane="ledger">Ledger</button>
+      <button role="tab" aria-selected="false" aria-controls="paneSocial" id="tabSocial" data-pane="social">Social</button>
+    </div></div>
+
+    <div class="pane on" id="paneOverview" role="tabpanel" aria-labelledby="tabOverview" tabindex="0">
+      <div class="card" id="newMonthCard" style="padding:15px;margin-bottom:10px;border-color:rgba(var(--orb2),.4);background:rgba(var(--orb2),.08)">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:9px">
+          <span class="eyebrow">New month</span>
+          <button class="pillbtn" id="newMonthDismiss" style="min-height:38px;min-width:38px;padding:4px 9px;justify-content:center" aria-label="Decide later">✕</button>
+        </div>
+        <p style="font-weight:600;font-size:15px;margin-top:7px" id="newMonthTitle"></p>
+        <p style="font-size:12.5px;color:var(--t2);margin-top:5px;line-height:1.55" id="newMonthBody"></p>
+        <div class="btnrow" style="margin-top:12px" id="newMonthActions">
+          <button class="btn primary small" id="newMonthKeep">Keep it</button>
+          <button class="btn ghost small" id="newMonthAdjust">Adjust</button>
+        </div>
+        <div class="addrow" style="margin-top:12px" id="newMonthEdit" hidden>
+          <label class="sr" for="newMonthInput">New target</label>
+          <input class="field" id="newMonthInput" inputmode="decimal" value="2500">
+          <button class="btn primary" id="newMonthSave">Save</button>
+        </div>
+      </div>
+
+      <div class="card flush" style="margin-bottom:10px">
+        <div class="headline">
+          <div class="top">
+            <span class="cap" id="headlineLabel">Net this month</span>
+            <div class="seg tight" id="periodSeg" role="group" aria-label="Period">
+              <button data-period="d">D</button><button data-period="w">W</button>
+              <button data-period="m" class="on">M</button><button data-period="a">All</button>
+            </div>
+          </div>
+          <p class="value pos m" id="headlineValue"></p>
+          <div class="strip">
+            <span>Bets <b id="statBets"></b></span>
+            <span>Units <b id="statUnits"></b></span>
+            <span>Turnover <b id="statTurnover"></b></span>
+          </div>
+          <div class="strip" id="statExtra" hidden>
+            <span>Win rate <b id="statWinRate"></b></span>
+            <span>Avg odds <b id="statAvgOdds"></b></span>
+            <span>ROI <b id="statRoi"></b></span>
+          </div>
+          <p class="imported" id="importedNote" hidden></p>
+        </div>
+        <div class="goal">
+          <div class="head"><span class="mut" id="goalLabel"></span><span class="pctval" id="goalPct"></span></div>
+          <div class="track"><span class="clip"><span class="fill" id="goalFill"></span></span><i class="pace" id="goalPace" aria-hidden="true"></i></div>
+          <div class="foot"><span id="goalEarned"></span><span id="goalPace2"></span></div>
+        </div>
+      </div>
+
+      <div class="card running" id="runningCard" style="margin-bottom:10px" hidden>
+        <button class="runhead" id="runToggle" aria-expanded="false" aria-controls="runList">
+          <span class="left"><span class="dot" aria-hidden="true"></span><b id="runCount"></b></span>
+          <span class="right"><span class="m" id="runRisk"></span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></span>
+        </button>
+        <div id="runList" hidden></div>
+      </div>
+
+      <div class="card pad" style="margin-bottom:10px">
+        <div class="calnav">
+          <button id="calPrev" aria-label="Previous month"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" aria-hidden="true"><path d="M15 18l-6-6 6-6"/></svg></button>
+          <div class="month" id="calTitle" aria-live="polite"></div>
+          <button id="calNext" aria-label="Next month"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></button>
+          <div class="seg tight" id="calMode" role="group" aria-label="Calendar range">
+            <button data-cal="m" class="on">M</button><button data-cal="y">Y</button>
+          </div>
+        </div>
+        <div class="dowrow" id="dowRow" aria-hidden="true"></div>
+        <div class="calgrid" id="calGrid"></div>
+        <div class="callegend">
+          <span><i style="background:#86EFAC"></i>Profitable</span>
+          <span><i style="background:#FCA5A5"></i>Losing</span>
+          <span><i class="swatch-none"></i>No bets</span>
+        </div>
+      </div>
+
+      <div class="kpis" id="kpiRow"></div>
+
+      <div class="card pad" style="margin-bottom:10px">
+        <div class="cardhead"><span class="title">Recent bets</span>
+          <button class="meta" id="viewAllBets" aria-expanded="false">View all</button></div>
+        <div class="betlist short" id="recentBets"></div>
+      </div>
+
+      <button class="card" id="moreToggle" aria-expanded="false" style="display:flex;width:100%;align-items:center;justify-content:space-between;padding:0 15px;min-height:48px;font-size:13.5px;font-weight:550;color:var(--t2)">
+        <span id="moreLabel">Show more</span><span class="switch" aria-hidden="true"></span>
+      </button>
+
+      <div id="moreBlock" hidden style="margin-top:12px">
+        <div class="kpis pair" id="kpiPair" style="margin-bottom:10px"></div>
+        <div class="card pad" style="margin-bottom:10px">
+          <div class="cardhead"><span class="title">Results</span><span class="meta scoped"></span></div>
+          <div class="stackbar" id="resultsBar"></div>
+          <div class="callegend" style="margin-top:10px" id="resultsKey"></div>
+        </div>
+        <div class="card pad">
+          <div class="cardhead"><span class="title">What paid</span><span class="meta scoped"></span></div>
+          <div class="barlist" id="paidBars"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="pane" id="paneLedger" role="tabpanel" aria-labelledby="tabLedger" tabindex="0">
+      <div class="notice">
+        <span>Showing <b class="scoped"></b></span>
+        <div class="seg tight" id="ledgerPeriod" role="group" aria-label="Ledger period">
+          <button data-period="d">D</button><button data-period="w">W</button>
+          <button data-period="m" class="on">M</button><button data-period="a">All</button>
+        </div>
+      </div>
+      <div class="seg" id="ledgerSeg" role="group" aria-label="Ledger view" style="margin-bottom:12px">
+        <button class="on" data-ledger="ledgerBets" aria-pressed="true">Bets</button>
+        <button data-ledger="ledgerAnalysis" aria-pressed="false">Analysis</button>
+      </div>
+
+      <div id="ledgerBets">
+        <div class="searchbox">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>
+          <label class="sr" for="betSearch">Search bets</label>
+          <input class="field" id="betSearch" type="search" placeholder="Search event, market or bookmaker…">
+        </div>
+        <div class="chiprow" id="betFilters" role="group" aria-label="Filter by outcome"></div>
+        <div class="card pad"><div id="ledgerList"></div></div>
+      </div>
+
+      <div id="ledgerAnalysis" hidden>
+        <div class="kpis" id="ledgerKpis" style="margin-bottom:11px"></div>
+        <div class="card pad" style="margin-bottom:10px">
+          <div class="cardhead"><span class="title">Results</span><span class="meta" id="settledCount"></span></div>
+          <div class="donutrow">
+            <div class="donut">
+              <svg viewBox="0 0 42 42" style="transform:rotate(-90deg)" role="img" aria-label="Result split">
+                <circle cx="21" cy="21" r="15.9" fill="none" stroke="rgba(255,255,255,.07)" stroke-width="4.5"/>
+                <circle id="ringWon" cx="21" cy="21" r="15.9" fill="none" stroke="#86EFAC" stroke-width="4.5" stroke-dasharray="0 100"/>
+                <circle id="ringLost" cx="21" cy="21" r="15.9" fill="none" stroke="#FCA5A5" stroke-width="4.5" stroke-dasharray="0 100"/>
+                <circle id="ringCash" cx="21" cy="21" r="15.9" fill="none" stroke="#F59E0B" stroke-width="4.5" stroke-dasharray="0 100"/>
+              </svg>
+              <div class="mid"><div><b id="winRateBig"></b><span>win rate</span></div></div>
+            </div>
+            <div id="resultLegend" style="display:flex;flex-direction:column;gap:7px;font-size:12.5px;flex:1;min-width:130px"></div>
+          </div>
+        </div>
+        <div class="card pad" style="margin-bottom:10px"><div class="cardhead"><span class="title">By bookmaker</span><span class="meta scoped"></span></div><div class="barlist" id="bookBars"></div></div>
+        <div class="card pad" style="margin-bottom:10px"><div class="cardhead"><span class="title">By market</span><span class="meta scoped"></span></div><div class="barlist" id="marketBars"></div></div>
+        <div class="card pad"><div class="cardhead"><span class="title">By tipster</span><button class="meta" data-nav="adv">Manage</button></div><div class="barlist" id="tipsterBars"></div></div>
+      </div>
+    </div>
+
+    <div class="pane" id="paneSocial" role="tabpanel" aria-labelledby="tabSocial" tabindex="0">
+      <div class="notice">
+        <span>Showing <b class="scoped"></b></span>
+        <div class="seg tight" id="socialPeriod" role="group" aria-label="Social period">
+          <button data-period="d">D</button><button data-period="w">W</button>
+          <button data-period="m" class="on">M</button><button data-period="a">All</button>
+        </div>
+      </div>
+      <div class="seg" id="socialSeg" role="group" aria-label="Social scope" style="margin-bottom:12px">
+        <button class="on" data-social="socialGroups" aria-pressed="true">Groups</button>
+        <button data-social="socialFollowing" aria-pressed="false">Following</button>
+        <button data-social="socialFollowers" aria-pressed="false">Followers</button>
+      </div>
+
+      <div id="socialGroups">
+        <div id="groupList"></div>
+        <div class="card pad" id="groupBoard" style="margin-top:2px"></div>
+        <p class="fineprint" style="margin:12px 0">Group members always see your units. Your privacy setting does not apply inside a group.</p>
+        <div class="btnrow">
+          <button class="btn primary" id="groupCreate">Create a group</button>
+          <button class="btn ghost" id="groupJoin">Join with a code</button>
+        </div>
+      </div>
+
+      <div id="socialFollowing" hidden>
+        <div class="searchbox">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>
+          <label class="sr" for="peopleSearch">Search people</label>
+          <input class="field" id="peopleSearch" type="search" placeholder="Find someone by name…">
+        </div>
+        <div id="followingSummary"></div>
+        <div class="card pad"><div id="followingList"></div></div>
+      </div>
+
+      <div id="socialFollowers" hidden>
+        <div id="followersSummary"></div>
+        <div class="card pad" style="margin-bottom:10px"><div id="followersList"></div></div>
+        <div class="card pad" style="text-align:center">
+          <div style="width:42px;height:42px;border-radius:13px;margin:0 auto 9px;display:grid;place-items:center;background:rgba(var(--orb2),.14);border:1px solid rgba(var(--orb2),.3)">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:20px;height:20px;color:var(--s)" aria-hidden="true"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="M9 12l2 2 4-4"/></svg>
+          </div>
+          <h3 style="font-size:14.5px">Get the verified tick</h3>
+          <p style="font-size:12.5px;color:var(--t2);margin:5px 0 12px">Send a batch of slips for review. Once checked, anyone following you sees your figures are real.</p>
+          <button class="btn primary full" id="applyVerify">Apply for verification</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════ PROFILE ══════════════ -->
+<section class="view" id="prof" aria-label="Profile">
+  <div class="wrap nar">
+    <h1 class="sr">Profile</h1>
+    <button class="pillbtn" id="profileBack" style="margin-bottom:13px">Back</button>
+    <div class="card pad" style="margin-bottom:10px">
+      <div style="display:flex;align-items:center;gap:13px">
+        <span class="avatar large" id="profileAvatar" aria-hidden="true"></span>
+        <div style="flex:1;min-width:0">
+          <p class="profilename" id="profileName"></p>
+          <p class="mut" id="profileSub" style="font-size:11.5px;line-height:1.5;margin-top:3px"></p>
+        </div>
+        <button class="btn primary small" id="profileFollow">Follow</button>
+      </div>
+    </div>
+    <div id="profileBody"></div>
+  </div>
+</section>
+
+<!-- ══════════════ IMPORT ══════════════ -->
+<section class="view" id="imp" aria-label="Import">
+  <div class="wrap nar">
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px;margin-bottom:14px">
+      <div><h1 style="font-size:23px">Import</h1>
+        <p class="mut" style="font-size:13px;margin-top:3px">Add slips, or bring across what you have.</p></div>
+      <span class="pillbtn locked m" id="slipCount"></span>
+    </div>
+    <div class="seg" id="importSeg" role="group" aria-label="Import method" style="margin-bottom:13px">
+      <button class="on" data-import="importUpload" aria-pressed="true">Upload</button>
+      <button data-import="importTotals" aria-pressed="false">Type totals</button>
+      <button data-import="importOther" aria-pressed="false">Other</button>
+    </div>
+
+    <div id="importUpload">
+      <button class="card dropzone" id="dropzone" type="button">
+        <span class="glyph" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 16V4M7 9l5-5 5 5M4 20h16"/></svg></span>
+        <span class="t">Drop a slip here, or tap to choose</span>
+        <span class="s">Screenshot, photo, PDF, CSV or Excel</span>
+      </button>
+      <label class="sr" for="slipFile">Choose a slip image</label>
+      <input type="file" id="slipFile" accept="image/png,image/jpeg,image/webp,image/heic,application/pdf" multiple hidden>
+      <div id="uploadResults"></div>
+      <div class="quadstat">
+        <div><div class="k">Ready</div><div class="v" id="readyCount">0</div></div>
+        <div><div class="k">Needs retake</div><div class="v" style="color:var(--a)" id="retakeCount">0</div></div>
+        <div><div class="k">Staked</div><div class="v m" id="importStaked">—</div></div>
+        <div><div class="k">Profit</div><div class="v m" id="importProfit">—</div></div>
+      </div>
+      <p class="eyebrow" style="margin:16px 0 9px">Review</p>
+      <div id="reviewList"></div>
+    </div>
+
+    <div id="importTotals" hidden>
+      <div class="card pad">
+        <div class="cardhead"><span class="title">Type your totals</span><span class="meta" id="totalsSummary">—</span></div>
+        <p class="fineprint" style="margin-bottom:11px">Pick the period you have figures for.</p>
+        <div class="seg" id="totalsSeg" role="group" aria-label="Totals period">
+          <button data-totals="day">Daily</button><button data-totals="week">Weekly</button>
+          <button data-totals="month" class="on" aria-pressed="true">Monthly</button><button data-totals="year">Yearly</button>
+        </div>
+        <div class="totalsgrid" id="totalsGrid"></div>
+        <button class="btn primary full" id="totalsSave" style="margin-top:13px">Add these totals</button>
+      </div>
+    </div>
+
+    <div id="importOther" hidden>
+      <div class="card pad">
+        <div class="cardhead"><span class="title">Other format</span><span class="tagbit warn">Experimental</span></div>
+        <p class="fineprint" style="margin:9px 0 12px">We will try to convert it. If we cannot, you get an error rather than bad data.</p>
+        <button class="dropzone" id="otherDrop" type="button">
+          <span class="glyph" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6M9 15h6"/></svg></span>
+          <span class="t">Drop an unusual file</span><span class="s">Any format, any layout</span>
+        </button>
+        <div class="card" id="otherError" hidden style="padding:13px;margin-top:12px;border-color:rgba(252,165,165,.45);background:rgba(252,165,165,.08)">
+          <div class="alerthead" style="color:var(--neg)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 8v5M12 16h.01"/></svg>Could not read that file</div>
+          <p class="hinttext" style="border-top-color:rgba(252,165,165,.22)">Nothing was imported. Try exporting as CSV, or send the slips as screenshots.</p>
+        </div>
+      </div>
+    </div>
+
+    <button class="card" data-nav="bot" style="display:flex;align-items:center;gap:11px;padding:13px;margin-top:16px;width:100%;text-align:left;border-color:rgba(var(--orb2),.3);background:rgba(var(--orb2),.08)">
+      <svg viewBox="0 0 24 24" fill="currentColor" style="width:20px;height:20px;color:var(--s);flex:0 0 auto" aria-hidden="true"><path d="M21.9 4.3l-3.1 14.9c-.2 1-.9 1.3-1.8.8l-4.9-3.6-2.4 2.3c-.3.3-.5.5-1 .5l.4-5 9.1-8.2c.4-.4-.1-.6-.6-.2L4.3 13.2l-4.8-1.5c-1-.3-1-1 .2-1.5L20.6 2.3c.9-.3 1.6.2 1.3 2z"/></svg>
+      <span><span style="font-size:13px;font-weight:600;display:block">Faster: forward it to the bot</span>
+      <span style="font-size:11.5px;color:var(--t2)">Send a slip on Telegram and it lands here</span></span>
+    </button>
+  </div>
+</section>
+
+<!-- ══════════════ SETTINGS ══════════════ -->
+<section class="view" id="settings" aria-label="Settings">
+  <div class="wrap nar">
+    <h1 style="font-size:23px;margin-bottom:14px">Settings</h1>
+
+    <div class="card settingcard">
+      <h2 class="cardtitle"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M5 5l2 2M17 17l2 2M19 5l-2 2M7 17l-2 2"/></svg>Appearance</h2>
+      <p class="desc">Green and red never change. They mean something.</p>
+      <div class="swatches" id="swatchesSettings" role="group" aria-label="Colour scheme"></div>
+      <div class="fieldrow"><span class="lab">Odds format</span><label class="sr" for="oddsFormat">Odds format</label>
+        <select class="select compact" id="oddsFormat"><option>Decimal</option><option>Fractional</option><option>American</option></select></div>
+      <div class="fieldrow"><span class="lab">Currency</span><label class="sr" for="currencySel">Currency</label>
+        <select class="select compact" id="currencySel"><option>GBP</option><option>EUR</option><option>USD</option></select></div>
+      <div class="fieldrow"><span class="lab">Show profit in</span><label class="sr" for="profitFormat">Show profit in</label>
+        <select class="select compact" id="profitFormat"><option>Currency</option><option>Units</option><option>Both</option></select></div>
+    </div>
+
+    <div class="card settingcard">
+      <h2 class="cardtitle"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M21.9 4.3l-3.1 14.9c-.2 1-.9 1.3-1.8.8l-4.9-3.6-2.4 2.3c-.3.3-.5.5-1 .5l.4-5 9.1-8.2c.4-.4-.1-.6-.6-.2L4.3 13.2l-4.8-1.5c-1-.3-1-1 .2-1.5L20.6 2.3c.9-.3 1.6.2 1.3 2z"/></svg>Telegram bot</h2>
+      <div class="livedot"><i aria-hidden="true"></i><span>Connected since 12 August 2024</span></div>
+      <p class="linkcode" translate="no">SLIP-7F3A</p>
+      <div class="fieldrow"><span class="lab">Daily summary</span>
+        <button class="switch" role="switch" aria-checked="true" aria-label="Daily summary"></button></div>
+      <div class="fieldrow"><span class="lab">Confirm before logging<small>Off logs clean slips straight away</small></span>
+        <button class="switch" role="switch" aria-checked="true" aria-label="Confirm before logging"></button></div>
+      <div class="fieldrow"><span class="lab">Not connected?</span><button class="pillbtn link" data-nav="setup">Run setup</button></div>
+    </div>
+
+    <div class="card settingcard">
+      <h2 class="cardtitle"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M12 1v22M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>Units and targets</h2>
+      <p class="desc">Your standard stake. Groups and following are measured in units.</p>
+      <div class="unitrow" id="unitRowSettings" role="group" aria-label="Unit size">
+        <button data-unit="1000">£10</button><button data-unit="2000">£20</button>
+        <button data-unit="5000">£50</button><button data-unit="10000" aria-pressed="true">£100</button>
+        <button data-unit="custom">Custom</button>
+      </div>
+      <label class="sr" for="unitCustomSettings">Custom unit</label>
+      <input class="field" id="unitCustomSettings" inputmode="decimal" placeholder="For example 35…" hidden style="margin-bottom:6px">
+      <div class="fieldrow"><span class="lab">Enter stakes as</span><label class="sr" for="stakeAs">Enter stakes as</label>
+        <select class="select compact" id="stakeAs"><option>Currency</option><option>Units (u)</option></select></div>
+      <div class="fieldrow"><span class="lab">Target amount</span><label class="sr" for="targetSettings">Target amount</label>
+        <input class="field compact m" id="targetSettings" inputmode="decimal" value="2500"></div>
+      <div class="targetlist" id="targetListSettings"></div>
+    </div>
+
+    <div class="card settingcard breakcard">
+      <h2 class="cardtitle h"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg>Take a break</h2>
+      <p class="desc">Locks the app and stops all bot messages. Nothing is deleted, and the break cannot be lifted early.</p>
+      <div class="fieldrow"><span class="lab">Pause Slippery</span><label class="sr" for="breakLength">Break length</label>
+        <select class="select compact" id="breakLength"><option>24 hours</option><option>1 week</option><option>1 month</option><option>6 months</option></select></div>
+      <button class="btn ghost full" id="startBreak" style="margin-top:10px">Start a break</button>
+      <p class="fineprint" style="margin-top:11px">Gambling should not feel like an obligation. Free, confidential help is at
+        <a href="https://www.gamcare.org.uk" rel="noopener noreferrer" target="_blank" style="color:var(--s)">GamCare</a> or 0808 8020 133.</p>
+    </div>
+
+    <div class="card settingcard">
+      <h2 class="cardtitle"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg>Who can see your figures</h2>
+      <p class="desc">What people following you can see.</p>
+      <div class="optionlist" id="privacySettings"></div>
+      <div class="fieldrow"><span class="lab">Share units only<small>Never your stake sizes</small></span>
+        <button class="switch" role="switch" aria-checked="true" aria-label="Share units only"></button></div>
+      <div class="fieldrow"><span class="lab">Let people find me by name</span>
+        <button class="switch" role="switch" aria-checked="true" aria-label="Discoverable by name"></button></div>
+    </div>
+
+    <div class="card settingcard">
+      <h2 class="cardtitle"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21v-1a6 6 0 0 1 6-6h4a6 6 0 0 1 6 6v1"/></svg>Account</h2>
+      <div class="fieldrow"><span class="lab">Display name<small>Set at signup, cannot be changed</small></span>
+        <span class="pillbtn locked" translate="no" id="accountName"></span></div>
+      <div class="fieldrow"><span class="lab">Email</span><span class="mut m" style="font-size:12px" id="accountEmail">you@example.com</span></div>
+      <div class="fieldrow"><span class="lab">Plan</span><label class="sr" for="planSelect">Plan</label>
+        <select class="select compact" id="planSelect"><option>Free trial</option><option>Monthly</option><option selected>Yearly</option></select></div>
+      <div class="fieldrow"><span class="lab">Slips this month<small id="planLimit">Unlimited on Yearly</small></span>
+        <span class="pillbtn locked m" id="planUsage">126</span></div>
+      <div class="fieldrow"><span class="lab">Verification</span><span class="pillbtn" style="color:var(--s)">Verified</span></div>
+      <div class="fieldrow"><span class="lab">Billing</span><button class="pillbtn" data-nav="pricing">Manage</button></div>
+    </div>
+
+    <div class="card settingcard">
+      <h2 class="cardtitle"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M12 20h9M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/></svg>More</h2>
+      <div class="fieldrow"><span class="lab">Advanced<small>Privacy, bankroll, tipsters, bookmakers</small></span>
+        <button class="pillbtn link" data-nav="adv">Open</button></div>
+      <div class="fieldrow"><span class="lab">Help</span><button class="pillbtn link" data-nav="help">Open</button></div>
+      <div class="fieldrow"><span class="lab">Terms of use</span><button class="pillbtn link" data-nav="terms">Open</button></div>
+      <div class="fieldrow"><span class="lab">Privacy policy</span><button class="pillbtn link" data-nav="privacy">Open</button></div>
+      <div class="fieldrow"><span class="lab">Week starts on</span><label class="sr" for="weekStart">Week starts on</label>
+        <select class="select compact" id="weekStart"><option>Monday</option><option>Sunday</option></select></div>
+      <div class="fieldrow"><span class="lab">Timezone</span><label class="sr" for="timezone">Timezone</label>
+        <select class="select compact" id="timezone"><option>Europe/London</option><option>Europe/Dublin</option><option>UTC</option></select></div>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════ ADVANCED ══════════════ -->
+<section class="view" id="adv" aria-label="Advanced settings">
+  <div class="wrap nar">
+    <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:6px">
+      <h1 style="font-size:23px">Advanced</h1><button class="pillbtn" data-nav="settings">Back</button></div>
+    <p class="fineprint" style="margin-bottom:14px">Sensible defaults. Most people never come here.</p>
+
+    <div class="card settingcard">
+      <h2 class="cardtitle"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M3 3v18h18"/><path d="M7 14l4-4 3 3 5-6"/></svg>Your betting</h2>
+      <div class="fieldrow"><span class="lab">Starting bankroll</span><label class="sr" for="bankroll">Starting bankroll</label>
+        <input class="field compact m" id="bankroll" inputmode="decimal" value="5000"></div>
+      <div class="fieldrow"><span class="lab">Current bankroll<small>Starting plus all time profit</small></span>
+        <span class="pillbtn locked m" id="bankrollNow"></span></div>
+      <div class="fieldrow"><span class="lab">Show tipster next to bets</span>
+        <button class="switch" id="showTipster" role="switch" aria-checked="true" aria-label="Show tipster"></button></div>
+      <details class="disclose">
+        <summary>Tipsters <span class="count" id="tipsterCount"></span></summary>
+        <div class="tagchips" id="tipsterChips"></div>
+        <div class="addrow"><label class="sr" for="tipsterInput">New tipster</label>
+          <input class="field" id="tipsterInput" placeholder="Add a name…">
+          <button class="btn ghost" id="tipsterAdd" style="padding:0 17px">Add</button></div>
+      </details>
+      <details class="disclose">
+        <summary>Bookmakers <span class="count" id="bookCount"></span></summary>
+        <p class="desc" style="margin:3px 0 5px">Grouped by the operator behind them.</p>
+        <div id="bookGroups"></div>
+        <div class="addrow" style="margin-top:12px"><label class="sr" for="bookInput">New bookmaker</label>
+          <input class="field" id="bookInput" placeholder="Add a bookmaker…">
+          <label class="sr" for="bookParent">Group</label>
+          <select class="select" id="bookParent" style="max-width:110px"><option>Flutter</option><option>Kambi</option><option selected>Other</option></select>
+          <button class="btn ghost" id="bookAdd" style="padding:0 15px">Add</button></div>
+      </details>
+    </div>
+
+    <div class="card settingcard">
+      <h2 class="cardtitle"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M12 2l2.4 6.9L21 11l-6.6 2.1L12 20l-2.4-6.9L3 11l6.6-2.1z"/></svg>Reading and alerts</h2>
+      <div class="fieldrow"><span class="lab">Confirm before logging<small>Off logs clean slips straight away</small></span>
+        <button class="switch" role="switch" aria-checked="true" aria-label="Confirm before logging"></button></div>
+      <div class="fieldrow"><span class="lab">Daily summary from the bot</span>
+        <button class="switch" role="switch" aria-checked="true" aria-label="Daily summary from the bot"></button></div>
+      <details class="disclose">
+        <summary>Reading rules <span class="count">3</span></summary>
+        <div class="fieldrow"><span class="lab">Ask for a retake if unclear<small>Never guess at numbers</small></span>
+          <button class="switch" role="switch" aria-checked="true" aria-label="Ask for a retake if unclear"></button></div>
+        <div class="fieldrow"><span class="lab">Catch duplicate slips</span>
+          <button class="switch" role="switch" aria-checked="true" aria-label="Catch duplicate slips"></button></div>
+        <div class="fieldrow"><span class="lab">Catch the same bet worded differently<small>Away goals under 0.5 and BTTS No settle identically</small></span>
+          <button class="switch" role="switch" aria-checked="true" aria-label="Catch equivalent bets"></button></div>
+      </details>
+    </div>
+
+    <div class="card settingcard">
+      <h2 class="cardtitle"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>Your data</h2>
+      <div class="fieldrow"><span class="lab">Export all bets<small>Everything Slippery holds on you, in one file</small></span>
+        <label class="sr" for="exportFormat">Export format</label>
+        <select class="select compact" id="exportFormat"><option>CSV</option><option>Excel</option><option>JSON</option></select></div>
+      <div class="fieldrow"><span class="lab">Slip images<small>Kept 90 days, then deleted automatically</small></span>
+        <button class="pillbtn" id="purgeImages">Delete now</button></div>
+      <div class="fieldrow"><span class="lab">Reset all bets<small>Keeps your account and name</small></span>
+        <button class="pillbtn danger" data-confirm="Reset all bets">Reset</button></div>
+      <div class="fieldrow"><span class="lab">Delete account<small>Removes bets and stored images</small></span>
+        <button class="pillbtn danger" data-confirm="Delete account">Delete</button></div>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════ BOT PREVIEW ══════════════ -->
+<section class="view" id="bot" aria-label="Telegram bot">
+  <div class="wrap nar page-lede">
+    <div class="reveal" style="margin-bottom:14px">
+      <p class="eyebrow">Telegram bot</p>
+      <h1 style="font-size:26px;margin-top:6px">Forward. Confirm. Done.</h1>
+    </div>
+    <div class="card flush reveal" style="max-width:420px;margin:0 auto">
+      <div style="display:flex;align-items:center;gap:10px;padding:12px 15px;border-bottom:1px solid var(--e1);background:rgba(255,255,255,.05)">
+        <span class="avatar" aria-hidden="true">S</span>
+        <div><div style="font-weight:600;font-size:13.5px" translate="no">Slippery Bot</div>
+          <div class="pos" style="font-size:10.5px">online</div></div>
+      </div>
+      <div class="chatlog" id="botChat"></div>
+    </div>
+    <div style="text-align:center;margin-top:16px"><button class="btn ghost" data-nav="dash">See the dashboard</button></div>
+  </div>
+</section>
+
+<!-- ══════════════ HELP ══════════════ -->
+<section class="view" id="help" aria-label="Help">
+  <div class="wrap nar page-lede">
+    <div class="reveal" style="margin-bottom:14px">
+      <p class="eyebrow">Help</p>
+      <h1 style="font-size:26px;margin-top:6px">Common questions.</h1>
+    </div>
+    <div id="helpFaq"></div>
+  </div>
+</section>
+
+<!-- ══════════════ TERMS ══════════════ -->
+<section class="view" id="terms" aria-label="Terms of use">
+  <div class="wrap nar legal">
+    <button class="pillbtn" data-nav="landing" style="margin-bottom:14px">Back</button>
+    <h1 style="font-size:26px">Terms of use</h1>
+    <p class="updated">Draft for review · not yet reviewed by a solicitor</p>
+    <div class="card pad alertcard" style="margin-top:14px">
+      <div class="alerthead"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M12 9v4M12 17h.01"/><path d="M10.3 3.9L1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/></svg>Placeholder wording</div>
+      <p class="hinttext">This page exists so the flow, the links and the consent checkbox are real. The wording still needs a solicitor before launch, and the App Store will require a final version at a public URL.</p>
+    </div>
+    <div id="termsBody"></div>
+  </div>
+</section>
+
+<!-- ══════════════ PRIVACY ══════════════ -->
+<section class="view" id="privacy" aria-label="Privacy policy">
+  <div class="wrap nar legal">
+    <button class="pillbtn" data-nav="landing" style="margin-bottom:14px">Back</button>
+    <h1 style="font-size:26px">Privacy policy</h1>
+    <p class="updated">Draft for review · not yet reviewed by a solicitor</p>
+    <div class="card pad alertcard" style="margin-top:14px">
+      <div class="alerthead"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M12 9v4M12 17h.01"/><path d="M10.3 3.9L1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/></svg>Placeholder wording</div>
+      <p class="hinttext">Slip images are personal data and the retention promise below is a real commitment the code must keep. Confirm the retention period and the ICO registration before this goes public.</p>
+    </div>
+    <div id="privacyBody"></div>
+  </div>
+</section>
+</main>
+
+<div class="scrim" id="scrim"></div>
+<div class="sheet" id="daySheet" role="dialog" aria-modal="true" aria-labelledby="dayTitle">
+  <div class="grip" aria-hidden="true"></div>
+  <div class="dayhead">
+    <div><p class="d" id="dayTitle"></p><p class="s" id="daySub"></p></div>
+    <p class="n" id="dayNet"></p>
+  </div>
+  <div id="dayList" style="margin-top:6px"></div>
+  <button class="btn ghost full" id="dayClose" style="margin-top:12px">Close</button>
+</div>
+
+<div class="themeintro" id="themeIntro" hidden aria-hidden="true">
+  <div class="themeintro-in">
+    <span class="themeintro-chip"></span>
+    <p class="themeintro-name" id="themeIntroName">Periwinkle</p>
+    <div class="themeintro-dots" id="themeIntroDots"></div>
+  </div>
+</div>
+
+<div class="toasts" id="toasts"></div>
+
+<nav class="tabbar" aria-label="App sections">
+  <button data-nav="dash"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="3" y="3" width="8" height="8" rx="2"/><rect x="13" y="3" width="8" height="5" rx="2"/><rect x="13" y="10" width="8" height="11" rx="2"/><rect x="3" y="13" width="8" height="8" rx="2"/></svg>Dashboard</button>
+  <button data-nav="imp"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M12 16V4M7 9l5-5 5 5M4 20h16"/></svg>Import</button>
+  <button data-nav="settings"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-2.82 1.17V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 8 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.6 15H4.5a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 6 9.4"/></svg>Settings</button>
+</nav>

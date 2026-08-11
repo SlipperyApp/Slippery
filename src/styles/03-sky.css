@@ -1,0 +1,117 @@
+/* ============================================================
+   SKY — the living background, behind every screen
+   ============================================================
+   Rules this layer obeys, all of them non-negotiable:
+     · transform and opacity only. Nothing animates width, height,
+       top or left, so every frame stays on the compositor.
+     · everything lives inside .sky, which is overflow:hidden.
+       An uncontained orb once caused 47px of horizontal scroll.
+     · no backdrop-filter anywhere in here. The whole page budget
+       is ~3 on iPhone and the header and bottom nav own two.
+     · prefers-reduced-motion stops all drift and parallax.
+   ============================================================ */
+.sky{
+  position:fixed;inset:0;z-index:-1;overflow:hidden;pointer-events:none;
+  background:var(--bg);
+  transition:background var(--ts) var(--ez);
+  /* isolate paint and layout so nothing in here can invalidate app content.
+     Deliberately NOT contain:strict — that adds size containment, which on a
+     fixed inset:0 layer is a footgun for no gain. */
+  contain:layout paint style;
+}
+
+/* Base wash. Static, so it costs one paint at load and nothing after. */
+.sky-wash{
+  position:absolute;inset:-10%;
+  background:
+    radial-gradient(1200px 820px at 50% -12%, var(--glow), transparent 66%),
+    radial-gradient(820px 560px at 88% 6%, rgba(var(--orb2),.20), transparent 68%),
+    radial-gradient(760px 700px at 2% 24%, rgba(var(--orb1),.22), transparent 70%),
+    radial-gradient(900px 700px at 70% 96%, rgba(var(--orb3),.13), transparent 72%);
+  transition:background var(--ts) var(--ez);
+}
+
+/* Drifting colour fields. Three, at different speeds, so the pattern
+   never visibly repeats. vmax keeps them proportional on any viewport. */
+.sky-orb{
+  position:absolute;border-radius:50%;
+  will-change:transform;
+  transform:translate3d(0,0,0);
+}
+.sky-orb.o1{
+  width:78vmax;height:78vmax;left:-34vmax;top:-38vmax;
+  background:radial-gradient(circle,rgba(var(--orb1),.62),transparent 64%);
+  opacity:.8;animation:drift1 46s ease-in-out infinite}
+.sky-orb.o2{
+  width:64vmax;height:64vmax;right:-30vmax;top:-10vmax;
+  background:radial-gradient(circle,rgba(var(--orb2),.46),transparent 64%);
+  opacity:.72;animation:drift2 58s ease-in-out infinite}
+.sky-orb.o3{
+  width:56vmax;height:56vmax;left:22vmax;bottom:-34vmax;
+  background:radial-gradient(circle,rgba(var(--orb3),.38),transparent 66%);
+  opacity:.6;animation:drift3 72s ease-in-out infinite}
+
+@keyframes drift1{
+  0%,100%{transform:translate3d(0,0,0) scale(1)}
+  33%{transform:translate3d(7vmax,5vmax,0) scale(1.09)}
+  66%{transform:translate3d(3vmax,9vmax,0) scale(.97)}}
+@keyframes drift2{
+  0%,100%{transform:translate3d(0,0,0) scale(1.03)}
+  40%{transform:translate3d(-7vmax,7vmax,0) scale(.92)}
+  70%{transform:translate3d(-3vmax,2vmax,0) scale(1.06)}}
+@keyframes drift3{
+  0%,100%{transform:translate3d(0,0,0) scale(1)}
+  50%{transform:translate3d(-9vmax,-6vmax,0) scale(1.12)}}
+
+/* Silk ribbons. The SVG is one path per band; the bands drift on their
+   own clock and are additionally offset by scroll from motion.js, which
+   writes only a transform on these two <g> elements. */
+.sky-silk{
+  position:absolute;left:-12%;right:-12%;top:-6%;height:64vh;
+  opacity:.46;filter:blur(26px);
+  -webkit-mask-image:radial-gradient(120% 62% at 50% 24%,#000 18%,transparent 72%);
+  mask-image:radial-gradient(120% 62% at 50% 24%,#000 18%,transparent 72%);
+  & svg{width:100%;height:100%;display:block}
+  & g{will-change:transform}
+  /* outer group: scroll parallax, written by motion.js as a custom
+     property so the handler never touches the transform the keyframe owns */
+  & [data-parallax]{transform:translate3d(0,var(--parallax,0px),0)}
+  & .band1{animation:silk1 34s ease-in-out infinite}
+  & .band2{animation:silk2 44s ease-in-out infinite}}
+@keyframes silk1{
+  0%,100%{transform:translate3d(0,0,0)}
+  50%{transform:translate3d(-34px,16px,0) scaleY(1.16)}}
+@keyframes silk2{
+  0%,100%{transform:translate3d(0,5px,0) scaleY(1.08)}
+  50%{transform:translate3d(36px,-14px,0) scaleY(.9)}}
+
+/* Grain. Breaks up the gradient banding that large soft fields show on
+   OLED phones. Fixed layer, transform-animated, so it composites. */
+.sky-grain{
+  position:absolute;inset:-50px;
+  opacity:.032;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.82' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='180' height='180' filter='url(%23n)'/%3E%3C/svg%3E");
+  will-change:transform;
+  animation:grain 8s steps(6) infinite}
+@keyframes grain{
+  0%{transform:translate3d(0,0,0)}
+  20%{transform:translate3d(-12px,7px,0)}
+  40%{transform:translate3d(9px,-11px,0)}
+  60%{transform:translate3d(-7px,-6px,0)}
+  80%{transform:translate3d(11px,9px,0)}
+  100%{transform:translate3d(0,0,0)}}
+
+/* A vignette keeps the bottom nav legible over a bright orb. */
+.sky-vig{
+  position:absolute;inset:0;
+  background:linear-gradient(180deg,transparent 52%,rgba(0,0,0,.30) 100%)}
+
+@media (prefers-reduced-motion:reduce){
+  .sky-orb,.sky-grain,.sky-silk .band1,.sky-silk .band2{animation:none}
+  .sky-grain{opacity:.02}
+}
+/* Save-Data and low-power: drop the most expensive layers entirely. */
+@media (prefers-reduced-transparency:reduce){
+  .sky-grain{display:none}
+  .sky-silk{opacity:.18}
+}
