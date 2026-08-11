@@ -33,6 +33,7 @@ export function configured() { return true; }
 import * as espn from './espn.js';
 import * as sofascore from './sofascore.js';
 import * as footballdata from './footballdata.js';
+import * as footballdatauk from './footballdatauk.js';
 
 /* The scraper chain, in order of preference.
  *
@@ -58,6 +59,11 @@ const wanted = name => { const p = pinned(); return !p || p === 'off' ? p !== 'o
 const SOURCES = [
   { name: 'espn',      mod: espn,      enabled: () => wanted('espn') },
   { name: 'sofascore', mod: sofascore, enabled: () => wanted('sofascore') },
+  /* The one that actually answers from a datacenter IP, because it is a
+     static file rather than an endpoint behind a bot filter. League
+     fixtures only, so full time IS 90 minutes; cup ties are absent and
+     stay pending, which is the right failure. */
+  { name: 'football-data-uk', mod: footballdatauk, enabled: () => wanted('football-data-uk') },
   { name: 'football-data', mod: footballdata,
     enabled: () => wanted('football-data') && Boolean(process.env.FOOTBALL_DATA_TOKEN),
     acceptEmpty: true }

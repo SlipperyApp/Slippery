@@ -75,5 +75,8 @@
       "maxDuration": 30,
       "memory": 1024
     }
-  }
+  },
+  "regions": [
+    "lhr1"
+  ]
 }
