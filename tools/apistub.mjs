@@ -23,7 +23,10 @@ export const USER = {
   email: 'darius@example.com',
   emailVerified: true,
   unitPence: 10000,
-  plan: 'year'
+  plan: 'year',
+  telegramLinked: true,
+  linkCode: 'SLIP-7F3A',
+  since: '2026-02-14T10:00:00Z'
 };
 
 export const BETS = [

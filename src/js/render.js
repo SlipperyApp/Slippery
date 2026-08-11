@@ -672,6 +672,23 @@ export function renderAccount(user) {
   setText('planUsage', plan === 'free'
     ? Math.min(LEDGER.length + PENDING.length, 20) + ' of 20'
     : M.plain(LEDGER.length + PENDING.length));
+  /* Telegram: connected, or plainly not. */
+  const dot = $('tgState');
+  if (dot) {
+    dot.textContent = user.telegramLinked
+      ? 'Connected' + (user.since ? ' since ' + DF.format(new Date(user.since)) : '')
+      : 'Not connected yet';
+    dot.closest('.livedot').classList.toggle('off', !user.telegramLinked);
+  }
+  /* The same code appears during setup and in Settings; both come from the
+     session, so they cannot show different codes. */
+  for (const id of ['linkCode', 'linkCodeSettings']) {
+    const code = $(id);
+    if (!code) continue;
+    code.textContent = user.linkCode || '—';
+    if (id === 'linkCodeSettings') code.hidden = !user.linkCode;
+  }
+
   const v = $('verifyState');
   if (v) {
     v.textContent = user.emailVerified ? 'Verified' : 'Unverified';

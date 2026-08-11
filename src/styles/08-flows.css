@@ -386,7 +386,11 @@
 
 .livedot{display:flex;align-items:center;gap:9px;font-size:12.5px;margin-top:9px;
   & i{width:8px;height:8px;border-radius:50%;background:var(--pos);
-    box-shadow:0 0 8px var(--pos);flex:0 0 auto}}
+    box-shadow:0 0 8px var(--pos);flex:0 0 auto}
+  /* Not connected is a state, not an error — grey, not the loss red, which
+     is reserved for money. */
+  &.off{color:var(--t2);
+    & i{background:var(--t3);box-shadow:none}}}
 
 /* telegram preview */
 .chatlog{padding:14px;display:flex;flex-direction:column;gap:9px;background:rgba(8,13,24,.5)}
