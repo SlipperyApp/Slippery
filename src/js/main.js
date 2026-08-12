@@ -745,47 +745,50 @@ function renderExtraction(card, label, res) {
   const price = v => v == null ? '' : Number(v).toFixed(2);
   const count = f.bet_count || 1;
 
+  /* The date the bet was placed.
+     The reader has always extracted placed_at and kickoff and the card
+     threw both away, so every imported slip landed with today's date on it
+     and a month of history imported as one afternoon. Prefer the placed
+     date; fall back to kickoff, because a slip that prints only a kick-off
+     is still closer to the truth than "now". */
+  const dateOf = v => {
+    if (!v) return '';
+    const d = new Date(String(v).length <= 10 ? v + 'T12:00:00' : v);
+    return Number.isNaN(d.getTime()) ? '' : d.getFullYear() + '-' +
+      String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+  };
+  const placed = dateOf(f.placed_at) || dateOf(f.kickoff) ||
+    (new Date().getFullYear() + '-' + String(new Date().getMonth() + 1).padStart(2, '0') +
+     '-' + String(new Date().getDate()).padStart(2, '0'));
+
   card.innerHTML =
     '<div class="sliphead">' +
       '<span class="slipbook">' + esc(f.platform || f.bookmaker || label) + '</span>' +
       /* The number in the corner of a real slip: how many bets were placed. */
       '<span class="slipcount" title="Bets on this slip">' + count + '</span>' +
     '</div>' +
-    '<div class="sliplegs">' +
-      legs.map((leg, i) =>
-        '<div class="slipleg" data-leg="' + i + '">' +
-          '<div class="slipleg-top">' +
-            '<label class="sr" for="' + card.id + '-sel' + i + '">Selection ' + (i + 1) + '</label>' +
-            '<input class="field slipin slipleg-sel" id="' + card.id + '-sel' + i + '" ' +
-              'data-leg-field="selection" placeholder="Selection" value="' + esc(leg.selection || '') + '">' +
-            '<label class="sr" for="' + card.id + '-odds' + i + '">Odds for selection ' + (i + 1) + '</label>' +
-            '<input class="field slipin slipleg-odds m" id="' + card.id + '-odds' + i + '" ' +
-              'data-leg-field="odds" inputmode="decimal" placeholder="Odds" value="' + esc(price(leg.odds)) + '">' +
-          '</div>' +
-          '<label class="sr" for="' + card.id + '-ev' + i + '">Event for selection ' + (i + 1) + '</label>' +
-          '<input class="field slipin slipleg-ev" id="' + card.id + '-ev' + i + '" ' +
-            'data-leg-field="event" placeholder="Event" value="' + esc(leg.event || '') + '">' +
-        '</div>').join('') +
-    '</div>' +
-    (legs.length > 1
-      ? '<button class="pillbtn link slipaddleg" data-add-leg="1">Add another selection</button>'
-      : '') +
-    '<div class="slipfoot">' +
-      '<label class="slipfoot-cell"><span>Stake £</span>' +
+    '<div class="sliplegs">' + legs.map((leg, i) => slipLeg(card.id, i, leg, price)).join('') + '</div>' +
+    /* Always offered, not only on a multiple. A single that the reader read
+       as one leg is often a double with the second leg cropped off, and
+       there was no way to add it back. */
+    '<button class="pillbtn link slipaddleg" data-add-leg="1">' + ico('i-plus') + 'Add a selection</button>' +
+    '<div class="slipgrid">' +
+      '<label class="slipcell"><span>Stake £</span>' +
         '<input class="field slipin m" data-slip="stake" inputmode="decimal" value="' + esc(money(f.stake)) + '"></label>' +
       /* The combined price, next to the leg prices rather than instead of
          them. A slip prints both and correcting one leg should not force
          anyone to work the accumulator out in their head. */
-      '<label class="slipfoot-cell"><span>Total odds</span>' +
+      '<label class="slipcell"><span>Total odds</span>' +
         '<input class="field slipin m" data-slip="odds" inputmode="decimal" value="' + esc(price(f.odds)) + '"></label>' +
+      '<label class="slipcell"><span>Placed</span>' +
+        '<input class="field slipin m" type="date" data-slip="placed" value="' + esc(placed) + '"></label>' +
+      '<label class="slipcell"><span>Bookmaker</span>' +
+        '<input class="field slipin" data-slip="book" list="bookNames" value="' +
+        esc(f.bookmaker || f.platform || '') + '"></label>' +
+      '<label class="slipcell wide"><span>Market</span>' +
+        '<input class="field slipin" data-slip="market" list="marketNames" value="' + esc(f.market || '') + '"></label>' +
     '</div>' +
     '<p class="sliphint" id="' + card.id + '-oddshint" hidden></p>' +
-    '<div class="slipfoot">' +
-      '<label class="slipfoot-cell"><span>Bookmaker</span>' +
-        '<input class="field slipin" data-slip="book" value="' + esc(f.bookmaker || f.platform || '') + '"></label>' +
-      '<label class="slipfoot-cell"><span>Market</span>' +
-        '<input class="field slipin" data-slip="market" value="' + esc(f.market || '') + '"></label>' +
-    '</div>' +
     '<p class="sliptotal" id="' + card.id + '-returns"></p>' +
     '<p class="slipstage ' + stageNote[0] + '">' + esc(stageNote[1]) + '</p>' +
     '<p class="hinttext" id="' + card.id + '-hint">Check it, then confirm. Nothing is saved until you do.</p>' +
@@ -916,6 +919,39 @@ function dropPlRow(btn) {
   renderSummaryRead(card, card.querySelector('.title').textContent, { pl_rows: rows });
 }
 
+/* One leg of a slip, built in one place.
+ *
+ * Two rows instead of three: the selection and its price share a line, and
+ * the event sits under them in a lighter field. A fourfold used to be twelve
+ * stacked full-width inputs and about 600px of scrolling before you reached
+ * the stake; it is now roughly half that, and the shape reads like the slip
+ * it came from.
+ *
+ * Every leg carries a remove button. There was only ever "Add another
+ * selection", so a reader that split one selection into two, which happens
+ * on a slip with a line break in the wrong place, could not be corrected
+ * without discarding the whole card and starting again. */
+export function slipLeg(cardId, i, leg, price) {
+  leg = leg || {};
+  const fmt = price || (v => v == null ? '' : Number(v).toFixed(2));
+  return '<div class="slipleg" data-leg="' + i + '">' +
+    '<div class="slipleg-top">' +
+      '<label class="sr" for="' + cardId + '-sel' + i + '">Selection ' + (i + 1) + '</label>' +
+      '<input class="field slipin slipleg-sel" id="' + cardId + '-sel' + i + '" ' +
+        'data-leg-field="selection" placeholder="Selection" value="' + esc(leg.selection || '') + '">' +
+      '<label class="sr" for="' + cardId + '-odds' + i + '">Odds for selection ' + (i + 1) + '</label>' +
+      '<input class="field slipin slipleg-odds m" id="' + cardId + '-odds' + i + '" ' +
+        'data-leg-field="odds" inputmode="decimal" placeholder="Odds" value="' + esc(fmt(leg.odds)) + '">' +
+      '<button class="slipleg-x" data-drop-leg="' + i + '" ' +
+        'aria-label="Remove selection ' + (i + 1) + '">' + ico('i-close') + '</button>' +
+    '</div>' +
+    '<label class="sr" for="' + cardId + '-ev' + i + '">Event for selection ' + (i + 1) + '</label>' +
+    '<input class="field slipin slipleg-ev" id="' + cardId + '-ev' + i + '" ' +
+      'data-leg-field="event" placeholder="Event, for example Arsenal v Spurs" ' +
+      'value="' + esc(leg.event || '') + '">' +
+  '</div>';
+}
+
 /* Append an empty leg to a slip card. Ids stay unique by counting what is
    already there, because two inputs sharing an id is one of the two class
    of bug this codebase has been bitten by. */
@@ -925,23 +961,43 @@ function addLeg(card) {
   if (!legs) return;
   const i = legs.children.length;
   const row = document.createElement('div');
-  row.className = 'slipleg';
-  row.setAttribute('data-leg', String(i));
-  row.innerHTML =
-    '<div class="slipleg-top">' +
-      '<label class="sr" for="' + card.id + '-sel' + i + '">Selection ' + (i + 1) + '</label>' +
-      '<input class="field slipin slipleg-sel" id="' + card.id + '-sel' + i + '" ' +
-        'data-leg-field="selection" placeholder="Selection">' +
-      '<label class="sr" for="' + card.id + '-odds' + i + '">Odds for selection ' + (i + 1) + '</label>' +
-      '<input class="field slipin slipleg-odds m" id="' + card.id + '-odds' + i + '" ' +
-        'data-leg-field="odds" inputmode="decimal" placeholder="Odds">' +
-    '</div>' +
-    '<label class="sr" for="' + card.id + '-ev' + i + '">Event for selection ' + (i + 1) + '</label>' +
-    '<input class="field slipin slipleg-ev" id="' + card.id + '-ev' + i + '" ' +
-      'data-leg-field="event" placeholder="Event">';
-  legs.appendChild(row);
-  row.querySelector('input').focus();
+  /* Built by slipLeg, the same function the initial render uses. This used
+     to be a second copy of the markup, which is how the two drifted: the
+     remove button existed in neither and the placeholders differed. */
+  row.innerHTML = slipLeg(card.id, i, {});
+  legs.appendChild(row.firstChild);
+  const added = legs.lastElementChild;
+  added.querySelector('input').focus();
   syncSlipCard(card);
+}
+
+/* Take a selection off a slip.
+ *
+ * Renumbering matters and is easy to get wrong: leg ids are positional, so
+ * removing the middle of three and leaving the last one called leg 2 gives
+ * two inputs the same id, which is one of the two classes of bug this
+ * codebase has actually shipped. Every remaining leg is rebuilt from its
+ * current values at its new index. */
+function dropLeg(btn) {
+  const card = btn.closest('.card');
+  const legs = card && card.querySelector('.sliplegs');
+  if (!legs || legs.children.length <= 1) {
+    toast('A bet needs at least one selection');
+    return;
+  }
+  const kept = [...legs.children]
+    .filter((row, i) => i !== +btn.getAttribute('data-drop-leg'))
+    .map(row => ({
+      selection: (row.querySelector('[data-leg-field="selection"]') || {}).value || '',
+      odds: (row.querySelector('[data-leg-field="odds"]') || {}).value || '',
+      event: (row.querySelector('[data-leg-field="event"]') || {}).value || ''
+    }));
+  /* The odds come back out of the DOM as typed strings, so they are passed
+     straight through rather than run through the number formatter, which
+     would turn a half-typed "1." into "NaN". */
+  legs.innerHTML = kept.map((leg, i) => slipLeg(card.id, i, leg, v => v == null ? '' : String(v))).join('');
+  syncSlipCard(card);
+  updateImportTotals();
 }
 
 /* Read the card's inputs into its dataset, and gate Confirm on the three
@@ -967,6 +1023,10 @@ function syncSlipCard(card) {
   const selection = legs.map(l => l.selection).filter(Boolean).join(' & ');
   const event = legs.map(l => l.event).filter(Boolean).join(' & ');
 
+  /* The placed date, carried through so an imported slip lands on the day
+     it was placed. Without it every import stamped today, and a month of
+     history arrived as one afternoon. */
+  card.dataset.placed = read('placed');
   card.dataset.selection = selection;
   card.dataset.event = event;
   card.dataset.book = read('book');
@@ -1075,6 +1135,9 @@ async function confirmSlip(btn) {
     odds,
     stakePence: stake,
     outcome, profitPence,
+    /* Midday rather than midnight. A bet stamped 00:00 in one timezone is
+       the previous day in another, and the whole product is a calendar. */
+    placedAt: card.dataset.placed ? card.dataset.placed + 'T12:00:00' : undefined,
     source: 'upload'
   });
 
@@ -2024,6 +2087,7 @@ document.addEventListener('click', e => {
      beats retaking the photograph, which is the same reason every field is
      editable in the first place. */
   if ((el = c('[data-add-leg]'))) { addLeg(el.closest('.card')); return; }
+  if ((el = c('[data-drop-leg]'))) { dropLeg(el); return; }
   if ((el = c('[data-import-plrows]'))) { importPlRows(el); return; }
   if ((el = c('[data-drop-plrow]'))) { dropPlRow(el); return; }
   if (c('[data-goto-totals]')) {

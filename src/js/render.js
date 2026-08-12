@@ -807,7 +807,27 @@ export function renderTargets() {
   setText('targetLabel', { day: 'Daily', week: 'Weekly', month: 'Monthly', year: 'Yearly' }[S.targetPeriod] + ' target');
 }
 
+/* The markets people actually bet, ordered by how often a slip prints
+   them. Not a closed set: the field is a datalist, so anything can still
+   be typed, and the settlement engine reads the selection text rather than
+   this label. It is a shortcut for the two fields the reader most often
+   gets nearly right. */
+const MARKET_NAMES = [
+  'Match result', 'Over/Under', 'Both teams to score', 'Asian Handicap',
+  'Handicap', 'Draw no bet', 'Double chance', 'Correct score',
+  'Half time/Full time', 'Team goals', 'Anytime scorer', 'First goalscorer',
+  'Cards', 'Corners', 'Bet builder', 'Outright', 'Match winner', 'Total games',
+  'Set betting', 'Win to nil', 'Clean sheet'
+];
+
 export function renderMisc() {
+  /* Auto-complete for bookmaker and market. Rebuilt here rather than in the
+     markup because the bookmaker list is editable in Settings, so a book
+     somebody adds shows up in the importer without a reload. */
+  const opts = list => list.map(v => '<option value="' + esc(v) + '"></option>').join('');
+  setHTML('bookNames', opts(Object.values(BOOKS).flat()));
+  setHTML('marketNames', opts(MARKET_NAMES));
+
   setText('tipsterCount', String(TIPSTERS.length));
   setText('bookCount', String(Object.values(BOOKS).reduce((a, v) => a + v.length, 0)));
   setHTML('tipsterChips', TIPSTERS.map(t =>

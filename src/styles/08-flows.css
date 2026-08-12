@@ -390,11 +390,19 @@
   font-variant-numeric:tabular-nums lining-nums;
   &.warn{background:rgba(245,158,11,.14);border-color:rgba(245,158,11,.45);color:var(--a)}}
 
-.sliplegs{padding:4px 15px 0}
+.sliplegs{padding:2px 15px 0}
 .slipleg{
-  padding:11px 0;
+  padding:8px 0;
   &+&{border-top:1px dashed var(--e2)}}
-.slipleg-top{display:flex;gap:8px;margin-bottom:7px}
+.slipleg-top{display:flex;gap:7px;margin-bottom:5px;align-items:center}
+/* Remove a selection. Small, quiet, and on every leg: the reader
+   occasionally splits one selection into two when a slip wraps a line, and
+   before this the only fix was to discard the whole card and start over. */
+.slipleg-x{
+  flex:0 0 auto;width:32px;height:42px;border-radius:9px;display:grid;place-items:center;
+  color:var(--t3);transition:color var(--tf),background var(--tf);
+  & svg{width:13px;height:13px}
+  &:hover{color:var(--neg-ink);background:rgba(252,165,165,.10)}}
 /* The slip's own input size.
    NOT .field.compact: that one is width:auto, right-aligned and monospaced,
    because it exists for the single money box in a settings row. Applied
@@ -409,12 +417,21 @@
 .slipleg-sel{flex:1 1 auto;min-width:0;font-weight:550}
 .slipleg-odds{flex:0 0 78px;width:78px}
 .slipleg-ev{color:var(--t2)}
-.slipaddleg{margin:0 15px 4px}
+.slipaddleg{margin:2px 15px 4px;gap:5px;& svg{width:12px;height:12px}}
 
-.slipfoot{display:flex;gap:9px;padding:11px 15px 0;
-  &:first-of-type{border-top:1px solid var(--e2);padding-top:12px;margin-top:6px}}
-.slipfoot-cell{
-  flex:1 1 0;min-width:0;
+/* The five fields under the legs, on one grid.
+   These were two separate flex rows of two, which meant the date had
+   nowhere to go and the layout could not reflow: at 320px the pairs
+   squeezed to about 130px each and the market name was unreadable. Two
+   columns that become three when there is room, and Market spans the row
+   because it is the longest value of the five. */
+.slipgrid{
+  display:grid;grid-template-columns:1fr 1fr;gap:9px;
+  padding:12px 15px 0;margin-top:6px;border-top:1px solid var(--e2)}
+@media (min-width:420px){.slipgrid{grid-template-columns:repeat(3,1fr)}}
+.slipcell{
+  min-width:0;
+  &.wide{grid-column:1/-1}
   & span{display:block;font-size:9.5px;color:var(--t2);letter-spacing:.05em;
     text-transform:uppercase;margin-bottom:4px}
   & input{width:100%;font-size:16px}}

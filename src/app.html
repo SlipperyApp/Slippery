@@ -899,6 +899,12 @@
         <button class="btn ghost full" id="pasteGo" style="margin-top:9px">Read these bets</button>
       </details>
 
+      <!-- Auto-complete for the two fields the reader most often gets
+           nearly right. A datalist rather than a select: the list is a
+           shortcut, not a closed set, and somebody with an account at a
+           bookmaker nobody has heard of must still be able to type it. -->
+      <datalist id="bookNames"></datalist>
+      <datalist id="marketNames"></datalist>
       <div id="uploadResults"></div>
       <div id="csvReport"></div>
 
