@@ -87,7 +87,7 @@ const OG = `<html><body style="margin:0">
     </div>
     <div style="display:flex;gap:14px">
       <span style="padding:13px 22px;border-radius:999px;background:rgba(255,255,255,.055);
-                   border:1px solid rgba(255,255,255,.10);font-size:21px">20 free slips</span>
+                   border:1px solid rgba(255,255,255,.10);font-size:21px">2 weeks free</span>
       <span style="padding:13px 22px;border-radius:999px;background:rgba(134,239,172,.14);
                    border:1px solid rgba(134,239,172,.34);font-size:21px;color:#86EFAC;
                    font-variant-numeric:tabular-nums">+£1,938.38 this month</span>

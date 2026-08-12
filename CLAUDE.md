@@ -167,10 +167,17 @@ node tools/preview.mjs one self-contained slippery-preview.html to open anywhere
    Add a `<symbol>` to `src/icons.svg` and use `ico(id)` from `data.js`.
 
 ## Decisions that reversed an earlier one
+- **The free tier is 2 weeks OR 35 slips, whichever runs out first**, on the
+  owner's instruction, superseding "Free 20 slips" in the brief above. Both
+  halves matter and they fail differently, so `trialState()` in
+  `api/_lib/promo.js` reports *which* one ran out and the prompt says so.
+  `TRIAL_DAYS` and `TRIAL_SLIPS` there are the only place the numbers live;
+  the client is told the answer rather than counting, so the counter on the
+  dashboard cannot disagree with what actually blocks an upload.
 - **Scroll jacking is now in**, on the owner's explicit instruction, and it
   supersedes the "already tried, rejected" line in the brief. What was
   rejected was *mandatory* snap, which traps people. The landing sequence
-  in `src/styles/09-jack.css` is jacked without trapping: a real 300svh
+  in `src/styles/09-jack.css` is jacked without trapping: a real 180svh
   track, a `position:sticky` stage rather than fixed, proximity snap, no
   intercepted wheel or touch events, and a full collapse under
   prefers-reduced-motion. `tools/audit.mjs` asserts all of that. If you
