@@ -72,14 +72,64 @@
 .pane{display:none;&.on{display:block;animation:panein 300ms var(--ex)}}
 @keyframes panein{from{opacity:0;transform:translate3d(0,6px,0)}to{opacity:1;transform:none}}
 
+/* ============================================================
+   THE SLIP
+   ============================================================
+   The one card on the dashboard that is shaped like the thing the product
+   is about. Three details, all taken from the object rather than invented:
+
+     · a reference row along the top, mono and small caps, printing what
+       period is in view. A slip prints a reference up there; this prints
+       the fact that identifies what you are looking at.
+     · a tear line across the card, dashed, the same language the leg rows
+       on an imported slip already use.
+     · a punched notch at each end of the tear.
+
+   The notches are radial gradients of the page colour rather than a mask.
+   A mask would let the drifting sky through, which is truer, but it also
+   clips the element's own children on iOS and needs two prefixed
+   declarations to hold; at 11px across, a disc of --bg is
+   indistinguishable from a hole and cannot break anything.
+
+   Everything else on this screen stays a plain card. One surface carries
+   the identity and the rest carry information, which is the whole reason
+   this reads as considered rather than as decoration applied evenly. */
+.slipcard-hero{position:relative;overflow:hidden}
+
+.sliprule{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:10px 16px 9px;
+  border-bottom:1px dashed var(--e1);
+  & .sliprule-id{
+    font-family:var(--fm);font-size:9px;letter-spacing:.16em;
+    color:var(--t3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}}
+
+/* The punched notches, sitting on the tear line. Half off the card on each
+   side, so they read as bitten out of the edge rather than drawn on it. */
+/* No ring on these. With an inset outline they read as two small buttons
+   sitting on the edge; plain, they read as holes, which is the point. */
+.slipcard-hero::before,
+.slipcard-hero::after{
+  content:'';position:absolute;top:29px;width:13px;height:13px;
+  border-radius:50%;background:var(--bg);pointer-events:none}
+.slipcard-hero::before{left:-6px}
+.slipcard-hero::after{right:-6px}
+
 /* headline number */
 .headline{
   padding:16px 16px 0;
   & .top{display:flex;justify-content:space-between;align-items:flex-start;gap:10px;flex-wrap:wrap}
   & .cap{font-family:var(--fm);font-size:9.5px;letter-spacing:.15em;
     text-transform:uppercase;color:var(--t2)}
-  & .value{font-weight:750;font-size:clamp(30px,8.5vw,38px);letter-spacing:-.035em;
-    line-height:1;margin-top:8px;font-variant-numeric:tabular-nums lining-nums}
+  /* The number is the subject of this screen, so it is set like one:
+     larger, tighter, and tabular so the digits cannot jitter as it
+     animates between periods. The currency mark is optically reduced and
+     raised by its own rule below, because at this size a full-height £
+     is a second character competing with the figure. */
+  & .value{font-weight:750;font-size:clamp(38px,12vw,54px);letter-spacing:-.045em;
+    line-height:.95;margin-top:10px;font-variant-numeric:tabular-nums lining-nums;
+    & .cur{font-size:.56em;font-weight:650;letter-spacing:0;
+      vertical-align:.28em;margin-right:.04em;opacity:.72}}
   & .strip{display:flex;gap:14px;margin-top:9px;font-size:11.5px;color:var(--t2);flex-wrap:wrap;
     & b{font-family:var(--fm);font-weight:550;color:var(--t1);
       font-variant-numeric:tabular-nums lining-nums}}
@@ -146,13 +196,24 @@
   transition:transform var(--tf) var(--ez);
   & .amt{font-size:10px;font-weight:600;line-height:1.15;letter-spacing:-.03em;
     font-variant-numeric:tabular-nums lining-nums}
-  & .dnum{font-size:8.5px;color:var(--t3);line-height:1.15;margin-top:1px}
+  /* 9.5px and --t2, not 8.5px and --t3.
+     Every day is a button now, including empty ones and days in the
+     future, and that changed what these numbers are. While they were
+     `disabled` an audit skipped them; as controls somebody can tap to add
+     a figure to that day, a date they cannot read is a date they cannot
+     choose. Measured 2.1:1 across all five themes before this. */
+  & .dnum{font-size:9.5px;color:var(--t2);line-height:1.15;margin-top:1px}
   &.blank{visibility:hidden;animation:none;opacity:1}
   &.nobets{background:rgba(var(--ink),.035);border-color:rgba(var(--ink),.08);
     &::after{content:"";position:absolute;left:-16%;right:-16%;top:50%;height:1px;
       background:rgba(var(--ink),.18);transform:rotate(-38deg)}}
-  &.future{border:1px dashed rgba(var(--ink),.10);& .dnum{color:rgba(100,116,139,.6)}}
-  &.hasbets{cursor:pointer;&:active{transform:scale(.93)}}
+  /* A future day is dashed rather than dimmed. The dashed border already
+     says "nothing here yet"; fading the number as well made the one part
+     that has to stay readable the part that was hardest to read. */
+  &.future{border:1px dashed rgba(var(--ink),.16)}
+  /* Every cell is pressable now, so every cell gets the affordance. */
+  cursor:pointer;
+  &:active{transform:scale(.93)}
   &.today{outline:1.5px solid rgba(var(--orb2),.75);outline-offset:-1.5px;
     & .dnum{color:var(--s);font-weight:600}}
   &.picked{outline:2px solid var(--s);outline-offset:-2px}}

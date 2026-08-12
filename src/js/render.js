@@ -174,15 +174,51 @@ export function renderHeadline() {
   const p = stats(S, MS);
   const life = lifetime();
 
+  /* The reference row along the top of the slip.
+     A real slip prints a reference and a date up there. This prints the
+     span of dates in view and how many of them have anything on them,
+     which is the pair of facts the big number does not tell you.
+
+     Deliberately NOT the period name: the label directly under it already
+     says "Net this month", and printing "THIS MONTH" nine pixels above
+     that is one element doing another's job. Dates are what the label
+     cannot say. */
+  const pad = n => String(n).padStart(2, '0');
+  const range = (() => {
+    const y = TODAY.year;
+    if (S.period === 'a') return LEDGER.length ? 'ALL TIME' : 'NOTHING LOGGED YET';
+    if (S.period === 'd' && S.focus != null) {
+      return DS.format(new Date(y, S.month, S.focus)).toUpperCase() + ' ' + y;
+    }
+    if (S.period === 'w' && S.focus != null) {
+      const r = weekRange(S.month, S.focus, S.weekStart);
+      return pad(r.a) + ' TO ' + pad(r.b) + ' ' + MS.format(new Date(y, S.month, 1)).toUpperCase() + ' ' + y;
+    }
+    const dim = new Date(y, S.month + 1, 0).getDate();
+    return '01 TO ' + dim + ' ' + MS.format(new Date(y, S.month, 1)).toUpperCase() + ' ' + y;
+  })();
+  setText('headlineRef',
+    range + '  ·  ' + (p.activeDays === 1 ? '1 ACTIVE DAY' : p.activeDays + ' ACTIVE DAYS'));
+
   const label = S.period === 'a' ? 'Net all time'
     : S.period === 'm' ? (S.month === TODAY.month ? 'Net this month'
         : 'Net in ' + MS.format(new Date(TODAY.year, S.month, 1)))
-    : S.period === 'd' ? 'Net on ' + DS.format(new Date(TODAY.year, S.month, S.focus))
-    : 'Net, ' + p.label;
+    : S.period === 'w' ? 'Net this week'
+    : 'Net on ' + (S.focus != null
+        ? DS.format(new Date(TODAY.year, S.month, S.focus))
+        : 'the selected day');
   setText('headlineLabel', label);
 
+  /* The currency mark is wrapped so it can be optically reduced. Set
+     through innerHTML with the figure escaped rather than by concatenating
+     a formatted string, because the only variable part is money() output
+     and it must never be able to carry markup. */
   const v = $('headlineValue');
-  v.textContent = M.signed(p.profit);
+  const money = M.signed(p.profit);
+  const cur = money.match(/^([^\d]*?)([\d].*)$/);
+  v.innerHTML = cur
+    ? '<span class="cur">' + esc(cur[1]) + '</span>' + esc(cur[2])
+    : esc(money);
   v.className = 'value m ' + M.tone(p.profit);
 
   /* The bet count honours the Settings toggle. `p.bets` for a scoped
