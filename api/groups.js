@@ -89,7 +89,7 @@ async function list(res, user) {
 
   const ids = mine.map(g => g.id);
   const members = await sql`
-    SELECT gm.group_id, u.id, u.display_name, u.unit_pence
+    SELECT gm.group_id, u.id, u.display_name, u.unit_pence, u.verified
     FROM group_members gm JOIN users u ON u.id = gm.user_id
     WHERE gm.group_id = ANY(${ids}) AND u.deleted_at IS NULL
     ORDER BY gm.joined_at`;
@@ -143,7 +143,10 @@ async function list(res, user) {
          stays on the server and only the percentage it produces leaves. */
       b: acc.bets,
       roi: acc.staked ? all / acc.staked : 0,
-      v: false,
+      /* The tick, from the column. It used to be hardcoded false, so a
+         verified account looked exactly like an unverified one to everybody
+         in its groups, which is the entire thing the tick is for. */
+      v: Boolean(m.verified),
       /* Inside a group, units are always visible. That is the brief's rule,
          and it is why these two are fixed rather than read from a privacy
          column: you joined the group. */

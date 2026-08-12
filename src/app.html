@@ -959,11 +959,17 @@
           <option value="monthly">Monthly</option>
           <option value="yearly">Yearly</option>
         </select></div>
-      <div class="fieldrow"><span class="lab">Slips logged<small id="planLimit">20 slips on the free trial</small></span>
-        <span class="pillbtn locked m" id="planUsage">0 of 20</span></div>
+      <div class="fieldrow"><span class="lab">Slips logged<small id="planLimit">35 slips on the free trial</small></span>
+        <span class="pillbtn locked m" id="planUsage">0 of 35</span></div>
       <div class="fieldrow"><span class="lab">Promo code<small>Applies to this account straight away</small></span>
         <button class="pillbtn" data-pay="promo">Enter</button></div>
-      <div class="fieldrow"><span class="lab">Verification</span><span class="pillbtn" id="verifyState" style="color:var(--s)">Verified</span></div>
+      <!-- Two different things, so two rows. An email address being proven
+           and an account being verified are unrelated: one is a click on a
+           link, the other is a claim that the figures are real. Sharing a
+           row said "Verified" to everyone who had confirmed an email. -->
+      <div class="fieldrow"><span class="lab">Email address</span><span class="pillbtn locked" id="verifyState">Verified</span></div>
+      <div class="fieldrow"><span class="lab">Verified tick<small id="tickNote">Not granted yet</small></span>
+        <span class="pillbtn locked" id="tickState">No</span></div>
       <div class="fieldrow"><span class="lab">Billing</span><button class="pillbtn" data-pay="yearly">Manage</button></div>
     </div>
 

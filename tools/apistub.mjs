@@ -23,8 +23,16 @@ export const USER = {
   email: 'darius@example.com',
   emailVerified: true,
   unitPence: 10000,
-  plan: 'yearly',
+  /* free, to match the trial the bets stub reports. A paid plan here and a
+     trial there would render a counter for an account that cannot have
+     one. */
+  plan: 'free',
   planUntil: null,
+  /* The tick is off, which is the default and the state worth auditing:
+     the bug being guarded against is showing it to somebody who has not
+     been granted it. */
+  verified: false,
+  trialEndsAt: null,
   telegramLinked: true,
   linkCode: 'SLIP-7F3A',
   since: '2026-02-14T10:00:00Z'

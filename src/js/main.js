@@ -569,9 +569,13 @@ async function redeemPromo(btn, inputId, noteId) {
   S.plan = r.body.plan;
   S.planUntil = r.body.planUntil;
   S.planChoice = r.body.plan === 'lifetime' ? 'free' : r.body.plan;
+  /* A code can carry the tick, and once granted it is never taken back by
+     redeeming another one, so this only ever goes on. */
+  if (r.body.verified) S.verified = true;
   say(r.body.label + ', ' + r.body.note, 'pos');
   toast(r.body.label + ' applied');
   R.renderPlan();
+  R.renderGroups();
   renderPlanChoice();
 }
 

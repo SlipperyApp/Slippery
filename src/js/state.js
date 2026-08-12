@@ -43,6 +43,10 @@ export const S = {
   name: '',
   plan: 'free',           // free | monthly | yearly | lifetime
   planUntil: null,
+  /* The verified tick. Granted by the owner, or by a code that carries it,
+     and removable, so it is a fact about the account rather than something
+     derived from how long you have been here or how much you have logged. */
+  verified: false,
   planChoice: 'free',     // what the signup chooser is on
   payPlan: 'yearly',      // which plan the checkout page is showing
   ledgerView: 'ledgerBets',

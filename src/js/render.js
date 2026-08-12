@@ -429,7 +429,9 @@ function duo(title, n, units) {
 function groupRows(g) {
   const me = stats(S, MS);
   return g.mem.map(n => {
-    if (n === 'You') return { n: 'You', a: 'YO', un: S.unit, v: me.profit, verified: true, me: true };
+    /* Your own tick is whatever the session says it is. This was hardcoded
+       true, which claimed a verification nobody had granted. */
+    if (n === 'You') return { n: 'You', a: 'YO', un: S.unit, v: me.profit, verified: S.verified, me: true };
     const p = PEOPLE.find(x => x.n === n);
     return p ? { n: p.n, a: p.a, un: p.un, v: personValue(p), verified: p.v } : null;
   }).filter(Boolean).sort((a, b) => b.v / b.un - a.v / a.un);
@@ -775,6 +777,20 @@ export function renderAccount(user) {
     v.textContent = user.emailVerified ? 'Verified' : 'Unverified';
     v.style.color = user.emailVerified ? 'var(--s)' : 'var(--a)';
   }
+
+  /* The tick. Separate from the line above on purpose: proving an email
+     address and having your figures vouched for are unrelated claims, and
+     one row for both told everyone who clicked a link that they were
+     verified. */
+  S.verified = Boolean(user.verified);
+  const tick = $('tickState');
+  if (tick) {
+    tick.textContent = S.verified ? 'Verified' : 'No';
+    tick.style.color = S.verified ? 'var(--s)' : 'var(--t2)';
+  }
+  setText('tickNote', S.verified
+    ? 'Your figures have been checked'
+    : 'Granted after a review of your slips');
 }
 
 /* The plan rows in Settings, from state rather than from a passed user, so
