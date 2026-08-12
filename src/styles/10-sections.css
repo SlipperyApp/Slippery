@@ -1,0 +1,144 @@
+/* ============================================================
+   THE SECTION COMPONENT
+   ============================================================
+   One structure, repeated, with the accent varied per section. That
+   repetition is the whole reason a long page reads as designed rather than
+   as a pile of blocks: by the third section the reader knows where the
+   badge, the claim, the evidence and the conclusion will be, and can skim
+   for whichever they want.
+
+   Six parts, in this order, every time:
+     1  badge      accent-filled pill, icon and two or three words
+     2  headline   two lines, second line in the accent
+     3  lede       two sentences, never three
+     4  rows       full width, icon tile left; exactly ONE carries the accent
+     5  ticks      four short items, 2x2
+     6  demo       real UI, ending in a one-line conclusion
+
+   THE ACCENT IS A HUE ANGLE, NOT A COLOUR. Every section sets --acc from
+   the theme's own tokens rather than from a fixed palette, so the page
+   varies across a section while staying inside whichever theme is on. A
+   hardcoded purple would be someone else's brand.
+
+   THE CONCLUSION LINE IS NOT OPTIONAL. A chart without a conclusion is
+   decoration; the line under each demo says what the data means in one
+   sentence. If a demo cannot be summed up in one line it is the wrong
+   demo. */
+
+.sect{
+  --acc:var(--s);
+  --acc-rgb:var(--orb2);
+  padding:52px 0 0;
+  &:first-of-type{padding-top:34px}
+}
+
+/* Per-section accent, rotated through the theme's own three orb hues so
+   the page moves without leaving the palette. */
+.sect.a1{--acc:var(--s);--acc-rgb:var(--orb2)}
+.sect.a2{--acc:var(--pos);--acc-rgb:134,239,172}
+.sect.a3{--acc:var(--p);--acc-rgb:var(--orb1)}
+.sect.a4{--acc:var(--a);--acc-rgb:245,158,11}
+
+.sect-badge{
+  display:inline-flex;align-items:center;gap:7px;
+  padding:6px 13px 6px 9px;border-radius:999px;
+  background:rgba(var(--acc-rgb),.13);border:1px solid rgba(var(--acc-rgb),.34);
+  font-size:11.5px;font-weight:600;letter-spacing:.01em;color:var(--acc);
+  & svg{width:13px;height:13px;flex:0 0 auto}}
+
+/* The two-tone headline. The accent lands on the second line, and the
+   second line is the claim rather than the setup: "Switch in seconds," is
+   white, "not hours." is coloured. */
+.sect-h{
+  font-family:var(--fd);font-size:clamp(26px,7vw,38px);line-height:1.08;
+  letter-spacing:-.03em;margin:14px 0 0;
+  & em{font-style:normal;color:var(--acc);display:block}}
+.sect-lede{
+  margin:12px 0 0;font-size:14.5px;line-height:1.62;color:var(--t2);max-width:52ch}
+
+/* The rows. One is highlighted, and highlighted means the accent border
+   and a filled tile, not a different size: the eye should land on it
+   without the layout moving. */
+.sect-rows{display:flex;flex-direction:column;gap:8px;margin-top:20px}
+.sect-row{
+  display:flex;align-items:center;gap:13px;padding:13px 14px;border-radius:14px;
+  border:1px solid var(--e2);background:var(--c1);
+  transition:border-color var(--tb),background var(--tb),transform var(--tb) var(--ez);
+  @media (hover:hover) and (pointer:fine){&:hover{transform:translateY(-1px)}}
+  & .rowtile{
+    width:38px;height:38px;border-radius:11px;flex:0 0 auto;display:grid;place-items:center;
+    background:var(--c2);border:1px solid var(--e1);
+    & svg{width:17px;height:17px;color:var(--t2)}}
+  & .rowt{font-weight:600;font-size:14px;letter-spacing:-.01em}
+  & .rows{display:block;font-size:12.5px;color:var(--t2);margin-top:2px;line-height:1.45}
+  &.on{
+    border-color:rgba(var(--acc-rgb),.5);background:rgba(var(--acc-rgb),.07);
+    & .rowtile{background:rgba(var(--acc-rgb),.9);border-color:transparent;
+      & svg{color:#08111f}}}}
+
+.sect-ticks{
+  display:grid;grid-template-columns:1fr 1fr;gap:11px 14px;margin-top:20px;
+  & span{display:flex;align-items:flex-start;gap:8px;font-size:12.5px;color:var(--t2);
+    line-height:1.4}
+  & svg{width:14px;height:14px;flex:0 0 auto;color:var(--acc);margin-top:1px}}
+
+/* The demo. Real UI, never a screenshot: a screenshot ages the moment the
+   product changes and cannot be read by a screen reader. */
+.sect-demo{
+  margin-top:22px;padding:15px;border-radius:17px;
+  border:1px solid var(--e1);background:var(--card);
+  & .demohead{display:flex;align-items:center;gap:8px;margin-bottom:13px;
+    font-family:var(--fm);font-size:10px;letter-spacing:.12em;text-transform:uppercase;
+    color:var(--t3);
+    & svg{width:13px;height:13px;color:var(--acc)}}}
+
+/* THE CONCLUSION. Every demo ends here. */
+.sect-said{
+  margin-top:14px;padding-top:11px;border-top:1px solid var(--e2);
+  font-size:11.5px;line-height:1.5;color:var(--t2);text-align:center;
+  & b{color:var(--t1);font-weight:600}
+  & .up{color:var(--pos)}
+  & .down{color:var(--neg)}}
+
+/* A row inside a demo: label, bar, value. Used by the splits. */
+.demobar{
+  display:grid;grid-template-columns:1fr auto;gap:3px 10px;align-items:baseline;
+  padding:7px 0;
+  & .bl{font-size:12px;color:var(--t2)}
+  & .bv{font-family:var(--fm);font-size:12px;font-weight:600;
+    font-variant-numeric:tabular-nums lining-nums}
+  & .bt{grid-column:1/-1;height:4px;border-radius:3px;background:var(--e2);overflow:hidden}
+  /* A neutral bar still needs a fill, or a real value renders as an empty
+     track and reads as zero. Only the tone changes with up and down. */
+  & .bt i{display:block;height:100%;border-radius:3px;background:var(--t3);
+    transform-origin:left center;transform:scaleX(var(--f,0));
+    transition:transform 780ms var(--ez)}
+  &.up .bt i{background:var(--pos)}
+  &.down .bt i{background:var(--neg)}}
+
+@media (min-width:760px){
+  .sect-ticks{grid-template-columns:repeat(4,1fr)}
+  .sect-rows{gap:9px}
+}
+
+/* The 18+ line. On every page, above the tab bar, never inside a view.
+   Small, permanent, and not dismissible: the point of it is that it is
+   always there. It sits in normal flow at the end of the document so it
+   scrolls with content rather than covering it, and the tab bar's own
+   safe-area padding keeps it clear of the home indicator. */
+.agebar{
+  display:flex;align-items:center;justify-content:center;gap:8px;flex-wrap:wrap;
+  padding:14px 16px calc(14px + env(safe-area-inset-bottom));
+  font-size:11px;line-height:1.5;color:var(--t3);text-align:center;
+  border-top:1px solid var(--e2);
+  /* A link in a permanent footer is still a control somebody has to hit.
+     Padded to the 24px floor rather than left as 17px of text. */
+  & a{color:var(--t2);text-decoration:underline;text-underline-offset:3px;
+    display:inline-flex;align-items:center;min-height:24px;padding:3px 2px}
+  & .ageroundel{
+    display:inline-grid;place-items:center;width:22px;height:22px;border-radius:50%;
+    border:1.5px solid var(--t3);font-family:var(--fm);font-size:8.5px;font-weight:600;
+    flex:0 0 auto}}
+/* In the app the tab bar is fixed to the bottom, so the line needs to clear
+   it rather than hide behind it. */
+body.in-app .agebar{margin-bottom:66px}

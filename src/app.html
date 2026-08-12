@@ -178,44 +178,19 @@
   </div>
 
   <div class="wrap">
-    <!-- The case for the product, stated rather than implied.
-         The two things that make Slippery different are a decision about
-         WHEN you log and a decision about when NOT to grade, and neither
-         was written down anywhere a reader would find it. Both are worth
-         a sentence: they are the reasons the numbers on the dashboard can
-         be trusted, and a tracker whose numbers cannot be trusted is a
-         diary. -->
-    <div class="section snap-point" id="secWhy">
-      <p class="eyebrow reveal">Why it works</p>
-      <h2 class="reveal">Two decisions, both awkward.</h2>
-      <div class="claims reveal">
-        <div class="claim">
-          <span class="cn">01</span>
-          <h3>You log at placement, not at settlement</h3>
-          <p>Every tracker that asks you to enter a bet after it finishes gets a record of the ones you wanted to remember. Capturing the slip when you place it is less convenient and it is the only way the total is real.</p>
-        </div>
-        <div class="claim">
-          <span class="cn">02</span>
-          <h3>It refuses rather than guesses</h3>
-          <p>Extra time never counts. A whole line on the exact score is a push, not a loss. Handicaps grade differently at bet365 than everywhere else. Anything Slippery cannot be certain of is handed back to you, because a wrong grade is worse than no grade.</p>
-        </div>
-      </div>
-    </div>
+    <!-- THE SECTIONS.
+         One component, six parts, repeated with the accent varied per
+         section: badge, two-tone headline, two sentences, rows with
+         exactly one highlighted, four ticks, a live demo, and a line
+         saying what the demo means.
 
-    <div class="section snap-point" id="secGet">
-      <p class="eyebrow reveal">What you get</p>
-      <h2 class="reveal">Your real numbers.</h2>
-      <div class="card feature reveal">
-        <div class="glyph" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="17" rx="2"/><path d="M3 9h18M8 2v4M16 2v4"/></svg></div>
-        <h3>Profit calendar and analytics</h3>
-        <p>Green days, red days, a target with a pace marker, and profit split by bookmaker, market and tipster.</p>
-      </div>
-      <div class="card feature premium reveal">
-        <div class="glyph" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 21h8M12 17v4"/><path d="M7 4h10v5a5 5 0 0 1-10 0z"/><path d="M17 5h3v2a3 3 0 0 1-3 3M7 5H4v2a3 3 0 0 0 3 3"/></svg></div>
-        <h3>Groups and following</h3>
-        <p>Start a group, follow Slippers whose numbers you rate, and choose who sees yours. Ranked in units, so nobody sees a stake size.</p>
-      </div>
-    </div>
+         The order is deliberate and it is not the benchmark's. Theirs
+         opens with AI extraction because extraction is their product.
+         Ours opens with capture at placement, because that is the only
+         thing here nobody can copy, and leading with a feature tour would
+         be arguing on their ground. Built from data in content.js, so a
+         new section is an entry rather than a block of markup. -->
+    <div id="landingSections"></div>
 
     <div class="card telegramcta reveal snap-point">
       <div class="glyph" aria-hidden="true"><svg viewBox="0 0 24 24"><use href="#i-telegram"/></svg></div>
@@ -1292,6 +1267,18 @@
 </div>
 
 <div class="toasts" id="toasts"></div>
+
+<!-- ON EVERY PAGE, not just the landing footer.
+     The benchmark puts this line everywhere and it is right to: a product
+     that turns a gambling record into a green and red grid should carry
+     the reminder wherever somebody is looking at it, not only where they
+     arrived. Rendered outside every view so it cannot be missed by
+     navigating past it. -->
+<footer class="agebar" aria-label="Responsible gambling">
+  <span class="ageroundel" aria-hidden="true">18+</span>
+  <span>Please gamble responsibly.</span>
+  <a href="https://www.begambleaware.org" target="_blank" rel="noopener">BeGambleAware.org</a>
+</footer>
 
 <nav class="tabbar" aria-label="App sections">
   <button data-nav="dash"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="3" y="3" width="8" height="8" rx="2"/><rect x="13" y="3" width="8" height="5" rx="2"/><rect x="13" y="10" width="8" height="11" rx="2"/><rect x="3" y="13" width="8" height="8" rx="2"/></svg>Dashboard</button>

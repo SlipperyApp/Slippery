@@ -206,6 +206,7 @@ const PRIVACY = [
 ];
 
 export function renderStatic() {
+  renderSections();
   setHTML('homeFaq', HOME_FAQ.map(f =>
     '<details class="card faq"><summary>' + esc(f[0]) + '</summary><p>' + esc(f[1]) + '</p></details>').join(''));
   setHTML('helpFaq', HELP_FAQ.map(f =>
@@ -519,3 +520,143 @@ function paintScene() {
 }
 
 export function isPlaying() { return playing; }
+
+/* ---------- the landing sections ----------
+ *
+ * One component, six parts, repeated with the accent varied. The order is
+ * deliberate and it is not the benchmark's order: theirs opens with AI
+ * extraction because extraction is their product. Ours opens with capture
+ * at placement because that is the only thing here nobody else can copy,
+ * and burying it behind a feature tour would be arguing on their ground.
+ *
+ * Every section ends with `said`, one line stating what the demo means. A
+ * chart without a conclusion is decoration.
+ */
+export const SECTIONS = [
+  {
+    accent: 'a2',
+    badge: ['i-won', 'The bit that makes it true'],
+    h: ['Logged before kick-off,', 'not after the result.'],
+    lede: 'Every other tracker asks you to enter a bet once it has finished, which quietly collects the ones you wanted to remember. Slippery captures the slip when you place it.',
+    rows: [
+      ['i-telegram', 'Forward the slip as you place it', 'Screenshot, share, done. Two seconds.', true],
+      ['i-bolt', 'Read before anything is known', 'Stake, odds, selection and every leg.'],
+      ['i-shield', 'Locked to the moment it was sent', 'The capture time is recorded and cannot be edited.']
+    ],
+    ticks: ['Pre-match, in-play and settled are told apart',
+            'The split is on your dashboard',
+            'Imported history is excluded, not guessed',
+            'One number nobody can game'],
+    demo: 'capture',
+    said: 'A record that is <b>90% pre-match</b> cannot be a highlight reel. That is the whole argument.'
+  },
+  {
+    accent: 'a1',
+    badge: ['i-shield', 'Settlement'],
+    h: ['It refuses', 'rather than guesses.'],
+    lede: 'Extra time never counts. A whole line on the exact score is a push, not a loss. Handicaps grade differently at bet365 than everywhere else.',
+    rows: [
+      ['i-won', 'Standard markets settle themselves', 'On the 90 minute score, as soon as it is in.'],
+      ['i-void', 'Anything uncertain comes back to you', 'A wrong grade is worse than no grade.', true],
+      ['i-refresh', 'Five results sources, tried in order', 'If one blocks us, the next one answers.']
+    ],
+    ticks: ['90 minutes only, never extra time',
+            'Whole lines push, quarter lines split',
+            'Per-bookmaker handicap rules',
+            'Postponed voids, abandoned asks'],
+    demo: 'settle',
+    said: 'Measured on a live feed: <b class="up">299 of 300</b> handicaps graded, <b>274 cup ties refused</b> because the 90 minute score could not be proved.'
+  },
+  {
+    accent: 'a3',
+    badge: ['i-users', 'Groups'],
+    h: ['Compare with friends.', 'Show nobody your stakes.'],
+    lede: 'Groups rank in units, not pounds. A £10 bettor and a £500 bettor sit in the same table honestly, and neither learns what the other stakes.',
+    rows: [
+      ['i-users', 'Start a group, share the code', 'Private by default, or listed for anyone to find.'],
+      ['i-chart', 'Ranked in units', 'Your unit is your standard stake. Only the ratio leaves the server.', true],
+      ['i-shield', 'Turnover never leaves', 'The board divides on the server so it cannot be reversed.']
+    ],
+    ticks: ['Units, never pounds', 'Public or invite-only groups',
+            'Follow individual Slippers', 'You choose who sees your figures'],
+    demo: 'group',
+    said: 'Same table, <b>50x</b> difference in stake size, and no way to tell which is which.'
+  },
+  {
+    accent: 'a4',
+    badge: ['i-bolt', 'Import'],
+    h: ['Bring the history', 'you already have.'],
+    lede: 'Screenshots, PDFs, a CSV export, or a profit screen from another tracker. Slippery works out which it is and files the dated rows on the right days.',
+    rows: [
+      ['i-arrow-down', 'Drop anything in', 'One zone. No choosing a format first.', true],
+      ['i-bolt', 'Dated rows land on their dates', 'A P/L screen becomes a month of the calendar, not one number.'],
+      ['i-void', 'Re-running it corrects, never doubles', 'Keyed on the day, so a retry is safe.']
+    ],
+    ticks: ['Images, PDF, CSV and paste', 'Every field editable before saving',
+            'Nothing saved until you confirm', 'Imported bets excluded from the capture rate'],
+    demo: 'import',
+    said: 'Imported history is counted separately, because it has no slips behind it and pretending otherwise would break the one number that matters.'
+  }
+];
+
+
+/* Build every section from SECTIONS. One function, so a new section is a
+   data entry rather than a block of markup, and so the six parts cannot
+   drift apart between sections. */
+const tick = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" aria-hidden="true"><path d="M20 6L9 17l-5-5"/></svg>';
+
+function sectionRow(r) {
+  return '<div class="sect-row' + (r[3] ? ' on' : '') + '">' +
+    '<span class="rowtile" aria-hidden="true">' + ico(r[0]) + '</span>' +
+    '<span><span class="rowt">' + esc(r[1]) + '</span>' +
+    '<span class="rows">' + esc(r[2]) + '</span></span></div>';
+}
+
+/* The demos. Real markup, never a screenshot: a screenshot ages the day
+   the product changes and a screen reader cannot read one. */
+function sectionDemo(kind) {
+  if (kind === 'capture') {
+    const bars = [['Before kick-off', 90, 'up'], ['In play', 7, ''], ['After it settled', 3, 'down']];
+    return '<div class="demohead">' + ico('i-chart') + 'How this record was captured</div>' +
+      bars.map(b => '<div class="demobar ' + b[2] + '"><span class="bl">' + b[0] +
+        '</span><span class="bv">' + b[1] + '%</span>' +
+        '<span class="bt"><i style="--f:' + (b[1] / 100) + '"></i></span></div>').join('');
+  }
+  if (kind === 'settle') {
+    const rows = [['Arsenal v Spurs', 'Over 2.5, 3-1', 'Settled', 'up'],
+                  ['Bayern v Mainz', 'Bayern -1, 2-1 at bet365', 'Void, whole line', ''],
+                  ['Morocco W v South Africa W', 'Cup tie, went to extra time', 'Asks you', 'down']];
+    return '<div class="demohead">' + ico('i-shield') + 'Three results, three answers</div>' +
+      rows.map(r => '<div class="demobar"><span class="bl"><b style="color:var(--t1)">' +
+        esc(r[0]) + '</b><br>' + esc(r[1]) + '</span><span class="bv ' + r[3] + '">' +
+        esc(r[2]) + '</span></div>').join('');
+  }
+  if (kind === 'group') {
+    const rows = [['DariusOdds', '1u = £10', '+4.20u', 'up'], ['HalfEdge', '1u = £500', '+2.05u', 'up'],
+                  ['QuietStake', '1u = £25', '-0.90u', 'down']];
+    return '<div class="demohead">' + ico('i-users') + 'Sunday League, this month</div>' +
+      rows.map((r, i) => '<div class="demobar"><span class="bl">' + (i + 1) + '. <b style="color:var(--t1)">' +
+        esc(r[0]) + '</b> · ' + esc(r[1]) + '</span><span class="bv ' + r[3] + '">' +
+        esc(r[2]) + '</span></div>').join('');
+  }
+  const rows = [['12 Aug', '-40.50', 'down'], ['11 Aug', '+118.00', 'up'], ['10 Aug', '+26.40', 'up']];
+  return '<div class="demohead">' + ico('i-calendar') + 'Read off a profit screen</div>' +
+    rows.map(r => '<div class="demobar"><span class="bl">' + esc(r[0]) +
+      '</span><span class="bv ' + r[2] + '">' + esc(r[1]) + '</span></div>').join('');
+}
+
+export function renderSections() {
+  const el = $('landingSections');
+  if (!el) return;
+  el.innerHTML = SECTIONS.map(s =>
+    '<section class="sect ' + s.accent + ' reveal">' +
+      '<span class="sect-badge">' + ico(s.badge[0]) + esc(s.badge[1]) + '</span>' +
+      '<h2 class="sect-h">' + esc(s.h[0]) + '<em>' + esc(s.h[1]) + '</em></h2>' +
+      '<p class="sect-lede">' + esc(s.lede) + '</p>' +
+      '<div class="sect-rows">' + s.rows.map(sectionRow).join('') + '</div>' +
+      '<div class="sect-ticks">' + s.ticks.map(t =>
+        '<span>' + tick + esc(t) + '</span>').join('') + '</div>' +
+      '<div class="sect-demo">' + sectionDemo(s.demo) +
+        '<p class="sect-said">' + s.said + '</p></div>' +
+    '</section>').join('');
+}
