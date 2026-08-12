@@ -19,10 +19,18 @@ import { db, ensureSchema, configured } from './_lib/db.js';
 import { sessionUser } from './_lib/auth.js';
 import { cashOutcome, ledgerOutcome, payoutFor } from '../src/js/settlement.js';
 import { limit } from './_lib/rate.js';
+import { unlimited } from './_lib/promo.js';
 
 /* The free tier. Counted on the server, because a limit enforced in the
    browser is a suggestion. */
 const FREE_SLIPS = 20;
+
+/* limit() answers {allowed, retryAfter}. Testing the object is always true,
+   which silently disabled both burst limits below. */
+const allowed = async (...args) => (await limit(...args)).allowed;
+
+/* Paid, gifted or free-for-life all mean the same thing here: no cap. */
+const capped = user => !unlimited(user.plan, user.plan_until);
 
 export default async function handler(req, res) {
   if (!methodGuard(req, res, ['GET', 'POST', 'PATCH', 'DELETE'])) return;
@@ -61,7 +69,9 @@ async function list(res, user) {
     bets: rows.map(shape),
     total: counted[0].n,
     freeSlips: FREE_SLIPS,
-    plan: user.plan || 'free'
+    plan: user.plan || 'free',
+    planUntil: user.plan_until || null,
+    unlimited: !capped(user)
   });
 }
 
@@ -99,7 +109,7 @@ async function create(req, res, user, body) {
   const sql = db();
   /* The free tier is a count of bets ever logged, not bets currently held,
      so deleting bets cannot be used to reset it. */
-  if ((user.plan || 'free') === 'free') {
+  if (capped(user)) {
     const used = await sql`SELECT count(*)::int AS n FROM bets WHERE user_id = ${user.id}`;
     if (used[0].n >= FREE_SLIPS) {
       return json(res, 402, {
@@ -109,8 +119,9 @@ async function create(req, res, user, body) {
     }
   }
   /* A burst of uploads is normal; a thousand a minute is not. */
-  const ok = await limit('bets:' + user.id, 120, 60);
-  if (!ok) return json(res, 429, { error: 'Slow down a moment and try again.' });
+  if (!(await allowed('bets:' + user.id, 120, 60))) {
+    return json(res, 429, { error: 'Slow down a moment and try again.' });
+  }
 
   const stake = Math.round(Number(body.stakePence));
   const odds = body.odds == null ? null : Number(body.odds);
@@ -150,11 +161,12 @@ async function createMany(req, res, user, rows) {
   if (rows.length > MAX_IMPORT) {
     return json(res, 413, { error: 'That is more than ' + MAX_IMPORT + ' bets. Split the file.' });
   }
-  const ok = await limit('import:' + user.id, 6, 300);
-  if (!ok) return json(res, 429, { error: 'Give the last import a moment to finish.' });
+  if (!(await allowed('import:' + user.id, 6, 300))) {
+    return json(res, 429, { error: 'Give the last import a moment to finish.' });
+  }
 
   const sql = db();
-  if ((user.plan || 'free') === 'free') {
+  if (capped(user)) {
     const used = await sql`SELECT count(*)::int AS n FROM bets WHERE user_id = ${user.id}`;
     if (used[0].n + rows.length > FREE_SLIPS) {
       return json(res, 402, {

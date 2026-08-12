@@ -30,14 +30,20 @@ export function provider() {
 }
 
 export async function sendVerificationEmail(to, code) {
+  return send(to, 'Your Slippery code: ' + code, codeText(code, VERIFY), codeHtml(code, VERIFY));
+}
+
+export async function sendResetEmail(to, code) {
+  return send(to, 'Reset your Slippery password: ' + code,
+    codeText(code, RESET), codeHtml(code, RESET));
+}
+
+async function send(to, subject, text, html) {
   if (!configured()) {
     const err = new Error('Email delivery is not configured yet.');
     err.statusCode = 503;
     throw err;
   }
-  const subject = 'Your Slippery code: ' + code;
-  const text = verificationText(code);
-  const html = verificationHtml(code);
 
   if (gmailReady()) {
     /* Gmail rewrites From to the authenticated account, so defaulting to it
@@ -73,26 +79,38 @@ export async function sendVerificationEmail(to, code) {
   }
 }
 
-const verificationText = code => `Your Slippery verification code is ${code}.
+/* The two emails differ only in their wording, so they share a body. What
+   they must not share is the reassurance line: "ignore this and nothing
+   happens" is true of an unwanted signup, and it is the single most useful
+   sentence in a reset email someone did not ask for. */
+const VERIFY = {
+  lead: 'Here is your verification code. It expires in ten minutes.',
+  ignore: 'If you did not create a Slippery account, ignore this email and nothing will happen.',
+  window: 'ten minutes'
+};
+const RESET = {
+  lead: 'Here is your password reset code. It expires in thirty minutes.',
+  ignore: 'If you did not ask to reset your password, ignore this email. Your password has not changed.',
+  window: 'thirty minutes'
+};
 
-It expires in ten minutes. If you did not create a Slippery account, you can
-ignore this email and nothing will happen.
+const codeText = (code, copy) => `Your Slippery code is ${code}.
+
+It expires in ${copy.window}. ${copy.ignore}
 
 Slippery tracks bets. It does not accept them and never handles money.
 18+ only. When the fun stops, stop. begambleaware.org`;
 
-const verificationHtml = code => `<!doctype html>
+const codeHtml = (code, copy) => `<!doctype html>
 <html lang="en-GB"><body style="margin:0;background:#0B1020;color:#F1F5F9;
   font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;padding:32px 20px">
   <div style="max-width:440px;margin:0 auto">
     <p style="font-size:19px;font-weight:700;letter-spacing:-.02em;margin:0 0 24px">Slippery</p>
-    <p style="font-size:15px;line-height:1.6;color:#98A6BC;margin:0 0 20px">
-      Here is your verification code. It expires in ten minutes.</p>
+    <p style="font-size:15px;line-height:1.6;color:#98A6BC;margin:0 0 20px">${copy.lead}</p>
     <p style="font-family:ui-monospace,Menlo,monospace;font-size:32px;letter-spacing:.28em;
       font-weight:600;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);
       border-radius:12px;padding:18px;text-align:center;margin:0 0 20px">${code}</p>
-    <p style="font-size:13.5px;line-height:1.6;color:#98A6BC;margin:0 0 24px">
-      If you did not create a Slippery account, ignore this email and nothing will happen.</p>
+    <p style="font-size:13.5px;line-height:1.6;color:#98A6BC;margin:0 0 24px">${copy.ignore}</p>
     <p style="font-size:11.5px;line-height:1.6;color:#75839B;margin:0;
       border-top:1px solid rgba(255,255,255,.1);padding-top:16px">
       Slippery tracks bets. It does not accept them and never handles money. 18+ only.

@@ -573,6 +573,90 @@ async function main() {
     await page.close();
   }
 
+  /* ── logging in actually opens the app ────────────────────────
+     "Won't let me sign in after making an account." The password was
+     right and the session cookie was set; the client simply never asked
+     again who it was, so go() still held the signed-out user it read at
+     boot and refused every app view. The symptom was being thrown back to
+     the signup screen with "create an account, or log in".
+
+     The check is deliberately end to end: fill the real fields, press the
+     real button, and require the dashboard. Anything less would have
+     passed while the bug was live. */
+  {
+    const page = await browser.newPage({ viewport: { width: 390, height: 844 } });
+    await installStub(page, { signedIn: false });
+    await page.goto(base, { waitUntil: 'networkidle' });
+    await page.waitForTimeout(400);
+    await page.evaluate(() => document.querySelector('[data-nav="setup"]').click());
+    await page.waitForTimeout(250);
+    await page.evaluate(() => document.querySelector('#authSeg [data-auth="in"]').click());
+    await page.waitForTimeout(200);
+
+    const loginVisible = await page.evaluate(() => {
+      const el = document.getElementById('liUser');
+      return Boolean(el) && !document.getElementById('authLogin').hidden;
+    });
+    if (!loginVisible) fail('login', 'the log in panel did not open, or has no username field');
+
+    /* A username, not an email. The account is found by either, and the
+       display name is the one people remember. */
+    await page.evaluate(() => {
+      const set = (id, v) => {
+        const el = document.getElementById(id);
+        el.value = v;
+        el.dispatchEvent(new Event('input', { bubbles: true }));
+      };
+      set('liUser', 'DariusOdds');
+      set('liPw', 'Correct-Horse-9');
+    });
+    await page.evaluate(() => document.getElementById('authGo').click());
+    await page.waitForTimeout(900);
+
+    const view = await page.evaluate(() => {
+      const on = document.querySelector('.view.on');
+      return on ? on.id : null;
+    });
+    if (view !== 'dash') {
+      fail('login', 'a correct username and password landed on "' + view +
+        '" rather than the dashboard');
+    }
+    await page.close();
+  }
+
+  /* ── a promo code changes the plan ────────────────────────────
+     Redemption is a server act; what is checked here is that the client
+     sends the code and repaints the plan from the answer rather than
+     believing its own optimism. */
+  {
+    const page = await browser.newPage({ viewport: { width: 390, height: 844 } });
+    await installStub(page);
+    await page.goto(base, { waitUntil: 'networkidle' });
+    await page.waitForTimeout(500);
+    await page.evaluate(() => document.querySelector('[data-pay="promo"]').click());
+    await page.waitForTimeout(300);
+    await page.evaluate(() => {
+      const el = document.getElementById('payPromo');
+      el.value = 'ak5-wrd';
+      el.dispatchEvent(new Event('input', { bubbles: true }));
+    });
+    const folded = await page.evaluate(() => document.getElementById('payPromo').value);
+    if (folded !== 'AK5WRD') {
+      fail('promo', 'the code field did not fold "ak5-wrd" to AK5WRD, so a code typed ' +
+        'off a screenshot would be rejected');
+    }
+    await page.evaluate(() => document.getElementById('payPromoGo').click());
+    await page.waitForTimeout(600);
+    const limit = await page.evaluate(() => {
+      const el = document.getElementById('planLimit');
+      return el ? el.textContent : '';
+    });
+    if (!/permanently/i.test(limit)) {
+      fail('promo', 'redeeming a lifetime code left the plan row saying "' + limit + '"');
+    }
+    await page.close();
+  }
+
   /* ── import actually imports ──────────────────────────────────
      The complaint that started this was "I can't import". Confirm used to
      be a toast and a fade — the card collapsed, the counters moved, and

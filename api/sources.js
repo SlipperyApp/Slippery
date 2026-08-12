@@ -34,7 +34,8 @@ export default async function handler(req, res) {
         MAIL_FROM: has('MAIL_FROM'),
         RESEND_API_KEY: has('RESEND_API_KEY'),
         FOOTBALL_DATA_TOKEN: has('FOOTBALL_DATA_TOKEN'),
-        CRON_SECRET: has('CRON_SECRET')
+        CRON_SECRET: has('CRON_SECRET'),
+        ADMIN_SECRET: has('ADMIN_SECRET')
       },
       mail: mail.provider(),
       sources: await probeSources()

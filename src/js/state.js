@@ -40,7 +40,11 @@ export const S = {
   query: '',
   peopleQuery: '',
   migrateChoice: '',
-  name: 'Darius',
+  name: '',
+  plan: 'free',           // free | monthly | yearly | lifetime
+  planUntil: null,
+  planChoice: 'free',     // what the signup chooser is on
+  payPlan: 'yearly',      // which plan the checkout page is showing
   ledgerView: 'ledgerBets',
   socialView: 'socialGroups',
   importView: 'importUpload',

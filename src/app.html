@@ -265,7 +265,7 @@
           <input class="field" id="suPw" type="password" autocomplete="new-password" placeholder="Create a password…" aria-describedby="suPwErr">
           <p class="formerr" id="suPwErr" hidden></p>
           <ul class="pwrules" id="pwRules" aria-live="polite">
-            <li data-rule="len"><i aria-hidden="true"></i>12 characters or more</li>
+            <li data-rule="len"><i aria-hidden="true"></i>8 characters or more</li>
             <li data-rule="cap"><i aria-hidden="true"></i>One capital letter</li>
             <li data-rule="sym"><i aria-hidden="true"></i>One special character</li>
           </ul>
@@ -279,6 +279,10 @@
           </div>
           <p class="stepnote" id="nameStatus" aria-live="polite" style="margin:8px 0 0;font-size:12.5px">Three characters or more, letters and numbers.</p>
           <p class="formerr" id="suNameErr" hidden></p>
+          <label class="label" for="suPromo">Promo code <span class="hint">optional</span></label>
+          <input class="field" id="suPromo" spellcheck="false" autocapitalize="characters" maxlength="24" placeholder="If you were given one…" aria-describedby="suPromoErr promoStatus">
+          <p class="stepnote" id="promoStatus" aria-live="polite" style="margin:8px 0 0;font-size:12.5px">Leave it blank if you do not have one.</p>
+          <p class="formerr" id="suPromoErr" hidden></p>
           <label class="fieldrow" for="ageOk" style="margin-top:14px;cursor:pointer">
             <span class="lab">I am 18 or over<small>Slippery is strictly for adults</small></span>
             <input type="checkbox" id="ageOk" style="width:22px;height:22px;flex:0 0 auto;accent-color:var(--p)">
@@ -292,13 +296,42 @@
         <div id="authLogin" hidden>
           <h2>Welcome back</h2>
           <p class="stepnote">Log in to pick up where you left off.</p>
-          <label class="label" for="liEmail">Email</label>
-          <input class="field" id="liEmail" type="email" autocomplete="email" spellcheck="false" placeholder="you@example.com" aria-describedby="liEmailErr">
-          <p class="formerr" id="liEmailErr" hidden></p>
+          <!-- Username or email. The display name is unique and it is the
+               thing people actually remember; insisting on the address they
+               happened to sign up with is a needless dead end. -->
+          <label class="label" for="liUser">Username or email</label>
+          <input class="field" id="liUser" type="text" autocomplete="username" spellcheck="false" autocapitalize="none" placeholder="DariusOdds or you@example.com" aria-describedby="liUserErr">
+          <p class="formerr" id="liUserErr" hidden></p>
           <label class="label" for="liPw">Password</label>
           <input class="field" id="liPw" type="password" autocomplete="current-password" placeholder="Your password…" aria-describedby="liPwErr">
           <p class="formerr" id="liPwErr" hidden></p>
           <button class="pillbtn link" id="forgotPw" style="margin-top:13px">Forgotten your password?</button>
+        </div>
+
+        <!-- Password reset, in place rather than on its own page: it is two
+             fields and a code, and losing the account context to a separate
+             screen is how people end up resetting the wrong account. -->
+        <div id="authForgot" hidden>
+          <h2>Reset your password</h2>
+          <p class="stepnote" id="forgotLead">Tell us the username or email on the account and we will send a code.</p>
+          <label class="label" for="fgUser">Username or email</label>
+          <input class="field" id="fgUser" type="text" autocomplete="username" spellcheck="false" autocapitalize="none" placeholder="DariusOdds or you@example.com" aria-describedby="fgUserErr">
+          <p class="formerr" id="fgUserErr" hidden></p>
+          <div id="forgotSecond" hidden>
+            <label class="label" for="fgCode">Six digit code</label>
+            <input class="field codeinput" id="fgCode" inputmode="numeric" maxlength="6" autocomplete="one-time-code" placeholder="000000" aria-describedby="fgCodeErr">
+            <p class="formerr" id="fgCodeErr" hidden></p>
+            <label class="label" for="fgPw">New password</label>
+            <input class="field" id="fgPw" type="password" autocomplete="new-password" placeholder="Create a new password…" aria-describedby="fgPwErr">
+            <p class="formerr" id="fgPwErr" hidden></p>
+            <ul class="pwrules" id="fgPwRules" aria-live="polite">
+              <li data-rule="len"><i aria-hidden="true"></i>8 characters or more</li>
+              <li data-rule="cap"><i aria-hidden="true"></i>One capital letter</li>
+              <li data-rule="sym"><i aria-hidden="true"></i>One special character</li>
+            </ul>
+          </div>
+          <div class="notice" id="forgotNotice" hidden></div>
+          <button class="pillbtn link" id="forgotBack" style="margin-top:13px">Back to log in</button>
         </div>
       </div>
       <div class="stepnav"><button class="btn primary" id="authGo" data-wizard="1">Continue</button></div>
@@ -326,6 +359,27 @@
 
     <div class="step" data-step="2">
       <div class="card settingcard">
+        <div class="stepglyph" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/></svg></div>
+        <h2>Pick your plan</h2>
+        <p class="stepnote">Start free and change later, or go straight to unlimited.</p>
+        <div class="planpick" id="planChoice" role="radiogroup" aria-label="Plan"></div>
+        <div class="promobox" id="promoBox">
+          <label class="label" for="planPromo">Promo code</label>
+          <div class="addrow">
+            <input class="field" id="planPromo" spellcheck="false" autocapitalize="characters" maxlength="24" placeholder="Enter a code…" autocomplete="off" aria-describedby="planPromoNote">
+            <button class="btn ghost" id="planPromoGo" style="padding:0 17px">Apply</button>
+          </div>
+          <p class="stepnote" id="planPromoNote" aria-live="polite" style="margin:8px 0 0;font-size:12.5px">A code applies to this account straight away.</p>
+        </div>
+      </div>
+      <div class="stepnav">
+        <button class="btn ghost" data-wizard="-1">Back</button>
+        <button class="btn primary" data-wizard="1">Continue</button>
+      </div>
+    </div>
+
+    <div class="step" data-step="3">
+      <div class="card settingcard">
         <div class="stepglyph" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 1v22M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg></div>
         <h2>Units and target</h2>
         <p class="stepnote">A unit is your standard stake. The target is what you are chasing.</p>
@@ -351,7 +405,7 @@
       </div>
     </div>
 
-    <div class="step" data-step="3">
+    <div class="step" data-step="4">
       <div class="card settingcard">
         <div class="stepglyph" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg></div>
         <h2>Bring your history</h2>
@@ -365,7 +419,7 @@
       <button class="btn ghost full" data-wizard="1" style="margin-top:9px">Skip for now</button>
     </div>
 
-    <div class="step" data-step="4">
+    <div class="step" data-step="5">
       <div class="card settingcard">
         <div class="stepglyph" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg></div>
         <h2>Who can see your figures?</h2>
@@ -378,7 +432,7 @@
       </div>
     </div>
 
-    <div class="step" data-step="5">
+    <div class="step" data-step="6">
       <div class="card settingcard">
         <div class="stepglyph" aria-hidden="true"><svg viewBox="0 0 24 24"><use href="#i-telegram"/></svg></div>
         <h2>Connect Telegram</h2>
@@ -394,7 +448,7 @@
       <button class="btn ghost full" data-wizard="1" style="margin-top:9px">Skip for now</button>
     </div>
 
-    <div class="step" data-step="6">
+    <div class="step" data-step="7">
       <div class="card settingcard" style="text-align:center">
         <svg class="tick" viewBox="0 0 60 60" role="img" aria-label="Setup complete"><circle cx="30" cy="30" r="26"/><path d="M18 31l8 8 16-17"/></svg>
         <h2>You are set up</h2>
@@ -438,6 +492,40 @@
     </div>
     <div id="planList"></div>
     <p class="fineprint" style="margin-top:16px">Prices in GBP. Slippery is an analytics tool, not a bookmaker, and never handles stakes or winnings.</p>
+  </div>
+</section>
+
+<!-- ══════════════ PAYMENT ══════════════
+     Where "change plan" and every plan button lands. Card payments need a
+     payment processor account, which is the owner's to open — so this page
+     is honest about that rather than showing a card form that goes nowhere.
+     A promo code is a real payment path and works here in full. -->
+<section class="view" id="pay" aria-label="Payment">
+  <div class="wrap nar page-lede">
+    <button class="pillbtn" data-nav="pricing" style="margin-bottom:14px">Back to pricing</button>
+    <h1 style="font-size:26px">Checkout</h1>
+    <div class="card pad" style="margin-top:14px">
+      <div class="cardhead"><span class="title" id="payPlanName">Yearly</span><span class="meta m" id="payPlanPrice">£29.99</span></div>
+      <p class="hinttext" id="payPlanNote"></p>
+      <ul class="paylist" id="payFeatures"></ul>
+    </div>
+
+    <div class="card pad" style="margin-top:10px">
+      <h2 style="font-size:15px">Have a code?</h2>
+      <p class="fineprint" style="margin:5px 0 10px">Applies to your account immediately, no card needed.</p>
+      <div class="addrow">
+        <label class="sr" for="payPromo">Promo code</label>
+        <input class="field" id="payPromo" spellcheck="false" autocapitalize="characters" maxlength="24" placeholder="Enter a code…" autocomplete="off" aria-describedby="payPromoNote">
+        <button class="btn primary" id="payPromoGo" style="padding:0 17px">Apply</button>
+      </div>
+      <p class="stepnote" id="payPromoNote" aria-live="polite" style="margin:9px 0 0;font-size:12.5px"></p>
+    </div>
+
+    <div class="card pad alertcard" style="margin-top:10px">
+      <div class="alerthead"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M12 9v4M12 17h.01"/><path d="M10.3 3.9L1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/></svg>Card payment is not switched on yet</div>
+      <p class="hinttext">Taking card payments needs a payment processor account in the business name, which only the owner can open. Until it is connected, paid plans are granted by promo code and the free trial runs as normal. Nothing here will ever ask you for card details.</p>
+    </div>
+    <p class="fineprint" style="margin-top:14px">Prices in GBP. Slippery never handles stakes or winnings.</p>
   </div>
 </section>
 
@@ -813,11 +901,17 @@
         <span class="pillbtn locked" translate="no" id="accountName"></span></div>
       <div class="fieldrow"><span class="lab">Email</span><span class="mut m" style="font-size:12px" id="accountEmail"></span></div>
       <div class="fieldrow"><span class="lab">Plan</span><label class="sr" for="planSelect">Plan</label>
-        <select class="select compact" id="planSelect"><option>Free trial</option><option>Monthly</option><option selected>Yearly</option></select></div>
-      <div class="fieldrow"><span class="lab">Slips this month<small id="planLimit">Unlimited on Yearly</small></span>
+        <select class="select compact" id="planSelect">
+          <option value="free">Free trial</option>
+          <option value="monthly">Monthly</option>
+          <option value="yearly">Yearly</option>
+        </select></div>
+      <div class="fieldrow"><span class="lab">Slips logged<small id="planLimit">20 slips on the free trial</small></span>
         <span class="pillbtn locked m" id="planUsage">0 of 20</span></div>
+      <div class="fieldrow"><span class="lab">Promo code<small>Applies to this account straight away</small></span>
+        <button class="pillbtn" data-pay="promo">Enter</button></div>
       <div class="fieldrow"><span class="lab">Verification</span><span class="pillbtn" id="verifyState" style="color:var(--s)">Verified</span></div>
-      <div class="fieldrow"><span class="lab">Billing</span><button class="pillbtn" data-nav="pricing">Manage</button></div>
+      <div class="fieldrow"><span class="lab">Billing</span><button class="pillbtn" data-pay="yearly">Manage</button></div>
     </div>
 
     <div class="card settingcard">

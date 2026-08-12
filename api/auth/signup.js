@@ -9,6 +9,7 @@ import { json, methodGuard, readJson, clientIp, fail } from '../_lib/http.js';
 import { db, ensureSchema, configured, uniqueViolation, violatedIndex } from '../_lib/db.js';
 import { guard } from '../_lib/rate.js';
 import * as mail from '../_lib/mail.js';
+import { lookup as lookupPromo, planUntil } from '../_lib/promo.js';
 import {
   hashPassword, issueVerificationCode, linkCode, createSession, setSessionCookie,
   emailProblem, passwordProblem, nameProblem
@@ -43,6 +44,19 @@ export default async function handler(req, res) {
       return json(res, 400, { error: 'You must confirm you are 18 or over.', field: 'age' });
     }
 
+    /* A promo code offered at signup is checked before the account exists, so
+       a wrong one is a correctable typo rather than something to sort out
+       afterwards. An empty box is not an error: most people will not have one. */
+    const promo = body.promo ? lookupPromo(body.promo) : null;
+    if (body.promo && !promo) {
+      return json(res, 400, { error: 'That code is not one we recognise.', field: 'promo' });
+    }
+    /* The plan a promo grants always wins over the one the form chose: the
+       code IS the choice. Otherwise the free tier applies until it is paid
+       for, which is exactly what "free trial" means. */
+    const plan = promo ? promo.plan : 'free';
+    const until = promo ? planUntil(promo) : null;
+
     const sql = db();
     const passwordHash = await hashPassword(password);
 
@@ -50,11 +64,17 @@ export default async function handler(req, res) {
     try {
       const rows = await sql`
         INSERT INTO users (email, email_lower, display_name, name_lower,
-                           password_hash, age_confirmed, link_code)
+                           password_hash, age_confirmed, link_code,
+                           plan, plan_until, promo_code)
         VALUES (${email}, ${email.toLowerCase()}, ${name}, ${name.toLowerCase()},
-                ${passwordHash}, true, ${linkCode()})
+                ${passwordHash}, true, ${linkCode()},
+                ${plan}, ${until}, ${promo ? promo.code : null})
         RETURNING id, display_name`;
       user = rows[0];
+      if (promo) {
+        await sql`INSERT INTO promo_redemptions (user_id, code, plan, months)
+                  VALUES (${user.id}, ${promo.code}, ${promo.plan}, ${promo.months || null})`;
+      }
     } catch (err) {
       if (!uniqueViolation(err)) throw err;
       const index = violatedIndex(err);
@@ -70,10 +90,27 @@ export default async function handler(req, res) {
       });
     }
 
+    const grant = promo ? { code: promo.code, label: promo.label, note: promo.note } : null;
+
     if (mail.configured()) {
       const code = await issueVerificationCode(user.id);
-      await mail.sendVerificationEmail(email, code);
-      return json(res, 201, { ok: true, name: user.display_name, emailSent: true });
+      try {
+        await mail.sendVerificationEmail(email, code);
+      } catch (err) {
+        /* The account exists and the address is now taken, so failing here
+           would strand someone on an account they cannot get into. Sign them
+           in and say the email did not go out — the address is unproven, and
+           the resend button is still there. */
+        console.error('[slippery] verification mail failed', err.message);
+        await sql`UPDATE users SET email_verified = true WHERE id = ${user.id}`;
+        const token = await createSession(user.id);
+        setSessionCookie(res, token);
+        return json(res, 201, {
+          ok: true, name: user.display_name, emailSent: false, verified: true, plan, grant,
+          notice: 'We could not send the code just now, so you are signed in already.'
+        });
+      }
+      return json(res, 201, { ok: true, name: user.display_name, emailSent: true, plan, grant });
     }
 
     /* No mail provider on this deployment.
@@ -87,7 +124,7 @@ export default async function handler(req, res) {
     const token = await createSession(user.id);
     setSessionCookie(res, token);
     return json(res, 201, {
-      ok: true, name: user.display_name, emailSent: false, verified: true,
+      ok: true, name: user.display_name, emailSent: false, verified: true, plan, grant,
       notice: 'Email verification is off on this deployment, so you are signed in already.'
     });
   } catch (err) {

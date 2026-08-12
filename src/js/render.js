@@ -673,13 +673,9 @@ export function renderAccount(user) {
   if (user.unitPence) S.unit = user.unitPence;
   setText('accountName', user.name || '');
   setText('accountEmail', user.email || '');
-  const plan = user.plan || 'free';
-  const sel = $('planSelect');
-  if (sel) sel.value = plan === 'year' ? 'Yearly' : plan === 'month' ? 'Monthly' : 'Free trial';
-  setText('planLimit', plan === 'free' ? '20 slips on the free trial' : 'Unlimited');
-  setText('planUsage', plan === 'free'
-    ? Math.min(LEDGER.length + PENDING.length, 20) + ' of 20'
-    : M.plain(LEDGER.length + PENDING.length));
+  S.plan = user.plan || 'free';
+  S.planUntil = user.planUntil || null;
+  renderPlan();
   /* Telegram: connected, or plainly not. */
   const dot = $('tgState');
   if (dot) {
@@ -702,6 +698,42 @@ export function renderAccount(user) {
     v.textContent = user.emailVerified ? 'Verified' : 'Unverified';
     v.style.color = user.emailVerified ? 'var(--s)' : 'var(--a)';
   }
+}
+
+/* The plan rows in Settings, from state rather than from a passed user, so
+   redeeming a code repaints them without another round trip.
+
+   The plan ids are the server's: free, monthly, yearly, lifetime. This
+   previously compared against 'month' and 'year', which nothing ever sends,
+   so every account read as the free trial however it was paying. */
+const PLAN_NAME = { free: 'Free trial', monthly: 'Monthly', yearly: 'Yearly', lifetime: 'Free for life' };
+
+export function renderPlan() {
+  const plan = S.plan || 'free';
+  const sel = $('planSelect');
+  if (sel) {
+    /* lifetime is not one of the buyable options, so it is added only when
+       it applies rather than sitting in the list for everyone. */
+    const lifetime = sel.querySelector('option[value="lifetime"]');
+    if (plan === 'lifetime' && !lifetime) {
+      const opt = document.createElement('option');
+      opt.value = 'lifetime';
+      opt.textContent = PLAN_NAME.lifetime;
+      sel.appendChild(opt);
+    } else if (plan !== 'lifetime' && lifetime) {
+      lifetime.remove();
+    }
+    sel.value = plan;
+  }
+  const until = S.planUntil ? new Date(S.planUntil) : null;
+  setText('planLimit', plan === 'free'
+    ? '20 slips on the free trial'
+    : plan === 'lifetime'
+      ? 'Unlimited, permanently'
+      : until ? 'Unlimited until ' + DS.format(until) : 'Unlimited');
+  setText('planUsage', plan === 'free'
+    ? Math.min(LEDGER.length + PENDING.length, 20) + ' of 20'
+    : M.plain(LEDGER.length + PENDING.length));
 }
 
 export function renderAll() {

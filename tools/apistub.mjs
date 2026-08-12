@@ -23,7 +23,8 @@ export const USER = {
   email: 'darius@example.com',
   emailVerified: true,
   unitPence: 10000,
-  plan: 'year',
+  plan: 'yearly',
+  planUntil: null,
   telegramLinked: true,
   linkCode: 'SLIP-7F3A',
   since: '2026-02-14T10:00:00Z'
@@ -71,7 +72,12 @@ export const BETS = [
  * @param {{signedIn?: boolean}} [opts]
  */
 export async function installStub(page, opts = {}) {
-  const signedIn = opts.signedIn !== false;
+  /* Mutable, because signing in is a state change the client has to notice.
+     The login bug was exactly this: the browser held the signed-out session
+     it read at boot and never asked again, so a correct password bounced
+     back to the signup screen. A stub with a frozen flag could not have
+     caught it. */
+  let signedIn = opts.signedIn !== false;
 
   await page.route('**/api/auth/me', route => route.fulfill({
     status: 200, contentType: 'application/json',
@@ -86,7 +92,8 @@ export async function installStub(page, opts = {}) {
     }
     if (method === 'GET') {
       return route.fulfill({ status: 200, contentType: 'application/json',
-        body: JSON.stringify({ bets: BETS, total: BETS.length, freeSlips: 20, plan: 'year' }) });
+        body: JSON.stringify({ bets: BETS, total: BETS.length, freeSlips: 20,
+          plan: 'yearly', planUntil: null, unlimited: true }) });
     }
     if (method === 'POST') {
       const sent = JSON.parse(route.request().postData() || '{}');
@@ -125,15 +132,47 @@ export async function installStub(page, opts = {}) {
   /* Signup and verification, so the wizard can be driven end to end. */
   await page.route('**/api/auth/signup', route => route.fulfill({
     status: 201, contentType: 'application/json',
-    body: JSON.stringify({ ok: true, name: 'DariusOdds', emailVerified: false })
+    body: JSON.stringify({ ok: true, name: 'DariusOdds', emailSent: true, plan: 'free' })
   }));
-  await page.route('**/api/auth/verify', route => route.fulfill({
-    status: 200, contentType: 'application/json',
-    body: JSON.stringify({ ok: true, user: USER })
-  }));
+  await page.route('**/api/auth/verify', route => {
+    signedIn = true;
+    return route.fulfill({ status: 200, contentType: 'application/json',
+      body: JSON.stringify({ ok: true, name: USER.name }) });
+  });
   await page.route('**/api/auth/resend', route => route.fulfill({
     status: 200, contentType: 'application/json', body: JSON.stringify({ ok: true })
   }));
+
+  /* Logging in sets the session, exactly as the real cookie would. */
+  await page.route('**/api/auth/login', route => {
+    const sent = JSON.parse(route.request().postData() || '{}');
+    if (!sent.identifier || !sent.password) {
+      return route.fulfill({ status: 400, contentType: 'application/json',
+        body: JSON.stringify({ error: 'That username and password do not match.' }) });
+    }
+    signedIn = true;
+    return route.fulfill({ status: 200, contentType: 'application/json',
+      body: JSON.stringify({ ok: true, name: USER.name }) });
+  });
+  await page.route('**/api/auth/forgot', route => route.fulfill({
+    status: 200, contentType: 'application/json',
+    body: JSON.stringify({ ok: true, message: 'If that account exists, a reset code is on its way.' })
+  }));
+  await page.route('**/api/auth/reset', route => {
+    signedIn = true;
+    return route.fulfill({ status: 200, contentType: 'application/json',
+      body: JSON.stringify({ ok: true, name: USER.name }) });
+  });
+  await page.route('**/api/promo', route => {
+    const sent = JSON.parse(route.request().postData() || '{}');
+    if (sent.code !== 'AK5WRD') {
+      return route.fulfill({ status: 400, contentType: 'application/json',
+        body: JSON.stringify({ error: 'That code is not one we recognise.', field: 'code' }) });
+    }
+    return route.fulfill({ status: 200, contentType: 'application/json',
+      body: JSON.stringify({ ok: true, plan: 'lifetime', planUntil: null,
+        label: 'Free for life', note: 'Slippery is free on this account, permanently.' }) });
+  });
 
   /* The slip reader. Returns one legible slip and one the reader could only
      partly make out, which is the case the editable fields exist for. */

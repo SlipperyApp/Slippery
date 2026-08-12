@@ -54,6 +54,11 @@ export async function ensureSchema() {
     )`;
   /* Added after the table shipped, so existing rows need it too. */
   await sql`ALTER TABLE users ADD COLUMN IF NOT EXISTS plan text NOT NULL DEFAULT 'free'`;
+  /* When the current plan stops being paid for. NULL means "no end date",
+     which is what a lifetime redemption and a free account both look like —
+     they are told apart by `plan`, never by this. */
+  await sql`ALTER TABLE users ADD COLUMN IF NOT EXISTS plan_until timestamptz`;
+  await sql`ALTER TABLE users ADD COLUMN IF NOT EXISTS promo_code text`;
 
   /* The three constraints the product depends on. Partial indexes so a
      deleted account frees its email and name for reuse. */
@@ -146,6 +151,40 @@ export async function ensureSchema() {
       created_at timestamptz NOT NULL DEFAULT now()
     )`;
   await sql`CREATE INDEX IF NOT EXISTS slip_drafts_user_idx ON slip_drafts (user_id, created_at DESC)`;
+
+  /* Password reset.
+     Separate from verification_codes on purpose: a verification code proves
+     an address, a reset token grants a password change. Sharing one table
+     would mean a bug in one flow is a takeover in the other. Tokens are
+     stored as hashes, so a database leak does not hand out live resets. */
+  await sql`
+    CREATE TABLE IF NOT EXISTS password_resets (
+      id         uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+      user_id    uuid NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      code_hash  text NOT NULL,
+      expires_at timestamptz NOT NULL,
+      attempts   integer NOT NULL DEFAULT 0,
+      consumed   boolean NOT NULL DEFAULT false,
+      created_at timestamptz NOT NULL DEFAULT now()
+    )`;
+  await sql`CREATE INDEX IF NOT EXISTS password_resets_user_idx ON password_resets (user_id)`;
+
+  /* Promo redemptions.
+     The codes themselves live in code (api/_lib/promo.js) because they are
+     product decisions, not data. What has to be in the database is who
+     redeemed what: a one-per-account code is only actually one per account
+     if a UNIQUE constraint says so. */
+  await sql`
+    CREATE TABLE IF NOT EXISTS promo_redemptions (
+      id          uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+      user_id     uuid NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      code        text NOT NULL,
+      plan        text NOT NULL,
+      months      integer,
+      redeemed_at timestamptz NOT NULL DEFAULT now()
+    )`;
+  await sql`CREATE UNIQUE INDEX IF NOT EXISTS promo_once_per_user
+            ON promo_redemptions (user_id, code)`;
 
   _ready = true;
 }

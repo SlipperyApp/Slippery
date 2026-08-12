@@ -5,8 +5,12 @@ import { sessionUser } from '../_lib/auth.js';
 import { limit } from '../_lib/rate.js';
 import { settleForUser } from '../_lib/settling.js';
 
+/* limit() returns {allowed, retryAfter}. Testing the object itself is always
+   true, which meant this re-scraped on every single page load rather than
+   once every ten minutes. Read the field. */
 async function settleQuietly(req, user) {
-  if (!(await limit('signin-settle:' + user.id, 1, 600))) return;
+  const { allowed } = await limit('signin-settle:' + user.id, 1, 600);
+  if (!allowed) return;
   await settleForUser(user.id);
 }
 
@@ -37,6 +41,8 @@ export default async function handler(req, res) {
         emailVerified: user.email_verified,
         unitPence: user.unit_pence,
         plan: user.plan || 'free',
+        planUntil: user.plan_until || null,
+        promoCode: user.promo_code || null,
         /* Telegram state is real or absent. The settings page used to show
            a link code and a "connected since" date that were written into
            the markup, so an account with no bot linked was told it had

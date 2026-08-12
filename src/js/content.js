@@ -106,15 +106,54 @@ const HELP_FAQ = [
   ['Correcting a slip Slippery misread', 'Every field on an uploaded slip is editable before you confirm it, and nothing is saved until you do. A bet already in your ledger can be settled by hand from the running list.']
 ];
 
-const PLANS = [
-  ['Free trial', 'Try it properly first.', '£0', '', '20 slips included, no time limit',
-    ['Dashboard, calendar and ledger', 'Telegram bot access'], false],
-  ['Monthly', 'Pay as you go.', '£3.49', ' per month', 'Cancel any time',
-    ['Unlimited slips', 'Full analytics and groups'], false],
-  ['Yearly', 'Best value by a distance.', '£29.99', ' per year', '£2.50 a month, saving £11.89 against monthly',
-    ['Unlimited slips', 'Analytics by bookmaker, market and tipster', 'Groups, following and followers',
-     'History import and CSV export'], true]
+/* The three plans, defined once.
+ *
+ * The pricing page, the signup chooser and the Settings plan row all read
+ * this array, so there is no second list to drift out of step.
+ *
+ * Monthly and yearly used to carry the same feature list with a different
+ * number on top, which makes the yearly price look like a worse deal than it
+ * is. Each tier now adds something the one below does not have, and the
+ * additions are things the product actually does.
+ */
+export const PLANS = [
+  {
+    id: 'free', name: 'Free trial', blurb: 'Try it properly first.',
+    price: '£0', per: '', note: '20 slips included, no time limit',
+    adds: 'Everything you need to see whether it fits.',
+    features: [
+      'Dashboard, profit calendar and ledger',
+      'Telegram bot, slip reading and settlement',
+      '20 slips, then it stops adding new ones'
+    ]
+  },
+  {
+    id: 'monthly', name: 'Monthly', blurb: 'Pay as you go.',
+    price: '£3.49', per: ' per month', note: 'Cancel any time, keep the month you paid for',
+    adds: 'Everything in the free trial, plus:',
+    features: [
+      'Unlimited slips',
+      'Analytics by bookmaker, market and tipster',
+      'Groups, following and followers',
+      'CSV import and export'
+    ]
+  },
+  {
+    id: 'yearly', name: 'Yearly', blurb: 'Best value by a distance.',
+    price: '£29.99', per: ' per year', note: '£2.50 a month, saving £11.89 against monthly',
+    adds: 'Everything in monthly, plus:',
+    flag: 'Save £11.89',
+    featured: true,
+    features: [
+      'The price of eight and a half months, for twelve',
+      'Unlimited history import, no row cap',
+      'Verification review, for the verified tick',
+      'Slips read first when the queue is busy'
+    ]
+  }
 ];
+
+export const planById = id => PLANS.find(p => p.id === id) || PLANS[0];
 
 const TERMS = [
   ['h2', 'What Slippery is'],
@@ -173,14 +212,16 @@ export function renderStatic() {
     '<details class="card faq"><summary>' + esc(f[0]) + '</summary><p>' + esc(f[1]) + '</p></details>').join(''));
 
   setHTML('planList', PLANS.map(p =>
-    '<div class="card plan reveal' + (p[6] ? ' featured' : '') + '">' +
-    (p[6] ? '<div class="flag">3 months free</div>' : '') +
-    '<div class="nm">' + p[0] + '</div><div class="desc">' + p[1] + '</div>' +
-    '<div class="price">' + p[2] + '<small>' + p[3] + '</small></div>' +
-    '<div class="note">' + p[4] + '</div><ul>' +
-    p[5].map(f => '<li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><path d="M20 6L9 17l-5-5"/></svg>' + f + '</li>').join('') +
-    '</ul><button class="btn ' + (p[6] ? 'primary' : 'ghost') + ' full" data-nav="setup">' +
-    (p[6] ? 'Go yearly' : p[0] === 'Monthly' ? 'Go monthly' : 'Start free') + '</button></div>').join(''));
+    '<div class="card plan reveal' + (p.featured ? ' featured' : '') + '">' +
+    (p.flag ? '<div class="flag">' + esc(p.flag) + '</div>' : '') +
+    '<div class="nm">' + esc(p.name) + '</div><div class="desc">' + esc(p.blurb) + '</div>' +
+    '<div class="price">' + esc(p.price) + '<small>' + esc(p.per) + '</small></div>' +
+    '<div class="note">' + esc(p.note) + '</div>' +
+    '<p class="planadds">' + esc(p.adds) + '</p><ul>' +
+    p.features.map(f => '<li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><path d="M20 6L9 17l-5-5"/></svg>' + esc(f) + '</li>').join('') +
+    '</ul><button class="btn ' + (p.featured ? 'primary' : 'ghost') + ' full" ' +
+    (p.id === 'free' ? 'data-nav="setup"' : 'data-pay="' + p.id + '"') + '>' +
+    (p.id === 'free' ? 'Start free' : 'Choose ' + esc(p.name.toLowerCase())) + '</button></div>').join(''));
 
   const legal = rows => rows.map(([tag, body]) =>
     tag === 'ul'

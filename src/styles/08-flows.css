@@ -104,6 +104,30 @@
   & ul{list-style:none;margin:14px 0;display:flex;flex-direction:column;gap:9px}
   & li{display:flex;gap:9px;font-size:13px;
     & svg{width:15px;height:15px;color:var(--pos);flex:0 0 auto;margin-top:2px}}}
+/* "Everything in monthly, plus:" — the line that makes the ladder legible.
+   Without it the three feature lists read as three unrelated sets and the
+   yearly price looks like it buys less than it does. */
+.planadds{font-size:11.5px;color:var(--t2);margin-top:13px;
+  letter-spacing:.02em;font-weight:600}
+
+/* the signup plan chooser */
+.planpick{display:flex;flex-direction:column;gap:9px;margin-top:6px}
+.planopt{
+  display:flex;flex-direction:column;gap:3px;width:100%;text-align:left;
+  padding:13px 15px;border-radius:14px;border:1px solid var(--e1);
+  background:rgba(255,255,255,.03);color:inherit;cursor:pointer;
+  transition:border-color var(--tf) var(--ez),background var(--tf) var(--ez);
+  &.on{border-color:rgba(var(--orb1),.6);background:rgba(var(--orb1),.12)}}
+.planopt-top{display:flex;justify-content:space-between;align-items:baseline;gap:10px;
+  & b{font-size:15px;font-weight:650;letter-spacing:-.01em}
+  & small{font-size:11px;color:var(--t2);font-weight:400}}
+.planopt-note{font-size:11.5px;color:var(--t2);line-height:1.45}
+.planopt-add{font-size:11.5px;color:var(--s)}
+
+.promobox{margin-top:16px;padding-top:14px;border-top:1px solid var(--e1)}
+.paylist{list-style:none;margin:12px 0 0;display:flex;flex-direction:column;gap:8px;
+  & li{display:flex;gap:9px;align-items:flex-start;font-size:13px}
+  & svg{width:15px;height:15px;color:var(--pos);flex:0 0 auto;margin-top:2px}}
 
 /* setup wizard */
 .wizbar{display:flex;gap:4px;margin-bottom:16px;

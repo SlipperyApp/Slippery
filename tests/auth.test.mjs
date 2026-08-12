@@ -93,9 +93,15 @@ test('email validation rejects what it should', () => {
   }
 });
 
-test('password policy is 12 characters, not 8', () => {
+/* Eight characters, on the owner's instruction. Composition still applies:
+   length alone at 8 is weak, and a capital plus a symbol is what keeps the
+   floor above a dictionary word. The upper bound is not cosmetic — scrypt is
+   memory-hard by design, so an unbounded password is a way to make the
+   server do arbitrary work per request. */
+test('password policy is 8 characters, with a capital and a symbol', () => {
+  assert.equal(passwordProblem('Abcdef1!'), '');
   assert.equal(passwordProblem('Abcdefghij1!'), '');
-  assert.notEqual(passwordProblem('Abcdef1!'), '', '8 chars is trivially crackable offline');
+  assert.notEqual(passwordProblem('Abc1!'), '', 'under 8 characters');
   assert.notEqual(passwordProblem('abcdefghijkl!'), '', 'no capital');
   assert.notEqual(passwordProblem('Abcdefghijkl'), '', 'no symbol');
   assert.notEqual(passwordProblem('A1!' + 'x'.repeat(300)), '', 'unbounded length is a DoS on scrypt');
@@ -107,4 +113,19 @@ test('display name policy', () => {
   for (const bad of ['', 'ab', 'x'.repeat(21), 'has space', 'emoji😀', 'semi;colon']) {
     assert.notEqual(nameProblem(bad), '', 'should reject: ' + bad);
   }
+});
+
+/* Log in with either.
+   The rule is exact rather than heuristic: nameProblem allows letters,
+   numbers and underscores only, so a string containing @ can only ever have
+   been meant as an email — including a malformed one, which should be told
+   it is a bad email rather than treated as a username that does not exist. */
+test('an identifier is a username or an email, decided by the @', async () => {
+  const { identifierProblem, looksLikeEmail } = await import('../api/_lib/auth.js');
+  assert.equal(identifierProblem('DariusOdds'), '');
+  assert.equal(identifierProblem('you@example.com'), '');
+  assert.equal(identifierProblem(''), 'Enter your username or email.');
+  assert.notEqual(identifierProblem('broken@'), '', 'an @ means it is judged as an email');
+  assert.equal(looksLikeEmail('a@b.com'), true);
+  assert.equal(looksLikeEmail('DariusOdds'), false);
 });

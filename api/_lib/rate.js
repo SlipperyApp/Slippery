@@ -31,10 +31,18 @@ export async function limit(bucket, max, windowSeconds) {
   };
 }
 
-/** Apply a limit and write the 429 if it is exceeded. Returns true to continue. */
+/**
+ * Apply a limit and write the 429 if it is exceeded. Returns true to continue.
+ *
+ * `res` may be null, for the callers that must answer identically whether or
+ * not the limit bit — /api/auth/forgot deliberately gives the same reply to
+ * every request, so it consumes the verdict rather than letting it write a
+ * distinguishable response.
+ */
 export async function guard(res, bucket, max, windowSeconds) {
   const { allowed, retryAfter } = await limit(bucket, max, windowSeconds);
   if (allowed) return true;
+  if (!res) return false;
   res.statusCode = 429;
   res.setHeader('retry-after', String(retryAfter));
   res.setHeader('content-type', 'application/json; charset=utf-8');

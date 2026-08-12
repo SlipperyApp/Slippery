@@ -4,7 +4,7 @@ import { S, canUsePeriod, periodNeedsFocus } from './state.js';
 import * as M from './money.js';
 import {
   LEDGER, PENDING, PEOPLE, GROUPS, TODAY, THEMES, THEME_BG, BOOKS, TIPSTERS,
-  TARGETS, hydrate, addBet, settleLocal, setMe, ME
+  TARGETS, hydrate, addBet, settleLocal, setMe, ME, ico
 } from './data.js';
 import { settle, settleCashOut, ledgerOutcome } from './settlement.js';
 import { stats, dayMap, monthTotal, targetFor, weekRange, invalidateDays } from './stats.js';
@@ -358,9 +358,10 @@ function wizardStep(n) {
   step = Math.max(0, Math.min(steps.length - 1, n));
   steps.forEach((s, i) => s.classList.toggle('on', i === step));
   $$('#wizbar i').forEach((b, i) => b.classList.toggle('done', i <= step));
-  if (step === 2) { R.renderTargets(); paintSegs($('setup')); }
-  if (step === 4) R.renderPrivacy();
-  if (step === 6) { renderSetupSummary(); playThemeIntro(); }
+  if (step === 2) renderPlanChoice();
+  if (step === 3) { R.renderTargets(); paintSegs($('setup')); }
+  if (step === 5) R.renderPrivacy();
+  if (step === 7) { renderSetupSummary(); playThemeIntro(); }
   scrollTo(0, 0);
 }
 function renderSetupSummary() {
@@ -375,6 +376,68 @@ function renderSetupSummary() {
     ['Theme', theme[1]],
     ['History', S.migrateChoice ? { upload: 'Files uploaded', totals: 'Typed totals', other: 'Other format' }[S.migrateChoice] : 'Skipped']
   ].map(r => '<div class="summaryrow"><span>' + esc(r[0]) + '</span><span>' + esc(r[1]) + '</span></div>').join('');
+}
+
+/* ---------------- plans and promo codes ----------------
+   The chooser at signup, the checkout page and the Settings plan row all
+   read C.PLANS, so there is one description of what each tier includes. */
+function renderPlanChoice() {
+  const el = $('planChoice');
+  if (!el) return;
+  setHTML('planChoice', C.PLANS.map(p => {
+    const on = S.planChoice === p.id;
+    return '<button class="planopt' + (on ? ' on' : '') + '" role="radio" ' +
+      'aria-checked="' + on + '" data-plan-pick="' + p.id + '">' +
+      '<span class="planopt-top"><b>' + esc(p.name) + '</b>' +
+      '<span class="m">' + esc(p.price) + '<small>' + esc(p.per) + '</small></span></span>' +
+      '<span class="planopt-note">' + esc(p.note) + '</span>' +
+      '<span class="planopt-add">' + esc(p.features[0]) + '</span></button>';
+  }).join(''));
+}
+
+function renderPayPage() {
+  const p = C.planById(S.payPlan);
+  setText('payPlanName', p.name);
+  setText('payPlanPrice', p.price + p.per);
+  setText('payPlanNote', p.note);
+  setHTML('payFeatures', p.features.map(f =>
+    '<li>' + ico('i-won') + esc(f) + '</li>').join(''));
+  setText('payPromoNote', S.plan === 'lifetime'
+    ? 'This account is already free for life.'
+    : 'Applies immediately, no card needed.');
+}
+
+/* Redemption is a server act. A code that unlocked the plan in the browser
+   would unlock it for anyone who read the JavaScript. */
+async function redeemPromo(btn, inputId, noteId) {
+  const input = $(inputId);
+  const note = $(noteId);
+  const code = input ? input.value.trim() : '';
+  const say = (msg, tone) => { if (note) { note.textContent = msg; note.className = 'stepnote ' + (tone || ''); } };
+  if (!code) { say('Type the code first.', 'neg'); if (input) input.focus(); return; }
+
+  btn.disabled = true;
+  const was = btn.textContent;
+  btn.textContent = 'Checking…';
+  const r = await post('/api/promo', { code });
+  btn.disabled = false;
+  btn.textContent = was;
+
+  if (r.status === 401) {
+    /* Not signed in yet. At signup the code travels with the form instead,
+       so say which box to put it in rather than bouncing them out. */
+    say('Sign in first, or enter the code on the account step.', 'neg');
+    return;
+  }
+  if (!r.ok) { say(r.body.error || 'That code could not be applied.', 'neg'); return; }
+
+  S.plan = r.body.plan;
+  S.planUntil = r.body.planUntil;
+  S.planChoice = r.body.plan === 'lifetime' ? 'free' : r.body.plan;
+  say(r.body.label + ' — ' + r.body.note, 'pos');
+  toast(r.body.label + ' applied');
+  R.renderPlan();
+  renderPlanChoice();
 }
 
 const NAME_A = ['Sharp', 'Value', 'Edge', 'Late', 'Cold', 'Quiet', 'Steady', 'Blue', 'North', 'Half'];
@@ -904,6 +967,25 @@ document.addEventListener('click', e => {
   if (c('#verifyResend')) { Auth.resend(); return; }
   if (c('#verifyChange')) { wizardStep(0); setTimeout(() => $('suEmail').focus(), 260); return; }
   if (c('#forgotPw')) { Auth.forgot(); return; }
+  if (c('#forgotBack')) { Auth.backToLogin(); return; }
+
+  if ((el = c('[data-plan-pick]'))) {
+    S.planChoice = el.getAttribute('data-plan-pick');
+    renderPlanChoice();
+    return;
+  }
+  /* Every route to a paid plan lands on the checkout page, so there is one
+     place that explains how paying actually works. */
+  if ((el = c('[data-pay]'))) {
+    const want = el.getAttribute('data-pay');
+    if (want !== 'promo') S.payPlan = want;
+    renderPayPage();
+    go('pay');
+    if (want === 'promo') setTimeout(() => $('payPromo').focus(), 260);
+    return;
+  }
+  if ((el = c('#planPromoGo'))) { redeemPromo(el, 'planPromo', 'planPromoNote'); return; }
+  if ((el = c('#payPromoGo'))) { redeemPromo(el, 'payPromo', 'payPromoNote'); return; }
   if (c('#suggestName')) {
     const f = $('suName');
     f.value = suggestName();
@@ -1065,10 +1147,16 @@ document.addEventListener('change', e => {
   else if (t.id === 'profitFormat') { S.profitFormat = t.value; R.renderRecentBets(); R.renderLedger(); toast('Profit shown in ' + t.value.toLowerCase()); }
   else if (t.id === 'weekStart') { S.weekStart = t.value === 'Monday' ? 1 : 0; drawAll(); toast('Weeks now start on ' + t.value); }
   /* Changing your plan must not navigate you away mid-task. */
+  /* Changing plan is a payment, so it goes to the checkout page rather than
+     silently relabelling the row. The select is put back to the plan the
+     account actually has, because nothing has changed until it is paid. */
   else if (t.id === 'planSelect') {
-    setText('planLimit', t.value === 'Free trial' ? '20 slips on the free trial' : 'Unlimited on ' + t.value);
-    setText('planUsage', t.value === 'Free trial' ? '14 of 20' : M.plain(LEDGER.length));
-    toast(t.value + ' plan selected');
+    const want = t.value;
+    R.renderPlan();
+    if (want === S.plan || want === 'free') return;
+    S.payPlan = want;
+    renderPayPage();
+    go('pay');
   }
   else if (t.id === 'slipFile') { handleFiles(t.files); t.value = ''; }
   else if (t.id === 'csvFile') { handleCsv(t.files && t.files[0]); t.value = ''; }
@@ -1142,7 +1230,10 @@ function renderNewMonth() {
 
 /* ---------------- init ---------------- */
 async function init() {
-  setHTML('wizbar', new Array(7).fill('<i></i>').join(''));
+  /* One tick per step, counted from the markup. It was a literal 7, so
+     adding the plan step left the last step with no tick and every tick
+     pointing at the wrong one. */
+  setHTML('wizbar', new Array($$('.step').length).fill('<i></i>').join(''));
   C.renderStatic();
   R.renderMisc();
   R.renderPrivacy();
@@ -1157,6 +1248,16 @@ async function init() {
   syncThemeColor();
   initMotion();
   Auth.init();
+  /* Auth cannot navigate on its own: go() refuses the app views until the
+     session has been re-read, which is why a correct password used to bounce
+     back to the signup screen. This is that re-read. */
+  Auth.whenSignedIn(async (stayPut) => {
+    const user = await loadSession();
+    if (!user) return;
+    R.renderAccount(user);
+    await loadLedger();
+    if (!stayPut) go('dash');
+  });
 
   /* Honour a deep link before anything else paints over it. */
   const deep = location.hash.slice(1);
