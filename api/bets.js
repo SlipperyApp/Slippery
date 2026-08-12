@@ -47,6 +47,12 @@ export default async function handler(req, res) {
     if (req.method === 'GET') return list(res, user);
 
     const body = await readJson(req, 256 * 1024);
+    /* Period profit and loss rides on this endpoint rather than its own,
+       because Vercel Hobby allows twelve functions in total and this is
+       ledger data by any reading. The discriminator is explicit so a
+       malformed bet can never be mistaken for one. */
+    if (body && Array.isArray(body.pl)) return savePl(res, user, body.pl);
+    if (body && body.removePl) return removePl(res, user, body.removePl);
     if (req.method === 'POST') return create(req, res, user, body);
     if (req.method === 'PATCH') return update(res, user, body);
     return remove(res, user, body);
@@ -65,8 +71,15 @@ async function list(res, user) {
     ORDER BY placed_at DESC LIMIT 2000`;
   const counted = await sql`
     SELECT count(*)::int AS n FROM bets WHERE user_id = ${user.id}`;
+  const pl = await sql`
+    SELECT id, on_date, period, profit_pence, turnover_pence, bets, note, source
+    FROM pl_entries WHERE user_id = ${user.id}
+    ORDER BY on_date DESC LIMIT 1000`;
   return json(res, 200, {
     bets: rows.map(shape),
+    /* Period figures, separate from bets on purpose: they have no slips
+       behind them and nothing that counts bets may count these. */
+    pl: pl.map(shapePl),
     total: counted[0].n,
     freeSlips: FREE_SLIPS,
     plan: user.plan || 'free',
@@ -77,6 +90,102 @@ async function list(res, user) {
       : null
   });
 }
+
+/* ---------------- period profit and loss ----------------
+ *
+ * Figures somebody has for a day, week or month with no slips behind them:
+ * typed in, or lifted off a screenshot from another tracker. They are not
+ * bets, they never become bets, and nothing here can settle.
+ *
+ * The write is an upsert keyed on (user, date, period), which is what makes
+ * importing the same screenshot twice safe: the second run corrects the
+ * first rather than doubling every figure. That is not a nicety. A P/L
+ * import is exactly the operation somebody retries when they are not sure
+ * it worked.
+ */
+const PL_PERIODS = ['day', 'week', 'month', 'year'];
+const MAX_PL_ROWS = 400;
+/* A date has to be a real one and inside a range a person could mean.
+   Far-future dates are allowed on purpose: the brief asks for future days
+   to be selectable, and somebody recording a bet placed today on a game
+   next month has a legitimate reason to. */
+const PL_MIN = Date.UTC(2000, 0, 1);
+const PL_MAX = Date.UTC(2100, 0, 1);
+
+function plProblem(row) {
+  if (!row || typeof row !== 'object') return 'Nothing to save.';
+  if (!PL_PERIODS.includes(row.period)) return 'That is not a period.';
+  const iso = String(row.date || '');
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(iso)) return 'A profit figure needs a date.';
+  const t = Date.parse(iso + 'T00:00:00Z');
+  if (!Number.isFinite(t) || t < PL_MIN || t >= PL_MAX) return 'That date is not usable.';
+  /* Round-trip check: 2026-02-31 parses in some engines and is not a day. */
+  if (new Date(t).toISOString().slice(0, 10) !== iso) return 'That date does not exist.';
+  const p = Number(row.profitPence);
+  if (!Number.isFinite(p) || Math.round(p) !== p) return 'Profit is whole pence.';
+  if (Math.abs(p) > 1_000_000_00) return 'That figure is larger than this tracker supports.';
+  return '';
+}
+
+async function savePl(res, user, rows) {
+  if (!rows.length) return json(res, 400, { error: 'Nothing to save.' });
+  if (rows.length > MAX_PL_ROWS) {
+    return json(res, 413, { error: 'That is more than ' + MAX_PL_ROWS + ' figures at once.' });
+  }
+  if (!(await allowed('pl:' + user.id, 60, 3600))) {
+    return json(res, 429, { error: 'Too many at once. Try again shortly.' });
+  }
+
+  const rejected = [];
+  const good = [];
+  rows.forEach((row, i) => {
+    const problem = plProblem(row);
+    if (problem) rejected.push({ i, why: problem });
+    else good.push(row);
+  });
+  if (!good.length) return json(res, 400, { error: rejected[0].why, rejected });
+
+  const sql = db();
+  let saved = 0;
+  for (const row of good) {
+    await sql`
+      INSERT INTO pl_entries (user_id, on_date, period, profit_pence, turnover_pence, bets, note, source)
+      VALUES (${user.id}, ${row.date}, ${row.period}, ${Math.round(row.profitPence)},
+              ${row.turnoverPence == null ? null : Math.round(row.turnoverPence)},
+              ${row.bets == null ? null : Math.round(row.bets)},
+              ${row.note ? String(row.note).slice(0, 120) : null},
+              ${row.source === 'import' ? 'import' : 'typed'})
+      ON CONFLICT (user_id, on_date, period) DO UPDATE
+      SET profit_pence = EXCLUDED.profit_pence,
+          turnover_pence = EXCLUDED.turnover_pence,
+          bets = EXCLUDED.bets,
+          note = EXCLUDED.note,
+          source = EXCLUDED.source`;
+    saved++;
+  }
+  return json(res, 201, { saved, rejected });
+}
+
+async function removePl(res, user, id) {
+  const sql = db();
+  const rows = await sql`
+    DELETE FROM pl_entries WHERE id = ${String(id)} AND user_id = ${user.id} RETURNING id`;
+  if (!rows.length) return json(res, 404, { error: 'That figure is not in your ledger.' });
+  return json(res, 200, { removedPl: rows[0].id });
+}
+
+const shapePl = r => ({
+  id: r.id,
+  /* pg hands back a Date for a date column; the client wants the plain day
+     it was told, with no timezone shifting it by one. */
+  date: r.on_date instanceof Date ? r.on_date.toISOString().slice(0, 10) : String(r.on_date).slice(0, 10),
+  period: r.period,
+  profit: r.profit_pence,
+  turnover: r.turnover_pence,
+  bets: r.bets,
+  note: r.note || '',
+  source: r.source
+});
 
 /* One shape for the client, so the browser never has to know about column
    names or numeric-as-string. `odds` comes back from pg as a string. */
@@ -276,6 +385,26 @@ async function update(res, user, body) {
 
 /* ---------------- delete ---------------- */
 async function remove(res, user, body) {
+  /* Reset everything.
+     This button existed and did nothing: it printed "Reset all bets
+     completed", disabled itself, and deleted not one row. Somebody
+     clearing their record before handing a phone to a friend was told it
+     had worked. A destructive control that lies is worse than one that is
+     missing, because the missing one does not get trusted.
+
+     `all: true` is required rather than inferred from a missing id, so a
+     malformed single delete cannot wipe a ledger. */
+  if (body && body.all === true) {
+    const sql = db();
+    const rows = await sql`DELETE FROM bets WHERE user_id = ${user.id} RETURNING id`;
+    /* Slip images go with them. They are the most sensitive thing stored
+       and the retention promise is explicit, so "reset my bets" leaving
+       the pictures behind would break it. */
+    await sql`DELETE FROM slips WHERE user_id = ${user.id}`;
+    await sql`DELETE FROM slip_drafts WHERE user_id = ${user.id}`;
+    return json(res, 200, { deleted: rows.length, all: true });
+  }
+
   if (!body || !body.id) return json(res, 400, { error: 'Which bet?' });
   const sql = db();
   const rows = await sql`

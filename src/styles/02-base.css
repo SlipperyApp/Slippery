@@ -52,8 +52,8 @@ p{text-wrap:pretty}
   font-feature-settings:"tnum","lnum";letter-spacing:-.02em}
 .tnum{font-variant-numeric:tabular-nums lining-nums;font-feature-settings:"tnum","lnum"}
 
-.pos{color:var(--pos)}
-.neg{color:var(--neg)}
+.pos{color:var(--pos-ink)}
+.neg{color:var(--neg-ink)}
 .mut{color:var(--t2)}
 .dim{color:var(--t3)}
 
@@ -68,8 +68,8 @@ p{text-wrap:pretty}
   & .ico{width:16px;height:16px}
   &.tiny{width:20px;justify-content:center;
     & .ico{width:11px;height:11px}}
-  &[data-outcome=won]{color:var(--pos)}
-  &[data-outcome=lost]{color:var(--neg)}
+  &[data-outcome=won]{color:var(--pos-ink)}
+  &[data-outcome=lost]{color:var(--neg-ink)}
   &[data-outcome=cash]{color:var(--s)}
   &[data-outcome=void]{color:var(--t2)}
 }

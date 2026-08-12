@@ -91,20 +91,20 @@
   & .head{display:flex;justify-content:space-between;align-items:baseline;
     font-size:12px;margin-bottom:8px;gap:10px}
   & .pctval{font-family:var(--fm);font-weight:600;font-size:13px;flex:0 0 auto}
-  & .track{position:relative;height:10px;border-radius:6px;background:rgba(255,255,255,.07)}
+  & .track{position:relative;height:10px;border-radius:6px;background:rgba(var(--ink),.07)}
   & .clip{position:absolute;inset:0;border-radius:6px;overflow:hidden}
   & .fill{display:block;height:100%;width:100%;border-radius:6px;
     background:linear-gradient(90deg,var(--p),var(--pos));
     transform-origin:left;transform:scaleX(0);
     transition:transform 820ms var(--ez)}
   & .pace{position:absolute;top:-4px;bottom:-4px;left:0;width:2px;border-radius:2px;
-    background:rgba(255,255,255,.62);will-change:transform;
+    background:rgba(var(--ink),.62);will-change:transform;
     transition:transform var(--tb) var(--ez)}
   & .foot{display:flex;justify-content:space-between;font-family:var(--fm);
     font-size:10.5px;color:var(--t2);margin-top:8px;gap:10px}}
 .editable{
   font-family:var(--fm);font-weight:600;color:var(--t1);
-  border-bottom:1px dashed rgba(255,255,255,.32);
+  border-bottom:1px dashed rgba(var(--ink),.32);
   /* 24px minimum touch target: this was 43x20 and failed the audit */
   padding:4px 2px;min-height:26px;display:inline-flex;align-items:center;font-size:12px;
   &:hover{color:var(--s);border-bottom-color:var(--s)}}
@@ -129,7 +129,7 @@
   & button{width:38px;height:38px;border-radius:11px;background:var(--c2);
     border:1px solid var(--e1);display:grid;place-items:center;
     transition:background var(--tf),transform var(--tf);
-    &:hover{background:rgba(255,255,255,.14)}
+    &:hover{background:rgba(var(--ink),.14)}
     &:active{transform:scale(.92)}
     & svg{width:14px;height:14px}}}
 .dowrow{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;margin-bottom:4px;
@@ -148,10 +148,10 @@
     font-variant-numeric:tabular-nums lining-nums}
   & .dnum{font-size:8.5px;color:var(--t3);line-height:1.15;margin-top:1px}
   &.blank{visibility:hidden;animation:none;opacity:1}
-  &.nobets{background:rgba(255,255,255,.035);border-color:rgba(255,255,255,.08);
+  &.nobets{background:rgba(var(--ink),.035);border-color:rgba(var(--ink),.08);
     &::after{content:"";position:absolute;left:-16%;right:-16%;top:50%;height:1px;
-      background:rgba(255,255,255,.18);transform:rotate(-38deg)}}
-  &.future{border:1px dashed rgba(255,255,255,.10);& .dnum{color:rgba(100,116,139,.6)}}
+      background:rgba(var(--ink),.18);transform:rotate(-38deg)}}
+  &.future{border:1px dashed rgba(var(--ink),.10);& .dnum{color:rgba(100,116,139,.6)}}
   &.hasbets{cursor:pointer;&:active{transform:scale(.93)}}
   &.today{outline:1.5px solid rgba(var(--orb2),.75);outline-offset:-1.5px;
     & .dnum{color:var(--s);font-weight:600}}
@@ -163,22 +163,22 @@
   & span{display:flex;align-items:center;gap:5px}
   & i{width:8px;height:8px;border-radius:2px;flex:0 0 auto}
   & .swatch-none{width:12px;height:10px;border-radius:3px;
-    background:rgba(255,255,255,.035);border:1px solid rgba(255,255,255,.08);position:relative;
+    background:rgba(var(--ink),.035);border:1px solid rgba(var(--ink),.08);position:relative;
     &::after{content:"";position:absolute;left:-14%;right:-14%;top:50%;height:1px;
-      background:rgba(255,255,255,.26);transform:rotate(-38deg)}}}
+      background:rgba(var(--ink),.26);transform:rotate(-38deg)}}}
 
 /* bet rows */
 .betrow{
   display:flex;align-items:center;gap:11px;padding:10px 0;
   transition:background var(--tf);
   &+.betrow{border-top:1px solid var(--e2)}
-  &:hover{background:rgba(255,255,255,.028)}
+  &:hover{background:rgba(var(--ink),.028)}
   & .icon{width:26px;flex:0 0 auto;display:flex;justify-content:center;
     & .ico{width:19px;height:19px}}
   /* The glyph carries the outcome's semantic colour, which is the whole
      reason these are SVG and not emoji. */
-  &[data-outcome=won] .icon{color:var(--pos)}
-  &[data-outcome=lost] .icon{color:var(--neg)}
+  &[data-outcome=won] .icon{color:var(--pos-ink)}
+  &[data-outcome=lost] .icon{color:var(--neg-ink)}
   &[data-outcome=cash] .icon{color:var(--s)}
   &[data-outcome=void] .icon{color:var(--t2)}
   & .mid{flex:1;min-width:0}
@@ -196,21 +196,21 @@
   &.short{max-height:158px;overflow:hidden}
   &.tall{max-height:280px;overflow-y:auto;overscroll-behavior:contain;
     &::-webkit-scrollbar{width:3px}
-    &::-webkit-scrollbar-thumb{background:rgba(255,255,255,.18);border-radius:3px}}}
+    &::-webkit-scrollbar-thumb{background:rgba(var(--ink),.18);border-radius:3px}}}
 
 /* split bars */
 .barlist{display:flex;flex-direction:column;gap:10px}
 .barline{
   display:grid;grid-template-columns:88px 1fr auto;align-items:center;gap:10px;font-size:12px;
   & .lab{color:var(--t2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-  & .track{height:7px;background:rgba(255,255,255,.06);border-radius:5px;overflow:hidden}
+  & .track{height:7px;background:rgba(var(--ink),.06);border-radius:5px;overflow:hidden}
   & i{display:block;height:100%;border-radius:5px;transform-origin:left;
     animation:barin 700ms var(--ez) forwards}
   & .val{font-family:var(--fm);font-weight:600;font-size:11.5px;
     font-variant-numeric:tabular-nums lining-nums}}
 @keyframes barin{from{transform:scaleX(0)}to{transform:scaleX(1)}}
 .stackbar{display:flex;height:11px;border-radius:6px;overflow:hidden;
-  background:rgba(255,255,255,.06);& i{display:block;height:100%}}
+  background:rgba(var(--ink),.06);& i{display:block;height:100%}}
 
 .donut{width:88px;height:88px;flex:0 0 auto;position:relative;
   & .mid{position:absolute;inset:0;display:grid;place-items:center;text-align:center;
@@ -225,7 +225,7 @@
   display:flex;align-items:center;justify-content:space-between;gap:10px;
   width:100%;padding:12px 15px;min-height:48px;
   transition:background var(--tf);
-  &:hover{background:rgba(255,255,255,.03)}
+  &:hover{background:rgba(var(--ink),.03)}
   & .left{display:flex;align-items:center;gap:9px;font-size:13.5px}
   & .dot{width:7px;height:7px;border-radius:50%;background:var(--a);flex:0 0 auto;
     animation:livepulse 2.4s ease-out infinite}
@@ -251,13 +251,13 @@
   & .top{display:flex;justify-content:space-between;align-items:baseline;gap:10px}
   & .ev{font-size:13px;font-weight:550;white-space:nowrap;overflow:hidden;
     text-overflow:ellipsis;min-width:0}
-  & .ret{font-family:var(--fm);font-size:12.5px;color:var(--pos);flex:0 0 auto;
+  & .ret{font-family:var(--fm);font-size:12.5px;color:var(--pos-ink);flex:0 0 auto;
     font-variant-numeric:tabular-nums lining-nums}
   & .pick{font-size:11.5px;color:var(--t2);margin-top:3px;line-height:1.45}
   & .meta{display:flex;align-items:center;gap:7px;margin-top:7px;flex-wrap:wrap;
     font-family:var(--fm);font-size:10px;color:var(--t3)}
   & .badge{padding:2px 7px;border-radius:5px;
-    &.auto{background:rgba(134,239,172,.14);color:var(--pos)}
+    &.auto{background:rgba(134,239,172,.14);color:var(--pos-ink)}
     &.ask{background:rgba(245,158,11,.16);color:var(--a)}
     &.live{background:rgba(56,189,248,.16);color:var(--s)}}
   & .why{font-size:11px;color:var(--a);margin-top:8px;line-height:1.5;
@@ -269,8 +269,8 @@
     background:var(--c2);border:1px solid var(--e1);
     transition:filter var(--tf),transform var(--tf);
     &:active{transform:scale(.97)}
-    &.win{color:var(--pos);border-color:rgba(134,239,172,.35);background:rgba(134,239,172,.1)}
-    &.lose{color:var(--neg);border-color:rgba(252,165,165,.35);background:rgba(252,165,165,.1)}
+    &.win{color:var(--pos-ink);border-color:rgba(134,239,172,.35);background:rgba(134,239,172,.1)}
+    &.lose{color:var(--neg-ink);border-color:rgba(252,165,165,.35);background:rgba(252,165,165,.1)}
     &.cash{color:var(--a);border-color:rgba(245,158,11,.35);background:rgba(245,158,11,.1)}
     &.void{color:var(--t2);border-color:var(--e1);background:var(--c1)}}
   & .cashform{display:flex;gap:6px;margin-top:8px;&>input{flex:1}}
@@ -283,7 +283,7 @@
 .pendrow.flash-won{background:rgba(134,239,172,.16);box-shadow:inset 3px 0 0 var(--pos)}
 .pendrow.flash-lost{background:rgba(252,165,165,.16);box-shadow:inset 3px 0 0 var(--neg)}
 .pendrow.flash-cash{background:rgba(245,158,11,.16);box-shadow:inset 3px 0 0 var(--a)}
-.pendrow.flash-void{background:rgba(255,255,255,.12);box-shadow:inset 3px 0 0 var(--t2)}
+.pendrow.flash-void{background:rgba(var(--ink),.12);box-shadow:inset 3px 0 0 var(--t2)}
 .pendrow.flash .acts button{opacity:.35}
 .pendrow.flash .acts button.chosen{opacity:1;transform:scale(1.04)}
 

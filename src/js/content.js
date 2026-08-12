@@ -92,7 +92,7 @@ const HOME_FAQ = [
   ['Does extra time count?', 'No. Everything settles on ninety minutes. If the ninety minute score is not in the feed, the bet is handed to you rather than settled on a score that includes extra time.'],
   ['Who can see my numbers?', 'Whoever you choose: public, people you follow back, or nobody. Group members always see the units of everyone in that group.'],
   ['What is a unit?', 'Your standard stake. Units let groups rank people without anyone seeing how much money is involved.'],
-  ['What does it cost?', 'Free for twenty slips, then £3.49 a month or £29.99 a year.'],
+  ['What does it cost?', 'Two weeks free with up to 35 slips in that window, then £3.49 a month or £29.99 a year.'],
   ['When is it on the App Store?', 'Coming soon. It runs in your browser today and installs to your home screen from the share sheet, so it behaves like an app already, and the Telegram bot works now. The App Store version follows.']
 ];
 
@@ -305,7 +305,7 @@ function renderBotChat() {
     kv('Bookmaker', esc(slip.book)) +
     kv('Status', '<span style="color:var(--a)">Tracking</span>') +
     '<div style="display:flex;gap:8px;margin-top:11px">' +
-    '<span style="flex:1;text-align:center;font-size:12.5px;padding:9px 0;border-radius:9px;background:linear-gradient(135deg,var(--p),var(--s));color:#08111f">Confirm</span>' +
+    '<span style="flex:1;text-align:center;font-size:12.5px;padding:9px 0;border-radius:9px;background:linear-gradient(135deg,var(--p),var(--s));color:var(--on-p)">Confirm</span>' +
     '<span style="flex:1;text-align:center;font-size:12.5px;padding:9px 0;border-radius:9px;background:var(--c1);border:1px solid var(--e1)">Edit</span></div></div>' +
 
     /* Settlement arrives later, from the results feed. Showing it as a
@@ -373,7 +373,7 @@ function panel(i) {
        at full time, from the results feed, not from the image. */
     srow('Status', '<span style="color:var(--a)">Tracking, kicks off 16:00</span>') +
     '<div style="display:flex;gap:5px;margin-top:7px">' +
-    '<span style="flex:1;text-align:center;font-size:9px;padding:5px 0;border-radius:6px;background:linear-gradient(135deg,var(--p),var(--s));color:#08111f">Confirm</span>' +
+    '<span style="flex:1;text-align:center;font-size:9px;padding:5px 0;border-radius:6px;background:linear-gradient(135deg,var(--p),var(--s));color:var(--on-p)">Confirm</span>' +
     '<span style="flex:1;text-align:center;font-size:9px;padding:5px 0;border-radius:6px;background:var(--c1);border:1px solid var(--e1)">Edit</span></div></div>' +
     '<p style="font-size:9px;color:var(--t2);text-align:center;padding-top:4px">You confirm before anything saves</p>' };
 
@@ -458,7 +458,7 @@ function panel(i) {
       '<div style="display:flex;align-items:center;gap:6px;font-size:9px;padding:5px 0;border-bottom:1px solid rgba(255,255,255,.05)' +
       (x.me ? ';background:rgba(var(--orb1),.16);border-radius:5px;padding-left:5px;padding-right:5px' : '') + '">' +
       '<span style="width:9px;font-family:var(--fm);color:var(--t3)">' + (n + 1) + '</span>' +
-      '<span style="width:16px;height:16px;border-radius:50%;display:grid;place-items:center;font-size:6.5px;font-weight:600;color:#08111f;background:linear-gradient(140deg,#8FC7C0,#8B9DE0)">' + esc(x.a) + '</span>' +
+      '<span style="width:16px;height:16px;border-radius:50%;display:grid;place-items:center;font-size:6.5px;font-weight:600;color:var(--on-p);background:linear-gradient(140deg,#8FC7C0,#8B9DE0)">' + esc(x.a) + '</span>' +
       '<span style="flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">' + esc(x.n) + '</span>' +
       '<b class="m ' + M.tone(x.v) + '" style="font-size:9px">' + M.units(x.v, x.un) + '</b></div>').join('') + '</div>' +
     '<p style="font-size:9px;color:var(--t2);text-align:center;padding-top:4px">' +
@@ -469,23 +469,33 @@ const skpi = (k, v) => '<div style="background:var(--c1);border:1px solid var(--
 
 /** Render the whole guide: five steps, each with its panel. */
 export function renderGuide() {
-  const el = $('guideSteps');
-  if (!el) return;
-  el.innerHTML = STEPS.map((step, i) => {
-    const p = panel(i);
-    return '<li class="guidestep">' +
-      '<div class="guidehead">' +
-        '<span class="guiden" aria-hidden="true">' + (i + 1) + '</span>' +
-        '<div><h2>' + esc(step[0]) + '</h2><p>' + esc(step[1]) + '</p></div>' +
-      '</div>' +
-      '<div class="guideshot">' +
-        '<div class="phone-top"><span class="l">' + esc(p.top[0]) + '</span>' +
-          '<span class="r ' + (p.top[1] && p.top[1].charAt(0) === '−' ? 'neg'
-            : p.top[1] && p.top[1].charAt(0) === '+' ? 'pos' : '') + '">' +
-          esc(p.top[1] || '') + '</span></div>' +
-        '<div class="guidebody' + (p.cls ? ' ' + p.cls : '') + '">' + p.html + '</div>' +
-      '</div></li>';
-  }).join('');
+  /* Two chapters, not one list of five.
+     The split is not cosmetic: steps one to three are things the bot does
+     to a slip and steps four and five are things the dashboard does with
+     the result, so they answer two different questions and somebody who
+     only has one of them can read only that half. The numbering restarts
+     per chapter for the same reason. */
+  const render = (id, steps, offset) => {
+    const el = $(id);
+    if (!el) return;
+    el.innerHTML = steps.map((step, i) => {
+      const p = panel(i + offset);
+      return '<li class="guidestep">' +
+        '<div class="guidehead">' +
+          '<span class="guiden" aria-hidden="true">' + (i + 1) + '</span>' +
+          '<div><h3>' + esc(step[0]) + '</h3><p>' + esc(step[1]) + '</p></div>' +
+        '</div>' +
+        '<div class="guideshot">' +
+          '<div class="phone-top"><span class="l">' + esc(p.top[0]) + '</span>' +
+            '<span class="r ' + (p.top[1] && p.top[1].charAt(0) === '\u2212' ? 'neg'
+              : p.top[1] && p.top[1].charAt(0) === '+' ? 'pos' : '') + '">' +
+            esc(p.top[1] || '') + '</span></div>' +
+          '<div class="guidebody' + (p.cls ? ' ' + p.cls : '') + '">' + p.html + '</div>' +
+        '</div></li>';
+    }).join('');
+  };
+  render('guideBot', STEPS.slice(0, 3), 0);
+  render('guideDash', STEPS.slice(3), 3);
 }
 
 function paintScene() {

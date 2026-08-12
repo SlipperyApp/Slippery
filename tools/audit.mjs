@@ -20,7 +20,8 @@ const WIDTHS = [320, 390, 430];
 const SHOT_DIR = path.join(root, 'tools', 'screens');
 
 const VIEWS = ['landing', 'setup', 'howto', 'pricing', 'dash', 'imp', 'settings', 'help', 'terms', 'privacy'];
-const THEMES = ['periwinkle', 'graphite', 'ink', 'tide', 'chalk'];
+/* Graphite first, matching data.js: it is the default. */
+const THEMES = ['graphite', 'periwinkle', 'ink', 'tide', 'chalk'];
 
 const MIME = { '.html': 'text/html', '.js': 'text/javascript', '.css': 'text/css',
   '.woff2': 'font/woff2', '.png': 'image/png', '.svg': 'image/svg+xml',

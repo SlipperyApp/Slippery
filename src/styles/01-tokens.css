@@ -11,27 +11,63 @@
   --neg:#FCA5A5;
   --warn:#F59E0B;
 
-  /* theme: periwinkle */
-  --p:#5D76CB;          /* primary */
-  --s:#7DD3FC;          /* secondary / link */
-  --a:#F59E0B;          /* attention */
-  --bg:#0B1020;
-  --glow:#182238;
-  --orb1:93,118,203;
-  --orb2:56,189,248;
-  --orb3:143,199,192;
+  /* THE TEXT-SAFE PROFIT AND LOSS PAIR.
+     On every dark theme these ARE --pos and --neg, byte for byte, and the
+     brief's rule that the two colours never change is untouched.
+
+     They exist because Chalk is now a genuinely light theme, and #86EFAC
+     as text on a near-white background measures about 1.4:1. That is not
+     dim, it is invisible, and it is exactly why a light theme was
+     rejected before. Rendering profit in a colour nobody can read does not
+     honour the rule, it just breaks it quietly instead of loudly.
+
+     So: fills, borders, chips and the calendar keep the locked hex
+     everywhere, because a block of colour is legible at any size, and only
+     TEXT on a light background swaps to a darker shade of the same hue.
+     Same green, same red, same meaning, readable. If you add a new light
+     theme, override these two there as well. */
+  --pos-ink:var(--pos);
+  --neg-ink:var(--neg);
+
+  /* Text on a theme-accent fill: a primary button, a selected segment, an
+     avatar. It was hardcoded #08111f, which is correct while every accent
+     is a pastel and wrong the moment one is not. Chalk's --p and --s are
+     dark browns, so near-black on them was unreadable. */
+  --on-p:#08111f;
+
+  /* theme: graphite, the default.
+     Neutral by design: the numbers are the only saturated thing on the
+     page, and profit green next to a blue accent is a harder read than
+     profit green next to nothing. */
+  --p:#7C8DA6;          /* primary */
+  --s:#B4C4DA;          /* secondary / link */
+  --a:#FBBF24;          /* attention */
+  --bg:#101419;
+  --glow:#1E2530;
+  --orb1:124,141,166;
+  --orb2:180,196,218;
+  --orb3:150,160,175;
 
   /* text */
   --t1:#F1F5F9;
   --t2:#98A6BC;
   --t3:#8B99B0;
 
+  /* THE OVERLAY INK.
+     Every hover tint, hairline, track and scrollbar in this stylesheet used
+     to be a hardcoded rgba(255,255,255,x). That is correct on five dark
+     themes and wrong on the sixth: a white veil on a light page is a
+     lighter patch on something already light, so cards, hover states and
+     progress tracks all vanished. One token, flipped once per theme, and
+     every overlay follows. */
+  --ink:255,255,255;
+
   /* surfaces */
   --c1:rgba(255,255,255,.045);
   --c2:rgba(255,255,255,.075);
   --e1:rgba(255,255,255,.10);
   --e2:rgba(255,255,255,.055);
-  --card:rgba(19,27,45,.66);
+  --card:rgba(28,34,44,.68);
   --card-hi:rgba(255,255,255,.055);
 
   /* type */
@@ -53,11 +89,14 @@
   --eg:cubic-bezier(.34,1.4,.64,1);
 }
 
-html[data-theme=graphite]{
-  --p:#7C8DA6;--s:#B4C4DA;--a:#FBBF24;
-  --bg:#101419;--glow:#1E2530;
-  --orb1:124,141,166;--orb2:180,196,218;--orb3:150,160,175;
-  --card:rgba(28,34,44,.68);
+/* Graphite is :root, so it needs no block of its own. The attribute is
+   still written to <html> because the theme picker, the meta theme-color
+   and the audit all read it. */
+html[data-theme=periwinkle]{
+  --p:#5D76CB;--s:#7DD3FC;--a:#F59E0B;
+  --bg:#0B1020;--glow:#182238;
+  --orb1:93,118,203;--orb2:56,189,248;--orb3:143,199,192;
+  --card:rgba(19,27,45,.66);
 }
 html[data-theme=ink]{
   --p:#7C79A0;--s:#B3AAD8;--a:#7DD3FC;
@@ -71,10 +110,43 @@ html[data-theme=tide]{
   --orb1:62,147,181;--orb2:143,212,236;--orb3:80,170,170;
   --card:rgba(17,41,52,.68);
 }
+/* CHALK: the light one.
+ *
+ * Warm paper rather than white. A pure #FFF page with a dark-mode layout
+ * on it looks like a bug, and the drifting background needs somewhere to
+ * drift that is not glare.
+ *
+ * Everything inverts, not just the background. The surface tints go from
+ * white-on-dark to black-on-light, or every card would be a lighter patch
+ * on an already light page and disappear. The accent darkens because a
+ * pastel on paper has no contrast to give.
+ *
+ * --pos-ink and --neg-ink are the reason this theme can exist at all. See
+ * the note at the top: the fills stay the locked #86EFAC and #FCA5A5,
+ * text takes a darker shade of the same hue so it can actually be read.
+ */
 html[data-theme=chalk]{
-  --p:#A8998A;--s:#EADFC9;--a:#7DD3FC;
-  --bg:#17140F;--glow:#2C2820;
-  --orb1:168,153,138;--orb2:234,223,201;--orb3:150,140,120;
-  --card:rgba(41,37,29,.70);
-  --t2:#B4A996;--t3:#9E9382;
+  --p:#8A7A63;--s:#6B5B44;--a:#B45309;
+  --bg:#F7F3EA;--glow:#EDE5D6;
+  --orb1:186,170,142;--orb2:206,192,168;--orb3:170,158,136;
+  --card:rgba(255,253,248,.78);
+  --card-hi:rgba(0,0,0,.03);
+
+  --t1:#241F18;
+  --t2:#5C5245;
+  --t3:#6B6153;
+
+  --ink:60,48,30;
+
+  --c1:rgba(60,48,30,.045);
+  --c2:rgba(60,48,30,.075);
+  --e1:rgba(60,48,30,.16);
+  --e2:rgba(60,48,30,.09);
+
+  /* Same hues as #86EFAC and #FCA5A5, taken down to where they carry on
+     paper. Measured against --bg rather than chosen by eye. */
+  --on-p:#FBF8F1;
+
+  --pos-ink:#116B3A;
+  --neg-ink:#A81F1F;
 }

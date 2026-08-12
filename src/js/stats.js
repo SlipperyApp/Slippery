@@ -7,7 +7,7 @@
  * screen it is counted here, from records.
  */
 import {
-  LEDGER, DAY_TOTALS, IMPORTED, TODAY, monthTotal as monthTotalOf,
+  LEDGER, PENDING, DAY_TOTALS, IMPORTED, TODAY, monthTotal as monthTotalOf,
   TARGETS, outcomeGroup, betsOn
 } from './data.js';
 import { S } from './state.js';
@@ -165,6 +165,22 @@ export function stats(S, MS) {
   };
 }
 
+/* How many bets to claim.
+ *
+ * Two honest answers to one question, and they differ by whatever was
+ * imported as an aggregate. The tracker count is what Slippery has seen:
+ * it starts at 0 on a new account and every number in it has a slip
+ * behind it. The lifetime count adds the history brought across, which is
+ * the true total and is also a figure this tracker cannot show the
+ * workings for.
+ *
+ * Period figures (typed P/L, imported P/L rows) are in NEITHER. They have
+ * no bets behind them at all, so counting them would be inventing bets. */
+export function betCount(S, scoped) {
+  const here = scoped == null ? LEDGER.length + PENDING.length : scoped;
+  return S.countMode === 'lifetime' ? here + IMPORTED.bets : here;
+}
+
 /** Lifetime figures, always the same numbers wherever they appear.
     Derived, never stored: ledger + imports, computed the one way. */
 export function lifetime() {
@@ -176,7 +192,10 @@ export function lifetime() {
   }
   return {
     profit, turnover,
+    /* This one is always the true lifetime total; the toggle decides what
+       gets DISPLAYED, and callers pick. */
     bets: LEDGER.length + IMPORTED.bets,
+    trackerBets: LEDGER.length,
     roi: turnover ? profit / turnover * 100 : 0,
     avgOdds: oddsN ? oddsSum / oddsN : 0
   };

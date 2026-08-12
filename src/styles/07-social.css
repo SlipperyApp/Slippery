@@ -6,7 +6,7 @@
   display:flex;align-items:center;gap:11px;padding:11px 0;
   transition:background var(--tf);
   &+.person{border-top:1px solid var(--e2)}
-  &:hover{background:rgba(255,255,255,.028)}
+  &:hover{background:rgba(var(--ink),.028)}
   &.you{background:rgba(var(--orb1),.14);border-radius:11px;
     padding:11px 10px;margin:4px -10px;border-top:none}
   & .rank{width:20px;text-align:center;font-family:var(--fm);font-weight:600;
@@ -28,14 +28,14 @@
 .avatar{
   width:32px;height:32px;border-radius:50%;flex:0 0 auto;
   display:grid;place-items:center;font-weight:600;font-size:12px;
-  color:#08111f;background:linear-gradient(140deg,#8FC7C0,#8B9DE0);
+  color:var(--on-p);background:linear-gradient(140deg,#8FC7C0,#8B9DE0);
   &.large{width:54px;height:54px;font-size:18px}}
 
 .privacytag{
   font-family:var(--fm);font-size:8.5px;padding:2px 6px;border-radius:4px;flex:0 0 auto;
-  &.public{background:rgba(134,239,172,.15);color:var(--pos)}
+  &.public{background:rgba(134,239,172,.15);color:var(--pos-ink)}
   &.friends{background:rgba(var(--orb2),.16);color:var(--s)}
-  &.private{background:rgba(255,255,255,.08);color:var(--t2)}}
+  &.private{background:rgba(var(--ink),.08);color:var(--t2)}}
 
 .followbtn{
   font-size:11.5px;font-weight:600;padding:9px 13px;border-radius:9px;
@@ -51,7 +51,7 @@
   width:100%;text-align:left;
   transition:transform var(--tb) var(--ez),background var(--tb),border-color var(--tb);
   @media (hover:hover) and (pointer:fine){&:hover{transform:translateY(-2px)}}
-  &:hover{background:rgba(255,255,255,.10)}
+  &:hover{background:rgba(var(--ink),.10)}
   &[aria-pressed=true]{border-color:var(--s);background:rgba(var(--orb2),.10)}
   & .glyph{width:36px;height:36px;border-radius:11px;flex:0 0 auto;display:grid;place-items:center;
     background:rgba(var(--orb2),.14);border:1px solid rgba(var(--orb2),.3);
@@ -99,7 +99,7 @@
 .minical{
   display:grid;grid-template-columns:repeat(7,1fr);gap:4px;max-width:260px;
   & span{text-align:center;font-family:var(--fm);font-size:8px;color:var(--t3);padding-bottom:2px}
-  & i{aspect-ratio:1;border-radius:4px;background:rgba(255,255,255,.04);display:block}
+  & i{aspect-ratio:1;border-radius:4px;background:rgba(var(--ink),.04);display:block}
   & i.blank{visibility:hidden}}
 
 .sparkline{
@@ -140,7 +140,12 @@
        two sets of text sat on top of each other. Mixed from --bg so it
        still follows the theme, and no backdrop-filter, which is a budget
        of about three elements on an iPhone and already spent. */
-    background:color-mix(in srgb,var(--bg) 92%,#fff 8%);
+    /* Mixed with the text colour rather than with white: "lift it by
+       adding white" is backwards on a light theme, where the panel needs
+       to sit slightly DARKER than the page to read as raised. --t1 is dark
+       on paper and light on everything else, so one expression works in
+       both directions. */
+    background:color-mix(in srgb,var(--bg) 93%,var(--t1) 7%);
     border:1px solid var(--e1);
     box-shadow:0 18px 40px rgba(0,0,0,.55);
     animation:gmenuin 160ms var(--ex)}
@@ -150,7 +155,7 @@
     & .k{font-size:11.5px;color:var(--t2)}}
   & .gmenu-leave{
     width:100%;text-align:left;margin-top:5px;padding:9px 8px;border-radius:9px;
-    font-size:12.5px;font-weight:550;color:var(--neg);min-height:38px;
+    font-size:12.5px;font-weight:550;color:var(--neg-ink);min-height:38px;
     border-top:1px solid var(--e2);
     transition:background var(--tb);
     &:hover{background:rgba(252,165,165,.09)}}}

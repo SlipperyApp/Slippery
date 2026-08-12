@@ -80,12 +80,41 @@
 /* Inner: the drift. The blur is INSIDE the SVG, not a CSS filter on this
    element, a live filter is recomputed every scroll frame and cost 30fps;
    a pre-blurred background is rasterised once and only composited after. */
+/* Inner: the drift.
+ *
+ * The ribbons used to be two data-URI SVGs with #5D76CB, #38BDF8 and
+ * #8B5CF6 baked into their gradients, which meant every theme got
+ * periwinkle ribbons. Nobody noticed on the four dark themes because they
+ * are all cool; on Chalk it put a mauve haze across warm paper, and it
+ * quietly contradicted the brief's "colour that shifts per theme".
+ *
+ * A custom property cannot reach inside a data: URI, so the fix splits the
+ * asset in two: the SVG is now a SHAPE ONLY, black on transparent, used as
+ * a mask, and the colour is an ordinary CSS gradient underneath it made of
+ * theme tokens. One asset, five palettes, and the baked feGaussianBlur is
+ * preserved because it now blurs the mask's alpha instead of the fill.
+ *
+ * The blur stays inside the SVG. A live CSS filter here measured 49.9ms
+ * p95 against 16.8ms without, because it is re-evaluated every scroll
+ * frame whether or not anything moved.
+ *
+ * -webkit- and standard, both, per the iOS constraint in the brief. */
 .sky-band-in{
   position:absolute;inset:0;will-change:transform;
-  background-repeat:no-repeat;background-size:100% 100%;
-  &.b1{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1200 620' preserveAspectRatio='none'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='1' y2='0'%3E%3Cstop offset='0' stop-color='%235D76CB'/%3E%3Cstop offset='.4' stop-color='%2338BDF8'/%3E%3Cstop offset='.75' stop-color='%238FC7C0'/%3E%3Cstop offset='1' stop-color='%238B5CF6'/%3E%3C/linearGradient%3E%3Cfilter id='b' x='-25%25' y='-25%25' width='150%25' height='150%25'%3E%3CfeGaussianBlur stdDeviation='38'/%3E%3C/filter%3E%3C/defs%3E%3Cpath d='M-120,300 C160,175 340,430 620,300 C900,175 1060,415 1340,285 L1340,460 C1060,590 900,350 620,478 C340,606 160,366 -120,494 Z' fill='url(%23g)' opacity='1' filter='url(%23b)'/%3E%3C/svg%3E");
+  -webkit-mask-repeat:no-repeat;mask-repeat:no-repeat;
+  -webkit-mask-size:100% 100%;mask-size:100% 100%;
+  &.b1{
+    background:linear-gradient(100deg,
+      rgb(var(--orb1)) 0%, rgb(var(--orb2)) 42%, rgb(var(--orb3)) 74%, rgb(var(--orb1)) 100%);
+    -webkit-mask-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1200 620' preserveAspectRatio='none'%3E%3Cfilter id='b' x='-25%25' y='-25%25' width='150%25' height='150%25'%3E%3CfeGaussianBlur stdDeviation='38'/%3E%3C/filter%3E%3Cpath d='M-120,300 C160,175 340,430 620,300 C900,175 1060,415 1340,285 L1340,460 C1060,590 900,350 620,478 C340,606 160,366 -120,494 Z' fill='%23000' filter='url(%23b)'/%3E%3C/svg%3E");
+    mask-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1200 620' preserveAspectRatio='none'%3E%3Cfilter id='b' x='-25%25' y='-25%25' width='150%25' height='150%25'%3E%3CfeGaussianBlur stdDeviation='38'/%3E%3C/filter%3E%3Cpath d='M-120,300 C160,175 340,430 620,300 C900,175 1060,415 1340,285 L1340,460 C1060,590 900,350 620,478 C340,606 160,366 -120,494 Z' fill='%23000' filter='url(%23b)'/%3E%3C/svg%3E");
     animation:silk1 34s ease-in-out infinite}
-  &.b2{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1200 620' preserveAspectRatio='none'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='1' y2='0'%3E%3Cstop offset='0' stop-color='%238B5CF6'/%3E%3Cstop offset='.55' stop-color='%235D76CB'/%3E%3Cstop offset='1' stop-color='%238FC7C0'/%3E%3C/linearGradient%3E%3Cfilter id='b' x='-25%25' y='-25%25' width='150%25' height='150%25'%3E%3CfeGaussianBlur stdDeviation='38'/%3E%3C/filter%3E%3C/defs%3E%3Cpath d='M-120,175 C180,80 340,320 660,190 C980,64 1120,300 1340,175 L1340,285 C1120,412 980,175 660,300 C340,430 180,190 -120,300 Z' fill='url(%23g)' opacity='.7' filter='url(%23b)'/%3E%3C/svg%3E");
+  &.b2{
+    opacity:.7;
+    background:linear-gradient(80deg,
+      rgb(var(--orb3)) 0%, rgb(var(--orb1)) 55%, rgb(var(--orb2)) 100%);
+    -webkit-mask-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1200 620' preserveAspectRatio='none'%3E%3Cfilter id='b' x='-25%25' y='-25%25' width='150%25' height='150%25'%3E%3CfeGaussianBlur stdDeviation='38'/%3E%3C/filter%3E%3Cpath d='M-120,175 C180,80 340,320 660,190 C980,64 1120,300 1340,175 L1340,285 C1120,412 980,175 660,300 C340,430 180,190 -120,300 Z' fill='%23000' filter='url(%23b)'/%3E%3C/svg%3E");
+    mask-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1200 620' preserveAspectRatio='none'%3E%3Cfilter id='b' x='-25%25' y='-25%25' width='150%25' height='150%25'%3E%3CfeGaussianBlur stdDeviation='38'/%3E%3C/filter%3E%3Cpath d='M-120,175 C180,80 340,320 660,190 C980,64 1120,300 1340,175 L1340,285 C1120,412 980,175 660,300 C340,430 180,190 -120,300 Z' fill='%23000' filter='url(%23b)'/%3E%3C/svg%3E");
     animation:silk2 44s ease-in-out infinite}}
 @keyframes silk1{
   0%,100%{transform:translate3d(0,0,0);opacity:1}
@@ -99,6 +128,11 @@
 .sky-grain{
   position:absolute;inset:-50px;
   opacity:.032;
+  /* The grain is black noise over a dark wash. On paper the same noise
+     reads as dirt rather than as texture, and the banding it exists to
+     break up is an OLED-on-dark artefact that a light theme does not
+     have. */
+  html[data-theme=chalk] &{opacity:.014}
   background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.82' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='180' height='180' filter='url(%23n)'/%3E%3C/svg%3E");
   will-change:transform;
   animation:grain 8s steps(6) infinite}

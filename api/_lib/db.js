@@ -71,6 +71,10 @@ export async function ensureSchema() {
      losses to anyone who asks. This lived only in the browser until now, so
      the toggle changed a label and no server ever heard about it. */
   await sql`ALTER TABLE users ADD COLUMN IF NOT EXISTS privacy text NOT NULL DEFAULT 'friends'`;
+  /* Which bet count to show: 'tracker' counts only what was logged here and
+     starts at 0, 'lifetime' adds the history imported as aggregates. Both
+     are true; the user picks which one they mean. */
+  await sql`ALTER TABLE users ADD COLUMN IF NOT EXISTS count_mode text NOT NULL DEFAULT 'tracker'`;
 
   /* The three constraints the product depends on. Partial indexes so a
      deleted account frees its email and name for reuse. */
@@ -241,6 +245,42 @@ export async function ensureSchema() {
       PRIMARY KEY (group_id, user_id)
     )`;
   await sql`CREATE INDEX IF NOT EXISTS group_members_user_idx ON group_members (user_id)`;
+
+  /* Profit and loss entered as a period total rather than as bets.
+   *
+   * These are NOT bets and must never be counted as any. Somebody bringing
+   * a year of history across from another tracker has a figure per day and
+   * no slips behind it; inventing bets to carry that figure is exactly the
+   * dishonesty this product exists to stop. So they live in their own
+   * table, they have no odds, no stake and no settlement, and every place
+   * that sums the ledger has to decide whether to include them.
+   *
+   * `on_date` is a date, not a timestamp. A day's profit belongs to the day
+   * as the person writing it down understands it, and a timestamp drags in
+   * a timezone question nobody asked.
+   *
+   * The unique index is per (user, date, period), so re-entering a figure
+   * for a day you already have corrects it instead of double counting. That
+   * is the behaviour somebody re-importing the same screenshot expects, and
+   * it is the difference between an import being safe to retry and not.
+   */
+  await sql`
+    CREATE TABLE IF NOT EXISTS pl_entries (
+      id           uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+      user_id      uuid NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      on_date      date NOT NULL,
+      period       text NOT NULL DEFAULT 'day',
+      profit_pence integer NOT NULL,
+      turnover_pence integer,
+      bets         integer,
+      note         text,
+      source       text NOT NULL DEFAULT 'typed',
+      created_at   timestamptz NOT NULL DEFAULT now()
+    )`;
+  await sql`CREATE UNIQUE INDEX IF NOT EXISTS pl_entries_key
+            ON pl_entries (user_id, on_date, period)`;
+  await sql`CREATE INDEX IF NOT EXISTS pl_entries_user_idx
+            ON pl_entries (user_id, on_date DESC)`;
 
   /* Following.
    *

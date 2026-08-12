@@ -5,7 +5,7 @@ import { S } from './state.js';
 import * as M from './money.js';
 import {
   LEDGER, PENDING, PEOPLE, GROUPS, TODAY, THEMES, THEME_BG, BOOKS, TIPSTERS,
-  OUTCOME_ICON, OUTCOME_LABEL, outcomeGroup, personMonths, personDays, IMPORTED, ico, TRIAL, FOUND
+  OUTCOME_ICON, OUTCOME_LABEL, outcomeGroup, personMonths, personDays, IMPORTED, ico, TRIAL, FOUND, PL
 } from './data.js';
 import {
   stats, lifetime, dayMap, monthTotal, dowLabels, dowOffset, weekRange, targetFor
@@ -125,12 +125,19 @@ export function renderCalendar() {
            Neither green nor red, both would be a lie about the day. */
         style += ';background:rgba(255,255,255,.06);border-color:rgba(255,255,255,.14)';
       }
+      /* EVERY DAY IS TAPPABLE, past and future.
+         Days with no bets used to be `disabled`, which made the calendar
+         a readout rather than a control: there was no way to say "put this
+         figure on the 3rd" because the 3rd could not be tapped. A day with
+         nothing in it opens the same sheet, showing an empty day and the
+         way to add a figure to it. Future days too, on purpose, because a
+         bet placed today on a game next week has a date in the future. */
       const label = has
         ? DS.format(new Date(TODAY.year, S.month, d)) + ', ' + M.signed(v)
-        : DS.format(new Date(TODAY.year, S.month, d)) + ', no bets';
+        : DS.format(new Date(TODAY.year, S.month, d)) + ', no bets, tap to add a figure';
       html += '<button class="cell ' + cls + (isToday ? ' today' : '') +
-        (S.focus === d && has ? ' picked' : '') + '" style="' + style + '"' +
-        (has ? ' data-day="' + d + '"' : ' disabled') +
+        (S.focus === d ? ' picked' : '') + '" style="' + style + '"' +
+        ' data-day="' + d + '"' +
         ' aria-label="' + esc(label) + '">' +
         (has ? '<span class="amt ' + M.tone(v) + '" aria-hidden="true">' +
           M.compact(v) + '</span>' : '') +
@@ -178,7 +185,10 @@ export function renderHeadline() {
   v.textContent = M.signed(p.profit);
   v.className = 'value m ' + M.tone(p.profit);
 
-  setText('statBets', M.plain(p.bets));
+  /* The bet count honours the Settings toggle. `p.bets` for a scoped
+     period is what was logged here; the all-time scope adds the imported
+     history, and the toggle decides whether that history counts. */
+  setText('statBets', M.plain(S.countMode === 'lifetime' ? p.bets : p.ledgerBets));
   setText('statUnits', M.units(p.profit, S.unit));
   setText('statTurnover', M.money0(p.turnover));
   setText('statWinRate', p.winRate + '%');
@@ -567,6 +577,45 @@ export function renderGroups() {
       M.units(p.v, p.un) + '</span><span class="s">' + M.money0s(p.v) + '</span></span></div>').join('');
 }
 
+/* ---------------- period profit and loss ----------------
+ *
+ * The compact dated list an import ends up as. One line per figure: the
+ * date it belongs to, what it was, and a way to take it off again.
+ *
+ * Sorted newest first by the server, and not re-sorted here. Dates arrive
+ * as plain ISO days with no timezone, and re-parsing them to sort would be
+ * the one place a day could shift by one.
+ */
+const PL_TAG = { day: '', week: 'week', month: 'month', year: 'year' };
+
+export function renderPl() {
+  const card = $('plListCard');
+  const list = $('plList');
+  if (!list || !card) return;
+  if (!PL.length) { card.hidden = true; list.innerHTML = ''; return; }
+  card.hidden = false;
+
+  const sum = PL.reduce((a, p) => a + p.profit, 0);
+  setHTML('plTotal', PL.length + ' figure' + (PL.length === 1 ? '' : 's') +
+    ' · <b class="' + M.tone(sum) + '">' + M.money0s(sum) + '</b>');
+
+  list.innerHTML = PL.map(p => {
+    const d = new Date(p.date + 'T12:00:00');
+    const when = Number.isNaN(d.getTime()) ? p.date
+      : p.period === 'month' ? ML.format(d)
+      : p.period === 'week' ? 'Week of ' + DS.format(d)
+      : DS.format(d) + ' ' + d.getFullYear();
+    return '<div class="plrow">' +
+      '<span class="pld">' + esc(when) +
+        (PL_TAG[p.period] ? '<span class="plt">' + PL_TAG[p.period] + '</span>' : '') +
+        (p.source === 'import' ? '<span class="plt">imported</span>' : '') + '</span>' +
+      '<span class="plv ' + M.tone(p.profit) + '">' + M.signed(p.profit) + '</span>' +
+      '<button class="plx" data-remove-pl="' + esc(p.id) + '" ' +
+        'aria-label="Remove the figure for ' + esc(when) + '">' + ico('i-close') + '</button>' +
+    '</div>';
+  }).join('');
+}
+
 /* ---------------- the group directory ----------------
  *
  * Public groups, alphabetically, exactly as the server sorted them. It is
@@ -804,6 +853,13 @@ export function renderAccount(user) {
      used to live only in the browser, so a reload silently reset them to
      the defaults in state.js while the account kept its real values. */
   if (user.privacy) S.privacy = user.privacy;
+  if (user.countMode) S.countMode = user.countMode;
+  paintSeg($('countSeg'));
+  $$('#countSeg button').forEach(b => {
+    const on = b.getAttribute('data-count') === S.countMode;
+    b.classList.toggle('on', on);
+    b.setAttribute('aria-pressed', String(on));
+  });
   renderPlan();
   renderPrivacy();
   /* Telegram: connected, or plainly not. */
@@ -941,4 +997,5 @@ export function renderAll() {
   renderPending();
   renderTrial();
   renderPlan();
+  renderPl();
 }

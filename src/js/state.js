@@ -25,8 +25,16 @@ export const S = {
   currency: 'GBP',
   oddsFormat: 'Decimal',
   profitFormat: 'Currency',
-  theme: 'periwinkle',
+  /* Graphite. It is what :root carries, so this and the stylesheet agree
+     without the client writing an attribute on first paint. */
+  theme: 'graphite',
   showTipster: true,
+  /* Which bet count to show.
+     'tracker' counts only what has been logged HERE, so a new account
+     starts at 0 and the number means "bets Slippery has actually seen".
+     'lifetime' adds the history brought across at import, which is the
+     honest total but starts a fresh account at somebody else's figure. */
+  countMode: 'tracker',
 
   /* social */
   privacy: 'friends',
@@ -52,7 +60,10 @@ export const S = {
   ledgerView: 'ledgerBets',
   socialView: 'socialGroups',
   importView: 'importUpload',
-  totalsPeriod: 'month'
+  /* A day. The markup marks "A day" as the selected segment, and this
+     used to say month, so the sentence under the picker announced a month
+     while the control said a day. */
+  totalsPeriod: 'day' 
 };
 
 /** Day and week periods need a focused day. Without one the old build

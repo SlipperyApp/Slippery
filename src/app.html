@@ -57,7 +57,6 @@
       <p class="sell reveal">Send a slip when you place it. Slippery reads it, tracks it, and settles it into your profit and loss.</p>
       <div class="herocta reveal">
         <button class="btn primary" data-nav="setup">Start free</button>
-        <button class="btn ghost" data-nav="howto">See how it works</button>
       </div>
       <div class="badges reveal">
         <span class="badge-pill">
@@ -179,10 +178,6 @@
   </div>
 
   <div class="wrap">
-    <div class="section">
-      <button class="btn ghost reveal" data-nav="howto">See how it works</button>
-    </div>
-
     <!-- The case for the product, stated rather than implied.
          The two things that make Slippery different are a decision about
          WHEN you log and a decision about when NOT to grade, and neither
@@ -513,10 +508,32 @@
   <div class="wrap nar page-lede">
     <div class="reveal" style="margin-bottom:18px">
       <p class="eyebrow">How it works</p>
-      <h1 style="font-size:28px;margin-top:6px">Five steps, start to settled.</h1>
-      <p class="lede">One slip followed the whole way. The figures are a worked example.</p>
+      <h1 style="font-size:28px;margin-top:6px">Two halves, one slip.</h1>
+      <p class="lede">The bot takes it in, the dashboard is where it lands. Figures throughout are one worked example, followed the whole way.</p>
     </div>
-    <ol class="guide" id="guideSteps"></ol>
+    <!-- EXACTLY TWO EXPLAINERS.
+         There were five numbered steps here, a Telegram preview on the
+         landing page and a "how it works" section above it, all narrating
+         the same journey in three places. It is one story with two halves,
+         so it is told once, in two chapters: what the bot does with a slip,
+         and what the dashboard does with the result. -->
+    <div class="chapter" id="chapBot">
+      <div class="chaphead">
+        <span class="chapglyph" aria-hidden="true"><svg viewBox="0 0 24 24"><use href="#i-telegram"/></svg></span>
+        <div><p class="eyebrow">Chapter one</p><h2>How the bot works</h2>
+          <p class="chapsub">Forward a slip the moment you place it. Everything after that is automatic until something is genuinely uncertain.</p></div>
+      </div>
+      <ol class="guide" id="guideBot"></ol>
+    </div>
+
+    <div class="chapter" id="chapDash">
+      <div class="chaphead">
+        <span class="chapglyph" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="17" rx="2"/><path d="M3 9h18M8 2v4M16 2v4"/></svg></span>
+        <div><p class="eyebrow">Chapter two</p><h2>How the dashboard looks</h2>
+          <p class="chapsub">Where the numbers end up: a month you can read at a glance, and the splits that say which of it was skill.</p></div>
+      </div>
+      <ol class="guide" id="guideDash"></ol>
+    </div>
     <div class="btnrow" style="margin-top:22px">
       <button class="btn primary" data-nav="setup">Start free</button>
       <button class="btn ghost" data-nav="pricing">See pricing</button>
@@ -898,16 +915,60 @@
       </div>
     </div>
 
+    <!-- Profit and loss for a period, with no slips behind it.
+         This was a grid of boxes labelled Mon..Sun and Jan..Dec with no
+         year attached to any of them, and a save button that printed
+         "Totals added" and stored nothing. You could not say WHICH Monday
+         you meant, which is the only thing that matters about a daily
+         figure. It is now one dated row at a time, and the date is a real
+         date you pick. -->
     <div id="importTotals" hidden>
       <div class="card pad">
-        <div class="cardhead"><span class="title">Type your totals</span><span class="meta" id="totalsSummary">None yet</span></div>
-        <p class="fineprint" style="margin-bottom:11px">Pick the period you have figures for.</p>
-        <div class="seg" id="totalsSeg" role="group" aria-label="Totals period">
-          <button data-totals="day">Daily</button><button data-totals="week">Weekly</button>
-          <button data-totals="month" class="on" aria-pressed="true">Monthly</button><button data-totals="year">Yearly</button>
+        <div class="cardhead"><span class="title">Add a profit figure</span>
+          <span class="meta" id="totalsSummary">Nothing added yet</span></div>
+        <p class="fineprint" style="margin-bottom:11px">For a day, a week or a month you already have the number for. These go on your calendar without pretending to be bets.</p>
+
+        <div class="seg" id="totalsSeg" role="group" aria-label="Which period this figure covers">
+          <button data-totals="day" class="on" aria-pressed="true">A day</button>
+          <button data-totals="week" aria-pressed="false">A week</button>
+          <button data-totals="month" aria-pressed="false">A month</button>
         </div>
-        <div class="totalsgrid" id="totalsGrid"></div>
-        <button class="btn primary full" id="totalsSave" style="margin-top:13px">Add these totals</button>
+
+        <!-- The period in words, so there is never a question about what
+             the figure is being attached to. Updated on every change. -->
+        <p class="plperiod" id="plPeriodLabel">Profit for <b>today</b></p>
+
+        <div class="plentry">
+          <div class="plfield">
+            <label class="label" for="plDate">Date</label>
+            <!-- A native date input: it is the only control that gets a
+                 phone's own picker, handles months and leap years without
+                 us reimplementing a calendar, and reaches any day forwards
+                 or backwards. No min or max, because the brief asks for
+                 future days and somebody logging a figure for a game next
+                 week is not making a mistake. -->
+            <input class="field" type="date" id="plDate">
+          </div>
+          <div class="plfield">
+            <label class="label" for="plAmount">Profit or loss</label>
+            <div class="plmoney">
+              <span class="cur" aria-hidden="true">£</span>
+              <input class="field" id="plAmount" inputmode="decimal" placeholder="0.00" autocomplete="off" aria-describedby="plErr">
+            </div>
+          </div>
+        </div>
+        <p class="fineprint" style="margin-top:7px">A loss goes in with a minus, for example −40.50</p>
+        <p class="formerr" id="plErr" hidden></p>
+        <button class="btn primary full" id="plAdd" style="margin-top:11px">Add to calendar</button>
+      </div>
+
+      <!-- What has been added, most recent first. The compact dated list
+           the import ends up as, and the same list a screenshot import
+           fills. -->
+      <div class="card pad" id="plListCard" style="margin-top:10px" hidden>
+        <div class="cardhead"><span class="title">Added figures</span>
+          <span class="meta" id="plTotal"></span></div>
+        <div id="plList"></div>
       </div>
     </div>
 
@@ -1004,6 +1065,16 @@
       <h2 class="cardtitle"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M3 3v18h18"/><path d="M7 14l4-4 3 3 5-6"/></svg>Your betting</h2>
       <div class="fieldrow"><span class="lab">Show tipster next to bets</span>
         <button class="switch" id="showTipster" role="switch" aria-checked="true" aria-label="Show tipster"></button></div>
+      <!-- Which bet count to show. Tracker starts at 0 and every bet in it
+           has a slip behind it; lifetime adds the history brought across at
+           import, which is the true total and also a figure this tracker
+           cannot show the workings for. Both are honest, so it is a choice
+           rather than a decision made for you. -->
+      <div class="fieldrow"><span class="lab">Bet count<small id="countModeNote">Only bets logged here, starting at 0</small></span>
+        <div class="seg tight" id="countSeg" role="group" aria-label="Which bet count to show">
+          <button data-count="tracker" class="on" aria-pressed="true">Tracker</button>
+          <button data-count="lifetime" aria-pressed="false">Lifetime</button>
+        </div></div>
       <details class="disclose">
         <summary>Tipsters <span class="count" id="tipsterCount"></span></summary>
         <div class="tagchips" id="tipsterChips"></div>
@@ -1038,15 +1109,38 @@
 
     <div class="card settingcard">
       <h2 class="cardtitle"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>Your data</h2>
+      <!-- This was a select that toasted "CSV selected" and never produced
+           a file. It needs a button, because choosing a format is not the
+           same act as asking for the download. Excel is gone from the list:
+           it emitted nothing, and a CSV opens in Excel anyway, so naming a
+           format we do not write was just a promise to break. -->
       <div class="fieldrow"><span class="lab">Export all bets<small>Everything Slippery holds on you, in one file</small></span>
-        <label class="sr" for="exportFormat">Export format</label>
-        <select class="select compact" id="exportFormat"><option>CSV</option><option>Excel</option><option>JSON</option></select></div>
+        <span style="display:flex;gap:7px;align-items:center">
+          <label class="sr" for="exportFormat">Export format</label>
+          <select class="select compact" id="exportFormat"><option>CSV</option><option>JSON</option></select>
+          <button class="pillbtn" id="exportGo">Download</button>
+        </span></div>
       <div class="fieldrow"><span class="lab">Slip images<small>Kept 90 days, then deleted automatically</small></span>
         <button class="pillbtn" id="purgeImages">Delete now</button></div>
-      <div class="fieldrow"><span class="lab">Reset all bets<small>Keeps your account and name</small></span>
-        <button class="pillbtn danger" data-confirm="Reset all bets">Reset</button></div>
-      <div class="fieldrow"><span class="lab">Delete account<small>Removes bets and stored images</small></span>
-        <button class="pillbtn danger" data-confirm="Delete account">Delete</button></div>
+      <div class="fieldrow"><span class="lab">Reset all bets<small>Deletes every bet and slip image. Keeps your account.</small></span>
+        <button class="pillbtn danger" id="resetBets">Reset</button></div>
+      <div class="fieldrow"><span class="lab">Delete account<small>Everything goes. This cannot be undone.</small></span>
+        <button class="pillbtn danger" id="deleteAccount">Delete</button></div>
+      <!-- Both of these used to be a toast that deleted nothing, so both
+           now confirm in place. Reset arms on a second tap; deleting the
+           account asks for the display name, because it is the one action
+           in the product with no way back and a mis-tap should not be
+           enough to trigger it. -->
+      <div class="dangerbox" id="deleteBox" hidden>
+        <p class="dangerlead">This deletes every bet, every stored slip image, your groups and your account. There is no undo and no export afterwards.</p>
+        <label class="label" for="deleteConfirm">Type <b id="deleteName">your display name</b> to confirm</label>
+        <input class="field" id="deleteConfirm" autocomplete="off" spellcheck="false" placeholder="Display name…" aria-describedby="deleteErr">
+        <p class="formerr" id="deleteErr" hidden></p>
+        <div class="btnrow" style="margin-top:11px">
+          <button class="btn ghost small" id="deleteCancel">Keep my account</button>
+          <button class="btn danger small" id="deleteGo">Delete everything</button>
+        </div>
+      </div>
     </div>
 
     <div class="card settingcard">

@@ -30,14 +30,20 @@
   &:active{transform:translateY(1px)}
   &[disabled],&[aria-disabled=true]{opacity:.5;pointer-events:none}
   &::after{content:"";position:absolute;inset:0;border-radius:inherit;pointer-events:none;
-    background:radial-gradient(circle,rgba(255,255,255,.32),transparent 60%);
+    background:radial-gradient(circle,rgba(var(--ink),.32),transparent 60%);
     opacity:0;transform:scale(.4);
     transition:opacity 460ms var(--ez),transform 460ms var(--ez)}
   &:active::after{opacity:1;transform:scale(1);transition-duration:0ms}}
-.btn.primary{background:linear-gradient(135deg,var(--p),var(--s));color:#08111f;
+.btn.primary{background:linear-gradient(135deg,var(--p),var(--s));color:var(--on-p);
   box-shadow:0 8px 22px rgba(var(--orb1),.32)}
 .btn.ghost{background:var(--c2);border:1px solid var(--e1)}
 .btn.attn{background:var(--a);color:#3a2600}
+/* Irreversible actions. Outlined rather than filled: a solid red button is
+   the easiest thing on the card to hit by accident, and this one deletes an
+   account. It should look like what it is without inviting the thumb. */
+.btn.danger{background:rgba(252,165,165,.10);border:1px solid rgba(252,165,165,.45);
+  color:var(--neg-ink);box-shadow:none;
+  &:hover{background:rgba(252,165,165,.16)}}
 .btn.full{display:flex;width:100%}
 .btn.small{font-size:13px;padding:9px 13px;min-height:40px;border-radius:10px}
 
@@ -49,10 +55,10 @@
   padding:8px 12px;border-radius:10px;min-height:38px;
   display:inline-flex;align-items:center;gap:6px;flex:0 0 auto;
   transition:background var(--tf),border-color var(--tf);
-  &:hover{background:rgba(255,255,255,.11)}
+  &:hover{background:rgba(var(--ink),.11)}
   &.link{color:var(--s)}
   &.locked{color:var(--t2)}
-  &.danger{color:var(--neg);border-color:rgba(252,165,165,.36)}}
+  &.danger{color:var(--neg-ink);border-color:rgba(252,165,165,.36)}}
 
 /* segmented control */
 .seg{
@@ -63,7 +69,7 @@
     font-size:13px;font-weight:550;color:var(--t2);
     padding:9px 4px;border-radius:10px;min-height:42px;
     transition:color var(--tb);
-    &[aria-pressed=true],&.on{color:#08111f}}
+    &[aria-pressed=true],&.on{color:var(--on-p)}}
   & .thumb{position:absolute;top:3px;bottom:3px;left:0;width:100px;border-radius:10px;z-index:0;
     background:linear-gradient(135deg,var(--p),var(--s));
     transform-origin:left center;will-change:transform;
@@ -72,6 +78,15 @@
   border-radius:999px;padding:2px;
   & button{font-family:var(--fm);font-size:11.5px;padding:6px 12px;
     border-radius:999px;min-height:36px;flex:none;
+    /* --t1, NOT --on-p.
+       The two segment sizes have different thumbs and therefore need
+       different text. The full-size thumb is the solid --p to --s gradient,
+       which is light, so near-black sits on it correctly. The tight thumb
+       is a 55% tint of --orb1 over the card, which blends to something
+       dark: near-black on it measured 2.43:1, well under the 4.5 an 11.5px
+       label needs, and axe caught it. --t1 is light on the dark themes and
+       dark on Chalk, so one value is right on both sides of the tint. */
+    &[aria-pressed=true],&.on{color:var(--t1)}
     &[aria-disabled=true]{opacity:.34}}
   & .thumb{top:2px;bottom:2px;border-radius:999px;
     background:rgba(var(--orb1),.55)}}
@@ -89,9 +104,9 @@
   &:active{transform:scale(.95)}
   &[aria-pressed=true]{color:var(--t1);background:rgba(var(--orb1),.30);
     border-color:rgba(var(--orb1),.55)}
-  &[data-filter=won]{color:var(--pos);
+  &[data-filter=won]{color:var(--pos-ink);
     &[aria-pressed=true]{background:rgba(134,239,172,.18);border-color:rgba(134,239,172,.5)}}
-  &[data-filter=lost]{color:var(--neg);
+  &[data-filter=lost]{color:var(--neg-ink);
     &[aria-pressed=true]{background:rgba(252,165,165,.18);border-color:rgba(252,165,165,.5)}}
   &[data-filter=cash]{color:var(--a);
     &[aria-pressed=true]{background:rgba(245,158,11,.18);border-color:rgba(245,158,11,.5)}}}
@@ -101,8 +116,8 @@
   width:100%;background:var(--c2);border:1px solid var(--e1);
   border-radius:11px;padding:12px;min-height:48px;
   transition:border-color var(--tf),background var(--tf);
-  &:hover{border-color:rgba(255,255,255,.2)}
-  &:focus{border-color:var(--s);background:rgba(255,255,255,.09)}
+  &:hover{border-color:rgba(var(--ink),.2)}
+  &:focus{border-color:var(--s);background:rgba(var(--ink),.09)}
   &[aria-invalid=true]{border-color:rgba(252,165,165,.6);background:rgba(252,165,165,.06)}}
 .select{
   appearance:none;padding-right:34px;
@@ -123,18 +138,18 @@
     & small{display:block;color:var(--t2);font-size:11.5px;line-height:1.45;margin-top:1px}}}
 
 .formerr{
-  display:flex;gap:7px;align-items:flex-start;font-size:12.5px;color:var(--neg);margin-top:8px;
+  display:flex;gap:7px;align-items:flex-start;font-size:12.5px;color:var(--neg-ink);margin-top:8px;
   animation:errin 240ms var(--ez);
   &::before{content:"!";font-family:var(--fm);font-size:10px;font-weight:600;
     width:16px;height:16px;flex:0 0 auto;border-radius:50%;
-    background:rgba(252,165,165,.18);color:var(--neg);
+    background:rgba(252,165,165,.18);color:var(--neg-ink);
     display:grid;place-items:center;margin-top:1px}}
 @keyframes errin{from{opacity:0;transform:translateY(-3px)}to{opacity:1;transform:none}}
 
 /* toggle */
 .switch{
   width:46px;height:27px;border-radius:999px;
-  background:rgba(255,255,255,.12);border:1px solid var(--e1);
+  background:rgba(var(--ink),.12);border:1px solid var(--e1);
   position:relative;flex:0 0 auto;
   transition:background var(--tb),border-color var(--tb);
   &::after{content:"";position:absolute;top:2px;left:2px;width:20px;height:20px;
@@ -166,7 +181,7 @@
   & input{padding-left:36px}}
 
 .tagbit{font-family:var(--fm);font-size:10.5px;padding:3px 8px;border-radius:6px;
-  &.ok{background:rgba(134,239,172,.15);color:var(--pos)}
+  &.ok{background:rgba(134,239,172,.15);color:var(--pos-ink)}
   &.neutral{background:var(--c2);color:var(--t2)}
   &.warn{background:rgba(245,158,11,.16);color:var(--a)}}
 
@@ -186,8 +201,8 @@
     min-height:48px;transition:background var(--tf);
     &::-webkit-details-marker{display:none}
     &::after{content:"+";font-family:var(--fm);color:var(--s);font-size:17px;flex:0 0 auto}
-    &:hover{background:rgba(255,255,255,.03)}}
-  &[open] summary{background:rgba(255,255,255,.04);&::after{content:"\2212"}}
+    &:hover{background:rgba(var(--ink),.03)}}
+  &[open] summary{background:rgba(var(--ink),.04);&::after{content:"\2212"}}
   & p{padding:0 15px 14px;color:var(--t2);font-size:13.5px;line-height:1.6}}
 
 /* collapse-on-dismiss, so a resolved card folds away instead of vanishing */

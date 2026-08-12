@@ -4,7 +4,7 @@ import { S, canUsePeriod, periodNeedsFocus } from './state.js';
 import * as M from './money.js';
 import {
   LEDGER, PENDING, PEOPLE, GROUPS, TODAY, THEMES, THEME_BG, BOOKS, TIPSTERS,
-  TARGETS, FOUND, hydrate, hydrateSocial, hydratePeople, setFound, addBet, settleLocal, setMe, ME, ico
+  TARGETS, FOUND, PL, IMPORTED, hydrate, hydrateSocial, hydratePeople, setFound, addBet, settleLocal, setMe, ME, ico
 } from './data.js';
 import { settle, settleCashOut, ledgerOutcome } from './settlement.js';
 import { stats, dayMap, monthTotal, targetFor, weekRange, invalidateDays } from './stats.js';
@@ -343,8 +343,12 @@ function unlockScroll() {
 
 function openDay(day) {
   const days = dayMap(S.month);
-  const v = days[day];
-  if (v === undefined) return;
+  /* An empty day is a real day. This used to `return` when there was no
+     figure, so tapping the 3rd did nothing and there was no way to say
+     "the profit for the 3rd was this". The sheet opens either way; what
+     changes is whether it lists bets or offers to add a figure. */
+  const has = days[day] !== undefined;
+  const v = has ? days[day] : 0;
   S.focus = day;
   const list = LEDGER.filter(b => b.month === S.month && b.day === day);
   const w = weekRange(S.month, day, S.weekStart);
@@ -355,12 +359,26 @@ function openDay(day) {
   const net = $('dayNet');
   net.textContent = M.signed(v);
   net.className = 'n ' + M.tone(v);
-  setHTML('daySub', (list.length ? list.length + (list.length === 1 ? ' bet' : ' bets') : 'Daily total') +
+  setHTML('daySub', (list.length ? list.length + (list.length === 1 ? ' bet' : ' bets')
+      : has ? 'Daily total' : 'Nothing logged') +
     ' · week to ' + R.DS.format(new Date(TODAY.year, S.month, w.b)) +
     ' <b class="' + M.tone(weekTotal) + '">' + M.money0s(weekTotal) + '</b>');
+
+  /* Three states, and they are genuinely different: bets to show, a figure
+     with no bets behind it, or an empty day waiting for one. */
+  const stamp = TODAY.year + '-' + String(S.month + 1).padStart(2, '0') + '-' +
+    String(day).padStart(2, '0');
+  const entered = PL.find(x => x.date === stamp && x.period === 'day');
   setHTML('dayList', list.length
     ? list.map((b, i) => R.betRow(b, i * 40)).join('')
-    : '<div class="emptystate"><div class="t">Total carried over</div><p>This day came from an imported total, so there are no slips behind it.</p></div>');
+    : entered
+      ? '<div class="emptystate"><div class="t">Entered as a figure</div>' +
+        '<p>' + esc(M.signed(entered.profit)) + ' for this day, with no slips behind it. ' +
+        'Remove it from the Import screen if it is wrong.</p></div>'
+      : '<div class="emptystate"><div class="t">Nothing on this day yet</div>' +
+        '<p>Send a slip to the bot, or put the day\'s profit in directly if you already know it.</p>' +
+        '<button class="btn ghost small" data-add-figure="' + stamp + '" style="margin-top:11px">' +
+        'Add a figure for this day</button></div>');
 
   lastFocused = document.activeElement;
   $('scrim').classList.add('on');
@@ -789,21 +807,113 @@ function renderExtraction(card, label, res) {
    stop. */
 function renderSummaryRead(card, label, f) {
   const t = f.totals || {};
+  const rows = Array.isArray(f.pl_rows) ? f.pl_rows : [];
   const row = (k, v) => v == null ? ''
     : '<div class="reviewline"><span class="k">' + k + '</span><span class="v m">' + esc(String(v)) + '</span></div>';
+
+  /* The dated rows are the point of a P/L screenshot, so they come first
+     and the grand total is the footnote. The old version showed only the
+     grand total and threw every date on the screen away, which meant a
+     year of history arrived as a single number with nowhere to sit. */
+  if (rows.length) {
+    const sum = rows.reduce((a, r) => a + r.profit, 0);
+    card.innerHTML =
+      '<div class="cardhead"><span class="title">' + esc(f.platform || label) + '</span>' +
+      '<span class="tagbit">' + rows.length + ' dated figure' + (rows.length === 1 ? '' : 's') + '</span></div>' +
+      '<p class="hinttext">Read off the screen with a date on each one. They go on your ' +
+      'calendar as figures rather than as bets, because there are no slips behind them and ' +
+      'inventing some would make your bet count wrong forever.</p>' +
+      '<div class="plpreview">' + rows.map((r, i) =>
+        '<div class="plrow"><span class="pld">' + esc(r.label || r.date) +
+        (r.label ? '<span class="plt">' + esc(r.date) + '</span>' : '') + '</span>' +
+        '<span class="plv ' + M.tone(Math.round(r.profit * 100)) + '">' +
+        M.signed(Math.round(r.profit * 100)) + '</span>' +
+        '<button class="plx" data-drop-plrow="' + i + '" aria-label="Leave out ' +
+        esc(r.label || r.date) + '">' + ico('i-close') + '</button></div>').join('') +
+      '</div>' +
+      '<div class="reviewbar" style="margin-top:11px">' +
+        '<div class="reviewline"><span class="k">Adds up to</span><span class="v m ' +
+        M.tone(Math.round(sum * 100)) + '">' + M.signed(Math.round(sum * 100)) + '</span></div>' +
+        (t.profit != null
+          ? '<div class="reviewline"><span class="k">Screen says</span><span class="v m">' +
+            M.signed(Math.round(t.profit * 100)) + '</span></div>'
+          : '') +
+      '</div>' +
+      /* When the rows do not add up to the total the screen printed, say
+         so rather than picking one. Usually it means a row scrolled off
+         the top, which is the user's to resolve, not ours. */
+      (t.profit != null && Math.abs(sum - t.profit) > 0.02
+        ? '<p class="sliphint">These add up to ' + esc(M.signed(Math.round(sum * 100))) +
+          ' but the screen totals ' + esc(M.signed(Math.round(t.profit * 100))) +
+          '. Some rows are probably off the top of the screenshot.</p>'
+        : '') +
+      '<div class="btnrow" style="margin-top:11px">' +
+      '<button class="btn primary small" data-import-plrows="1">Add ' + rows.length + ' to calendar</button>' +
+      '<button class="btn ghost small" data-dismiss-card="1">Discard</button></div>';
+    card.dataset.plrows = JSON.stringify(rows);
+    return;
+  }
+
+  /* A totals screen with a grand total and no dated rows on it. */
   card.innerHTML =
     '<div class="cardhead"><span class="title">' + esc(f.platform || label) + '</span>' +
     '<span class="tagbit">Summary, not slips</span></div>' +
-    '<p class="hinttext">That is a totals screen rather than a bet slip, so there are no ' +
-    'individual bets behind it. The figures can go in as a period total instead, and your ' +
-    'ledger will show them as carried over rather than as bets you can settle.</p>' +
+    '<p class="hinttext">That is a totals screen rather than a bet slip, and it has no dates ' +
+    'broken out on it, so there is nothing to put on a particular day. Add it as one figure ' +
+    'for the period it covers.</p>' +
     '<div class="reviewbar" style="margin-top:11px">' +
       row('Period', t.period) + row('Profit', t.profit) + row('Turnover', t.turnover) +
       row('Bets', t.bets) + row('Won', t.won) + row('Lost', t.lost) +
     '</div>' +
     '<div class="btnrow" style="margin-top:11px">' +
-    '<button class="btn primary small" data-goto-totals="1">Open Type totals</button>' +
+    '<button class="btn primary small" data-goto-totals="1">Add it as a figure</button>' +
     '<button class="btn ghost small" data-dismiss-card="1">Discard</button></div>';
+}
+
+/* Save the dated rows a P/L screenshot gave us.
+   Sent in one request so the whole import either lands or does not, and
+   the upsert on the server means running the same screenshot twice
+   corrects the figures rather than doubling them. */
+async function importPlRows(btn) {
+  const card = btn.closest('.card');
+  let rows = [];
+  try { rows = JSON.parse(card.dataset.plrows || '[]'); } catch { rows = []; }
+  if (!rows.length) { toast('Nothing left to add'); return; }
+
+  btn.disabled = true;
+  btn.textContent = 'Adding…';
+  const r = await post('/api/bets', {
+    pl: rows.map(x => ({
+      date: x.date,
+      period: 'day',
+      profitPence: Math.round(x.profit * 100),
+      note: x.label || '',
+      source: 'import'
+    }))
+  });
+  btn.disabled = false;
+
+  if (r.status === 401) { go('setup'); toast('Log in to import.'); return; }
+  if (!r.ok) { btn.textContent = 'Add to calendar'; toast(r.body.error || 'That import did not go through.'); return; }
+
+  collapse(card);
+  await loadLedger();
+  toast(r.body.saved + ' figure' + (r.body.saved === 1 ? '' : 's') + ' added to your calendar');
+  updateImportTotals();
+}
+
+/* Drop one row before importing. A screenshot often catches a header or a
+   running-balance line that is not a day's profit, and the fix should be
+   one tap rather than abandoning the whole import. */
+function dropPlRow(btn) {
+  const card = btn.closest('.card');
+  let rows = [];
+  try { rows = JSON.parse(card.dataset.plrows || '[]'); } catch { rows = []; }
+  const i = +btn.getAttribute('data-drop-plrow');
+  if (!(i >= 0) || i >= rows.length) return;
+  rows.splice(i, 1);
+  if (!rows.length) { collapse(card); updateImportTotals(); return; }
+  renderSummaryRead(card, card.querySelector('.title').textContent, { pl_rows: rows });
 }
 
 /* Append an empty leg to a slip card. Ids stay unique by counting what is
@@ -1156,6 +1266,159 @@ function browseSearch(value) {
   browseTimer = setTimeout(() => loadBrowse(value.trim()), 260);
 }
 
+/* ---------------- export ----------------
+ *
+ * Built in the browser from the ledger already loaded, so there is no
+ * endpoint and no round trip: the data is on screen, exporting it is a
+ * formatting job. Money comes out in pounds because a spreadsheet is
+ * where this is going, and integer pence is an internal representation
+ * that nobody wants to divide by 100 in a formula.
+ */
+const EXPORT_COLUMNS = [
+  ['Placed', b => b.placedAt || ''],
+  ['Event', b => b.event || ''],
+  ['Selection', b => b.selection || ''],
+  ['Market', b => b.market || ''],
+  ['Bookmaker', b => b.book || ''],
+  ['Odds', b => (b.odds || '')],
+  ['Stake', b => (b.stake / 100).toFixed(2)],
+  ['Profit', b => (b.status === 'settled' ? (b.profit / 100).toFixed(2) : '')],
+  ['Outcome', b => b.outcome || ''],
+  ['Status', b => b.status || ''],
+  ['Tipster', b => b.tipster || ''],
+  ['Via', b => (b.viaTelegram ? 'Telegram' : 'Upload')]
+];
+
+/* RFC 4180: double the quotes, wrap anything with a comma, quote, or
+   newline in it. A selection like `Over 2.5, both teams to score` would
+   otherwise silently become two columns. */
+const csvCell = v => {
+  const s = String(v == null ? '' : v);
+  return /[",\n\r]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s;
+};
+
+function exportBets(format) {
+  const rows = LEDGER.concat(PENDING)
+    .slice()
+    .sort((a, b) => String(b.placedAt || '').localeCompare(String(a.placedAt || '')));
+  if (!rows.length) { toast('There is nothing to export yet'); return; }
+
+  const stamp = new Date().toISOString().slice(0, 10);
+  let body, type, name;
+  if (format === 'JSON') {
+    body = JSON.stringify({ exported: new Date().toISOString(), bets: rows }, null, 2);
+    type = 'application/json';
+    name = 'slippery-' + stamp + '.json';
+  } else {
+    body = [EXPORT_COLUMNS.map(c => csvCell(c[0])).join(',')]
+      .concat(rows.map(b => EXPORT_COLUMNS.map(c => csvCell(c[1](b))).join(',')))
+      .join('\r\n');
+    /* A BOM, so Excel opens it as UTF-8 rather than mangling every name
+       with an accent in it. */
+    body = '﻿' + body;
+    type = 'text/csv;charset=utf-8';
+    name = 'slippery-' + stamp + '.csv';
+  }
+
+  const url = URL.createObjectURL(new Blob([body], { type }));
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = name;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  /* Revoked on the next tick rather than immediately: Safari has been
+     known to cancel the download if the object URL dies too soon. */
+  setTimeout(() => URL.revokeObjectURL(url), 4000);
+  toast(rows.length + ' bets exported');
+}
+
+/* ---------------- destructive actions ----------------
+ *
+ * All three of these were a toast. "Reset all bets completed", "Delete
+ * account completed", "All stored slip images deleted", and in every case
+ * nothing was removed and the session stayed valid. Somebody clearing
+ * their record before handing over a phone was told it had worked.
+ *
+ * They talk to the server now, and the button reports what the server
+ * actually did rather than what was asked for.
+ */
+async function resetBets(btn) {
+  /* Two taps rather than a dialog. There is a way back from this one: the
+     account survives and the slips can be re-imported, so the friction is
+     proportionate. Deleting the account is a different matter and gets a
+     typed confirmation. */
+  if (btn.dataset.armed !== '1') {
+    btn.dataset.armed = '1';
+    btn.textContent = 'Tap again to wipe';
+    setTimeout(() => {
+      if (btn.dataset.armed === '1') { btn.dataset.armed = '0'; btn.textContent = 'Reset'; }
+    }, 5000);
+    return;
+  }
+  btn.dataset.armed = '0';
+  btn.disabled = true;
+  btn.textContent = 'Wiping…';
+  const r = await del('/api/bets', { all: true });
+  btn.disabled = false;
+  btn.textContent = 'Reset';
+  if (!r.ok) { toast(r.body.error || 'Nothing was deleted.'); return; }
+  await loadLedger();
+  toast(r.body.deleted ? r.body.deleted + ' bets deleted' : 'There was nothing to delete');
+}
+
+async function purgeImages(btn) {
+  btn.disabled = true;
+  const was = btn.textContent;
+  btn.textContent = 'Deleting…';
+  const r = await post('/api/auth/close', { images: true });
+  btn.disabled = false;
+  btn.textContent = was;
+  if (!r.ok) { toast(r.body.error || 'Nothing was deleted.'); return; }
+  toast(r.body.purged ? r.body.purged + ' slip images deleted' : 'No stored images to delete');
+}
+
+function openDeleteBox() {
+  const box = $('deleteBox');
+  if (!box) return;
+  box.hidden = false;
+  setText('deleteName', S.name || 'your display name');
+  $('deleteConfirm').value = '';
+  $('deleteErr').hidden = true;
+  $('deleteConfirm').focus();
+}
+function closeDeleteBox() {
+  const box = $('deleteBox');
+  if (box) box.hidden = true;
+}
+
+async function deleteAccount(btn) {
+  const typed = $('deleteConfirm').value.trim();
+  const err = $('deleteErr');
+  if (typed.toLowerCase() !== String(S.name || '').toLowerCase()) {
+    err.hidden = false;
+    err.textContent = 'That does not match your display name.';
+    $('deleteConfirm').focus();
+    return;
+  }
+  err.hidden = true;
+  btn.disabled = true;
+  btn.textContent = 'Deleting…';
+  const r = await post('/api/auth/close', { confirm: typed });
+  if (!r.ok) {
+    btn.disabled = false;
+    btn.textContent = 'Delete everything';
+    err.hidden = false;
+    err.textContent = r.body.error || 'That did not go through.';
+    return;
+  }
+  /* The session is gone server-side, so the page has to stop pretending it
+     has one. A reload is the honest reset: every store empties, and what
+     comes back is the signed-out site. */
+  toast('Account deleted');
+  setTimeout(() => location.reload(), 900);
+}
+
 /* ---------------- following ----------------
  *
  * Following is a server fact now. It used to flip a boolean on an object in
@@ -1241,6 +1504,14 @@ function saveUnit() {
     const r = await post('/api/auth/profile', { unitPence: S.unit });
     if (!r.ok && r.status !== 401) console.warn('[slippery] unit not saved:', r.body.error);
   }, 700);
+}
+
+/* Saved, because a preference that resets on reload is not a preference.
+   Quiet on failure: it is a background write behind a value already on
+   screen, and the toggle has already moved. */
+async function saveCountMode() {
+  const r = await post('/api/auth/profile', { countMode: S.countMode });
+  if (!r.ok && r.status !== 401) console.warn('[slippery] count mode not saved:', r.body.error);
 }
 
 /* Privacy is an account setting, so it is saved. This used to change a
@@ -1387,30 +1658,91 @@ function updateImportTotals() {
   p.className = 'v m ' + M.tone(value);
 }
 
-/* ---------------- totals ---------------- */
-const TOTALS_FIELDS = {
-  day: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
-  week: ['Wk 1', 'Wk 2', 'Wk 3', 'Wk 4', 'Wk 5', 'Wk 6'],
-  month: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
-  year: ['2023', '2024', '2025', '2026']
-};
+/* ---------------- period profit and loss ----------------
+ *
+ * Figures with no slips behind them: a day you already know the number
+ * for, or a row lifted off another tracker's screenshot.
+ *
+ * The old version was a grid of boxes labelled Mon..Sun and Jan..Dec with
+ * no year on any of them, and a save button that printed "Totals added"
+ * and stored nothing. Two problems, and the smaller one was that it did
+ * not save: you could not say WHICH Monday you meant, and which Monday is
+ * the only thing that matters about a daily figure.
+ */
+const iso = d => d.getFullYear() + '-' +
+  String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+
+const PL_WORD = { day: 'day', week: 'week starting', month: 'month of' };
+
+/* The date in the words somebody would use. "Today" and "yesterday" earn
+   their place because those are the two days people actually type figures
+   for, and a bare date makes you do the arithmetic to check you picked the
+   right one. */
+function plDateWords(value, period) {
+  if (!value) return 'a date you pick';
+  const d = new Date(value + 'T12:00:00');
+  if (Number.isNaN(d.getTime())) return 'a date you pick';
+  if (period === 'month') return R.ML.format(d);
+  if (period === 'week') return 'the week of ' + R.DS.format(d);
+  const today = new Date();
+  const days = Math.round((new Date(iso(d) + 'T12:00:00') - new Date(iso(today) + 'T12:00:00')) / 86400000);
+  if (days === 0) return 'today';
+  if (days === -1) return 'yesterday';
+  if (days === 1) return 'tomorrow';
+  return R.DF.format(d);
+}
+
 function renderTotals(period) {
   S.totalsPeriod = period;
-  setHTML('totalsGrid', TOTALS_FIELDS[period].map((l, i) =>
-    '<div class="totalsrow"><label for="tot' + i + '">' + l + '</label>' +
-    '<span class="cur" aria-hidden="true">£</span>' +
-    '<input class="field" id="tot' + i + '" inputmode="decimal" placeholder="0.00"></div>').join(''));
-  sumTotals();
+  syncPlLabel();
 }
-function sumTotals() {
-  let sum = 0, n = 0;
-  $$('#totalsGrid input').forEach(i => {
-    const v = M.parseMoney(i.value);
-    if (v != null) { sum += v; n++; }
+
+/* The one sentence that says what the figure will be attached to. It is
+   the whole reason this screen was rebuilt, so it updates on every change
+   to either control rather than only on submit. */
+function syncPlLabel() {
+  const date = $('plDate');
+  if (!date) return;
+  if (!date.value) date.value = iso(new Date());
+  setHTML('plPeriodLabel',
+    'Profit for <b>' + esc(plDateWords(date.value, S.totalsPeriod)) + '</b>');
+}
+
+async function addPlEntry(btn) {
+  const date = $('plDate').value;
+  const err = $('plErr');
+  const say = msg => { err.hidden = false; err.textContent = msg; };
+  err.hidden = true;
+
+  if (!date) { say('Pick the date this figure is for.'); $('plDate').focus(); return; }
+  /* parseMoney handles a leading minus and the various dashes a phone
+     keyboard produces, which matters because a loss is the common case. */
+  const amount = M.parseMoney($('plAmount').value);
+  if (amount == null) { say('Type the profit or loss, for example −40.50'); $('plAmount').focus(); return; }
+
+  btn.disabled = true;
+  const was = btn.textContent;
+  btn.textContent = 'Adding…';
+  const r = await post('/api/bets', {
+    pl: [{ date, period: S.totalsPeriod, profitPence: amount, source: 'typed' }]
   });
-  setHTML('totalsSummary', n
-    ? n + ' filled · <b class="' + M.tone(sum) + '">' + M.money0s(sum) + '</b>'
-    : 'None yet');
+  btn.disabled = false;
+  btn.textContent = was;
+
+  if (r.status === 401) { go('setup'); toast('Log in to add figures.'); return; }
+  if (!r.ok) { say(r.body.error || 'That did not save.'); return; }
+
+  $('plAmount').value = '';
+  toast(M.signed(amount) + ' added for ' + plDateWords(date, S.totalsPeriod));
+  await loadLedger();
+  $('plAmount').focus();
+}
+
+async function removePlEntry(id) {
+  const r = await post('/api/bets', { removePl: id });
+  if (!r.ok) { toast(r.body.error || 'Could not remove that.'); return; }
+  await loadLedger();
+  toast('Figure removed');
 }
 
 /* ---------------- events ---------------- */
@@ -1440,6 +1772,24 @@ document.addEventListener('click', e => {
   if ((el = c('.cell[data-month]'))) {
     S.month = +el.getAttribute('data-month'); S.calMode = 'm'; S.focus = null;
     syncCalModeButtons(); drawAll(); return;
+  }
+  if ((el = c('[data-add-figure]'))) {
+    /* From the day sheet into the figure form with the date already set,
+       so the day you tapped is the day the figure lands on and nobody has
+       to re-pick it. */
+    const stamp = el.getAttribute('data-add-figure');
+    closeDay();
+    go('imp');
+    /* Reuse the tab button rather than duplicating what its handler does:
+       two places setting importView is how they drift apart. */
+    const tab = document.querySelector('#importSeg [data-import="importTotals"]');
+    if (tab) tab.click();
+    const dayBtn = document.querySelector('#totalsSeg [data-totals="day"]');
+    if (dayBtn) dayBtn.click();
+    $('plDate').value = stamp;
+    syncPlLabel();
+    $('plAmount').focus();
+    return;
   }
   if ((el = c('.cell[data-day]'))) { openDay(+el.getAttribute('data-day')); return; }
   if (c('#dayClose') || c('#scrim')) { closeDay(); return; }
@@ -1629,6 +1979,22 @@ document.addEventListener('click', e => {
     return;
   }
 
+  if ((el = c('#countSeg button'))) {
+    S.countMode = el.getAttribute('data-count');
+    $$('#countSeg button').forEach(b => {
+      const on = b === el;
+      b.classList.toggle('on', on);
+      b.setAttribute('aria-pressed', String(on));
+    });
+    paintSeg($('countSeg'));
+    setText('countModeNote', S.countMode === 'lifetime'
+      ? 'Includes ' + M.plain(IMPORTED.bets) + ' bets brought across at import'
+      : 'Only bets logged here, starting at 0');
+    R.renderAll();
+    saveCountMode();
+    return;
+  }
+
   if ((el = c('#importSeg button'))) {
     S.importView = el.getAttribute('data-import');
     $$('#importSeg button').forEach(b => {
@@ -1658,6 +2024,8 @@ document.addEventListener('click', e => {
      beats retaking the photograph, which is the same reason every field is
      editable in the first place. */
   if ((el = c('[data-add-leg]'))) { addLeg(el.closest('.card')); return; }
+  if ((el = c('[data-import-plrows]'))) { importPlRows(el); return; }
+  if ((el = c('[data-drop-plrow]'))) { dropPlRow(el); return; }
   if (c('[data-goto-totals]')) {
     const tab = document.querySelector('#importSeg [data-import="importTotals"]');
     if (tab) tab.click();
@@ -1672,12 +2040,8 @@ document.addEventListener('click', e => {
     if (box) box.innerHTML = '';
     return;
   }
-  if (c('#totalsSave')) {
-    const btn = c('#totalsSave');
-    btn.textContent = 'Totals added'; btn.disabled = true;
-    toast('Totals added');
-    return;
-  }
+  if ((el = c('#plAdd'))) { addPlEntry(el); return; }
+  if ((el = c('[data-remove-pl]'))) { removePlEntry(el.getAttribute('data-remove-pl')); return; }
 
   if ((el = c('.switch')) && !c('#moreToggle')) {
     const on = el.getAttribute('aria-checked') !== 'true';
@@ -1685,24 +2049,12 @@ document.addEventListener('click', e => {
     if (el.id === 'showTipster') { S.showTipster = on; R.renderRecentBets(); R.renderLedger(); R.renderPending(); }
     return;
   }
-  if ((el = c('[data-confirm]'))) {
-    if (el.dataset.armed === '1') {
-      el.textContent = 'Done'; el.disabled = true;
-      toast(el.getAttribute('data-confirm') + ' completed');
-    } else {
-      el.dataset.armed = '1';
-      el.textContent = 'Tap again';
-      toast('Tap again to confirm');
-      setTimeout(() => {
-        if (el.dataset.armed === '1') {
-          el.dataset.armed = '0';
-          el.textContent = el.getAttribute('data-confirm').split(' ')[0];
-        }
-      }, 4000);
-    }
-    return;
-  }
-  if (c('#purgeImages')) { toast('All stored slip images deleted'); return; }
+  if (c('#exportGo')) { exportBets(($('exportFormat') || {}).value || 'CSV'); return; }
+  if ((el = c('#resetBets'))) { resetBets(el); return; }
+  if (c('#deleteAccount')) { openDeleteBox(); return; }
+  if (c('#deleteCancel')) { closeDeleteBox(); return; }
+  if ((el = c('#deleteGo'))) { deleteAccount(el); return; }
+  if ((el = c('#purgeImages'))) { purgeImages(el); return; }
   if ((el = c('[data-remove-tipster]'))) {
     const n = el.getAttribute('data-remove-tipster');
     const i = TIPSTERS.indexOf(n);
@@ -1763,9 +2115,12 @@ document.addEventListener('click', e => {
     return;
   }
   if ((el = c('#applyVerify'))) {
-    el.textContent = 'Slips sent for review';
-    el.disabled = true;
-    toast(el.textContent);
+    /* This said "Slips sent for review" and sent nothing anywhere. There
+       is no review queue yet and no channel to send to, so it now says
+       what is actually true rather than confirming something that did not
+       happen. Wire it to a real queue and this goes back to being a
+       submit button. */
+    toast('Verification reviews are not open yet. The tick is granted by hand for now.');
     return;
   }
 
@@ -1814,7 +2169,9 @@ document.addEventListener('input', e => {
     if (v != null && v > 0) { S.unit = v; R.renderMisc(); drawAll(); saveUnit(); }
     return;
   }
-  if (t.closest && t.closest('#totalsGrid')) { sumTotals(); return; }
+  /* The sentence saying what the figure is for has to move with the date,
+     or the whole point of showing it is lost. */
+  if (t.id === 'plDate') { syncPlLabel(); return; }
   if (t.matches && (t.matches('[data-slip]') || t.matches('[data-leg-field]'))) {
     const card = t.closest('.card');
     if (card) { syncSlipCard(card); updateImportTotals(); }
@@ -1845,7 +2202,9 @@ document.addEventListener('change', e => {
     handleFiles(t.files, { results: 'setupResults', report: 'setupCsvReport' });
     t.value = '';
   }
-  else if (t.id === 'timezone' || t.id === 'exportFormat' || t.id === 'stakeAs') toast(t.value + ' selected');
+  /* exportFormat is not announced any more: choosing a format is not an
+     act worth a toast, and the toast used to be the whole feature. */
+  else if (t.id === 'timezone' || t.id === 'stakeAs') toast(t.value + ' selected');
 });
 
 document.addEventListener('keydown', e => {

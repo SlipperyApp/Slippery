@@ -19,15 +19,31 @@ export const BOOKS = {
 export const ALL_BOOKS = Object.values(BOOKS).flat();
 export const TIPSTERS = ['Self', 'HB', 'Zhang', 'James'];
 
+/* Graphite first, and first means default: it is what :root carries in
+   01-tokens.css, so an account with no theme set gets it without the client
+   having to write an attribute. Periwinkle is second.
+
+   The two hexes on each row are the swatch, and they are the theme's real
+   --p and --s rather than an approximation, so the picker cannot show a
+   colour the theme does not use. */
 export const THEMES = [
-  ['periwinkle', 'Periwinkle', '#5D76CB', '#38BDF8'],
-  ['graphite',   'Graphite',   '#64748B', '#9FB0C6'],
-  ['ink',        'Ink',        '#5F5D74', '#9A92BC'],
+  ['graphite',   'Graphite',   '#7C8DA6', '#B4C4DA'],
+  ['periwinkle', 'Periwinkle', '#5D76CB', '#7DD3FC'],
+  ['ink',        'Ink',        '#7C79A0', '#B3AAD8'],
   ['tide',       'Tide',       '#3E93B5', '#8FD4EC'],
-  ['chalk',      'Chalk',      '#9A9080', '#E8DFCB']
+  ['chalk',      'Chalk',      '#8A7A63', '#6B5B44']
 ];
-export const THEME_BG = { periwinkle: '#0F172A', graphite: '#12161D', ink: '#09090C',
-  tide: '#0A1A22', chalk: '#1B1813' };
+/* The colour behind the browser chrome. Chalk is the light one, so its
+   value is paper rather than a near-black, or the status bar would sit
+   dark above a light page. */
+export const THEME_BG = { graphite: '#12161D', periwinkle: '#0F172A', ink: '#09090C',
+  tide: '#0A1A22', chalk: '#F7F3EA' };
+
+/* Which themes are light. The sky layer and anything mixing a highlight
+   with white has to know, because "add white to lift it" is backwards on
+   paper. */
+export const LIGHT_THEMES = ['chalk'];
+export const isLight = t => LIGHT_THEMES.includes(t);
 
 export const OUTCOME_LABEL = {
   'won': 'Won', 'lost': 'Lost', 'void': 'Void',
@@ -99,6 +115,11 @@ export let ME = null;
    account, which is how the UI knows to say nothing at all. */
 export let TRIAL = null;
 
+/* Profit and loss entered for a period rather than logged as bets: typed
+   in, or read off another tracker's screenshot. Never counted as bets by
+   anything, because there are no bets behind them. */
+export let PL = [];
+
 /* ---------- hydration ---------- */
 
 /**
@@ -117,7 +138,21 @@ export function hydrate(payload) {
      the next upload, and "you have 3 left" followed by a refusal is worse
      than no counter at all. Null when the account is paid. */
   TRIAL = (payload && payload.trial) || null;
-  return { settled: LEDGER.length, pending: PENDING.length };
+  PL = (payload && payload.pl) || [];
+  /* Period figures land on the calendar beside the bets. They are added
+     after buildDayTotals so a day with both a bet and a typed figure shows
+     the sum, which is what somebody who has entered both means. Only daily
+     entries do this: a month's total spread across its days would invent
+     thirty figures nobody gave us. */
+  for (const p of PL) {
+    if (p.period !== 'day') continue;
+    const d = new Date(p.date + 'T12:00:00');
+    if (Number.isNaN(d.getTime()) || d.getFullYear() !== TODAY.year) continue;
+    const m = d.getMonth(), day = d.getDate();
+    (DAY_TOTALS[m] || (DAY_TOTALS[m] = {}));
+    DAY_TOTALS[m][day] = (DAY_TOTALS[m][day] || 0) + p.profit;
+  }
+  return { settled: LEDGER.length, pending: PENDING.length, pl: PL.length };
 }
 
 export function setImported(totals) {

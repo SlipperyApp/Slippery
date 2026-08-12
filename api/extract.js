@@ -111,13 +111,37 @@ const TOTALS_SCHEMA = {
   }
 };
 
+/* One dated figure off a profit-and-loss screen.
+ *
+ * This is the row that makes a P/L screenshot useful rather than merely
+ * readable. A totals screen usually shows a running list, "12 Aug −£40.50,
+ * 11 Aug +£118.00", and lifting only the grand total throws away every
+ * date on the screen. Each of these becomes one entry on the calendar,
+ * attached to the day it was printed against.
+ *
+ * `date` is an ISO day. The screen may print "12 Aug" with the year only
+ * in a header, so the prompt says to carry the year down; where it cannot
+ * be established the row is dropped rather than guessed, because a figure
+ * on the right day of the wrong year is worse than one that never
+ * arrived. */
+const PL_ROW_SCHEMA = {
+  type: 'object',
+  additionalProperties: false,
+  required: ['date', 'profit', 'label'],
+  properties: {
+    date: { type: 'string' },
+    profit: { type: 'number' },
+    label: { type: 'string' }
+  }
+};
+
 export const SLIP_SCHEMA = {
   type: 'object',
   additionalProperties: false,
   required: ['readable', 'doc_type', 'platform', 'bet_type', 'bet_count',
              'selection', 'event', 'market', 'bookmaker', 'odds',
              'stake', 'returns', 'result', 'stage', 'kickoff', 'legs',
-             'selections', 'totals', 'placed_at', 'unreadable_fields', 'notes'],
+             'selections', 'totals', 'pl_rows', 'placed_at', 'unreadable_fields', 'notes'],
   properties: {
     readable: { type: 'boolean' },
     /* What the file actually is. Guessing this from the shape of the other
@@ -151,6 +175,7 @@ export const SLIP_SCHEMA = {
     legs: { type: 'integer' },
     selections: { type: 'array', items: LEG_SCHEMA },
     totals: TOTALS_SCHEMA,
+    pl_rows: { type: 'array', items: PL_ROW_SCHEMA },
     placed_at: { type: 'string' },
     unreadable_fields: { type: 'array', items: { type: 'string' } },
     notes: { type: 'string' }
@@ -229,7 +254,28 @@ Field notes:
 - notes: at most one short sentence, and only if something would confuse the
   person reading the result later. Otherwise "".
 - totals: set present true ONLY for a pnl_summary. On anything else set
-  present false and leave the rest at 0 and "".`;
+  present false and leave the rest at 0 and "".
+
+pl_rows: THE DATED FIGURES. This is the most valuable thing on a
+profit-and-loss screen and the easiest to leave behind.
+
+A totals screen from another tracker usually prints a running list as well
+as a grand total: a row per day, or per month, each with its own figure.
+Put every one of those in pl_rows. One entry per dated figure, in the order
+printed.
+- date: ISO 8601, YYYY-MM-DD. The row often prints only "12 Aug" with the
+  year somewhere else on the screen, in a header, a filter, or a month
+  label above the group. Carry that year down onto the row. If the year
+  genuinely cannot be established anywhere on the image, LEAVE THE ROW OUT
+  ENTIRELY. A figure filed under the wrong year is worse than one that was
+  never imported, because it silently moves somebody's history.
+- profit: the figure for that date, negative for a loss. Read the sign off
+  the screen, from a minus, a bracket, red colouring, or a "-" prefix. Do
+  not infer a sign from anything else.
+- label: what the row was called if it carries a name, for example "Sat 12
+  Aug" or "August". "" if it is just a date and a number.
+Leave pl_rows empty for a bet slip. It is only for screens that print
+profit against dates.`;
 
 export default async function handler(req, res) {
   if (!methodGuard(req, res, ['POST'])) return;
@@ -404,6 +450,39 @@ export function sanitise(f) {
     }
   }
 
+  /* Dated figures.
+     Every row has to carry a date that is genuinely a date, because each
+     one becomes a day on somebody's calendar. A row whose date does not
+     round-trip is dropped rather than repaired: "2026-02-31" parses in
+     some engines, and landing a figure on the 3rd of March because the
+     screen said the 31st of February is the silent kind of wrong this
+     whole file exists to avoid. */
+  out.pl_rows = (Array.isArray(f.pl_rows) ? f.pl_rows : []).map(row => {
+    const date = String((row && row.date) || '').trim().slice(0, 10);
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) return null;
+    const t = Date.parse(date + 'T00:00:00Z');
+    if (!Number.isFinite(t)) return null;
+    if (new Date(t).toISOString().slice(0, 10) !== date) return null;
+    const profit = Number(row.profit);
+    if (!Number.isFinite(profit) || Math.abs(profit) > 1e7) return null;
+    return {
+      date,
+      profit,
+      label: typeof row.label === 'string' ? row.label.trim().slice(0, 60) : ''
+    };
+  }).filter(Boolean).slice(0, 400);
+  /* Two rows for the same day cannot both be right, and the upsert on the
+     server would keep whichever landed last with no way to tell. Keep the
+     first, and say so. */
+  const seenDays = new Set();
+  const before = out.pl_rows.length;
+  out.pl_rows = out.pl_rows.filter(r => {
+    if (seenDays.has(r.date)) return false;
+    seenDays.add(r.date);
+    return true;
+  });
+  if (out.pl_rows.length < before) bad.add('duplicate dates');
+
   /* A summary screenshot is not a bet. If the reader called it one, the
      money fields must not survive into the ledger. */
   if (out.doc_type === 'pnl_summary') {
@@ -412,6 +491,10 @@ export function sanitise(f) {
     out.selections = [];
   } else {
     out.totals = null;
+    /* Dated figures belong to a P/L screen. A bet slip that came back with
+       them read something else as a date and a price, and importing that
+       would put invented profit on somebody's calendar. */
+    out.pl_rows = [];
   }
 
   /* A single is one bet however many ways it is counted. */

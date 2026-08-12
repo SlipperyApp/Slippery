@@ -26,6 +26,7 @@ const MIN_UNIT = 1;
 const MAX_UNIT = 100_000_00;
 
 export const PRIVACIES = ['public', 'friends', 'private'];
+export const COUNT_MODES = ['tracker', 'lifetime'];
 
 export default async function handler(req, res) {
   if (!methodGuard(req, res, ['POST'])) return;
@@ -56,6 +57,12 @@ export default async function handler(req, res) {
       }
       sets.privacy = body.privacy;
     }
+    if (body.countMode !== undefined) {
+      if (!COUNT_MODES.includes(body.countMode)) {
+        return json(res, 400, { error: 'That is not a bet count mode.', field: 'countMode' });
+      }
+      sets.countMode = body.countMode;
+    }
     if (!Object.keys(sets).length) return json(res, 400, { error: 'Nothing to change.' });
 
     const sql = db();
@@ -66,14 +73,16 @@ export default async function handler(req, res) {
     const rows = await sql`
       UPDATE users
       SET unit_pence = COALESCE(${sets.unit ?? null}, unit_pence),
-          privacy    = COALESCE(${sets.privacy ?? null}, privacy)
+          privacy    = COALESCE(${sets.privacy ?? null}, privacy),
+          count_mode = COALESCE(${sets.countMode ?? null}, count_mode)
       WHERE id = ${user.id}
-      RETURNING unit_pence, privacy`;
+      RETURNING unit_pence, privacy, count_mode`;
 
     return json(res, 200, {
       ok: true,
       unitPence: rows[0].unit_pence,
-      privacy: rows[0].privacy
+      privacy: rows[0].privacy,
+      countMode: rows[0].count_mode
     });
   } catch (err) {
     return fail(res, err, 'Could not save those settings.');
