@@ -34,7 +34,7 @@
     opacity:0;transform:scale(.4);
     transition:opacity 460ms var(--ez),transform 460ms var(--ez)}
   &:active::after{opacity:1;transform:scale(1);transition-duration:0ms}}
-.btn.primary{background:linear-gradient(135deg,var(--p),var(--s));color:var(--on-p);
+.btn.primary{background:linear-gradient(135deg,var(--p),var(--s));color:#08111f;
   box-shadow:0 8px 22px rgba(var(--orb1),.32)}
 .btn.ghost{background:var(--c2);border:1px solid var(--e1)}
 .btn.attn{background:var(--a);color:#3a2600}
@@ -42,7 +42,7 @@
    the easiest thing on the card to hit by accident, and this one deletes an
    account. It should look like what it is without inviting the thumb. */
 .btn.danger{background:rgba(252,165,165,.10);border:1px solid rgba(252,165,165,.45);
-  color:var(--neg-ink);box-shadow:none;
+  color:var(--neg);box-shadow:none;
   &:hover{background:rgba(252,165,165,.16)}}
 .btn.full{display:flex;width:100%}
 .btn.small{font-size:13px;padding:9px 13px;min-height:40px;border-radius:10px}
@@ -58,7 +58,7 @@
   &:hover{background:rgba(var(--ink),.11)}
   &.link{color:var(--s)}
   &.locked{color:var(--t2)}
-  &.danger{color:var(--neg-ink);border-color:rgba(252,165,165,.36)}}
+  &.danger{color:var(--neg);border-color:rgba(252,165,165,.36)}}
 
 /* segmented control */
 .seg{
@@ -69,7 +69,7 @@
     font-size:13px;font-weight:550;color:var(--t2);
     padding:9px 4px;border-radius:10px;min-height:42px;
     transition:color var(--tb);
-    &[aria-pressed=true],&.on{color:var(--on-p)}}
+    &[aria-pressed=true],&.on{color:#08111f}}
   & .thumb{position:absolute;top:3px;bottom:3px;left:0;width:100px;border-radius:10px;z-index:0;
     background:linear-gradient(135deg,var(--p),var(--s));
     transform-origin:left center;will-change:transform;
@@ -104,9 +104,9 @@
   &:active{transform:scale(.95)}
   &[aria-pressed=true]{color:var(--t1);background:rgba(var(--orb1),.30);
     border-color:rgba(var(--orb1),.55)}
-  &[data-filter=won]{color:var(--pos-ink);
+  &[data-filter=won]{color:var(--pos);
     &[aria-pressed=true]{background:rgba(134,239,172,.18);border-color:rgba(134,239,172,.5)}}
-  &[data-filter=lost]{color:var(--neg-ink);
+  &[data-filter=lost]{color:var(--neg);
     &[aria-pressed=true]{background:rgba(252,165,165,.18);border-color:rgba(252,165,165,.5)}}
   &[data-filter=cash]{color:var(--a);
     &[aria-pressed=true]{background:rgba(245,158,11,.18);border-color:rgba(245,158,11,.5)}}}
@@ -138,11 +138,11 @@
     & small{display:block;color:var(--t2);font-size:11.5px;line-height:1.45;margin-top:1px}}}
 
 .formerr{
-  display:flex;gap:7px;align-items:flex-start;font-size:12.5px;color:var(--neg-ink);margin-top:8px;
+  display:flex;gap:7px;align-items:flex-start;font-size:12.5px;color:var(--neg);margin-top:8px;
   animation:errin 240ms var(--ez);
   &::before{content:"!";font-family:var(--fm);font-size:10px;font-weight:600;
     width:16px;height:16px;flex:0 0 auto;border-radius:50%;
-    background:rgba(252,165,165,.18);color:var(--neg-ink);
+    background:rgba(252,165,165,.18);color:var(--neg);
     display:grid;place-items:center;margin-top:1px}}
 @keyframes errin{from{opacity:0;transform:translateY(-3px)}to{opacity:1;transform:none}}
 
@@ -181,7 +181,7 @@
   & input{padding-left:36px}}
 
 .tagbit{font-family:var(--fm);font-size:10.5px;padding:3px 8px;border-radius:6px;
-  &.ok{background:rgba(134,239,172,.15);color:var(--pos-ink)}
+  &.ok{background:rgba(134,239,172,.15);color:var(--pos)}
   &.neutral{background:var(--c2);color:var(--t2)}
   &.warn{background:rgba(245,158,11,.16);color:var(--a)}}
 

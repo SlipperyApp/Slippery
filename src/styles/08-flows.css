@@ -54,7 +54,7 @@
   text-align:center;padding:26px 20px;margin-top:24px;
   & .glyph{width:50px;height:50px;border-radius:15px;
     background:linear-gradient(140deg,var(--p),var(--s));display:grid;place-items:center;
-    margin:0 auto 12px;& svg{width:24px;height:24px;color:var(--on-p)}}
+    margin:0 auto 12px;& svg{width:24px;height:24px;color:#08111f}}
   & h2{font-size:clamp(21px,5.2vw,27px)}
   & p{color:var(--t2);margin:9px auto 17px;max-width:38ch;font-size:14px}}
 
@@ -69,6 +69,22 @@
     transition:color var(--tf),background var(--tf);
     &:hover{color:var(--t1);background:var(--c1)}}}
 @media (min-width:540px){.anchors{display:flex}}
+
+/* The founder credit. Real attribution, so it carries the tick. */
+.founder{
+  display:flex;flex-direction:column;align-items:center;text-align:center;gap:8px;
+  margin:32px auto 0;padding:18px;border-radius:16px;
+  border:1px solid var(--e2);background:var(--c1);max-width:240px;
+  transition:border-color var(--tb),background var(--tb);
+  &:hover{border-color:var(--e1);background:var(--c2)}
+  & .ring{width:58px;height:58px;border-radius:50%;
+    background:linear-gradient(140deg,var(--p),var(--s));display:grid;place-items:center;
+    font-family:var(--fd);font-weight:700;font-size:22px;color:#08111f}
+  & .role{font-family:var(--fm);font-size:9px;letter-spacing:.15em;
+    text-transform:uppercase;color:var(--t2)}
+  & .nm{display:flex;align-items:center;justify-content:center;gap:5px;
+    font-size:14.5px;font-weight:600;letter-spacing:-.01em;
+    & svg{width:14px;height:14px;color:var(--s);flex:0 0 auto}}}
 
 /* The two claims the product actually rests on.
    Numbered rather than iconed: these are arguments, not features, and a
@@ -97,7 +113,7 @@
   &.featured{border-color:rgba(var(--orb1),.5);box-shadow:0 14px 36px rgba(var(--orb1),.2)}
   & .flag{position:absolute;top:-10px;left:19px;font-family:var(--fm);font-size:9.5px;
     letter-spacing:.1em;text-transform:uppercase;
-    background:linear-gradient(135deg,var(--p),var(--s));color:var(--on-p);
+    background:linear-gradient(135deg,var(--p),var(--s));color:#08111f;
     padding:4px 11px;border-radius:999px}
   & .nm{font-weight:700;font-size:18px;font-family:var(--fd)}
   & .desc{color:var(--t2);font-size:12.5px;margin-top:2px}
@@ -107,7 +123,7 @@
   & .note{font-size:12px;color:var(--t2);margin-top:4px}
   & ul{list-style:none;margin:14px 0;display:flex;flex-direction:column;gap:9px}
   & li{display:flex;gap:9px;font-size:13px;
-    & svg{width:15px;height:15px;color:var(--pos-ink);flex:0 0 auto;margin-top:2px}}}
+    & svg{width:15px;height:15px;color:var(--pos);flex:0 0 auto;margin-top:2px}}}
 /* "Everything in monthly, plus:", the line that makes the ladder legible.
    Without it the three feature lists read as three unrelated sets and the
    yearly price looks like it buys less than it does. */
@@ -131,7 +147,7 @@
 .promobox{margin-top:16px;padding-top:14px;border-top:1px solid var(--e1)}
 .paylist{list-style:none;margin:12px 0 0;display:flex;flex-direction:column;gap:8px;
   & li{display:flex;gap:9px;align-items:flex-start;font-size:13px}
-  & svg{width:15px;height:15px;color:var(--pos-ink);flex:0 0 auto;margin-top:2px}}
+  & svg{width:15px;height:15px;color:var(--pos);flex:0 0 auto;margin-top:2px}}
 
 /* setup wizard */
 .wizbar{display:flex;gap:4px;margin-bottom:16px;
@@ -171,9 +187,9 @@
       border:1.5px solid rgba(var(--ink),.22);position:relative;
       transition:background var(--tb),border-color var(--tb);
       &::after{content:"";position:absolute;left:3.5px;top:4px;width:5px;height:2.5px;
-        border-left:1.5px solid var(--on-p);border-bottom:1.5px solid var(--on-p);
+        border-left:1.5px solid #08111f;border-bottom:1.5px solid #08111f;
         transform:rotate(-45deg) scale(0);transition:transform var(--tb) var(--eg)}}
-    &.met{color:var(--pos-ink);
+    &.met{color:var(--pos);
       & i{background:var(--pos);border-color:var(--pos);
         &::after{transform:rotate(-45deg) scale(1)}}}}}
 
@@ -303,7 +319,7 @@
 .guiden{
   flex:0 0 auto;width:29px;height:29px;border-radius:9px;
   display:grid;place-items:center;margin-top:1px;
-  font-family:var(--fm);font-size:13px;font-weight:600;color:var(--on-p);
+  font-family:var(--fm);font-size:13px;font-weight:600;color:#08111f;
   background:linear-gradient(140deg,var(--p),var(--s));
 }
 /* The panel. A device frame without the phone drawing: the bezel added
@@ -402,7 +418,7 @@
   flex:0 0 auto;width:32px;height:42px;border-radius:9px;display:grid;place-items:center;
   color:var(--t3);transition:color var(--tf),background var(--tf);
   & svg{width:13px;height:13px}
-  &:hover{color:var(--neg-ink);background:rgba(252,165,165,.10)}}
+  &:hover{color:var(--neg);background:rgba(252,165,165,.10)}}
 /* The slip's own input size.
    NOT .field.compact: that one is width:auto, right-aligned and monospaced,
    because it exists for the single money box in a settings row. Applied
@@ -487,7 +503,7 @@
 .mergepreview{
   margin-top:11px;border-radius:11px;border:1px solid rgba(134,239,172,.35);
   background:rgba(134,239,172,.07);padding:12px;
-  & .h{font-size:11px;color:var(--pos-ink);font-family:var(--fm);letter-spacing:.05em;
+  & .h{font-size:11px;color:var(--pos);font-family:var(--fm);letter-spacing:.05em;
     text-transform:uppercase;margin-bottom:8px}
   & .r{display:flex;justify-content:space-between;gap:10px;font-size:12.5px;padding:3px 0;
     & span{color:var(--t2)}}}
@@ -551,7 +567,7 @@ input[type=date]{
   & .plx{width:30px;height:30px;border-radius:8px;flex:0 0 auto;display:grid;place-items:center;
     color:var(--t3);transition:color var(--tf),background var(--tf);
     & svg{width:13px;height:13px}
-    &:hover{color:var(--neg-ink);background:rgba(252,165,165,.10)}}}
+    &:hover{color:var(--neg);background:rgba(252,165,165,.10)}}}
 
 /* settings */
 .settingcard{

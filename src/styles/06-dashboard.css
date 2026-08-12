@@ -238,8 +238,8 @@
     & .ico{width:19px;height:19px}}
   /* The glyph carries the outcome's semantic colour, which is the whole
      reason these are SVG and not emoji. */
-  &[data-outcome=won] .icon{color:var(--pos-ink)}
-  &[data-outcome=lost] .icon{color:var(--neg-ink)}
+  &[data-outcome=won] .icon{color:var(--pos)}
+  &[data-outcome=lost] .icon{color:var(--neg)}
   &[data-outcome=cash] .icon{color:var(--s)}
   &[data-outcome=void] .icon{color:var(--t2)}
   & .mid{flex:1;min-width:0}
@@ -312,13 +312,13 @@
   & .top{display:flex;justify-content:space-between;align-items:baseline;gap:10px}
   & .ev{font-size:13px;font-weight:550;white-space:nowrap;overflow:hidden;
     text-overflow:ellipsis;min-width:0}
-  & .ret{font-family:var(--fm);font-size:12.5px;color:var(--pos-ink);flex:0 0 auto;
+  & .ret{font-family:var(--fm);font-size:12.5px;color:var(--pos);flex:0 0 auto;
     font-variant-numeric:tabular-nums lining-nums}
   & .pick{font-size:11.5px;color:var(--t2);margin-top:3px;line-height:1.45}
   & .meta{display:flex;align-items:center;gap:7px;margin-top:7px;flex-wrap:wrap;
     font-family:var(--fm);font-size:10px;color:var(--t3)}
   & .badge{padding:2px 7px;border-radius:5px;
-    &.auto{background:rgba(134,239,172,.14);color:var(--pos-ink)}
+    &.auto{background:rgba(134,239,172,.14);color:var(--pos)}
     &.ask{background:rgba(245,158,11,.16);color:var(--a)}
     &.live{background:rgba(56,189,248,.16);color:var(--s)}}
   & .why{font-size:11px;color:var(--a);margin-top:8px;line-height:1.5;
@@ -330,8 +330,8 @@
     background:var(--c2);border:1px solid var(--e1);
     transition:filter var(--tf),transform var(--tf);
     &:active{transform:scale(.97)}
-    &.win{color:var(--pos-ink);border-color:rgba(134,239,172,.35);background:rgba(134,239,172,.1)}
-    &.lose{color:var(--neg-ink);border-color:rgba(252,165,165,.35);background:rgba(252,165,165,.1)}
+    &.win{color:var(--pos);border-color:rgba(134,239,172,.35);background:rgba(134,239,172,.1)}
+    &.lose{color:var(--neg);border-color:rgba(252,165,165,.35);background:rgba(252,165,165,.1)}
     &.cash{color:var(--a);border-color:rgba(245,158,11,.35);background:rgba(245,158,11,.1)}
     &.void{color:var(--t2);border-color:var(--e1);background:var(--c1)}}
   & .cashform{display:flex;gap:6px;margin-top:8px;&>input{flex:1}}

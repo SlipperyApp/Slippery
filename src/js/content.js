@@ -305,7 +305,7 @@ function renderBotChat() {
     kv('Bookmaker', esc(slip.book)) +
     kv('Status', '<span style="color:var(--a)">Tracking</span>') +
     '<div style="display:flex;gap:8px;margin-top:11px">' +
-    '<span style="flex:1;text-align:center;font-size:12.5px;padding:9px 0;border-radius:9px;background:linear-gradient(135deg,var(--p),var(--s));color:var(--on-p)">Confirm</span>' +
+    '<span style="flex:1;text-align:center;font-size:12.5px;padding:9px 0;border-radius:9px;background:linear-gradient(135deg,var(--p),var(--s));color:#08111f">Confirm</span>' +
     '<span style="flex:1;text-align:center;font-size:12.5px;padding:9px 0;border-radius:9px;background:var(--c1);border:1px solid var(--e1)">Edit</span></div></div>' +
 
     /* Settlement arrives later, from the results feed. Showing it as a
@@ -373,7 +373,7 @@ function panel(i) {
        at full time, from the results feed, not from the image. */
     srow('Status', '<span style="color:var(--a)">Tracking, kicks off 16:00</span>') +
     '<div style="display:flex;gap:5px;margin-top:7px">' +
-    '<span style="flex:1;text-align:center;font-size:9px;padding:5px 0;border-radius:6px;background:linear-gradient(135deg,var(--p),var(--s));color:var(--on-p)">Confirm</span>' +
+    '<span style="flex:1;text-align:center;font-size:9px;padding:5px 0;border-radius:6px;background:linear-gradient(135deg,var(--p),var(--s));color:#08111f">Confirm</span>' +
     '<span style="flex:1;text-align:center;font-size:9px;padding:5px 0;border-radius:6px;background:var(--c1);border:1px solid var(--e1)">Edit</span></div></div>' +
     '<p style="font-size:9px;color:var(--t2);text-align:center;padding-top:4px">You confirm before anything saves</p>' };
 
@@ -458,7 +458,7 @@ function panel(i) {
       '<div style="display:flex;align-items:center;gap:6px;font-size:9px;padding:5px 0;border-bottom:1px solid rgba(255,255,255,.05)' +
       (x.me ? ';background:rgba(var(--orb1),.16);border-radius:5px;padding-left:5px;padding-right:5px' : '') + '">' +
       '<span style="width:9px;font-family:var(--fm);color:var(--t3)">' + (n + 1) + '</span>' +
-      '<span style="width:16px;height:16px;border-radius:50%;display:grid;place-items:center;font-size:6.5px;font-weight:600;color:var(--on-p);background:linear-gradient(140deg,#8FC7C0,#8B9DE0)">' + esc(x.a) + '</span>' +
+      '<span style="width:16px;height:16px;border-radius:50%;display:grid;place-items:center;font-size:6.5px;font-weight:600;color:#08111f;background:linear-gradient(140deg,#8FC7C0,#8B9DE0)">' + esc(x.a) + '</span>' +
       '<span style="flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">' + esc(x.n) + '</span>' +
       '<b class="m ' + M.tone(x.v) + '" style="font-size:9px">' + M.units(x.v, x.un) + '</b></div>').join('') + '</div>' +
     '<p style="font-size:9px;color:var(--t2);text-align:center;padding-top:4px">' +

@@ -31,19 +31,11 @@ export const THEMES = [
   ['periwinkle', 'Periwinkle', '#5D76CB', '#7DD3FC'],
   ['ink',        'Ink',        '#7C79A0', '#B3AAD8'],
   ['tide',       'Tide',       '#3E93B5', '#8FD4EC'],
-  ['chalk',      'Chalk',      '#8A7A63', '#6B5B44']
+  ['chalk',      'Chalk',      '#A8998A', '#EADFC9']
 ];
-/* The colour behind the browser chrome. Chalk is the light one, so its
-   value is paper rather than a near-black, or the status bar would sit
-   dark above a light page. */
+/* The colour behind the browser chrome. */
 export const THEME_BG = { graphite: '#12161D', periwinkle: '#0F172A', ink: '#09090C',
-  tide: '#0A1A22', chalk: '#F7F3EA' };
-
-/* Which themes are light. The sky layer and anything mixing a highlight
-   with white has to know, because "add white to lift it" is backwards on
-   paper. */
-export const LIGHT_THEMES = ['chalk'];
-export const isLight = t => LIGHT_THEMES.includes(t);
+  tide: '#0A1A22', chalk: '#1B1813' };
 
 export const OUTCOME_LABEL = {
   'won': 'Won', 'lost': 'Lost', 'void': 'Void',
