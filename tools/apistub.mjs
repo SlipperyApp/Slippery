@@ -174,6 +174,37 @@ export async function installStub(page, opts = {}) {
         label: 'Free for life', note: 'Slippery is free on this account, permanently.' }) });
   });
 
+  /* Groups. Two members and a real join code, so the board, the code and
+     the visibility tag all render the way they do in production. */
+  const GROUPS = [{
+    id: 'g1', name: 'Sunday League', visibility: 'private', code: 'K7RM24', owner: true,
+    mem: ['You', 'HalfEdge']
+  }];
+  const PEOPLE = [{
+    n: 'HalfEdge', a: 'HA', un: 5000,
+    months: [0, 0, 0, 0, 0, 0, 12000, 4400, 9100, 0, 0, 0],
+    all: 25500, b: 34, roi: 0.11, v: false, pv: 'public', mu: true, ing: false, er: false, gr: [0]
+  }];
+  await page.route('**/api/groups', route => {
+    const method = route.request().method();
+    if (method === 'GET') {
+      return route.fulfill({ status: 200, contentType: 'application/json',
+        body: JSON.stringify({ groups: GROUPS, people: PEOPLE }) });
+    }
+    const sent = JSON.parse(route.request().postData() || '{}');
+    if (method === 'DELETE') {
+      return route.fulfill({ status: 200, contentType: 'application/json',
+        body: JSON.stringify({ left: sent.id, dissolved: false }) });
+    }
+    if (sent.code) {
+      return route.fulfill({ status: 201, contentType: 'application/json',
+        body: JSON.stringify({ joined: true, group: { id: 'g2', name: 'Joined Group' } }) });
+    }
+    return route.fulfill({ status: 201, contentType: 'application/json',
+      body: JSON.stringify({ group: { id: 'g2', name: sent.name, visibility: sent.visibility,
+        code: 'QT9WFB', owner: true, mem: ['You'] } }) });
+  });
+
   /* The slip reader. Returns one legible slip and one the reader could only
      partly make out, which is the case the editable fields exist for. */
   let extractCall = 0;

@@ -140,8 +140,14 @@
   &::after{content:"";position:absolute;top:2px;left:2px;width:20px;height:20px;
     border-radius:50%;background:var(--t2);
     transition:transform var(--tb) var(--eg),background var(--tb)}
-  &[aria-checked=true]{background:rgba(134,239,172,.28);border-color:rgba(134,239,172,.45);
-    &::after{transform:translateX(19px);background:var(--pos)}}}
+  /* The theme accent, not #86EFAC.
+     Green means profit in this product and nothing else, so a green "on"
+     state spends the one colour that already has a meaning on a setting
+     toggle. The brief's rule is that no other colour may sit near the two
+     semantic ones, and a green switch three rows above a green figure is
+     exactly that. */
+  &[aria-checked=true]{background:rgba(var(--orb2),.32);border-color:rgba(var(--orb2),.55);
+    &::after{transform:translateX(19px);background:var(--s)}}}
 
 .notice{
   font-size:12.5px;color:var(--t2);

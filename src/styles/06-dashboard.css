@@ -4,16 +4,23 @@
 /* The dashboard opens on the subnav, so the view's default top padding
    left a strip of raw sky between the header and the tabs. */
 #dash{padding-top:0}
+/* Overview / Ledger / Social.
+   Three full-size pills across the top of a 390px screen took a 61px band
+   out of the viewport and sat over the first card as you scrolled. Smaller
+   and centred: the same three targets, a shorter band, and the group reads
+   as one control rather than as a row that happens to start at the left
+   margin. Still 38px tall, which is the floor for something a thumb has to
+   hit accurately. */
 .subnav{
-  position:sticky;top:57px;z-index:30;margin:0 -16px;padding:12px 0 9px;
+  position:sticky;top:57px;z-index:30;margin:0 -16px;padding:8px 0 7px;
   background:color-mix(in srgb,var(--bg) 92%,transparent);
   box-shadow:0 8px 16px -10px rgba(0,0,0,.75);
-  & .inner{display:flex;gap:6px;overflow-x:auto;padding:2px 16px;
+  & .inner{display:flex;gap:5px;justify-content:center;overflow-x:auto;padding:2px 16px;
     scrollbar-width:none;overscroll-behavior-x:contain;
     &::-webkit-scrollbar{display:none}}
-  & button{font-size:13px;font-weight:550;color:var(--t2);
+  & button{font-size:12.5px;font-weight:550;color:var(--t2);
     background:var(--c1);border:1px solid var(--e1);
-    padding:8px 14px;border-radius:999px;white-space:nowrap;min-height:40px;
+    padding:7px 15px;border-radius:999px;white-space:nowrap;min-height:38px;
     transition:color var(--tb),background var(--tb),border-color var(--tb),transform var(--tf);
     &:active{transform:scale(.96)}
     &[aria-selected=true]{color:#08111f;background:linear-gradient(135deg,var(--p),var(--s));
@@ -65,7 +72,7 @@
   & .kpi{background:var(--card);border:1px solid var(--e1);border-radius:13px;
     padding:10px 6px;text-align:center;
     transition:transform var(--tb) var(--ez);
-    &:hover{transform:translateY(-2px)}
+    @media (hover:hover) and (pointer:fine){&:hover{transform:translateY(-2px)}}
     & .n{font-size:9.5px;color:var(--t2);line-height:1.3}
     & .v{font-weight:600;font-size:13.5px;margin-top:3px;letter-spacing:-.02em;
       font-variant-numeric:tabular-nums lining-nums}}}

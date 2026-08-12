@@ -36,7 +36,7 @@
 .section{padding:32px 0 0;& h2{font-size:clamp(23px,5.6vw,30px);margin-top:8px}}
 .feature{
   padding:17px;margin-top:14px;transition:transform var(--tb) var(--ez);
-  &:hover{transform:translateY(-2px)}
+  @media (hover:hover) and (pointer:fine){&:hover{transform:translateY(-2px)}}
   & .glyph{width:40px;height:40px;border-radius:12px;
     background:rgba(var(--orb1),.16);border:1px solid rgba(var(--orb1),.3);
     display:grid;place-items:center;margin-bottom:11px;
@@ -89,7 +89,7 @@
 .plan{
   padding:19px;margin-bottom:12px;position:relative;
   transition:transform var(--tb) var(--ez);
-  &:hover{transform:translateY(-2px)}
+  @media (hover:hover) and (pointer:fine){&:hover{transform:translateY(-2px)}}
   &.featured{border-color:rgba(var(--orb1),.5);box-shadow:0 14px 36px rgba(var(--orb1),.2)}
   & .flag{position:absolute;top:-10px;left:19px;font-family:var(--fm);font-size:9.5px;
     letter-spacing:.1em;text-transform:uppercase;
@@ -201,17 +201,32 @@
       border-color:rgba(var(--orb1),.55)}}}
 
 /* swatches */
+/* Theme swatches, zoomed in.
+   A whole 140deg gradient inside a 60px square read as a two-tone tile
+   rather than as the colour the theme actually is. The same gradient
+   painted at 260% and centred shows a narrow slice of itself, so the cell
+   is near solid and the theme is legible at a glance. The 2px transparent
+   ring is gone with it: an invisible border still takes up space and left a
+   faint seam. Selection is an outline, which sits outside the box and so
+   moves nothing when it appears. */
 .swatches{
   display:grid;grid-template-columns:repeat(5,1fr);column-gap:10px;row-gap:26px;
   margin-top:12px;padding-bottom:22px;
-  & button{width:100%;aspect-ratio:1;border-radius:14px;border:2px solid transparent;
+  & button{width:100%;aspect-ratio:1;border-radius:14px;border:0;outline:0;
+    background-size:260% 260%;background-position:50% 50%;
     position:relative;padding:0;
-    transition:transform var(--tb) var(--eg),border-color var(--tb),box-shadow var(--tb);
-    &:hover{transform:translateY(-3px)}
-    &[aria-pressed=true]{border-color:var(--t1);box-shadow:0 6px 18px rgba(0,0,0,.4)}
+    transition:transform var(--tb) var(--eg),outline-color var(--tb),box-shadow var(--tb);
+    outline:2px solid transparent;outline-offset:2px;
+    &[aria-pressed=true]{outline-color:var(--t1);box-shadow:0 6px 18px rgba(0,0,0,.4)}
     & .swname{position:absolute;bottom:-18px;left:-4px;right:-4px;text-align:center;
       font-size:9.5px;color:var(--t2)}
     &[aria-pressed=true] .swname{color:var(--t1)}}}
+/* Lift on hover only where hover is real. On a touch screen the :hover
+   state latches after a tap and does not clear until you tap elsewhere, so
+   the swatch you just chose stays raised out of line with the rest of the
+   row. */
+@media (hover:hover) and (pointer:fine){
+  .swatches button:hover{transform:translateY(-3px)}}
 
 /* theme intro overlay */
 .themeintro{
@@ -462,7 +477,7 @@
   display:inline-flex;align-items:center;gap:6px;font-family:var(--fm);font-size:12.5px;
   background:var(--c2);border:1px solid var(--e1);border-radius:999px;
   padding:5px 5px 5px 12px;transition:transform var(--tf);
-  &:hover{transform:translateY(-1px)}
+  @media (hover:hover) and (pointer:fine){&:hover{transform:translateY(-1px)}}
   & button{background:rgba(255,255,255,.08);color:var(--t2);width:24px;height:24px;
     border-radius:50%;font-size:14px;display:grid;place-items:center;
     transition:background var(--tf);

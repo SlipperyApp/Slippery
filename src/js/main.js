@@ -4,14 +4,14 @@ import { S, canUsePeriod, periodNeedsFocus } from './state.js';
 import * as M from './money.js';
 import {
   LEDGER, PENDING, PEOPLE, GROUPS, TODAY, THEMES, THEME_BG, BOOKS, TIPSTERS,
-  TARGETS, hydrate, addBet, settleLocal, setMe, ME, ico
+  TARGETS, hydrate, hydrateSocial, addBet, settleLocal, setMe, ME, ico
 } from './data.js';
 import { settle, settleCashOut, ledgerOutcome } from './settlement.js';
 import { stats, dayMap, monthTotal, targetFor, weekRange, invalidateDays } from './stats.js';
 import * as R from './render.js';
 import * as C from './content.js';
 import { initMotion, syncThemeColor } from './motion.js';
-import { extractSlip, readText, get, post, patch } from './api.js';
+import { extractSlip, readText, get, post, patch, del } from './api.js';
 import { parseBetsCsv } from './csv.js';
 import * as Auth from './auth.js';
 
@@ -45,7 +45,134 @@ async function loadLedger() {
   invalidateDays();
   R.renderAll();
   renderNewMonth();          // depends on the ledger, so it re-runs with it
+  loadGroups();              // its own request, and not worth blocking on
   return true;
+}
+
+/* Groups and the people in them. Separate from the ledger because a board
+   is a different question from "what have I bet", and a failure to load one
+   must not empty the other. */
+async function loadGroups() {
+  const r = await get('/api/groups');
+  if (!r.ok) return false;
+  hydrateSocial(r.body);
+  R.renderGroups();
+  R.renderPeople();
+  return true;
+}
+
+/* Create a group: a name and who can see it.
+   The button used to relabel itself "Group created" and disable, which
+   created nothing. A group with no name and no visibility setting is not a
+   group, so both are asked for before anything is sent. */
+function openGroupForm() {
+  const holder = $('groupForms');
+  if (!holder || holder.dataset.mode === 'create') { closeGroupForm(); return; }
+  holder.dataset.mode = 'create';
+  holder.hidden = false;
+  holder.innerHTML =
+    '<div class="card pad">' +
+    '<div class="cardhead"><span class="title">Start a group</span></div>' +
+    '<label class="label" for="groupName">Group name</label>' +
+    '<input class="field" id="groupName" maxlength="40" placeholder="Sunday league" autocomplete="off">' +
+    '<p class="formerr" id="groupNameErr" hidden></p>' +
+    '<p class="label">Who can join</p>' +
+    '<div class="optionlist" id="groupVis">' +
+      visRow('private', 'Private', 'Invite only. The code is the only way in, and the group is never listed.') +
+      visRow('public', 'Public', 'Anyone with the code can join, and it can be listed for people to find.') +
+    '</div>' +
+    '<p class="fineprint" style="margin-top:11px">Everyone in a group sees everyone else in units. ' +
+    'Your privacy setting applies to followers, not to a group you chose to join.</p>' +
+    '<div class="btnrow" style="margin-top:12px">' +
+    '<button class="btn primary small" id="groupSave">Create it</button>' +
+    '<button class="btn ghost small" id="groupCancel">Cancel</button></div></div>';
+  $('groupName').focus();
+}
+
+/* The same .optioncard the privacy chooser uses. It was a `.option` with a
+   `.tick` span, neither of which exists in the stylesheet, so the two
+   choices rendered as unstyled centred text with the name run into the
+   description. Reuse the class that is already defined rather than adding a
+   second one that looks almost the same. */
+const VIS_GLYPH = {
+  private: '<rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/>',
+  public: '<circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a15 15 0 0 1 0 18a15 15 0 0 1 0-18"/>'
+};
+const visRow = (id, name, desc) =>
+  '<button class="optioncard" data-vis="' + id + '" aria-pressed="' + (S.groupVis === id) + '">' +
+  '<span class="glyph" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" ' +
+  'stroke-width="2">' + VIS_GLYPH[id] + '</svg></span>' +
+  '<span><span class="t">' + name + '</span><span class="s">' + desc + '</span></span></button>';
+
+function openJoinForm() {
+  const holder = $('groupForms');
+  if (!holder || holder.dataset.mode === 'join') { closeGroupForm(); return; }
+  holder.dataset.mode = 'join';
+  holder.hidden = false;
+  holder.innerHTML =
+    '<div class="card pad">' +
+    '<div class="cardhead"><span class="title">Join with a code</span></div>' +
+    '<p class="fineprint" style="margin:5px 0 9px">Six characters, from whoever set the group up.</p>' +
+    '<label class="sr" for="groupCode">Join code</label>' +
+    '<input class="field" id="groupCode" maxlength="7" placeholder="ABC234" autocomplete="off" ' +
+      'spellcheck="false" autocapitalize="characters">' +
+    '<p class="formerr" id="groupCodeErr" hidden></p>' +
+    '<div class="btnrow" style="margin-top:12px">' +
+    '<button class="btn primary small" id="groupJoinGo">Join</button>' +
+    '<button class="btn ghost small" id="groupCancel">Cancel</button></div></div>';
+  $('groupCode').focus();
+}
+
+function closeGroupForm() {
+  const holder = $('groupForms');
+  if (!holder) return;
+  holder.hidden = true;
+  holder.dataset.mode = '';
+  holder.innerHTML = '';
+}
+
+function groupError(id, msg) {
+  const err = $(id + 'Err');
+  const field = $(id);
+  if (!err) return;
+  err.hidden = !msg;
+  err.textContent = msg || '';
+  if (msg && field) { field.setAttribute('aria-invalid', 'true'); field.focus(); }
+  else if (field) field.removeAttribute('aria-invalid');
+}
+
+async function createGroup(btn) {
+  const name = $('groupName').value.trim();
+  if (name.length < 3) { groupError('groupName', 'Give it a name of three characters or more.'); return; }
+  groupError('groupName', '');
+  btn.disabled = true;
+  btn.textContent = 'Creating…';
+  const r = await post('/api/groups', { name, visibility: S.groupVis });
+  btn.disabled = false;
+  btn.textContent = 'Create it';
+  if (r.status === 401) { go('setup'); toast('Log in to start a group.'); return; }
+  if (!r.ok) { groupError('groupName', r.body.error || 'That group could not be created.'); return; }
+  closeGroupForm();
+  await loadGroups();
+  /* The code is the only way anyone else gets in, so it is the first thing
+     shown rather than something to go hunting for. */
+  toast(r.body.group.name + ' created. Share the code ' + r.body.group.code);
+}
+
+async function joinGroup(btn) {
+  const code = $('groupCode').value.trim().toUpperCase().replace(/[^A-Z0-9]/g, '');
+  if (code.length !== 6) { groupError('groupCode', 'A join code is six characters.'); return; }
+  groupError('groupCode', '');
+  btn.disabled = true;
+  btn.textContent = 'Joining…';
+  const r = await post('/api/groups', { code });
+  btn.disabled = false;
+  btn.textContent = 'Join';
+  if (r.status === 401) { go('setup'); toast('Log in to join a group.'); return; }
+  if (!r.ok) { groupError('groupCode', r.body.error || 'That code did not work.'); return; }
+  closeGroupForm();
+  await loadGroups();
+  toast(r.body.joined ? 'Joined ' + r.body.group.name : (r.body.note || 'Already a member'));
 }
 
 /* When no database is connected the honest thing is to say so, once, rather
@@ -964,6 +1091,14 @@ async function runCsvImport(btn) {
   await loadLedger();
 }
 
+async function leaveGroup(id) {
+  const r = await del('/api/groups', { id });
+  if (!r.ok) { toast(r.body.error || 'Could not leave that group.'); return; }
+  S.group = 0;
+  await loadGroups();
+  toast(r.body.dissolved ? 'You were the last one, so the group is gone' : 'Left the group');
+}
+
 function showUpgrade(body) {
   toast('That is all ' + (body && body.freeSlips || 20) + ' free slips used.');
   go('pricing');
@@ -1360,9 +1495,39 @@ document.addEventListener('click', e => {
     $('bookInput').value = '';
     return;
   }
-  if ((el = c('#groupCreate')) || (el = c('#groupJoin')) || (el = c('#applyVerify'))) {
-    el.textContent = el.id === 'groupCreate' ? 'Group created'
-      : el.id === 'groupJoin' ? 'Enter your code' : 'Slips sent for review';
+  if (c('#groupCreate')) { openGroupForm(); return; }
+  if (c('#groupJoin')) { openJoinForm(); return; }
+  if (c('#groupCancel')) { closeGroupForm(); return; }
+  if ((el = c('[data-vis]'))) {
+    S.groupVis = el.getAttribute('data-vis');
+    $$('[data-vis]').forEach(b => b.setAttribute('aria-pressed', String(b === el)));
+    return;
+  }
+  if ((el = c('#groupSave'))) { createGroup(el); return; }
+  if ((el = c('#groupJoinGo'))) { joinGroup(el); return; }
+  if ((el = c('#groupShare'))) {
+    const code = el.getAttribute('data-code') || '';
+    /* Clipboard first, and the code stays on screen either way: a toast
+       that has scrolled past is no use to someone reading it out. */
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(code).then(
+        () => toast('Code ' + code + ' copied'),
+        () => toast('Your code is ' + code));
+    } else toast('Your code is ' + code);
+    return;
+  }
+  if ((el = c('#groupLeave'))) {
+    if (el.dataset.armed !== '1') {
+      el.dataset.armed = '1';
+      el.textContent = 'Tap again to leave';
+      setTimeout(() => { if (el.dataset.armed === '1') { el.dataset.armed = '0'; el.textContent = 'Leave group'; } }, 4000);
+      return;
+    }
+    leaveGroup(el.getAttribute('data-id'));
+    return;
+  }
+  if ((el = c('#applyVerify'))) {
+    el.textContent = 'Slips sent for review';
     el.disabled = true;
     toast(el.textContent);
     return;

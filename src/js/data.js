@@ -185,7 +185,26 @@ export function betsOn(month, day) {
   return LEDGER.filter(b => b.month === month && b.day === day);
 }
 
-/* Social helpers kept as no-ops so the views keep their shape until the
-   groups API lands. They return nothing rather than inventing a curve. */
-export function personMonths() { return new Array(12).fill(0); }
+/* ---------- social ----------
+   Filled by GET /api/groups. Empty until then, and empty is what a new
+   account genuinely is, so the views render their empty states rather than
+   a cast of invented friends. */
+export function hydrateSocial(payload) {
+  GROUPS = (payload && payload.groups) || [];
+  PEOPLE = (payload && payload.people) || [];
+  return { groups: GROUPS.length, people: PEOPLE.length };
+}
+
+/* Twelve monthly totals for one person, in pence.
+   The server sends them; this is the accessor the renderers use, and it
+   returns zeros for anyone it has no figures for rather than undefined,
+   because every caller sums it. */
+export function personMonths(p) {
+  return (p && Array.isArray(p.months)) ? p.months : new Array(12).fill(0);
+}
+/* Per-day figures are not in the group response: a board ranks in units
+   over a period, and shipping every member's daily curve to every other
+   member is more of their record than the ranking needs. The profile
+   mini-calendar renders empty until there is an endpoint that asks the
+   person first. */
 export function personDays() { return {}; }

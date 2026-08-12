@@ -50,7 +50,8 @@
   border:1px solid var(--e1);background:var(--c2);margin-bottom:8px;
   width:100%;text-align:left;
   transition:transform var(--tb) var(--ez),background var(--tb),border-color var(--tb);
-  &:hover{transform:translateY(-2px);background:rgba(255,255,255,.10)}
+  @media (hover:hover) and (pointer:fine){&:hover{transform:translateY(-2px)}}
+  &:hover{background:rgba(255,255,255,.10)}
   &[aria-pressed=true]{border-color:var(--s);background:rgba(var(--orb2),.10)}
   & .glyph{width:36px;height:36px;border-radius:11px;flex:0 0 auto;display:grid;place-items:center;
     background:rgba(var(--orb2),.14);border:1px solid rgba(var(--orb2),.3);
@@ -80,7 +81,7 @@
   text-align:left;width:100%;
   border:1px solid var(--e1);background:var(--c2);
   transition:transform var(--tb) var(--ez),border-color var(--tb),background var(--tb);
-  &:hover{transform:translateY(-2px)}
+  @media (hover:hover) and (pointer:fine){&:hover{transform:translateY(-2px)}}
   &[aria-pressed=true]{border-color:var(--s);background:rgba(var(--orb2),.10)}
   & .glyph{width:32px;height:32px;border-radius:10px;flex:0 0 auto;display:grid;place-items:center;
     background:rgba(var(--orb1),.18);border:1px solid rgba(var(--orb1),.35);
@@ -111,3 +112,10 @@
     &.down{background:linear-gradient(180deg,rgba(252,165,165,.35),#FCA5A5)}}
   & .ml{font-family:var(--fm);font-size:8.5px;color:var(--t3)}}
 @keyframes sparkin{from{opacity:0;transform:scaleY(.2);transform-origin:bottom}}
+
+/* The join code and visibility, on the board itself. The code is the only
+   way anyone else gets into the group, and "private" is a promise the
+   person who made it should be able to check without opening a menu. */
+.groupmeta{
+  display:flex;align-items:center;gap:8px;flex-wrap:wrap;
+  padding:10px 0 2px;margin-bottom:4px;border-bottom:1px solid var(--e2)}

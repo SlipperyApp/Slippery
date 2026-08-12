@@ -31,6 +31,7 @@ export const S = {
   /* social */
   privacy: 'friends',
   group: 0,
+  groupVis: 'private',   // what the create-a-group form is set to
   profile: null,
 
   /* ui */

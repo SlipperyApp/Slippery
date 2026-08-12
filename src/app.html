@@ -716,6 +716,10 @@
           <button class="btn primary" id="groupCreate">Create a group</button>
           <button class="btn ghost" id="groupJoin">Join with a code</button>
         </div>
+        <!-- Create and join both open in here, one at a time. Neither is a
+             separate view: a group is two fields, and losing the board you
+             are looking at to fill them in is a worse trade than the space. -->
+        <div id="groupForms" hidden></div>
       </div>
 
       <div id="socialFollowing" hidden>
@@ -1042,5 +1046,5 @@
 <nav class="tabbar" aria-label="App sections">
   <button data-nav="dash"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="3" y="3" width="8" height="8" rx="2"/><rect x="13" y="3" width="8" height="5" rx="2"/><rect x="13" y="10" width="8" height="11" rx="2"/><rect x="3" y="13" width="8" height="8" rx="2"/></svg>Dashboard</button>
   <button data-nav="imp"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M12 16V4M7 9l5-5 5 5M4 20h16"/></svg>Import</button>
-  <button data-nav="settings"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-2.82 1.17V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 8 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.6 15H4.5a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 6 9.4"/></svg>Settings</button>
+  <button data-nav="settings"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="#i-gear"/></svg>Settings</button>
 </nav>

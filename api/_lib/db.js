@@ -186,6 +186,34 @@ export async function ensureSchema() {
   await sql`CREATE UNIQUE INDEX IF NOT EXISTS promo_once_per_user
             ON promo_redemptions (user_id, code)`;
 
+  /* Groups.
+     `visibility` is what the owner chose: a public group can be found and
+     joined by anyone with the code, a private one is invite only and never
+     appears in a search. The join code exists either way, because a group
+     nobody can be added to is not a group. */
+  await sql`
+    CREATE TABLE IF NOT EXISTS groups (
+      id         uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+      name       text NOT NULL,
+      owner_id   uuid NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      visibility text NOT NULL DEFAULT 'private',
+      join_code  text NOT NULL,
+      created_at timestamptz NOT NULL DEFAULT now()
+    )`;
+  await sql`CREATE UNIQUE INDEX IF NOT EXISTS groups_code_key ON groups (join_code)`;
+
+  /* Membership. The composite primary key IS the "already a member" check:
+     joining twice is an insert that the database refuses, rather than a
+     SELECT that two simultaneous joins can both pass. */
+  await sql`
+    CREATE TABLE IF NOT EXISTS group_members (
+      group_id  uuid NOT NULL REFERENCES groups(id) ON DELETE CASCADE,
+      user_id   uuid NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      joined_at timestamptz NOT NULL DEFAULT now(),
+      PRIMARY KEY (group_id, user_id)
+    )`;
+  await sql`CREATE INDEX IF NOT EXISTS group_members_user_idx ON group_members (user_id)`;
+
   _ready = true;
 }
 

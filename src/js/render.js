@@ -474,6 +474,18 @@ export function renderGroups() {
   $('groupBoard').innerHTML =
     '<div class="cardhead"><span class="title">' + esc(g.name) + '</span>' +
     '<span class="meta">' + periodWord() + ' · in units</span></div>' +
+    /* The join code and how the group is set up, on the board rather than
+       buried: the code is the only way anyone else gets in, and "private"
+       is a promise the person who made it should be able to check. */
+    (g.code
+      ? '<div class="groupmeta">' +
+        '<span class="privacytag ' + (g.visibility === 'public' ? 'public' : 'private') + '">' +
+        esc(g.visibility || 'private') + '</span>' +
+        '<button class="pillbtn" id="groupShare" data-code="' + esc(g.code) + '">' +
+        'Code ' + esc(g.code) + '</button>' +
+        '<button class="pillbtn link" id="groupLeave" data-id="' + esc(g.id || '') + '">Leave group</button>' +
+        '</div>'
+      : '') +
     '<div class="duo"><div><div class="k">Group total</div><div class="v ' +
       M.tone(totalUnits) + '">' +
       ((totalUnits >= 0 ? '+' : '−') + Math.abs(totalUnits).toFixed(2) + 'u') + '</div></div>' +
@@ -563,8 +575,8 @@ export function renderProfile(name) {
     '<div class="kpis pair" style="margin:12px 0 0">' +
       kpi('This month', M.units(thisMonth, p.un), M.tone(thisMonth)) +
       kpi('This year', M.units(yearTotal, p.un), M.tone(yearTotal)) +
-      kpi('ROI', M.pct(p.roi), M.tone(p.roi)) +
-      kpi('Bets', M.plain(p.b), '') +
+      kpi('ROI', M.pct(p.roi || 0), M.tone(p.roi || 0)) +
+      kpi('Bets', M.plain(p.b || 0), '') +
     '</div></div>' +
 
     '<div class="card pad" style="margin-bottom:10px">' +
@@ -578,7 +590,12 @@ export function renderProfile(name) {
         '<span class="ml">' + MS.format(new Date(TODAY.year, i, 1)).charAt(0) + '</span></div>';
     }).join('') + '</div></div>' +
 
-    (sharesGroup(p)
+    /* The mini calendar needs day-level figures, and the group response
+       deliberately does not carry them: a board ranks over a period, and
+       shipping every member's daily curve to every other member is more of
+       their record than the ranking needs. Show it only when there is
+       something in it, rather than an empty grid that looks broken. */
+    (sharesGroup(p) && Object.keys(personDays(p, TODAY.month)).length
       ? '<div class="card pad" style="margin-bottom:10px">' +
         '<div class="cardhead"><span class="title">' + ML.format(new Date(TODAY.year, TODAY.month, 1)) +
         '</span><span class="meta">' + M.units(thisMonth, p.un) + '</span></div>' +
@@ -649,7 +666,10 @@ export function renderMisc() {
 
   const swatches = THEMES.map(t =>
     '<button data-theme="' + t[0] + '" aria-pressed="' + (S.theme === t[0]) + '"' +
-    ' style="background:linear-gradient(140deg,' + t[2] + ',' + t[3] + ')" aria-label="' + t[1] + ' theme">' +
+    /* background-image, not the background shorthand: the shorthand resets
+       background-size, and the zoom that makes the cell read as one colour
+       instead of a two-tone tile lives in background-size. */
+    ' style="background-image:linear-gradient(140deg,' + t[2] + ',' + t[3] + ')" aria-label="' + t[1] + ' theme">' +
     '<span class="swname">' + t[1] + '</span></button>').join('');
   setHTML('swatchesSettings', swatches);
   setHTML('swatchesSetup', swatches);
