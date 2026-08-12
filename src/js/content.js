@@ -17,7 +17,7 @@ import * as M from './money.js';
 import { TODAY } from './data.js';
 
 import { dowLabels, dowOffset } from './stats.js';
-import { OUTCOME_ICON, outcomeGroup, ico } from './data.js';
+import { OUTCOME_ICON, outcomeGroup, ico, ALL_BOOKS } from './data.js';
 
 /* ---------- the worked example ----------
    One slip followed end to end, plus the day it settled into. Internally
@@ -207,6 +207,7 @@ const PRIVACY = [
 
 export function renderStatic() {
   renderSections();
+  renderTail();
   setHTML('homeFaq', HOME_FAQ.map(f =>
     '<details class="card faq"><summary>' + esc(f[0]) + '</summary><p>' + esc(f[1]) + '</p></details>').join(''));
   setHTML('helpFaq', HELP_FAQ.map(f =>
@@ -583,6 +584,66 @@ export const SECTIONS = [
     said: 'Same table, <b>50x</b> difference in stake size, and no way to tell which is which.'
   },
   {
+    accent: 'a1',
+    badge: ['i-camera', 'Slip reading'],
+    h: ['Screenshot to ledger,', 'without the typing.'],
+    lede: 'Send the slip and the stake, odds, selection, bookmaker and every leg come off the image. Anything it cannot read is left blank rather than guessed.',
+    rows: [
+      ['i-camera', 'Send anything legible', 'Screenshot, photo, PDF statement or a pasted list.', true],
+      ['i-bolt', 'Every leg, with its own price', 'A fourfold arrives as four selections, not one line.'],
+      ['i-void', 'Blanks, never guesses', 'An unreadable figure comes back empty and says which.']
+    ],
+    ticks: ['Any bookmaker', 'Multiple slips at once',
+            'Every field editable', 'Nothing saved until you confirm'],
+    demo: 'read',
+    said: 'Read live from a bet365 treble: combined price <b>5.86</b>, three legs each with its own odds, and the result left blank because the slip had not settled.'
+  },
+  {
+    accent: 'a2',
+    badge: ['i-chart', 'Football'],
+    h: ['Every league.', 'Matched automatically.'],
+    lede: 'Bets are linked to fixtures across the leagues our sources publish, so the competition and team splits build themselves. No tagging.',
+    rows: [
+      ['i-chart', 'Matched on the name you typed', 'Fuzzy matching handles Wolves and Wolverhampton.', true],
+      ['i-scales', 'Split by competition and market', 'Which leagues pay, and which ones you should leave alone.'],
+      ['i-void', 'One candidate, or it refuses', 'An ambiguous name settles nothing rather than the wrong thing.']
+    ],
+    ticks: ['Five sources, tried in order', 'Fuzzy fixture matching',
+            'Competition and team splits', 'No manual tagging'],
+    demo: 'football',
+    said: 'From one live pull: <b>1,291 fixtures</b> across three days, <b class="up">977</b> with a provable 90 minute score.'
+  },
+  {
+    accent: 'a4',
+    badge: ['i-trophy', 'Racing and tennis'],
+    h: ['Tennis grades.', 'Racing asks you.'],
+    lede: 'Tennis settles from set scores the same way football settles from goals. Racing does not, and we say so rather than guessing at a result we cannot prove.',
+    rows: [
+      ['i-trophy', 'Tennis settles on sets', 'Match winner, set betting and total games.'],
+      ['i-ask', 'Racing comes back to you', 'No feed we trust publishes finishing positions we can prove.', true],
+      ['i-shield', 'Named, not left pending', 'A racing bet says it needs you, so it stops looking unfinished.']
+    ],
+    ticks: ['Tennis fully automatic', 'Racing flagged, never guessed',
+            'Dead heats and retirements ask', 'One tap to settle by hand'],
+    demo: 'racing',
+    said: 'We would rather ship a gap you can see than a number you cannot check. Racing is the gap.'
+  },
+  {
+    accent: 'a3',
+    badge: ['i-telegram', 'Telegram'],
+    h: ['Send it on Telegram.', 'It is tracked.'],
+    lede: 'The bot is the front door, not an add-on. Forward the slip as you place it and it is read, confirmed and logged without opening anything.',
+    rows: [
+      ['i-telegram', 'Forward, do not switch apps', 'The slip is already in Telegram. Share it.', true],
+      ['i-bolt', 'It replies with what it read', 'Check it in the chat and confirm with one tap.'],
+      ['i-refresh', 'The dashboard already has it', 'By the time you open the app the bet is there.']
+    ],
+    ticks: ['Screenshots and text', 'Confirm before anything saves',
+            'Works from the group chat', 'Capture time recorded'],
+    demo: 'telegram',
+    said: 'Placing and logging become the same action. That is the only reason capture at placement survives contact with a Saturday.'
+  },
+  {
     accent: 'a4',
     badge: ['i-bolt', 'Import'],
     h: ['Bring the history', 'you already have.'],
@@ -740,10 +801,110 @@ function sectionDemo(kind) {
         esc(r[0]) + '</b> · ' + esc(r[1]) + '</span><span class="bv ' + r[3] + '">' +
         esc(r[2]) + '</span></div>').join('');
   }
+  if (kind === 'read') {
+    /* The reading the production reader actually returned for a bet365
+       treble, not an invented one. The result is blank because the slip
+       had not settled, which is the behaviour worth showing. */
+    const legs = [['Arsenal', 'Full Time Result', '1.80'],
+                  ['Over 2.5 Goals', 'Total Goals', '2.10'],
+                  ['Bayern Munich -1', 'Asian Handicap', '1.55']];
+    return '<div class="demohead">' + ico('i-camera') + 'bet365 treble, as read</div>' +
+      legs.map(l => '<div class="demobar"><span class="bl"><b style="color:var(--t1)">' +
+        esc(l[0]) + '</b><br>' + esc(l[1]) + '</span><span class="bv">' + l[2] + '</span></div>').join('') +
+      '<div class="demobar"><span class="bl">Combined price</span><span class="bv">5.86</span></div>' +
+      '<div class="demobar"><span class="bl">Result on the slip</span>' +
+        '<span class="bv" style="color:var(--t3)">Left blank</span></div>';
+  }
+  if (kind === 'football') {
+    const rows = [['Premier League', 78, '+£412', 'up'], ['La Liga', 44, '+£186', 'up'],
+                  ['Serie A', 30, '-£94', 'down'], ['Ligue 1', 18, '-£210', 'down']];
+    const max = 78;
+    return '<div class="demohead">' + ico('i-chart') + 'Profit by competition</div>' +
+      rows.map(r => '<div class="demobar ' + r[3] + '"><span class="bl">' + esc(r[0]) +
+        ' · ' + r[1] + ' bets</span><span class="bv ' + r[3] + '">' + esc(r[2]) + '</span>' +
+        '<span class="bt"><i style="--f:' + (r[1] / max).toFixed(2) + '"></i></span></div>').join('');
+  }
+  if (kind === 'racing') {
+    const rows = [['Tennis, match winner', 'Settled', 'up'],
+                  ['Tennis, over 22.5 games', 'Settled', 'up'],
+                  ['14:30 Ascot, each way', 'Needs you', 'down'],
+                  ['15:05 York, win only', 'Needs you', 'down']];
+    return '<div class="demohead">' + ico('i-trophy') + 'What happens to each</div>' +
+      rows.map(r => '<div class="demobar"><span class="bl">' + esc(r[0]) +
+        '</span><span class="bv ' + r[2] + '">' + esc(r[1]) + '</span></div>').join('');
+  }
+  if (kind === 'telegram') {
+    return '<div class="demohead">' + ico('i-telegram') + 'In the chat, 14:32</div>' +
+      '<div class="tgline you">Slip forwarded</div>' +
+      '<div class="tgline bot"><b>Arsenal v Chelsea</b><br>BTTS Yes · 1.90 · £20<br>' +
+        '<span class="tgmeta">Pre-match. Confirm and it is logged.</span></div>' +
+      '<div class="tgline you ok">Confirmed</div>';
+  }
   const rows = [['12 Aug', '-40.50', 'down'], ['11 Aug', '+118.00', 'up'], ['10 Aug', '+26.40', 'up']];
   return '<div class="demohead">' + ico('i-calendar') + 'Read off a profit screen</div>' +
     rows.map(r => '<div class="demobar"><span class="bl">' + esc(r[0]) +
       '</span><span class="bv ' + r[2] + '">' + esc(r[1]) + '</span></div>').join('');
+}
+
+/* ---------- the tail ----------
+ *
+ * The blocks after the sections. Same discipline: nothing here states a
+ * number we have not measured, and the testimonial slot renders nothing
+ * until there are real quotes to put in it.
+ */
+const FEATURES = [
+  ['i-chart', 'Calendar and analytics',
+   'Green days, red days, and profit split by bookmaker, market and tipster.'],
+  ['i-camera', 'Slip reading',
+   'Screenshots, photos, PDFs and pasted lists. Every field editable before it saves.'],
+  ['i-shield', 'Settlement that refuses',
+   'Ninety minutes only. Anything it cannot prove comes back to you.'],
+  ['i-users', 'Groups in units',
+   'Compare with friends without anyone seeing a stake size.'],
+  ['i-telegram', 'Telegram first',
+   'Forward a slip as you place it. The bot is the front door, not an add-on.'],
+  ['i-lock', 'Yours, and deletable',
+   'Export everything as CSV or JSON. Delete the account and it is gone.']
+];
+
+/* Aggregates, not a user count. A user count on a young product either
+   overstates or embarrasses; these are facts about what the thing does. */
+const PROOF = [
+  ['5', 'Results sources', 'tried in order until one answers'],
+  ['299/300', 'Handicaps graded', 'measured against a live feed'],
+  ['274', 'Cup ties refused', 'because 90 minutes could not be proved']
+];
+
+/* EMPTY ON PURPOSE. The benchmark's testimonials work because the quotes
+   are unpolished and unattributed. Inventing three would be the single
+   most obvious lie on the page, and the first thing a reader who has seen
+   a hundred landing pages checks. Put real ones in and the section
+   appears; leave it and nothing renders. */
+const QUOTES = [];
+
+export function renderTail() {
+  /* The bookmakers the reader has actually been run against, from the one
+     list of them, so adding a book in Settings shows up here too. */
+  setHTML('bookStrip', ALL_BOOKS.slice(0, 9).map(b => esc(b)).join(' · '));
+
+  setHTML('featureGrid', FEATURES.map(f =>
+    '<div class="fcard reveal"><span class="ftile" aria-hidden="true">' + ico(f[0]) + '</span>' +
+    '<h3>' + esc(f[1]) + '</h3><p>' + esc(f[2]) + '</p></div>').join(''));
+
+  setHTML('proofStats', PROOF.map(p =>
+    '<div class="pstat"><span class="pv">' + esc(p[0]) + '</span>' +
+    '<span class="pk">' + esc(p[1]) + '</span>' +
+    '<span class="pw">' + esc(p[2]) + '</span></div>').join(''));
+
+  const q = $('quoteWrap');
+  if (q) {
+    q.hidden = !QUOTES.length;
+    if (QUOTES.length) {
+      setHTML('quoteList', QUOTES.map(t =>
+        '<blockquote class="qcard"><span class="qmark" aria-hidden="true">&ldquo;</span>' +
+        esc(t) + '</blockquote>').join(''));
+    }
+  }
 }
 
 export function renderSections() {

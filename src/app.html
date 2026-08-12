@@ -192,6 +192,39 @@
          new section is an entry rather than a block of markup. -->
     <div id="landingSections"></div>
 
+    <!-- A quiet strip of bookmaker names. Not links to pages that do not
+         exist yet: naming the ones the reader has been tested against is
+         the useful half, and inventing twelve thin landing pages to rank
+         for is a content operation, not a product. -->
+    <div class="booktrip reveal">
+      <span class="bookl">Slips read from</span>
+      <span class="booknames" id="bookStrip"></span>
+    </div>
+
+    <!-- FEATURE GRID -->
+    <div class="section snap-point" id="secAll">
+      <p class="eyebrow reveal">Everything in it</p>
+      <h2 class="reveal">Six things, done properly.</h2>
+      <div class="fgrid" id="featureGrid"></div>
+    </div>
+
+    <!-- WHAT WE MEASURED. Aggregates about the product, not a user count:
+         a user count on a young product either overstates or embarrasses,
+         and these are checkable. -->
+    <div class="section snap-point">
+      <p class="eyebrow reveal">Measured, not claimed</p>
+      <h2 class="reveal">Numbers we can show the working for.</h2>
+      <div class="pstats reveal" id="proofStats"></div>
+      <p class="fineprint reveal" style="margin-top:12px">Taken from live runs against the results feeds, not from a spec sheet.</p>
+    </div>
+
+    <!-- Renders nothing until there are real quotes. -->
+    <div class="section snap-point" id="quoteWrap" hidden>
+      <p class="eyebrow reveal">Early feedback</p>
+      <h2 class="reveal">What people actually said.</h2>
+      <div class="qlist reveal" id="quoteList"></div>
+    </div>
+
     <div class="card telegramcta reveal snap-point">
       <div class="glyph" aria-hidden="true"><svg viewBox="0 0 24 24"><use href="#i-telegram"/></svg></div>
       <h2>It is already in your Telegram</h2>
@@ -210,6 +243,25 @@
       <span class="role">Founded by</span>
       <span class="nm"><span translate="no">Zhang et al.</span>
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" role="img" aria-label="Verified"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="M9 12l2 2 4-4"/></svg></span>
+    </div>
+
+    <!-- App store. Honest about which is real: the iOS badge is greyed
+         too, because neither app exists yet and a live-looking badge that
+         goes nowhere is the kind of small lie that costs the rest. -->
+    <div class="stores reveal">
+      <p class="storel">Install it from your browser today. Native apps are coming.</p>
+      <div class="storerow">
+        <span class="storebadge off"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="#i-apple"/></svg><span><small>Coming soon to the</small>App Store</span></span>
+        <span class="storebadge off"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M4 3.5l11 8.5-11 8.5z"/></svg><span><small>Coming soon to</small>Google Play</span></span>
+      </div>
+      <button class="pillbtn link" data-nav="help" style="margin-top:11px">How to install it now</button>
+    </div>
+
+    <!-- FINAL CTA -->
+    <div class="lastcta reveal">
+      <h2>Find out what your record actually says.</h2>
+      <p>Two weeks free, 35 slips, no card. If it tells you something you did not want to hear, that is the product working.</p>
+      <button class="btn primary" data-nav="setup">Start free</button>
     </div>
 
     <div class="footer">
