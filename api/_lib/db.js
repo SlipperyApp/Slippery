@@ -55,7 +55,7 @@ export async function ensureSchema() {
   /* Added after the table shipped, so existing rows need it too. */
   await sql`ALTER TABLE users ADD COLUMN IF NOT EXISTS plan text NOT NULL DEFAULT 'free'`;
   /* When the current plan stops being paid for. NULL means "no end date",
-     which is what a lifetime redemption and a free account both look like —
+     which is what a lifetime redemption and a free account both look like,
      they are told apart by `plan`, never by this. */
   await sql`ALTER TABLE users ADD COLUMN IF NOT EXISTS plan_until timestamptz`;
   await sql`ALTER TABLE users ADD COLUMN IF NOT EXISTS promo_code text`;
@@ -139,7 +139,7 @@ export async function ensureSchema() {
 
   /* A slip read from Telegram, waiting for the user to press Confirm.
      Telegram callbacks carry at most 64 bytes, which is not enough to send
-     a whole reading back — so the reading is parked here and the callback
+     a whole reading back, so the reading is parked here and the callback
      carries only this row's id. Without it the bot's Confirm button had
      nothing to log and the bet was silently dropped. */
   await sql`

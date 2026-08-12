@@ -1,5 +1,5 @@
 /* ============================================================
-   BASE — reset, self-hosted type, and the iOS rules
+   BASE: reset, self-hosted type, and the iOS rules
    ============================================================ */
 @font-face{font-family:'Fraunces';font-style:normal;font-weight:500 700;font-display:swap;
   src:url(/fonts/fraunces.woff2) format('woff2')}
@@ -61,7 +61,7 @@ p{text-wrap:pretty}
    and coloured by currentColor so the semantic tokens reach it. */
 .ico{width:1.15em;height:1.15em;flex:0 0 auto;vertical-align:-.22em}
 
-/* Outcome marker in the compact preview rows — landing card and the bot
+/* Outcome marker in the compact preview rows, landing card and the bot
    chat mock. Same glyphs as the ledger, same semantic colours, smaller. */
 .prevrow-i{
   display:flex;align-items:center;flex:0 0 auto;

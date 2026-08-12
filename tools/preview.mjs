@@ -5,13 +5,13 @@
  * public/index.html is already one file, but it is not portable: the fonts
  * live at /fonts/*.woff2 and the app fetches /api/* on load. Opened from a
  * file:// URL both fail, so you get system fonts and a permanently
- * signed-out shell — which is not what the app looks like.
+ * signed-out shell, which is not what the app looks like.
  *
  * This inlines the fonts as data URIs and installs a fetch shim that
  * answers the API from the same fixtures tools/apistub.mjs uses for the
  * audit. Nothing about the app is changed: the real client code runs, the
  * real session check runs, the real hydrate and render run. Only the
- * network is faked, and only in this copy — it is a viewing artefact and
+ * network is faked, and only in this copy, it is a viewing artefact and
  * is never deployed.
  */
 import { readFile, writeFile } from 'node:fs/promises';
@@ -51,7 +51,7 @@ const shim = (user, bets, extractions) => `
   var reads = 0;
 
   /* Timestamps are baked at build time, so shift them to be relative to
-     whenever the file is opened — otherwise the calendar fills a month
+     whenever the file is opened, otherwise the calendar fills a month
      that has since passed. */
   var built = ${Date.now()};
   var drift = Date.now() - built;
@@ -94,7 +94,7 @@ const shim = (user, bets, extractions) => `
 
     if (url.indexOf('/api/settle') > -1) {
       /* Settle the two plain running bets, leave the one the grader asked
-         about — the realistic shape of an answer. */
+         about, the realistic shape of an answer. */
       var did = 0;
       BETS.forEach(function (b) {
         if (b.status === 'pending' && did < 2) {
@@ -196,7 +196,7 @@ async function main() {
   const at = html.lastIndexOf('<script>');
   html = html.slice(0, at) + shim(USER, BETS, EXTRACTIONS) + html.slice(at);
 
-  html = html.replace('<title>', '<title>Slippery preview — ');
+  html = html.replace('<title>', '<title>Slippery preview, ');
 
   const out = path.join(root, 'slippery-preview.html');
   await writeFile(out, html);
@@ -210,7 +210,7 @@ async function main() {
   const head = html.slice(html.indexOf('<style>'), html.indexOf('</head>'));
   const body = html.slice(html.indexOf('<body>') + 6, html.lastIndexOf('</body>'));
   const page =
-    '<title>Slippery — bet slip tracker</title>\n' +
+    '<title>Slippery, bet slip tracker</title>\n' +
     head +
     /* The app is dark by deliberate choice: a light theme was tried and
        rejected because #86EFAC profit green measures 1.07:1 on beige. The

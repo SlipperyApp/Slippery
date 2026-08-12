@@ -1,7 +1,7 @@
 /* Promo codes.
  *
  * The dates are the part worth testing. A gifted month added to an account
- * that already has one must extend it, not replace it — anything else
+ * that already has one must extend it, not replace it, anything else
  * quietly takes time the person already paid for. And a lifetime code must
  * never produce an end date, because a date in the past is indistinguishable
  * from an expired plan.

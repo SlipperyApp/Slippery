@@ -160,7 +160,7 @@
     letter-spacing:.06em;
     & span{color:var(--s);font-size:15px;font-weight:600}
     /* No opacity here. Fading --t2 to .7 measured 4.31:1 at 12px, which
-       fails AA — a decorative counter still has to be readable. */
+       fails AA, a decorative counter still has to be readable. */
     & em{font-style:normal}}
   & .jack-h{font-family:var(--fd);font-size:clamp(25px,7.4vw,34px);
     line-height:1.1;margin:0 0 10px;letter-spacing:-.02em}

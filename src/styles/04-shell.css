@@ -1,5 +1,5 @@
 /* ============================================================
-   SHELL — header, bottom nav, view transitions
+   SHELL: header, bottom nav, view transitions
    BACKDROP-FILTER BUDGET: exactly two elements in the whole app
    carry one, .topbar and .tabbar, and only one topbar variant is
    ever in the DOM tree at a time. iPhone stutters past ~3.

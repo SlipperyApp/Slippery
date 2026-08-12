@@ -1,4 +1,4 @@
-/* GET /api/auth/me — who the session cookie belongs to. */
+/* GET /api/auth/me, who the session cookie belongs to. */
 import { json, methodGuard, fail } from '../_lib/http.js';
 import { configured, ensureSchema } from '../_lib/db.js';
 import { sessionUser } from '../_lib/auth.js';
@@ -29,7 +29,7 @@ export default async function handler(req, res) {
        once every ten minutes per user so a reload does not re-scrape, and it
        is deliberately not awaited: the session must return immediately, and
        the ledger request that follows a moment later picks up whatever
-       landed. A failed lookup is invisible here and that is correct — the
+       landed. A failed lookup is invisible here and that is correct, the
        refresh button reports properly when someone asks explicitly. */
     settleQuietly(req, user).catch(() => { /* never blocks the session */ });
 

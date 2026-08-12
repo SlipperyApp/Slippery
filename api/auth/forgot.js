@@ -1,8 +1,8 @@
-/* POST /api/auth/forgot — start a password reset.
+/* POST /api/auth/forgot, start a password reset.
  *
  * Answers the same way whether or not the account exists. The form is public
  * and unauthenticated, so a different answer for "no such account" turns this
- * endpoint into a way to test whether an address is registered — on a
+ * endpoint into a way to test whether an address is registered, on a
  * gambling product, that is a genuinely harmful thing to leak.
  */
 import { json, methodGuard, readJson, clientIp, fail } from '../_lib/http.js';

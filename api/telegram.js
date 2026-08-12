@@ -1,4 +1,4 @@
-/* POST /api/telegram — the bot webhook.
+/* POST /api/telegram, the bot webhook.
  *
  * Register once with:
  *   curl -X POST "https://api.telegram.org/bot<TOKEN>/setWebhook" \
@@ -10,7 +10,7 @@
  * endpoint refuses rather than trusting whatever arrives.
  *
  * Telegram retries any update it does not get a 200 for, so this always
- * answers 200 once the update is authentic — a failure is reported to the
+ * answers 200 once the update is authentic, a failure is reported to the
  * user in chat, not by failing the webhook into a retry loop.
  */
 import { timingSafeEqual } from 'node:crypto';
@@ -18,7 +18,7 @@ import { json, methodGuard, readJson, fail } from './_lib/http.js';
 import { db, ensureSchema, configured as dbConfigured } from './_lib/db.js';
 import { cashOutcome } from '../src/js/settlement.js';
 
-/* The free tier, counted here as well as in /api/bets — the bot is a second
+/* The free tier, counted here as well as in /api/bets, the bot is a second
    door into the same ledger, and a limit enforced at only one door is not a
    limit. */
 const FREE_SLIPS = 20;
@@ -34,7 +34,7 @@ export default async function handler(req, res) {
     if (!token) return json(res, 503, { error: 'Bot token not configured.' });
     /* Without a secret the webhook URL is guessable and anyone could post a
        forged update. That is a real risk, but a bot that refuses every
-       message is not a bot — so it runs, loudly, and every path below still
+       message is not a bot, so it runs, loudly, and every path below still
        requires the chat to be linked to an account before it touches the
        ledger. Set TELEGRAM_WEBHOOK_SECRET and this stops being permissive. */
     if (!secret) {
@@ -69,7 +69,7 @@ export default async function handler(req, res) {
        quiet and leaving the person wondering if it is broken. */
     await send(token, chatId,
       'Send me a *photo or screenshot of a bet slip* and I will read it.\n\n' +
-      'Forward it the moment you place the bet, not after it settles — that is the ' +
+      'Forward it the moment you place the bet, not after it settles, that is the ' +
       'whole point of Slippery.\n\n/help for what else I can do.');
     return json(res, 200, { ok: true });
   } catch (err) {
@@ -109,11 +109,11 @@ async function handleCommand(token, chatId, text, from) {
         '*What I do*\n' +
         'Send a slip photo and I read it, then ask you to confirm.\n\n' +
         '*Commands*\n' +
-        '/start — what this bot is\n' +
-        '/link CODE — connect this chat to your account\n' +
-        '/today — today\'s profit and loss\n' +
-        '/pending — bets still running\n' +
-        '/stop — pause every message from me\n\n' +
+        '/start, what this bot is\n' +
+        '/link CODE, connect this chat to your account\n' +
+        '/today, today\'s profit and loss\n' +
+        '/pending, bets still running\n' +
+        '/stop, pause every message from me\n\n' +
         'I never guess at a number I cannot read. If a slip is blurred I will ' +
         'ask for a clearer photo rather than invent a stake.');
       break;
@@ -140,7 +140,7 @@ async function handleCommand(token, chatId, text, from) {
         const risk = rows.reduce((a, b) => a + b.stake_pence, 0);
         await send(token, chatId,
           '*' + rows.length + ' running*, ' + money(risk, false) + ' at risk\n\n' +
-          rows.map(r => '· ' + esc(r.selection || 'Bet') + ' — ' +
+          rows.map(r => '· ' + esc(r.selection || 'Bet') + ', ' +
             money(r.stake_pence, false) + ' at ' + Number(r.odds).toFixed(2)).join('\n'));
       });
       break;
@@ -241,7 +241,7 @@ async function handleSlip(token, chatId, message, from) {
   ].join('\n');
 
   /* Where the bet is in its life. Read off the slip, never inferred from
-     the presence of a returns figure — every slip prints one. */
+     the presence of a returns figure, every slip prints one. */
   const stageLine = f.stage === 'settled' ? '\nAlready settled on the slip.'
     : f.stage === 'inplay' ? '\nIn play. I will settle it at full time.'
     : f.stage === 'prematch' ? '\nNot started. I will settle it at full time.'
@@ -309,7 +309,7 @@ async function handleCallback(token, callback) {
 
 /* Turn a parked reading into a real bet. The one place the bot writes to
    the ledger, so it is the one place the free tier and the settled-slip
-   rules have to hold — and they are the same rules /api/bets applies. */
+   rules have to hold, and they are the same rules /api/bets applies. */
 async function confirmDraft(token, chatId, draftId, from) {
   if (!dbConfigured()) {
     await send(token, chatId, 'This deployment has no database yet, so I cannot log that.');
@@ -375,7 +375,7 @@ async function confirmDraft(token, chatId, draftId, from) {
       : 'Logged. It is on your calendar now, and I will settle it when the game finishes.');
   } catch (err) {
     console.error('[slippery] confirmDraft failed:', err.message);
-    await send(token, chatId, 'Something went wrong saving that. Nothing was logged — try again.');
+    await send(token, chatId, 'Something went wrong saving that. Nothing was logged, try again.');
   }
 }
 

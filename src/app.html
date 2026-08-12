@@ -98,7 +98,7 @@
        version safe is that the scrollbar never lies: the track really is
        340svh tall, the stage is `position:sticky` inside it, and scroll
        progress maps to `--p`. Flicking hard still carries you straight
-       through — nothing is intercepted, nothing is animated on a timer,
+       through, nothing is intercepted, nothing is animated on a timer,
        and prefers-reduced-motion drops the whole thing to three stacked
        cards. -->
   <div class="jack" id="jack" aria-label="How a slip becomes a settled bet">
@@ -142,7 +142,7 @@
 
         <div class="jack-copy">
           <!-- Progress. Each segment fills with its own scene's presence, so
-               the rail is the same number the scenes are reading — there is
+               the rail is the same number the scenes are reading, there is
                no second source of truth to drift. -->
           <div class="jack-rail" aria-hidden="true">
             <span class="jack-tick"><i></i></span>
@@ -157,7 +157,7 @@
                scenes are decorative, so one summary is the whole story. -->
           <div class="jack-sum">
             <h2>Three beats, one slip.</h2>
-            <p>You place the bet and forward the slip. Slippery lifts the stake, odds, selection and bookmaker off the image. At full time it grades the bet on the 90-minute score and lands it on your calendar — and anything ambiguous asks you rather than guessing.</p>
+            <p>You place the bet and forward the slip. Slippery lifts the stake, odds, selection and bookmaker off the image. At full time it grades the bet on the 90-minute score and lands it on your calendar, and anything ambiguous asks you rather than guessing.</p>
           </div>
         </div>
       </div>
@@ -437,7 +437,7 @@
         <div class="stepglyph" aria-hidden="true"><svg viewBox="0 0 24 24"><use href="#i-telegram"/></svg></div>
         <h2>Connect Telegram</h2>
         <p class="stepnote">Forward slips and they land here.</p>
-        <p class="linkcode" translate="no" id="linkCode">—</p>
+        <p class="linkcode" translate="no" id="linkCode">Not linked yet</p>
         <button class="btn primary full" id="telegramLink">Open Telegram and link</button>
         <div class="livedot" id="telegramLinked" hidden><i aria-hidden="true"></i><span>Linked</span></div>
       </div>
@@ -497,7 +497,7 @@
 
 <!-- ══════════════ PAYMENT ══════════════
      Where "change plan" and every plan button lands. Card payments need a
-     payment processor account, which is the owner's to open — so this page
+     payment processor account, which is the owner's to open, so this page
      is honest about that rather than showing a card form that goes nowhere.
      A promo code is a real payment path and works here in full. -->
 <section class="view" id="pay" aria-label="Payment">
@@ -776,34 +776,54 @@
       <p>Slips can be read, but nothing can be saved until <code id="backendNeeds">DATABASE_URL</code>
         is set. Your ledger will be empty until then.</p>
     </div>
+    <!-- ONE import.
+         Upload and Other were two tabs asking the same question in two
+         places: a slip went in the first, a spreadsheet in the second, and
+         a screenshot from another tracker fitted neither. There is now one
+         drop zone that takes anything and works out what it got, so nobody
+         has to classify their own file before they can hand it over. -->
     <div class="seg" id="importSeg" role="group" aria-label="Import method" style="margin-bottom:13px">
-      <button class="on" data-import="importUpload" aria-pressed="true">Upload</button>
+      <button class="on" data-import="importUpload" aria-pressed="true">Add bets</button>
       <button data-import="importTotals" aria-pressed="false">Type totals</button>
-      <button data-import="importOther" aria-pressed="false">Other</button>
     </div>
 
     <div id="importUpload">
       <button class="card dropzone" id="dropzone" type="button">
         <span class="glyph" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 16V4M7 9l5-5 5 5M4 20h16"/></svg></span>
-        <span class="t">Drop a slip here, or tap to choose</span>
-        <span class="s">Screenshot, photo or PDF. For a CSV of past bets, use Type totals or Other.</span>
+        <span class="t">Drop anything here, or tap to choose</span>
+        <span class="s">Slip screenshots, photos, PDFs, a CSV export, or a profit screen from another tracker. Slippery works out which it is.</span>
       </button>
-      <label class="sr" for="slipFile">Choose a slip image</label>
-      <input type="file" id="slipFile" accept="image/png,image/jpeg,image/webp,image/heic,image/heif,application/pdf" multiple hidden>
+      <label class="sr" for="slipFile">Choose slips, statements or a spreadsheet</label>
+      <input type="file" id="slipFile" accept="image/png,image/jpeg,image/webp,image/heic,image/heif,application/pdf,.csv,.tsv,.txt,text/csv,text/tab-separated-values,text/plain" multiple hidden>
+
+      <details class="disclose pastebox">
+        <summary>Or paste a list of bets</summary>
+        <p class="fineprint" style="margin:3px 0 9px">Typed notes, a message from a friend, rows copied
+          out of a spreadsheet. Anything with a stake and a price in it.</p>
+        <label class="sr" for="pasteBets">Paste your bets</label>
+        <textarea class="field pastearea" id="pasteBets" rows="5" placeholder="Arsenal v Chelsea, over 2.5, £25 at 1.85, bet365&#10;Sirius v Djurgarden, over 2.5, £100 at 1.90, won"></textarea>
+        <button class="btn ghost full" id="pasteGo" style="margin-top:9px">Read these bets</button>
+      </details>
+
       <div id="uploadResults"></div>
-      <div class="quadstat">
-        <div><div class="k">Ready</div><div class="v" id="readyCount">0</div></div>
-        <div><div class="k">Needs you</div><div class="v" style="color:var(--a)" id="retakeCount">0</div></div>
-        <div><div class="k">Staked</div><div class="v m" id="importStaked">—</div></div>
-        <div><div class="k">Profit</div><div class="v m" id="importProfit">—</div></div>
+      <div id="csvReport"></div>
+
+      <!-- The review summary.
+           It used to be four numbers with no units and no time frame:
+           "Profit" mixed the potential return of an open bet with the
+           settled profit of a graded one, so the figure was never true of
+           anything. Each line now says what it is counting and over what. -->
+      <div class="reviewbar" id="reviewBar" hidden>
+        <div class="reviewline"><span class="k">Ready to add</span><span class="v" id="readyCount">0</span></div>
+        <div class="reviewline"><span class="k">Still needs a number</span><span class="v warn" id="retakeCount">0</span></div>
+        <div class="reviewline"><span class="k">Staked across them</span><span class="v m" id="importStaked">None</span></div>
+        <div class="reviewline" id="reviewProfitLine"><span class="k" id="importProfitLabel">If they all win</span><span class="v m" id="importProfit">None</span></div>
       </div>
-      <p class="eyebrow" style="margin:16px 0 9px">Review</p>
-      <div id="reviewList"></div>
     </div>
 
     <div id="importTotals" hidden>
       <div class="card pad">
-        <div class="cardhead"><span class="title">Type your totals</span><span class="meta" id="totalsSummary">—</span></div>
+        <div class="cardhead"><span class="title">Type your totals</span><span class="meta" id="totalsSummary">None yet</span></div>
         <p class="fineprint" style="margin-bottom:11px">Pick the period you have figures for.</p>
         <div class="seg" id="totalsSeg" role="group" aria-label="Totals period">
           <button data-totals="day">Daily</button><button data-totals="week">Weekly</button>
@@ -812,24 +832,6 @@
         <div class="totalsgrid" id="totalsGrid"></div>
         <button class="btn primary full" id="totalsSave" style="margin-top:13px">Add these totals</button>
       </div>
-    </div>
-
-    <div id="importOther" hidden>
-      <div class="card pad">
-        <div class="cardhead"><span class="title">Bring across a spreadsheet</span></div>
-        <p class="fineprint" style="margin:9px 0 12px">A CSV or TSV exported from your bookmaker
-          or another tracker. Column names are matched automatically. Anything that cannot be
-          read is listed by line rather than imported as a zero.</p>
-        <button class="dropzone" id="otherDrop" type="button">
-          <span class="glyph" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6M9 15h6"/></svg></span>
-          <span class="t">Drop a CSV here, or tap to choose</span>
-          <span class="s">Also accepts TSV and semicolon-separated exports</span>
-        </button>
-        <label class="sr" for="csvFile">Choose a CSV of past bets</label>
-        <input type="file" id="csvFile" accept=".csv,.tsv,.txt,text/csv,text/tab-separated-values,text/plain" hidden>
-        <div id="csvReport"></div>
-      </div>
-    </div>
     </div>
 
     <button class="card" data-nav="howto" style="display:flex;align-items:center;gap:11px;padding:13px;margin-top:16px;width:100%;text-align:left;border-color:rgba(var(--orb2),.3);background:rgba(var(--orb2),.08)">

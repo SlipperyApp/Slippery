@@ -411,7 +411,7 @@ export function settle(bet, fx) {
    drop out and the odds recalculate on the survivors.
 
    A quarter-line leg that half wins or half loses splits the stake, which
-   has no single agreed treatment inside an acca — bookmakers differ on
+   has no single agreed treatment inside an acca, bookmakers differ on
    whether the split applies to the leg or the whole slip. Rather than pick
    one and be wrong for half our users, we ask. */
 export function settleMulti(bet, fxDefault) {
@@ -461,7 +461,7 @@ export function settleMulti(bet, fxDefault) {
            reason: detail.join(' | ') + (voided ? ' (' + voided + ' void leg dropped)' : '') };
 }
 
-/* A user cash out. Never inferred from a feed — always an explicit action,
+/* A user cash out. Never inferred from a feed, always an explicit action,
    because no results API can tell you someone took the money early. */
 export function settleCashOut(bet, returnedPence) {
   const profit = roundPence(returnedPence) - bet.stakePence;

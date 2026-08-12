@@ -128,7 +128,7 @@ test('matching survives club suffixes and punctuation on the slip', () => {
 
 test('refuses to match when only one team is present', () => {
   assert.equal(matchFixture('Arsenal to win', fixtures), null,
-    'one team is not enough — settling against the wrong game is unrecoverable');
+    'one team is not enough, settling against the wrong game is unrecoverable');
 });
 
 test('refuses to match an unrelated event', () => {

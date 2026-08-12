@@ -1,4 +1,4 @@
-/* POST /api/promo — redeem a code against the signed-in account.
+/* POST /api/promo, redeem a code against the signed-in account.
  *
  * Redemption is a server act, always. A code that unlocked the plan in the
  * browser would unlock it for anyone who read the JavaScript, and the whole

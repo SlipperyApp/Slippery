@@ -97,7 +97,7 @@ export function sendMail(opts) {
   });
 }
 
-/* The bare address out of "Name <a@b>" — SMTP envelope commands take only
+/* The bare address out of "Name <a@b>", SMTP envelope commands take only
    the address, while the From: header keeps the display name. */
 function address(value) {
   const m = /<([^>]+)>/.exec(String(value || ''));

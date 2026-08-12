@@ -1,5 +1,5 @@
 /* ============================================================
-   SKY — the living background, behind every screen
+   SKY: the living background, behind every screen
    ============================================================
    Rules this layer obeys, all of them non-negotiable:
      · transform and opacity only. Nothing animates width, height,
@@ -15,7 +15,7 @@
   background:var(--bg);
   transition:background var(--ts) var(--ez);
   /* isolate paint and layout so nothing in here can invalidate app content.
-     Deliberately NOT contain:strict — that adds size containment, which on a
+     Deliberately NOT contain:strict, that adds size containment, which on a
      fixed inset:0 layer is a footgun for no gain. */
   contain:layout paint style;
 }
@@ -78,7 +78,7 @@
   transform:translate3d(0,var(--parallax,0px),0)}
 
 /* Inner: the drift. The blur is INSIDE the SVG, not a CSS filter on this
-   element — a live filter is recomputed every scroll frame and cost 30fps;
+   element, a live filter is recomputed every scroll frame and cost 30fps;
    a pre-blurred background is rasterised once and only composited after. */
 .sky-band-in{
   position:absolute;inset:0;will-change:transform;

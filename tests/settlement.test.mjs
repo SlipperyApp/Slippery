@@ -2,7 +2,7 @@
  *
  * Every rule in the locked list in CLAUDE.md has at least one test here.
  * If you change the engine and one of these goes red, the engine is wrong,
- * not the test — check with the owner before touching the expectation.
+ * not the test, check with the owner before touching the expectation.
  *
  * Money is integer pence throughout. £100.00 is 10000.
  */
@@ -305,7 +305,7 @@ test('always ask: an unreadable selection asks rather than guessing', () => {
 });
 
 test('always ask: "Match result" with no side named cannot be graded', () => {
-  /* The slip says only "Match result" — we do not know which team was backed. */
+  /* The slip says only "Match result", we do not know which team was backed. */
   assert.equal(settle(bet('Match result'), FT(2, 1)).status, 'ask');
 });
 

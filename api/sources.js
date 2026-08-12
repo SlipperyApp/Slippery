@@ -1,4 +1,4 @@
-/* GET /api/sources — what this deployment can actually reach.
+/* GET /api/sources, what this deployment can actually reach.
  *
  * Every results source here is a scraper, and scrapers are blocked by IP
  * reputation rather than by policy: ESPN and SofaScore both refuse the
@@ -7,7 +7,7 @@
  * ask.
  *
  * Read-only, no secrets echoed, no database touched. It reports which
- * environment variables are present as booleans — never their values.
+ * environment variables are present as booleans, never their values.
  */
 import { json, methodGuard, fail } from './_lib/http.js';
 import { configured as dbConfigured } from './_lib/db.js';

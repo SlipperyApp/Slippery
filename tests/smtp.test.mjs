@@ -89,7 +89,7 @@ test('a dot-leading line inside the body survives into a part', () => {
   assert.ok(m.includes('..leading dot'), 'body parts must be stuffed too');
 });
 
-test('the subject is on one line — a newline would inject a header', () => {
+test('the subject is on one line, a newline would inject a header', () => {
   /* Header injection: a newline in a user-controlled subject would let the
      rest of the string become headers of its own. The subject here is
      built from a six-digit code, but the property is worth holding. */

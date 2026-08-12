@@ -3,7 +3,7 @@
  * Three callers want exactly this: the refresh button (POST /api/settle),
  * the sign-in check (GET /api/auth/me), and the daily sweep, which runs it
  * per user. Writing it once means there is one grader, one matching rule and
- * one set of pence — three copies of this would eventually disagree, and a
+ * one set of pence, three copies of this would eventually disagree, and a
  * ledger that disagrees with itself is the failure this product cannot have.
  *
  * The engine is src/js/settlement.js, the same module the browser holds.
@@ -47,7 +47,7 @@ export async function settleForUser(userId) {
 
   /* Anything the sweep did not match gets one direct lookup each. A sweep
      only sees the days and competitions it pulled, so a bet outside that
-     window would otherwise stay pending forever — indistinguishable from
+     window would otherwise stay pending forever, indistinguishable from
      "still running", and the more annoying of the two failures. */
   const unmatched = pending.filter(b => !feed.matchFixture(b.event, fixtures));
   const extra = unmatched.length

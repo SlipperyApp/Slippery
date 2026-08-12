@@ -1,4 +1,4 @@
-/* Auth primitives. No database needed — these are the pure parts, and they
+/* Auth primitives. No database needed, these are the pure parts, and they
  * are the parts where a mistake is a security bug rather than a bug. */
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
@@ -73,7 +73,7 @@ test('link codes avoid the characters people misread', () => {
   for (let i = 0; i < 300; i++) {
     const code = linkCode();
     assert.match(code, /^SLIP-[A-HJ-NP-Z2-9]{4}$/,
-      'no I, O, 0 or 1 — these get read aloud and typed wrong');
+      'no I, O, 0 or 1, these get read aloud and typed wrong');
   }
 });
 
@@ -95,7 +95,7 @@ test('email validation rejects what it should', () => {
 
 /* Eight characters, on the owner's instruction. Composition still applies:
    length alone at 8 is weak, and a capital plus a symbol is what keeps the
-   floor above a dictionary word. The upper bound is not cosmetic — scrypt is
+   floor above a dictionary word. The upper bound is not cosmetic, scrypt is
    memory-hard by design, so an unbounded password is a way to make the
    server do arbitrary work per request. */
 test('password policy is 8 characters, with a capital and a symbol', () => {
@@ -118,7 +118,7 @@ test('display name policy', () => {
 /* Log in with either.
    The rule is exact rather than heuristic: nameProblem allows letters,
    numbers and underscores only, so a string containing @ can only ever have
-   been meant as an email — including a malformed one, which should be told
+   been meant as an email, including a malformed one, which should be told
    it is a bad email rather than treated as a username that does not exist. */
 test('an identifier is a username or an email, decided by the @', async () => {
   const { identifierProblem, looksLikeEmail } = await import('../api/_lib/auth.js');

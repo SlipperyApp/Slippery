@@ -2,7 +2,7 @@
  *
  * There is no demo dataset any more. LEDGER, PENDING and the aggregates
  * start empty and are filled by hydrate() from GET /api/bets. Every figure
- * the app shows is computed from those records — nothing downstream
+ * the app shows is computed from those records, nothing downstream
  * fabricates a number, and an empty ledger renders as an honest empty
  * state rather than as somebody else's numbers.
  *
@@ -34,8 +34,8 @@ export const OUTCOME_LABEL = {
   'cash-profit': 'Cashed out', 'cash-loss': 'Cashed out', 'cash-flat': 'Cashed out'
 };
 /* Sprite ids, not emoji. An emoji rasterises from the system font, so it
-   cannot take #86EFAC or #FCA5A5 — the two colours the brief fixes as
-   semantic — and it renders differently on every platform. These are
+   cannot take #86EFAC or #FCA5A5, the two colours the brief fixes as
+   semantic, and it renders differently on every platform. These are
    decorative; every row also carries OUTCOME_LABEL as real text, because
    an icon alone is not a label. */
 export const OUTCOME_ICON = {
@@ -81,7 +81,7 @@ export let PENDING = [];
 export let DAY_TOTALS = {};
 
 /* Totals for the years that predate the account, brought across as
-   aggregates by the Import flow. Zeroed for a new account — this is the
+   aggregates by the Import flow. Zeroed for a new account, this is the
    one place the old build invented a figure, and it must not do so again:
    all time is exactly the ledger plus whatever the user actually imported. */
 export let IMPORTED = { profit: 0, turnover: 0, bets: 0, won: 0, lost: 0, cash: 0, years: [] };
@@ -115,7 +115,7 @@ export function setImported(totals) {
 }
 export function setMe(user) { ME = user || null; }
 
-/** Add one bet without refetching the world — used after a confirm. */
+/** Add one bet without refetching the world, used after a confirm. */
 export function addBet(row) {
   const b = fromApi(row);
   (b.outcome ? LEDGER : PENDING).unshift(b);

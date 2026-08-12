@@ -1,4 +1,4 @@
-/* POST /api/auth/verify — confirm the six digit code, then sign in. */
+/* POST /api/auth/verify, confirm the six digit code, then sign in. */
 import { json, methodGuard, readJson, clientIp, fail } from '../_lib/http.js';
 import { db, ensureSchema, configured } from '../_lib/db.js';
 import { guard } from '../_lib/rate.js';

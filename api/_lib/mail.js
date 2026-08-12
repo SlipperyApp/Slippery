@@ -12,7 +12,7 @@
  *     issue one.
  *   · Roughly 500 messages a day, and the From address is forced to the
  *     account's own. MAIL_FROM may set the display name but not a different
- *     address — Gmail rewrites it, so a mismatched one just looks odd in
+ *     address, Gmail rewrites it, so a mismatched one just looks odd in
  *     the recipient's client.
  */
 import { sendMail } from './smtp.js';
@@ -71,7 +71,7 @@ async function send(to, subject, text, html) {
     })
   });
   if (!res.ok) {
-    /* Log the status, never the body — it echoes the recipient address. */
+    /* Log the status, never the body, it echoes the recipient address. */
     const err = new Error('Could not send the verification email.');
     err.statusCode = 502;
     console.error('[slippery] resend responded', res.status);

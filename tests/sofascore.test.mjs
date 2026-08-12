@@ -2,8 +2,8 @@
  *
  * The live endpoint refuses datacenter IPs, so these run against recorded
  * payload shapes rather than the network. That is the right trade: what can
- * actually go wrong here is the MAPPING — feeding the grader a score that
- * includes extra time, or settling against the wrong game — and a mapping
+ * actually go wrong here is the MAPPING, feeding the grader a score that
+ * includes extra time, or settling against the wrong game, and a mapping
  * bug is fully reproducible offline. Reachability is a deploy-time concern
  * and is handled by the fallback in fixtures.js.
  */

@@ -4,7 +4,7 @@
  * These are the marketing surfaces, and they are seen by people with no
  * account and therefore no data. They used to read the signed-in ledger,
  * which meant a visitor saw an empty sparkline and a crash where a sample
- * slip should be. They now run on SAMPLE below — a fixed, self-contained
+ * slip should be. They now run on SAMPLE below, a fixed, self-contained
  * example, labelled as one on screen.
  *
  * The rule that matters: SAMPLE never reaches the app. The dashboard, the
@@ -245,7 +245,7 @@ function renderHeroHeading() {
 }
 
 function renderPreview() {
-  /* A worked example, not the visitor's numbers — they have none yet, and
+  /* A worked example, not the visitor's numbers, they have none yet, and
      inventing some would be the exact dishonesty this product exists to
      stop. The card says "Example" on it. */
   setText('previewNet', M.signed(SAMPLE.monthNet));
@@ -282,7 +282,7 @@ function renderBotChat() {
   const pad = (s, n) => (s + '                    ').slice(0, n);
   setHTML('botChat',
     /* What you forward is the bookmaker's PLACED receipt. Capture happens
-       before the result exists — that is the locked core idea, and a
+       before the result exists, that is the locked core idea, and a
        preview showing a forwarded winner teaches the opposite habit. */
     '<div class="bubble outgoing" style="padding:0;overflow:hidden;width:66%"><div style="background:#fff;color:#0b1220;padding:12px">' +
     '<div style="color:#1e293b;font-weight:700;font-size:11px;letter-spacing:.08em">BET PLACED</div>' +
@@ -340,15 +340,15 @@ function renderMigrateOptions() {
    This replaces a fake video player with a scrubber, a clock and six
    chapters: there was nothing to play, so the controls were decoration
    that made the reader wait for information a screenshot gives instantly.
-   It is also one page instead of three — the Telegram preview and the
+   It is also one page instead of three, the Telegram preview and the
    landing section told the same story. */
 const STEPS = [
   ['Place the bet, then forward the slip',
-   'Screenshot your bookmaker\'s confirmation and send it to the bot. Pre-match, in-play or already settled — all three work, and capturing at placement is what stops a tracker quietly becoming a highlight reel.'],
+   'Screenshot your bookmaker\'s confirmation and send it to the bot. Pre-match, in-play or already settled, all three work, and capturing at placement is what stops a tracker quietly becoming a highlight reel.'],
   ['Slippery reads it',
    'Stake, odds, selection, bookmaker and every leg come off the image. Anything it cannot read is left blank for you to type rather than guessed at.'],
   ['It tracks and settles itself',
-   'Standard markets grade on the 90-minute score as soon as the result is in. Anything ambiguous — a bet builder, an abandoned game, a quarter-line inside an acca — comes back to you instead of being guessed.'],
+   'Standard markets grade on the 90-minute score as soon as the result is in. Anything ambiguous, a bet builder, an abandoned game, a quarter-line inside an acca, comes back to you instead of being guessed.'],
   ['Your calendar fills in',
    'Every settled day turns green or red, scaled by how big the day was. Tap a day to see the slips behind the number, or switch to the whole year.'],
   ['See what actually pays',

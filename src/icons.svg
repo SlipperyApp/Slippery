@@ -1,5 +1,5 @@
 <!-- ============================================================
-     ICON SPRITE — every glyph the site uses, defined once.
+     ICON SPRITE: every glyph the site uses, defined once.
      ============================================================
      Inlined by build.mjs as the first element in <body>, so a
      <use href="#i-won"> anywhere in the document resolves without a
@@ -11,7 +11,7 @@
        · Strokes are 1.9 with round caps and joins. Fills are
          currentColor. Nothing carries its own colour, because the
          outcome glyphs must take #86EFAC and #FCA5A5 from the
-         semantic tokens rather than approximating them — which is
+         semantic tokens rather than approximating them, which is
          exactly what the emoji they replaced could not do.
        · Never rely on an emoji for meaning: emoji rasterise from the
          system font, so they ignore the theme, ignore the semantic

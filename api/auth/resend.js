@@ -1,4 +1,4 @@
-/* POST /api/auth/resend — issue a fresh verification code. */
+/* POST /api/auth/resend, issue a fresh verification code. */
 import { json, methodGuard, readJson, clientIp, fail } from '../_lib/http.js';
 import { db, ensureSchema, configured } from '../_lib/db.js';
 import { guard } from '../_lib/rate.js';

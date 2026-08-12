@@ -21,7 +21,7 @@ export function currency() { return _cur; }
 
 /** £123.45 from 12345 */
 export function money(pence) { return _fmt2.format(pence / 100); }
-/** £123 from 12345, no decimals — for compact stats */
+/** £123 from 12345, no decimals, for compact stats */
 export function money0(pence) { return _fmt0.format(Math.abs(pence) / 100); }
 /** −£123 from -12345, signed, no decimals */
 export function money0s(pence) {
@@ -39,7 +39,7 @@ export function signed(pence) {
 export function tone(pence) {
   return pence > 0 ? 'pos' : pence < 0 ? 'neg' : 'mut';
 }
-/** +1.94u — profit expressed in the user's unit stake */
+/** +1.94u, profit expressed in the user's unit stake */
 export function units(pence, unitPence) {
   const v = unitPence ? pence / unitPence : 0;
   return (v > 0 ? '+' : v < 0 ? '−' : '') + Math.abs(v).toFixed(2) + 'u';

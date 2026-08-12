@@ -1,7 +1,7 @@
 /* ============================================================
    TOKENS
    Themes only ever change hue. Profit green and loss red are
-   semantic and identical in every theme — locked by the brief.
+   semantic and identical in every theme, locked by the brief.
    No theme accent may sit near either, which is why there is no
    green or red theme.
    ============================================================ */
@@ -39,7 +39,7 @@
   --fu:'Schibsted Grotesk',system-ui,-apple-system,sans-serif;
   --fm:'Spline Sans Mono',ui-monospace,Menlo,monospace;
 
-  /* rhythm — everything is a multiple of 4 */
+  /* rhythm, everything is a multiple of 4 */
   --r:16px;
   --r-sm:10px;
   --r-lg:22px;

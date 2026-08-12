@@ -2,7 +2,7 @@
  *
  * Anyone arriving with a betting history has it as a spreadsheet export,
  * and every bookmaker and tracker names its columns differently. This maps
- * whatever it is given onto the one bet shape, and — the important part —
+ * whatever it is given onto the one bet shape, and, the important part,
  * reports what it could not map rather than silently dropping rows.
  *
  * The rule from the settlement engine applies here too: a wrong figure is
@@ -33,7 +33,7 @@ const norm = h => String(h || '').toLowerCase().replace(/[^a-z0-9]/g, '');
 
 /* ---------- the parser ----------
    Hand-written rather than a dependency, because the only hard parts are
-   quoted fields containing commas, doubled quotes inside them, and CRLF —
+   quoted fields containing commas, doubled quotes inside them, and CRLF,
    and every real export has all three. */
 export function parseDelimited(text, delimiter) {
   const rows = [];
@@ -60,7 +60,7 @@ export function parseDelimited(text, delimiter) {
 }
 
 /** Guess the delimiter from the header line. Tabs and semicolons are as
-    common as commas — a European Excel export uses semicolons. */
+    common as commas, a European Excel export uses semicolons. */
 export function sniffDelimiter(text) {
   const first = String(text || '').split(/\r?\n/)[0] || '';
   const counts = [[',', 0], [';', 0], ['\t', 0], ['|', 0]];

@@ -3,7 +3,7 @@
  * Held in memory only. iOS Safari in Lockdown Mode and in private windows
  * throws on localStorage access, and the brief rules it out outright, so
  * nothing here is persisted client-side. Real persistence is the server's
- * job — see api/_lib/db.js.
+ * job, see api/_lib/db.js.
  */
 import { TODAY } from './data.js';
 
@@ -53,7 +53,7 @@ export const S = {
 
 /** Day and week periods need a focused day. Without one the old build
     fell through to whole-month figures while labelling them as a single
-    date — "Net on 31 Jul" showing the entire August total. */
+    date, "Net on 31 Jul" showing the entire August total. */
 export function periodNeedsFocus(p) { return p === 'd' || p === 'w'; }
 export function canUsePeriod(p) {
   if (!periodNeedsFocus(p)) return true;

@@ -1,4 +1,4 @@
-/* /api/bets — the user's ledger.
+/* /api/bets, the user's ledger.
  *
  *   GET    /api/bets                list every bet, newest first
  *   POST   /api/bets                log one (a confirmed slip, or manual)
@@ -129,7 +129,7 @@ async function create(req, res, user, body) {
 
   /* A slip can be forwarded before kick-off, in play, or after it settled.
      Only the third carries a result, and only a result the slip actually
-     stated — never one inferred here. Everything else lands pending and the
+     stated, never one inferred here. Everything else lands pending and the
      results lookup grades it. */
   const settledNow = body.outcome && body.profitPence != null;
   const outcome = settledNow ? importOutcome(body) : null;
@@ -186,8 +186,8 @@ async function createMany(req, res, user, rows) {
   });
   if (!good.length) return json(res, 400, { error: 'No row in that file could be imported.', rejected });
 
-  /* An imported row may already be settled — that is the point of importing
-     history — so outcome and profit come across with it. Anything without a
+  /* An imported row may already be settled, that is the point of importing
+     history, so outcome and profit come across with it. Anything without a
      result lands as pending and the sweep will grade it. */
   let inserted = 0;
   for (const b of good) {
@@ -229,7 +229,7 @@ async function update(res, user, body) {
   let outcome, profit;
   if (body.kind === 'cash') {
     /* Cash out. The user tells us what they actually took, and the outcome
-       follows from that against the stake — cash-profit, cash-loss or
+       follows from that against the stake, cash-profit, cash-loss or
        cash-flat. It is never inferred from a result. */
     const returned = Math.round(Number(body.returnedPence));
     if (!Number.isFinite(returned) || returned < 0) {
@@ -239,7 +239,7 @@ async function update(res, user, body) {
     outcome = cashOutcome(profit);
   } else if (body.kind === 'won' || body.kind === 'lost' || body.kind === 'void') {
     if (bet.odds == null) return json(res, 400, { error: 'That bet has no odds to settle against.' });
-    /* payoutFor returns the total RETURNED, stake included — profit is the
+    /* payoutFor returns the total RETURNED, stake included, profit is the
        difference. Going through the engine rather than reimplementing the
        arithmetic is the point: a hand-settled bet and an auto-settled one
        cannot then disagree by a penny. */

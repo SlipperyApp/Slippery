@@ -1,4 +1,4 @@
-/* POST /api/settle — settle this user's running bets, on demand.
+/* POST /api/settle, settle this user's running bets, on demand.
  *
  * The scheduled sweep in results.js does the same job for everybody every
  * twenty minutes. This is the button: someone whose game has just finished
@@ -8,7 +8,7 @@
  * expose. The sweep is cron-secret protected because it reads every pending
  * bet in the database; this only ever touches the caller's own.
  *
- * The engine is the same one the browser uses — src/js/settlement.js,
+ * The engine is the same one the browser uses, src/js/settlement.js,
  * imported directly. There is no second grader to drift out of sync, and
  * everything it returns as {status:'ask'} is left for the user with the
  * reason recorded rather than guessed at.
@@ -32,12 +32,15 @@ export default async function handler(req, res) {
     /* The feed is rate limited and this is a button someone can hold down.
        Six checks in five minutes is generous for a human and useless for a
        script. */
-    if (!(await limit('settle:' + user.id, 6, 300))) {
+    /* limit() answers {allowed, retryAfter}. Testing the object is always
+       true, so neither of these limits was doing anything at all, and the
+       button was a way to hammer the scrapers as fast as a finger moves. */
+    if (!(await limit('settle:' + user.id, 6, 300)).allowed) {
       return json(res, 429, {
-        error: 'You checked a moment ago. Results come in on their own too — give it a minute.'
+        error: 'You checked a moment ago. Results come in on their own too, give it a minute.'
       });
     }
-    if (!(await limit('settle-ip:' + clientIp(req), 40, 300))) {
+    if (!(await limit('settle-ip:' + clientIp(req), 40, 300)).allowed) {
       return json(res, 429, { error: 'Too many checks from this connection.' });
     }
 
@@ -45,7 +48,7 @@ export default async function handler(req, res) {
       const result = await settleForUser(user.id);
       return json(res, 200, result);
     } catch (err) {
-      /* Every source refused, or the lookup broke. Say so plainly — the
+      /* Every source refused, or the lookup broke. Say so plainly, the
          bets are fine, the lookup is not, and reporting "nothing settled"
          would be a lie about the ledger rather than about the network. */
       return json(res, 503, {

@@ -11,7 +11,7 @@
  * THE IMPORTANT PART: football-data.org reports `fullTime` INCLUDING extra
  * time on knockout ties. The engine settles on 90 minutes only, so the
  * 90-minute score is reported separately and left undefined when the feed
- * cannot prove it — which makes the engine ask instead of settling on a score
+ * cannot prove it, which makes the engine ask instead of settling on a score
  * that includes extra time. That is the single most valuable line in here.
  */
 
@@ -24,7 +24,7 @@ export function configured() { return true; }
 /* Static imports, deliberately.
  *
  * These were `await import(source.module)` with the path in a variable, and
- * Vercel's file tracer only follows literal specifiers — so espn.js was
+ * Vercel's file tracer only follows literal specifiers, so espn.js was
  * never bundled and production answered
  *   Cannot find module '/var/task/api/_lib/espn.js'
  * while sofascore.js worked, because one line elsewhere imported it by
@@ -48,7 +48,7 @@ import * as footballdatauk from './footballdatauk.js';
  * free tier cannot, and so it sits last and mostly returns "ask".
  *
  * All of these are blocked by IP reputation rather than by policy, and each
- * host gets a different answer — ESPN and SofaScore both refuse this
+ * host gets a different answer, ESPN and SofaScore both refuse this
  * development machine. That is precisely why it is a chain and why
  * /api/sources exists: production can be asked directly.
  *
@@ -75,7 +75,7 @@ const SOURCES = [
  * SofaScore first when asked for, because it publishes the 90-minute score
  * on knockout ties and football-data.org does not. But it sits behind a bot
  * filter that refuses datacenter IPs, which is what a serverless function
- * has — so a 403 falls back to football-data.org rather than returning an
+ * has, so a 403 falls back to football-data.org rather than returning an
  * empty day and leaving every bet pending. Falling back is the difference
  * between "settled a bit later than ideal" and "silently stopped settling".
  */
@@ -90,7 +90,7 @@ export async function resolveFinished(dateFrom, dateTo) {
       }
       tried.push(source.name + ': no fixtures');
     } catch (err) {
-      /* Blocked is the expected failure — these are scrapers and they are
+      /* Blocked is the expected failure, these are scrapers and they are
          blocked by IP reputation, which differs per host. Record it and try
          the next one rather than giving up on settlement entirely. */
       tried.push(source.name + ': ' + (err.blocked ? 'blocked' : err.message));
@@ -157,7 +157,7 @@ export async function lookupEach(eventTexts, cap = 8) {
    OCR'd in ASCII ("BODO GLIMT") while the feed uses the real spelling
    ("Bodø/Glimt"); without this the two never match and every Norwegian,
    Danish and Icelandic fixture silently stays pending. NFD alone does not
-   fix it — ø, æ, å and ð are distinct letters, not accented vowels. */
+   fix it, ø, æ, å and ð are distinct letters, not accented vowels. */
 const NON_DECOMPOSING = { 'ø': 'o', 'æ': 'ae', 'å': 'a', 'ð': 'd', 'þ': 'th', 'ł': 'l', 'đ': 'd', 'ı': 'i', 'ß': 'ss' };
 
 export function foldName(s) {

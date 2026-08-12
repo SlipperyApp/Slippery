@@ -4,13 +4,13 @@
  * football-data.org's free tier reports `fullTime` INCLUDING extra time and
  * does not expose a regular-time score, so every knockout tie that went past
  * 90 minutes had to come back as {status:'ask'}. SofaScore publishes period
- * scores — `homeScore.normaltime` is the score at 90 minutes — which is
+ * scores, `homeScore.normaltime` is the score at 90 minutes, which is
  * exactly the number the settlement rules are written against. That turns a
  * whole class of "ask" into a correct automatic grade.
  *
  * TWO THINGS TO KNOW BEFORE RELYING ON IT:
  *   1. This is an undocumented endpoint behind an aggressive bot filter.
- *      Datacenter IPs — which is what a Vercel function has — are refused
+ *      Datacenter IPs, which is what a Vercel function has, are refused
  *      with a 403 and a JSON body, not a challenge page. It was 403 from
  *      every host tried during development. So this provider is written to
  *      fail loudly and cheaply, and `fixtures.js` falls back to
@@ -27,7 +27,7 @@ import { foldName } from './fixtures.js';
 
 const BASE = 'https://api.sofascore.com/api/v1';
 
-/* A browser-shaped request. Not an attempt to defeat the bot filter — it is
+/* A browser-shaped request. Not an attempt to defeat the bot filter, it is
    the minimum that makes the endpoint answer at all for a legitimate
    client, and it is what a support request would be asked for. */
 const HEADERS = {
@@ -47,8 +47,8 @@ export function configured() {
 }
 
 /* SofaScore reports both a coarse `status.type` and a fine `status.code`.
-   The code is what carries the distinction the settlement rules turn on —
-   whether a finish was inside 90 minutes — so it is what we map. Anything
+   The code is what carries the distinction the settlement rules turn on,
+   whether a finish was inside 90 minutes, so it is what we map. Anything
    unrecognised deliberately falls through to UNKNOWN, which the engine
    treats as "do not settle", because a wrong grade is worse than no grade. */
 const CODES = {
@@ -86,7 +86,7 @@ export function normalise(ev) {
   };
 
   /* `current` is the headline score and, on a knockout tie, includes extra
-     time — the same trap football-data.org sets. It is recorded as hg/ag
+     time, the same trap football-data.org sets. It is recorded as hg/ag
      because some markets legitimately use it, but 90-minute settlement
      never reads it. */
   if (num(H.current) && num(A.current)) { fixture.hg = H.current; fixture.ag = A.current; }

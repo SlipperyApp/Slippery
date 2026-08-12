@@ -40,10 +40,22 @@ async function toBase64(file) {
 export async function extractSlip(file) {
   const small = await downscale(file);
   const b64 = await toBase64(small);
+  return read({ image: b64, mime: small.type || 'image/jpeg' });
+}
+
+/* The same reader, given text instead of a picture. A list someone typed
+   into their notes is a betting record as much as a screenshot is, and
+   refusing it because it is not an image would send them to a spreadsheet
+   they do not have. */
+export async function readText(text) {
+  return read({ text });
+}
+
+async function read(payload) {
   const res = await fetch('/api/extract', {
     method: 'POST',
     headers: { 'content-type': 'application/json' },
-    body: JSON.stringify({ image: b64, mime: small.type || 'image/jpeg' })
+    body: JSON.stringify(payload)
   });
   const body = await res.json().catch(() => ({}));
   if (!res.ok) throw new Error(body.error || ('Reader returned ' + res.status));

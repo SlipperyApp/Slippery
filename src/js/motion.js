@@ -10,7 +10,7 @@
  *   · Everything animated lives inside .sky, which is overflow:hidden and
  *     contain:strict. An uncontained decorative layer once caused 47px of
  *     horizontal scroll on mobile.
- *   · prefers-reduced-motion disables the loop entirely — CSS drops the
+ *   · prefers-reduced-motion disables the loop entirely, CSS drops the
  *     keyframes, and this file never installs the scroll listener.
  */
 import { $, $$, RM } from './dom.js';
@@ -39,7 +39,7 @@ function measureJack() {
 }
 
 /* Presence of a scene whose beat centre is `c`, given progress `p`.
-   One beat either side, clamped — so exactly one scene is solid at each
+   One beat either side, clamped, so exactly one scene is solid at each
    snap point and neighbours cross-fade between them. */
 const clamp = (v, lo, hi) => v < lo ? lo : v > hi ? hi : v;
 
@@ -57,7 +57,7 @@ function paintJack(y) {
 }
 
 /* The caption is text, so it cannot cross-fade on the compositor the way
-   the scenes do. Fade it out, swap, fade it back — 200ms each way, which
+   the scenes do. Fade it out, swap, fade it back, 200ms each way, which
    is short enough not to lag the scene behind it. */
 function swapCaption(scene) {
   jack.scene = scene;

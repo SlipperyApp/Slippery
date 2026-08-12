@@ -1,4 +1,4 @@
-/* POST /api/admin/reset — wipe accounts, so beta testing can reuse addresses.
+/* POST /api/admin/reset, wipe accounts, so beta testing can reuse addresses.
  *
  * Signing up burns an email and a display name permanently: both are UNIQUE,
  * and the partial index only frees them when the row is actually gone. During
@@ -7,7 +7,7 @@
  *
  * IT IS DESTRUCTIVE AND IT IS NOT UNDOABLE. Three things stand in front of
  * it, and none of them is optional:
- *   · ADMIN_SECRET must be set on the deployment. Unset, the route refuses —
+ *   · ADMIN_SECRET must be set on the deployment. Unset, the route refuses,
  *     it does not fall back to anything.
  *   · The secret is sent as a header, never a query string, because query
  *     strings land in access logs and browser history.
@@ -83,7 +83,7 @@ export default async function handler(req, res) {
 
     /* accounts: everything. Users cascade to bets, slips, drafts, sessions,
        verification codes, resets and redemptions, so one statement is the
-       whole job — but rate_limits has no user_id and would otherwise keep a
+       whole job, but rate_limits has no user_id and would otherwise keep a
        fresh signup locked out of the flow it just cleared. */
     const users = await sql`DELETE FROM users RETURNING 1`;
     await sql`DELETE FROM rate_limits`;

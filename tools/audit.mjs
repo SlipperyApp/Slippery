@@ -139,6 +139,34 @@ async function main() {
       return [...seen.entries()].filter(([, n]) => n > 1).map(([id, n]) => id + ' x' + n);
     });
     dupes.forEach(d => fail('duplicate-id', d));
+
+    /* ── no em dashes in anything anyone reads ──────────────────
+       The owner asked for them gone sitewide. Copy gets edited, so a
+       one-off find and replace does not hold; this reads the rendered
+       text of every view, with every list built, and names the offender.
+       Only rendered text: settlement.js and csv.js still MATCH an em dash
+       on the way in, because other people's slips and spreadsheets are
+       full of them. */
+    const emdash = await page.evaluate(() => {
+      const found = [];
+      const walk = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT);
+      for (let n = walk.nextNode(); n; n = walk.nextNode()) {
+        /* Script and style are not read by anyone. The bundle legitimately
+           contains an em dash: settlement.js normalises one out of a
+           selection string, and csv.js treats a lone one as an empty cell. */
+        const tag = n.parentElement && n.parentElement.tagName;
+        if (tag === 'SCRIPT' || tag === 'STYLE') continue;
+        if (n.nodeValue.includes('\u2014')) found.push(n.nodeValue.trim().slice(0, 70));
+      }
+      document.querySelectorAll('[placeholder],[aria-label],[title]').forEach(el => {
+        for (const a of ['placeholder', 'aria-label', 'title']) {
+          const v = el.getAttribute(a);
+          if (v && v.includes('\u2014')) found.push(a + '="' + v.slice(0, 60) + '"');
+        }
+      });
+      return found;
+    });
+    emdash.slice(0, 12).forEach(t => fail('em-dash', t));
     await page.close();
   }
 
@@ -175,7 +203,7 @@ async function main() {
         return { over, culprits: culprits.slice(0, 6) };
       });
       if (res.over > 0) {
-        fail('h-overflow', width + 'px / ' + v + ': ' + res.over + 'px — ' + (res.culprits.join(' | ') || 'no element found'));
+        fail('h-overflow', width + 'px / ' + v + ': ' + res.over + 'px, ' + (res.culprits.join(' | ') || 'no element found'));
       }
     }
     await page.close();
@@ -257,7 +285,7 @@ async function main() {
     if (reach.total < 5) fail('keyboard', 'only ' + reach.total + ' focusable controls found on the landing page');
 
     /* The skip link must be the first thing a keyboard reaches, and it must
-       become visible when focused — an invisible skip link is no skip link.
+       become visible when focused, an invisible skip link is no skip link.
        Driven through the DOM rather than a synthetic Tab, because a headless
        page may not hold window focus and the press then goes nowhere. */
     const skip = await page.evaluate(() => {
@@ -369,7 +397,7 @@ async function main() {
     });
     if (running > 0) fail('reduced-motion', running + ' animations still running under prefers-reduced-motion');
 
-    /* The pinned sequence must not merely animate less — it must stop
+    /* The pinned sequence must not merely animate less, it must stop
        pinning. Someone who asked the OS for less motion should not be
        made to scroll three viewport heights through a stuck stage. */
     const jack = await page.evaluate(() => {
@@ -396,12 +424,12 @@ async function main() {
   }
 
   /* ── delegated selectors cannot match <html> or <body> ────────
-     One bare attribute selector in the click handler — [data-theme] —
+     One bare attribute selector in the click handler, [data-theme],
      matched every click in the document, because the theme lives on
      <html data-theme>. closest() walked up to it, the branch returned, and
      every branch declared after it became dead code: the signup wizard's
      Continue button, the unit row, the import tabs, both dropzones and
-     Confirm on an imported slip. It is a silent failure — nothing throws,
+     Confirm on an imported slip. It is a silent failure, nothing throws,
      the click just quietly does the wrong thing.
 
      This reads the source rather than the page, because that is where the
@@ -424,7 +452,7 @@ async function main() {
       return bad;
     }, selectors);
     for (const b of reachesRoot) {
-      fail('delegation', b + ' — closest() will match it for every click, ' +
+      fail('delegation', b + ', closest() will match it for every click, ' +
         'and this branch returns, so every branch after it is dead');
     }
     await page.close();
@@ -432,7 +460,7 @@ async function main() {
 
   /* ── the app survives an opaque origin ────────────────────────
      WebKit throws SecurityError from pushState whenever the page has an
-     opaque origin — a file:// URL, a sandboxed iframe, and the capacitor://
+     opaque origin, a file:// URL, a sandboxed iframe, and the capacitor://
      scheme an App Store wrapper would use. Chromium tolerates it, which is
      exactly why this shipped: the routing threw inside go(), after the view
      classes were toggled but before reveal(), so the page half-rendered into
@@ -467,7 +495,7 @@ async function main() {
     });
     if (errors.length) fail('opaque-origin', 'threw where the URL cannot be changed: ' + errors[0]);
     if (state.view !== 'dash') fail('opaque-origin', 'did not reach the dashboard, stopped on ' + state.view);
-    if (!state.rows) fail('opaque-origin', 'the ledger rendered no rows — init aborted');
+    if (!state.rows) fail('opaque-origin', 'the ledger rendered no rows, init aborted');
 
     /* And navigation still works without the URL following it. */
     await page.evaluate(() => { const b = document.querySelector('[data-nav="imp"]'); if (b) b.click(); });
@@ -542,7 +570,7 @@ async function main() {
     });
     if (await step() !== '0') fail('signup', 'setup did not open on the first step');
 
-    /* Continue with an empty form must NOT advance — that is the validation
+    /* Continue with an empty form must NOT advance, that is the validation
        working, and it is also how we know the click is being handled at
        all rather than silently swallowed. */
     await page.evaluate(() => document.getElementById('authGo').click());
@@ -550,7 +578,7 @@ async function main() {
     if (await step() !== '0') fail('signup', 'an empty form advanced past step 0');
     const flagged = await page.evaluate(() =>
       !document.getElementById('suEmailErr').hidden);
-    if (!flagged) fail('signup', 'Continue on an empty form neither advanced nor complained — ' +
+    if (!flagged) fail('signup', 'Continue on an empty form neither advanced nor complained, ' +
       'the click is being swallowed before it reaches the handler');
 
     await page.evaluate(() => {
@@ -659,7 +687,7 @@ async function main() {
 
   /* ── import actually imports ──────────────────────────────────
      The complaint that started this was "I can't import". Confirm used to
-     be a toast and a fade — the card collapsed, the counters moved, and
+     be a toast and a fade, the card collapsed, the counters moved, and
      nothing was ever stored. So the check is not that the UI reacts, it is
      that a POST leaves the browser with the right body. */
   {
@@ -698,7 +726,7 @@ async function main() {
 
     await page.evaluate(() => { const b = document.querySelector('[data-confirm-slip]'); if (b) b.click(); });
     await page.waitForTimeout(600);
-    if (!posted.length) fail('import', 'Confirm did not POST the bet — the slip was never saved');
+    if (!posted.length) fail('import', 'Confirm did not POST the bet, the slip was never saved');
     else {
       const b = posted[0];
       if (b.stakePence !== 2500) fail('import', 'POSTed stakePence ' + b.stakePence + ', expected 2500');
@@ -713,7 +741,7 @@ async function main() {
     });
     await page.waitForTimeout(700);
     const gated = await page.evaluate(() => {
-      const cards = document.querySelectorAll('#uploadResults .card');
+      const cards = document.querySelectorAll('#uploadResults .slipcard');
       const c = cards[cards.length - 1];
       const btn = c && c.querySelector('[data-confirm-slip]');
       return { disabled: btn ? btn.disabled : null, ready: c && c.dataset.ready };
@@ -721,7 +749,7 @@ async function main() {
     if (gated.disabled !== true) fail('import', 'Confirm was enabled on a slip with no stake');
 
     await page.evaluate(() => {
-      const cards = document.querySelectorAll('#uploadResults .card');
+      const cards = document.querySelectorAll('#uploadResults .slipcard');
       const c = cards[cards.length - 1];
       const input = c.querySelector('[data-slip="stake"]');
       input.value = '40.00';
@@ -729,7 +757,7 @@ async function main() {
     });
     await page.waitForTimeout(200);
     const fixed = await page.evaluate(() => {
-      const cards = document.querySelectorAll('#uploadResults .card');
+      const cards = document.querySelectorAll('#uploadResults .slipcard');
       const c = cards[cards.length - 1];
       return { ready: c.dataset.ready, stake: c.dataset.stake,
                disabled: c.querySelector('[data-confirm-slip]').disabled };
@@ -738,10 +766,10 @@ async function main() {
       fail('import', 'typing the missing stake did not unlock Confirm');
     if (fixed.stake !== '4000') fail('import', 'typed stake became ' + fixed.stake + ', expected 4000 pence');
 
-    /* And the CSV path. */
-    await page.evaluate(() => { const b = document.querySelector('[data-import="importOther"]'); if (b) b.click(); });
-    await page.waitForTimeout(200);
-    await page.setInputFiles('#csvFile', {
+    /* And the spreadsheet path, through the SAME drop zone. Upload and
+       Other were two tabs asking the same question in two places; a CSV now
+       goes into the one input and is recognised by its own extension. */
+    await page.setInputFiles('#slipFile', {
       name: 'history.csv', mimeType: 'text/csv',
       buffer: Buffer.from(
         'Date,Event,Selection,Bookmaker,Odds,Stake,Profit\n' +
@@ -769,7 +797,7 @@ async function main() {
     });
     await page.waitForTimeout(700);
     const settledCard = await page.evaluate(() => {
-      const cards = document.querySelectorAll('#uploadResults .card');
+      const cards = document.querySelectorAll('#uploadResults .slipcard');
       const c = cards[cards.length - 1];
       return { stage: c.dataset.stage, result: c.dataset.result, returns: c.dataset.returns,
                note: (c.querySelector('.slipstage') || {}).textContent };
@@ -781,7 +809,7 @@ async function main() {
 
     const beforeSettled = posted.length;
     await page.evaluate(() => {
-      const cards = document.querySelectorAll('#uploadResults .card');
+      const cards = document.querySelectorAll('#uploadResults .slipcard');
       const b = cards[cards.length - 1].querySelector('[data-confirm-slip]');
       if (b) b.click();
     });
@@ -795,8 +823,54 @@ async function main() {
         fail('import', 'settled slip POSTed profit ' + sent.profitPence + ' pence, expected 7655');
     }
 
+    /* A double, with a price on each leg AND a combined price.
+       The old card had one Selection box and one Odds box, so a two-leg
+       slip lost the leg prices entirely and the user had to decide which of
+       the two selections to type. Both legs are editable, and correcting
+       one recomputes what the ledger will be told. */
+    await page.setInputFiles('#slipFile', {
+      name: 'double.jpg', mimeType: 'image/jpeg', buffer: Buffer.from('a-double')
+    });
+    await page.waitForTimeout(700);
+    const double = await page.evaluate(() => {
+      const cards = document.querySelectorAll('#uploadResults .slipcard');
+      const c = cards[cards.length - 1];
+      return {
+        legs: c.querySelectorAll('.slipleg').length,
+        legOdds: [...c.querySelectorAll('[data-leg-field="odds"]')].map(i => i.value),
+        total: c.querySelector('[data-slip="odds"]').value,
+        selection: c.dataset.selection,
+        count: (c.querySelector('.slipcount') || {}).textContent
+      };
+    });
+    if (double.legs !== 2) fail('import', 'a two-leg slip rendered ' + double.legs + ' legs');
+    if (double.legOdds.join(',') !== '1.20,1.17')
+      fail('import', 'leg prices came through as ' + double.legOdds.join(','));
+    if (double.total !== '1.40') fail('import', 'the combined price came through as ' + double.total);
+    if (!/&/.test(double.selection || ''))
+      fail('import', 'the legs were not joined into one selection: ' + double.selection);
+    if (double.count !== '1') fail('import', 'bet count in the corner read ' + double.count);
+
+    /* Correcting a leg price must be noticed. The legs multiplying to
+       something other than the combined price is how a mistyped leg shows
+       itself, and it is a note rather than a block because bookmakers round
+       and system bets do not multiply at all. */
+    await page.evaluate(() => {
+      const cards = document.querySelectorAll('#uploadResults .slipcard');
+      const i = cards[cards.length - 1].querySelector('[data-leg-field="odds"]');
+      i.value = '3.50';
+      i.dispatchEvent(new Event('input', { bubbles: true }));
+    });
+    await page.waitForTimeout(200);
+    const drifted = await page.evaluate(() => {
+      const cards = document.querySelectorAll('#uploadResults .slipcard');
+      const h = cards[cards.length - 1].querySelector('.sliphint');
+      return h && !h.hidden ? h.textContent : '';
+    });
+    if (!/multiply/.test(drifted))
+      fail('import', 'a leg price that disagrees with the combined price was not flagged');
+
     const before = posted.length;
-    await page.evaluate(() => { const b = document.querySelector('[data-import="importOther"]'); if (b) b.click(); });
     await page.evaluate(() => { const b = document.getElementById('csvGo'); if (b) b.click(); });
     await page.waitForTimeout(600);
     const bulk = posted.slice(before).find(b => Array.isArray(b.bets));
@@ -889,7 +963,7 @@ async function main() {
     console.log('');
     process.exit(1);
   }
-  console.log('  audit   clean: no overflow, no axe violations, no console errors, no duplicate ids');
+  console.log('  audit   clean: no overflow, no axe violations, no console errors,\n          no duplicate ids, no em dashes');
   console.log('  shots   tools/screens/');
 }
 

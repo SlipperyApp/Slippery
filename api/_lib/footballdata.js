@@ -1,7 +1,7 @@
 /* football-data.org, the last link in the chain.
  *
  * It is the only source here with an API key and a published contract, which
- * makes it the reliable one — but its free tier reports `fullTime` INCLUDING
+ * makes it the reliable one, but its free tier reports `fullTime` INCLUDING
  * extra time and does not expose a regular-time score. So on any tie that
  * went past 90 minutes it can only tell the engine to ask. That is why it
  * sits behind the scrapers rather than in front of them.
@@ -58,7 +58,7 @@ export function normalise(match) {
      football-data.org's `fullTime` on a knockout tie is the score AFTER extra
      time, and `regularTime` is not on the free tier. So when the match went
      beyond 90 minutes we mark it AET and deliberately do NOT supply ft90h /
-     ft90a — the engine then returns {status:'ask'} rather than settling a
+     ft90a, the engine then returns {status:'ask'} rather than settling a
      "90 minutes only" market on a score that includes extra time.
      Do not be tempted to derive a 90-minute score from halfTime; it is only
      the first half. */

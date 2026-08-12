@@ -1,4 +1,4 @@
-/* POST /api/auth/reset — finish a password reset and sign in.
+/* POST /api/auth/reset, finish a password reset and sign in.
  *
  * Signing in on success is deliberate: someone who has just proved control of
  * the mailbox and set a new password has done everything a login would ask

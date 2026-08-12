@@ -3,7 +3,7 @@
  * This is the gate between an OCR reading and a permanent financial record.
  * It rejects what is structurally impossible rather than what looks unusual:
  * a £2 bet at 501.0 is rare and real, a £2 bet at 0.4 is not a bet at all.
- * Getting that distinction wrong in either direction is a bug — one loses
+ * Getting that distinction wrong in either direction is a bug, one loses
  * real bets, the other corrupts the ledger with values the grader cannot
  * reason about.
  */
@@ -45,7 +45,7 @@ test('long-shot odds are accepted, absurd ones are not', () => {
   assert.notEqual(betProblem(ok({ odds: 100000 })), '', 'that is a misread, not a price');
 });
 
-test('odds may be absent — a bet can be logged before the price is legible', () => {
+test('odds may be absent, a bet can be logged before the price is legible', () => {
   assert.equal(betProblem(ok({ odds: null })), '');
   assert.equal(betProblem(ok({ odds: undefined })), '');
 });

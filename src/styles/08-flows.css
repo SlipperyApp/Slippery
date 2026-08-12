@@ -1,5 +1,5 @@
 /* ============================================================
-   FLOWS — landing, setup, walkthrough, import, settings, legal
+   FLOWS: landing, setup, walkthrough, import, settings, legal
    ============================================================ */
 .hero{
   text-align:center;padding:34px 0 0;position:relative;
@@ -104,7 +104,7 @@
   & ul{list-style:none;margin:14px 0;display:flex;flex-direction:column;gap:9px}
   & li{display:flex;gap:9px;font-size:13px;
     & svg{width:15px;height:15px;color:var(--pos);flex:0 0 auto;margin-top:2px}}}
-/* "Everything in monthly, plus:" — the line that makes the ladder legible.
+/* "Everything in monthly, plus:", the line that makes the ladder legible.
    Without it the three feature lists read as three unrelated sets and the
    yearly price looks like it buys less than it does. */
 .planadds{font-size:11.5px;color:var(--t2);margin-top:13px;
@@ -242,7 +242,7 @@
 /* walkthrough player */
 /* ---------- the how-it-works guide ----------
    Five steps, each a heading and the panel it describes. Static, so there
-   is nothing to press and nothing to wait for — the reader gets the whole
+   is nothing to press and nothing to wait for, the reader gets the whole
    story by scrolling, and can screenshot any step of it. */
 .guide{list-style:none;counter-reset:none;display:flex;flex-direction:column;gap:26px;margin:0;padding:0}
 .guidestep{
@@ -291,19 +291,27 @@
   & .glyph{width:46px;height:46px;border-radius:50%;background:var(--c2);
     display:grid;place-items:center;margin:0 auto 11px;
     & svg{width:20px;height:20px;color:var(--s)}}
-  /* Both are spans, so they need to be told to stack — inline they ran
+  /* Both are spans, so they need to be told to stack, inline they ran
      together as one sentence. */
   & .t{display:block;font-weight:600;font-size:15px}
   & .s{display:block;font-size:12.5px;color:var(--t2);margin-top:4px}}
 
-.quadstat{
-  display:grid;grid-template-columns:1fr 1fr;gap:1px;background:var(--e1);
+/* The review summary, one labelled line each.
+   It was a four-cell grid of bare numbers: "Profit" over a figure that
+   added the potential return of an open bet to the settled profit of a
+   graded one. Rows carry their own wording now, so the number always says
+   what it counts. */
+.reviewbar{
   border:1px solid var(--e1);border-radius:13px;overflow:hidden;margin:14px 0;
-  &>div{background:rgba(18,25,40,.88);padding:13px}
-  & .k{font-size:10.5px;color:var(--t2)}
-  & .v{font-weight:700;font-size:18px;margin-top:3px;
-    font-variant-numeric:tabular-nums lining-nums}}
-@media (min-width:560px){.quadstat{grid-template-columns:repeat(4,1fr)}}
+  background:rgba(18,25,40,.88)}
+.reviewline{
+  display:flex;align-items:baseline;justify-content:space-between;gap:12px;
+  padding:11px 14px;
+  &+&{border-top:1px solid var(--e2)}
+  & .k{font-size:12.5px;color:var(--t2);line-height:1.4}
+  & .v{font-weight:700;font-size:16px;flex:0 0 auto;
+    font-variant-numeric:tabular-nums lining-nums;
+    &.warn{color:var(--a)}}}
 
 .readout{
   display:grid;grid-template-columns:repeat(3,1fr);gap:12px 8px;margin:12px 0;padding:12px 0;
@@ -312,31 +320,82 @@
   & .v{font-family:var(--fm);font-weight:600;font-size:13px;margin-top:4px;
     font-variant-numeric:tabular-nums lining-nums}}
 
-/* An extracted slip, as editable fields. Every value the reader lifted is
-   correctable, and one it could not read is an empty box rather than a dead
-   end — retyping a stake beats rephotographing a slip. */
-.slipgrid{
-  display:grid;grid-template-columns:1fr 1fr;gap:9px;margin:12px 0;
-  & > label:nth-child(-n+2){grid-column:1/-1}
-}
+/* An extracted slip, drawn as a slip.
+   Six stacked labelled inputs did not look like the thing in the
+   photograph, so checking a reading meant comparing two different layouts
+   field by field. This mirrors the screenshot instead: bookmaker at the
+   top, bet count in the corner, one row per leg with that leg's own price
+   beside it, stake and combined price along the bottom. Every value stays
+   correctable, and one the reader could not make out is an empty box rather
+   than a dead end, retyping a stake beats rephotographing a slip. */
+.slipcard{padding:0;overflow:hidden}
+.sliphead{
+  display:flex;align-items:center;justify-content:space-between;gap:10px;
+  padding:13px 15px;border-bottom:1px solid var(--e2);
+  background:linear-gradient(180deg,rgba(var(--orb1),.1),transparent)}
+.slipbook{font-weight:650;font-size:14.5px;letter-spacing:-.01em;
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+/* The number in the corner of a real slip: how many bets it holds. */
+.slipcount{
+  flex:0 0 auto;min-width:26px;height:26px;padding:0 8px;border-radius:9px;
+  display:grid;place-items:center;font-family:var(--fm);font-size:12.5px;font-weight:600;
+  background:rgba(var(--orb1),.18);border:1px solid rgba(var(--orb1),.4);color:var(--s);
+  font-variant-numeric:tabular-nums lining-nums;
+  &.warn{background:rgba(245,158,11,.14);border-color:rgba(245,158,11,.45);color:var(--a)}}
+
+.sliplegs{padding:4px 15px 0}
+.slipleg{
+  padding:11px 0;
+  &+&{border-top:1px dashed var(--e2)}}
+.slipleg-top{display:flex;gap:8px;margin-bottom:7px}
+/* The slip's own input size.
+   NOT .field.compact: that one is width:auto, right-aligned and monospaced,
+   because it exists for the single money box in a settings row. Applied
+   here it made every selection sit right-aligned in a 100px box with the
+   event name clipped, which is the opposite of reading like a slip.
+   16px minimum on all of them: anything smaller and iOS zooms the page on
+   focus and never zooms back out. */
+.slipin{
+  width:100%;font-size:16px;padding:9px 11px;min-height:42px;border-radius:10px}
+.slipin.m{font-family:var(--fm);text-align:right;
+  font-variant-numeric:tabular-nums lining-nums}
+.slipleg-sel{flex:1 1 auto;min-width:0;font-weight:550}
+.slipleg-odds{flex:0 0 78px;width:78px}
+.slipleg-ev{color:var(--t2)}
+.slipaddleg{margin:0 15px 4px}
+
+.slipfoot{display:flex;gap:9px;padding:11px 15px 0;
+  &:first-of-type{border-top:1px solid var(--e2);padding-top:12px;margin-top:6px}}
+.slipfoot-cell{
+  flex:1 1 0;min-width:0;
+  & span{display:block;font-size:9.5px;color:var(--t2);letter-spacing:.05em;
+    text-transform:uppercase;margin-bottom:4px}
+  & input{width:100%;font-size:16px}}
+.sliphint{margin:9px 15px 0;font-size:11.5px;color:var(--a);line-height:1.5}
+.sliptotal{margin:11px 15px 0;font-size:12.5px;color:var(--t2);
+  font-variant-numeric:tabular-nums lining-nums}
+
 /* Where the bet is in its life, stated on the review card so nobody is
    surprised that an unsettled slip shows no profit yet. */
 .slipstage{
-  margin:0 0 4px;font-size:12px;line-height:1.5;
+  margin:9px 15px 0;font-size:12px;line-height:1.5;
   display:flex;align-items:center;gap:7px;
   &::before{content:"";width:7px;height:7px;border-radius:50%;flex:0 0 auto}
   &.ok{color:var(--t2);&::before{background:var(--pos)}}
-  &.warn{color:var(--t2);&::before{background:var(--a)}}
-}
-.slipfield{
-  display:block;
-  & span{display:block;font-size:9.5px;color:var(--t2);letter-spacing:.05em;
-    text-transform:uppercase;margin-bottom:4px}
-  /* 16px minimum: anything smaller and iOS zooms the page on focus and
-     never zooms back out. */
-  & input{width:100%;font-size:16px}
-  & input[data-empty]{border-color:rgba(245,158,11,.5);background:rgba(245,158,11,.06)}
-}
+  &.warn{color:var(--t2);&::before{background:var(--a)}}}
+/* The card has no padding of its own so the head and legs can run edge to
+   edge, so the parts that are not the slip get their inset here. Scoped
+   under .slipcard rather than redeclared: .btnrow belongs to 05-controls and
+   claiming it at the top level here is the class collision the build
+   refuses, after two production bugs caused by exactly that. */
+.slipcard{
+  & .hinttext{margin-left:15px;margin-right:15px}
+  & .btnrow{margin:11px 15px 15px}}
+
+/* Paste, for the people whose record is a note on their phone. */
+.pastebox{margin-top:12px}
+.pastearea{width:100%;font-size:16px;line-height:1.5;resize:vertical;min-height:96px;
+  font-family:var(--fm)}
 
 /* Shown when the app is served without a database behind it. Better to say
    so plainly than to render an app that quietly holds nothing. */
@@ -422,7 +481,7 @@
 .livedot{display:flex;align-items:center;gap:9px;font-size:12.5px;margin-top:9px;
   & i{width:8px;height:8px;border-radius:50%;background:var(--pos);
     box-shadow:0 0 8px var(--pos);flex:0 0 auto}
-  /* Not connected is a state, not an error — grey, not the loss red, which
+  /* Not connected is a state, not an error, grey, not the loss red, which
      is reserved for money. */
   &.off{color:var(--t2);
     & i{background:var(--t3);box-shadow:none}}}

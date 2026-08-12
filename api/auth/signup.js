@@ -99,7 +99,7 @@ export default async function handler(req, res) {
       } catch (err) {
         /* The account exists and the address is now taken, so failing here
            would strand someone on an account they cannot get into. Sign them
-           in and say the email did not go out — the address is unproven, and
+           in and say the email did not go out, the address is unproven, and
            the resend button is still there. */
         console.error('[slippery] verification mail failed', err.message);
         await sql`UPDATE users SET email_verified = true WHERE id = ${user.id}`;

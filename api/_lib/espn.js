@@ -11,7 +11,7 @@
  * settlement rules are written against, and most feeds do not publish it.
  *
  * No key, no account, no quota. It is an undocumented endpoint behind
- * Akamai, and Akamai blocks by IP reputation — it refused this development
+ * Akamai, and Akamai blocks by IP reputation, it refused this development
  * machine outright. Whether it answers a Vercel function is a question only
  * production can settle, which is what /api/sources exists to ask.
  */
@@ -19,7 +19,7 @@
 const BASE = 'https://site.api.espn.com/apis/site/v2/sports/soccer';
 
 /* The competitions worth sweeping. ESPN wants a slug per league and there
-   is no "all football" endpoint, so this is the list that gets checked —
+   is no "all football" endpoint, so this is the list that gets checked,
    the leagues this product's users actually bet on, Nordic included. */
 export const LEAGUES = [
   'eng.1', 'eng.2', 'esp.1', 'ita.1', 'ger.1', 'fra.1', 'ned.1', 'por.1',
@@ -161,7 +161,7 @@ export async function finishedBetween(dateFrom, dateTo) {
         if (blocked >= 3 && ok === 0) throw err;
       }
       /* A single league being unavailable is not a reason to abandon the
-         rest — the bet is probably in one of the others. */
+         rest, the bet is probably in one of the others. */
     }
   }
   if (!ok) {

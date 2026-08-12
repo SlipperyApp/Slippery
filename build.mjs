@@ -44,7 +44,7 @@ function topLevelClasses(css) {
         const sel = buf.trim();
         if (!sel.startsWith('@')) {
           /* Only the element actually being styled counts as an
-             introduction. In ".hero h1" the owner is h1, not .hero — an
+             introduction. In ".hero h1" the owner is h1, not .hero, an
              ancestor is a reference, not a definition, or every layout
              wrapper would look like a collision. */
           for (const one of sel.split(',')) {
@@ -197,7 +197,7 @@ async function main() {
 
   const { css, classCount, fileCount } = await collectCss();
   const html = await readFile(src('app.html'), 'utf8');
-  /* The sprite has to be a real, rendered element — `display:none` on an
+  /* The sprite has to be a real, rendered element, `display:none` on an
      SVG stops Safari resolving <use> into it. Hence the 0x0 clip instead. */
   const sprite = (await readFile(src('icons.svg'), 'utf8'))
     .replace(/<!--[\s\S]*?-->/g, '')
@@ -237,7 +237,7 @@ async function main() {
   console.log('  built   public/index.html in ' + (Date.now() - started) + 'ms');
 
   if (!existsSync(out('icon-192.png'))) {
-    console.log('  note    PNG icons missing — run: node tools/icons.mjs');
+    console.log('  note    PNG icons missing, run: node tools/icons.mjs');
   }
 }
 

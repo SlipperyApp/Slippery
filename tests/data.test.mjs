@@ -6,8 +6,8 @@
  * different angle. A previous build displayed "Net all time +£6,339.48"
  * directly above an "All time £15,079" KPI, and two different lifetime ROIs,
  * because the period total summed one array while the KPI read a separate
- * constant. There is no separate constant any more — everything is derived
- * from the ledger the server sent — and these tests hold that line.
+ * constant. There is no separate constant any more, everything is derived
+ * from the ledger the server sent, and these tests hold that line.
  */
 import { test } from 'node:test';
 import assert from 'node:assert/strict';

@@ -3,8 +3,8 @@
  * ESPN leads the scraper chain for one reason: `linescores` carries the
  * score period by period, so the 90-minute score on an extra-time tie is
  * provable rather than inferred. These tests run against recorded payload
- * shapes, because what can go wrong is the mapping — handing the grader a
- * score that includes extra time — and that is fully reproducible offline.
+ * shapes, because what can go wrong is the mapping, handing the grader a
+ * score that includes extra time, and that is fully reproducible offline.
  * Reachability is an IP-reputation question and is answered by /api/sources
  * from the host that actually matters.
  */

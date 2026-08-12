@@ -1,8 +1,8 @@
-/* GET /api/results — settlement sweep.
+/* GET /api/results, settlement sweep.
  *
  * Runs on a schedule (see vercel.json crons). Pulls the day's finished
  * fixtures, matches them to pending bets, and hands each pair to the SAME
- * settlement engine the browser uses — src/js/settlement.js, imported
+ * settlement engine the browser uses, src/js/settlement.js, imported
  * directly. There is no second implementation to drift out of sync.
  *
  * Everything the engine returns as {status:'ask'} is left pending with the
@@ -59,7 +59,7 @@ export default async function handler(req, res) {
         details.push({ bet: bet.id, outcome: out.outcome, profit: out.profit });
       } else if (out.status === 'ask') {
         /* The engine could not be certain. Record why and leave it to the
-           user — a wrong grade is worse than no grade. */
+           user, a wrong grade is worse than no grade. */
         await sql`
           UPDATE bets SET status = 'ask', settle_reason = ${out.reason}, fixture_id = ${fixture.id}
           WHERE id = ${bet.id}`;
@@ -92,7 +92,7 @@ function isAuthorised(req) {
      here: the endpoint only grades bets that are already in the database
      against a public results feed, so the cost of an unwanted call is one
      wasted lookup. Vercel stamps its own cron invocations with this header.
-     It is forgeable, which is exactly why CRON_SECRET exists — set it and
+     It is forgeable, which is exactly why CRON_SECRET exists, set it and
      this branch stops being used. */
   if (req.headers['x-vercel-cron']) {
     console.warn('[slippery] CRON_SECRET is unset; accepting on the x-vercel-cron header alone');

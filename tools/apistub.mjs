@@ -1,13 +1,13 @@
 /* A fake backend for the audit.
  *
  * The app now refuses to render a dashboard without a session, which is
- * correct — but it means the audit can no longer reach any of the signed-in
+ * correct, but it means the audit can no longer reach any of the signed-in
  * UI, and that is most of the surface worth auditing.
  *
  * The wrong fix would be a demo mode compiled into the product. The right
  * one is to stub the network: Playwright intercepts the same fetches the
  * real app makes and answers with fixture JSON, so every line of client code
- * — session check, hydrate, render, settle — runs exactly as it does in
+ *, session check, hydrate, render, settle, runs exactly as it does in
  * production. Nothing is added to the bundle for testing.
  *
  * The fixtures are deliberately awkward: a cash-out, a void, an unsettled
@@ -181,23 +181,52 @@ export async function installStub(page, opts = {}) {
     /* Read the counter once. `extractCall++ % 3` in the first branch and
        `extractCall % 3` in the second read different values, which silently
        skipped a case. */
-    const n = extractCall++ % 3;
-    return route.fulfill({
-    status: 200, contentType: 'application/json',
-    body: JSON.stringify({ fields: (n === 0)
+    const n = extractCall++ % 4;
+    const body = (n === 0)
       /* Unsettled and fully legible: the common case. */
-      ? { selection: 'Over 2.5 Goals', event: 'Arsenal v Chelsea', stake: 25.00,
-          odds: 1.85, bookmaker: 'bet365', market: 'Over/Under',
-          stage: 'prematch', result: 'open', returns: null }
+      ? { readable: true, doc_type: 'bet_slip', platform: 'bet365', bet_type: 'single',
+          bet_count: 1, selection: 'Over 2.5 Goals', event: 'Arsenal v Chelsea',
+          market: 'Over/Under', bookmaker: 'bet365', stake: 25.00, odds: 1.85,
+          returns: null, result: 'open', stage: 'prematch', kickoff: null, legs: 1,
+          selections: [{ selection: 'Over 2.5 Goals', event: 'Arsenal v Chelsea',
+                         market: 'Over/Under', odds: 1.85, result: 'open' }],
+          totals: null, placed_at: null, unreadable_fields: [], notes: null }
       : (n === 1)
       /* Legible but missing the stake: the case the editable fields exist for. */
-      ? { selection: 'Under 3.5 Goals', event: null, stake: null, odds: 1.44,
-          bookmaker: 'Sky Bet', market: 'Over/Under',
-          stage: 'inplay', result: 'open', returns: null }
+      ? { readable: true, doc_type: 'bet_slip', platform: 'Sky Bet', bet_type: 'single',
+          bet_count: 1, selection: 'Under 3.5 Goals', event: null, market: 'Over/Under',
+          bookmaker: 'Sky Bet', stake: null, odds: 1.44, returns: null, result: 'open',
+          stage: 'inplay', kickoff: null, legs: 1,
+          selections: [{ selection: 'Under 3.5 Goals', event: null, market: 'Over/Under',
+                         odds: 1.44, result: 'open' }],
+          totals: null, placed_at: null, unreadable_fields: ['stake'], notes: null }
+      : (n === 2)
       /* Already settled, with the returns printed on it. */
-      : { selection: 'Under 5.5 Goals', event: 'Oskarshamns AIK v IFK Karlshamn',
-          stake: 306.18, odds: 1.25, bookmaker: 'Paddy Power', market: 'Over/Under',
-          stage: 'settled', result: 'won', returns: 382.73 } })
+      ? { readable: true, doc_type: 'bet_slip', platform: 'Paddy Power', bet_type: 'single',
+          bet_count: 1, selection: 'Under 5.5 Goals',
+          event: 'Oskarshamns AIK v IFK Karlshamn', market: 'Over/Under',
+          bookmaker: 'Paddy Power', stake: 306.18, odds: 1.25, returns: 382.73,
+          result: 'won', stage: 'settled', kickoff: null, legs: 1,
+          selections: [{ selection: 'Under 5.5 Goals', event: 'Oskarshamns AIK v IFK Karlshamn',
+                         market: 'Over/Under', odds: 1.25, result: 'won' }],
+          totals: null, placed_at: null, unreadable_fields: [], notes: null }
+      /* A double, with a price on each leg and a combined price. This is the
+         shape the slip editor exists for: the legs are editable separately
+         and the combined price sits beside them. */
+      : { readable: true, doc_type: 'bet_slip', platform: 'Paddy Power', bet_type: 'multiple',
+          bet_count: 1, selection: 'Under 5.5 Goals & Under 3.5 Goals',
+          event: 'CD Cieza v Valencia-Mestalla & Antequera CF v Granada',
+          market: 'Over/Under', bookmaker: 'Paddy Power', stake: 400.00, odds: 1.40,
+          returns: null, result: 'open', stage: 'prematch', kickoff: null, legs: 2,
+          selections: [
+            { selection: 'Under 5.5 Goals', event: 'CD Cieza v Valencia-Mestalla',
+              market: 'Over/Under', odds: 1.20, result: 'open' },
+            { selection: 'Under 3.5 Goals', event: 'Antequera CF v Granada',
+              market: 'Over/Under', odds: 1.17, result: 'open' }
+          ],
+          totals: null, placed_at: null, unreadable_fields: [], notes: null };
+    return route.fulfill({
+      status: 200, contentType: 'application/json', body: JSON.stringify({ fields: body })
     });
   });
 }

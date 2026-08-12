@@ -1,4 +1,4 @@
-/* Small DOM helpers. Deliberately tiny — this app has no framework and
+/* Small DOM helpers. Deliberately tiny, this app has no framework and
    does not want one. */
 
 export const $ = id => document.getElementById(id);
@@ -44,7 +44,7 @@ export function collapse(el, msg) {
 }
 
 /** Position a segmented control's sliding thumb.
-    Measured, so it must only run while the control is actually laid out —
+    Measured, so it must only run while the control is actually laid out,
     calling it inside a display:none pane gives offsetWidth 0 and a thumb
     scaled to nothing. Every caller re-runs it when its pane is shown. */
 export function paintSeg(container) {

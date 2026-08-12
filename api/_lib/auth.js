@@ -122,7 +122,7 @@ export async function sessionUser(req) {
   const sql = db();
   /* Select every column the callers read.
      This used to stop at unit_pence while /api/auth/me went on to read
-     plan, telegram_id, link_code and created_at off the same row — so the
+     plan, telegram_id, link_code and created_at off the same row, so the
      settings page was told, on every load, that no bot was linked, there was
      no link code, and the plan was free. Nothing errored; the answers were
      just all undefined. */
@@ -190,7 +190,7 @@ export function nameProblem(v) {
  *
  * An @ decides which column to look in. Display names cannot contain one
  * (nameProblem allows letters, numbers and underscores only), so the test is
- * exact rather than a guess — and a string with an @ can only ever have been
+ * exact rather than a guess, and a string with an @ can only ever have been
  * meant as an email, even when it is a malformed one. */
 export function looksLikeEmail(v) {
   return String(v || '').includes('@');

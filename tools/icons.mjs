@@ -41,7 +41,7 @@ for (const { file, size, maskable } of sizes) {
    rasterises it server-side, so it cannot be SVG and cannot rely on a
    web font being fetched. It is drawn here from the same palette and
    the same silk artwork the site uses, with system serif/sans stand-ins
-   for Fraunces and Schibsted Grotesk — at 1200x630 in a feed, the
+   for Fraunces and Schibsted Grotesk, at 1200x630 in a feed, the
    difference does not survive the downscale, and a missing font would.
    Facebook and LinkedIn both cache aggressively; regenerate with
    `node tools/icons.mjs` and the filename stays /og.png so the cache

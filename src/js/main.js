@@ -11,7 +11,7 @@ import { stats, dayMap, monthTotal, targetFor, weekRange, invalidateDays } from 
 import * as R from './render.js';
 import * as C from './content.js';
 import { initMotion, syncThemeColor } from './motion.js';
-import { extractSlip, get, post, patch } from './api.js';
+import { extractSlip, readText, get, post, patch } from './api.js';
 import { parseBetsCsv } from './csv.js';
 import * as Auth from './auth.js';
 
@@ -62,14 +62,14 @@ function showBackendNotice(body) {
    on an installed PWA that means Android's hardware back exits the app from
    the middle of signup, and no screen can be linked to or bookmarked.
 
-   pushState rather than location.hash, deliberately — every view id is also
+   pushState rather than location.hash, deliberately, every view id is also
    an element id, so assigning the hash would make the browser scroll to it
    and fight the view transition. */
 function go(id, fromHistory) {
   const view = $(id);
   if (!view) return;
   /* The app views hold a real person's money. Without a session there is
-     nothing to show, so asking to see them is a request to sign in — not a
+     nothing to show, so asking to see them is a request to sign in, not a
      reason to render an empty dashboard and let them wonder. */
   if (APP_VIEWS.includes(id) && sessionChecked && !ME) {
     if (id !== 'setup') { go('setup'); toast('Create an account, or log in, to start tracking.'); }
@@ -87,7 +87,7 @@ function go(id, fromHistory) {
   });
   if (!fromHistory) {
     /* WebKit throws SecurityError from pushState whenever the page has an
-       opaque origin — a file:// URL, a sandboxed iframe, and the
+       opaque origin, a file:// URL, a sandboxed iframe, and the
        capacitor:// scheme an App Store wrapper would use. It is a URL
        nicety, not a feature worth taking the whole app down for, so it
        fails quietly and navigation carries on without it. */
@@ -129,7 +129,7 @@ function firstActiveDay(month) {
 
 /* Day and week need a focused day. The old build let you reach period "D"
    with no focus, fell through to whole-month figures, and then labelled
-   them with new Date(2026, 7, null) — which coerces to day 0 and renders
+   them with new Date(2026, 7, null), which coerces to day 0 and renders
    as 31 Jul. So it showed the entire August total as "Net on 31 Jul".
    Now a focus is always established before the period is applied. */
 function setPeriod(p) {
@@ -246,7 +246,7 @@ function closeDay() {
 
 /* ---------------- settlement ----------------
    ONE settle path. The old build declared settleBet twice in the same
-   scope — a UI handler and the grading engine — so the later declaration
+   scope, a UI handler and the grading engine, so the later declaration
    silently won and every manual Won/Lost/Cashed/Void tap called the
    engine with the wrong arguments, dismissed the row, and did nothing. */
 function commitSettlement(id, outcome, profitPence, stakePence, reason) {
@@ -261,7 +261,7 @@ async function manualSettle(id, kind, cashPence) {
   if (!b) return;
   /* The server settles it, using the same engine, and returns the pence it
      stored. Computing the profit here as well would give two answers that
-     could disagree — so this asks rather than guesses. */
+     could disagree, so this asks rather than guesses. */
   const body = kind === 'cash'
     ? { id, kind: 'cash', returnedPence: cashPence != null ? cashPence : b.stake }
     : { id, kind };
@@ -289,7 +289,7 @@ async function checkResults() {
   if (r.status === 401) { go('setup'); toast('Log in to check your bets.'); return; }
   if (r.status === 429) { toast(r.body.error || 'Just checked. Give it a minute.'); return; }
   if (r.status === 503) {
-    /* Distinguish "no backend" from "the provider is blocking us" — they
+    /* Distinguish "no backend" from "the provider is blocking us", they
        need different things from the owner, and neither is the user's
        fault. */
     if (r.body.needs) showBackendNotice(r.body);
@@ -434,7 +434,7 @@ async function redeemPromo(btn, inputId, noteId) {
   S.plan = r.body.plan;
   S.planUntil = r.body.planUntil;
   S.planChoice = r.body.plan === 'lifetime' ? 'free' : r.body.plan;
-  say(r.body.label + ' — ' + r.body.note, 'pos');
+  say(r.body.label + ', ' + r.body.note, 'pos');
   toast(r.body.label + ' applied');
   R.renderPlan();
   renderPlanChoice();
@@ -453,14 +453,31 @@ function suggestName() {
 
 /* ---------------- import / upload ---------------- */
 let uploadSeq = 0;
+
+/* One drop zone for everything.
+   A slip, a PDF statement, a spreadsheet, a profit screen from another
+   tracker, a list someone typed. Sorting them was the user's job across two
+   tabs; now the file decides, and the only thing that varies is which reader
+   it goes to. */
+const CSV_LIKE = /\.(csv|tsv|txt)$/i;
+const isSpreadsheet = file =>
+  CSV_LIKE.test(file.name || '') ||
+  /^text\/(csv|tab-separated-values|plain)$/.test(file.type || '');
+
 async function handleFiles(files) {
   const list = Array.prototype.slice.call(files || []).slice(0, 8);
   if (!list.length) return;
   const wrap = $('uploadResults');
+
   for (const file of list) {
+    /* A spreadsheet is parsed in the browser: the file never leaves the
+       device unless the user goes ahead, and a bad file gets an answer
+       instantly rather than after an upload. */
+    if (isSpreadsheet(file)) { await handleCsv(file); continue; }
+
     const id = 'up' + (++uploadSeq);
     const card = document.createElement('div');
-    card.className = 'card pad';
+    card.className = 'card pad slipcard';
     card.style.marginTop = '12px';
     card.id = id;
     card.innerHTML = '<div class="cardhead"><span class="title">' + esc(file.name) + '</span>' +
@@ -469,78 +486,206 @@ async function handleFiles(files) {
     wrap.appendChild(card);
     try {
       const res = await extractSlip(file);
-      renderExtraction(card, file, res);
+      renderExtraction(card, file.name, res);
     } catch (err) {
-      card.innerHTML = '<div class="alerthead" style="color:var(--neg)">' +
-        '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 8v5M12 16h.01"/></svg>' +
-        'Could not read that slip</div>' +
-        '<p class="hinttext">' + esc(err.message || 'The reader is not reachable right now.') +
-        ' Nothing was imported.</p>';
+      card.innerHTML = readerError(err.message);
     }
   }
   updateImportTotals();
 }
 
-function renderExtraction(card, file, res) {
+/* Pasted text. Tried as a spreadsheet first, because rows copied out of one
+   parse perfectly and cost nothing; prose falls through to the reader. */
+async function handlePaste(btn) {
+  const text = $('pasteBets').value.trim();
+  if (!text) { toast('Paste something first'); return; }
+
+  const rows = parseBetsCsv(text);
+  if (rows.bets.length && rows.mapped.length >= 2) {
+    showCsvReport(rows, 'what you pasted');
+    return;
+  }
+
+  btn.disabled = true;
+  const was = btn.textContent;
+  btn.textContent = 'Reading…';
+  const card = document.createElement('div');
+  card.className = 'card pad slipcard';
+  card.style.marginTop = '12px';
+  card.id = 'up' + (++uploadSeq);
+  card.innerHTML = '<div class="cardhead"><span class="title">Pasted bets</span>' +
+    '<span class="meta">Reading…</span></div>' +
+    '<div class="stackbar"><i style="width:100%;background:linear-gradient(90deg,var(--p),var(--s))"></i></div>';
+  $('uploadResults').appendChild(card);
+  try {
+    const res = await readText(text);
+    renderExtraction(card, 'Pasted bets', res);
+  } catch (err) {
+    card.innerHTML = readerError(err.message);
+  }
+  btn.disabled = false;
+  btn.textContent = was;
+  updateImportTotals();
+}
+
+const readerError = msg =>
+  '<div class="alerthead" style="color:var(--neg)">' +
+  '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 8v5M12 16h.01"/></svg>' +
+  'Could not read that</div>' +
+  '<p class="hinttext">' + esc(msg || 'The reader is not reachable right now.') +
+  ' Nothing was imported.</p>';
+
+const RESULT_WORD = { won: 'won', lost: 'lost', void: 'void', cashed_out: 'cashed out' };
+
+/* The slip, redrawn as a slip.
+   Six stacked labelled inputs did not look like the thing in the photograph,
+   so checking the reading meant comparing two different layouts field by
+   field. This one mirrors the screenshot: the bookmaker at the top, the
+   number of bets in the corner, one row per leg with that leg's own price
+   beside it, and the stake and combined price along the bottom, the way
+   every bookmaker prints them. */
+function renderExtraction(card, label, res) {
   const f = res.fields || {};
-  /* The reader will not guess at a number it cannot see, which is right.
-     But "needs retake" as the only option was wrong: if the stake is
-     illegible and the odds are not, retyping one field beats rephotographing
-     the slip. Anything missing becomes an input, and Confirm stays disabled
-     until the three that matter are present. */
-  const missing = ['stake', 'odds', 'selection'].filter(k => f[k] == null);
-  const val = (v, fmt) => v == null ? '' : fmt ? fmt(v) : String(v);
+
+  /* A profit-and-loss screen from another tracker is not a bet, and logging
+     it as one would put a single enormous fictional wager in the ledger. */
+  if (f.doc_type === 'pnl_summary') { renderSummaryRead(card, label, f); return; }
+  if (f.readable === false && !f.stake && !f.odds) {
+    card.innerHTML = readerError('That does not look like a betting record.');
+    return;
+  }
 
   /* Where the bet is in its life. A slip forwarded at placement has no
      result and gets looked up later; one forwarded after settlement carries
-     its own. The reader states which — it is never inferred here, because
+     its own. The reader states which, it is never inferred here, because
      every slip prints a potential-returns figure and inferring "settled"
      from that would grade open bets. */
   const stage = f.stage || (f.result && f.result !== 'open' ? 'settled' : null);
   const result = f.result && f.result !== 'open' ? f.result : null;
   const stageNote = stage === 'settled' && result
       ? ['ok', 'Settled on the slip: ' + RESULT_WORD[result]]
-    : stage === 'settled' ? ['ok', 'Settled, result unclear — we will look it up']
+    : stage === 'settled' ? ['ok', 'Settled, result unclear, we will look it up']
     : stage === 'inplay' ? ['warn', 'In play. We will settle it at full time']
     : stage === 'prematch' ? ['warn', 'Not started. We will settle it at full time']
     : ['warn', 'We will look the result up when the game finishes'];
 
-  const field = (key, label, value, mode) =>
-    '<label class="slipfield"><span>' + label + '</span>' +
-    '<input class="field compact" data-slip="' + key + '" ' +
-    (mode ? 'inputmode="' + mode + '" ' : '') +
-    'value="' + esc(value) + '"' + (value ? '' : ' data-empty="1"') + '></label>';
+  /* One leg minimum, so a single renders through the same code as a
+     fourfold and there is no second layout to keep in step. */
+  const legs = (Array.isArray(f.selections) && f.selections.length
+    ? f.selections
+    : [{ selection: f.selection, event: f.event, market: f.market, odds: f.odds, result: f.result }]
+  ).slice(0, 20);
+
+  const money = v => v == null ? '' : Number(v).toFixed(2);
+  const price = v => v == null ? '' : Number(v).toFixed(2);
+  const count = f.bet_count || 1;
 
   card.innerHTML =
-    '<div class="cardhead"><span class="title">' + esc(file.name) + '</span>' +
-    '<span class="tagbit ' + (missing.length ? 'warn' : 'ok') + '">' +
-    (missing.length ? 'Fill in ' + missing.length : 'Looks right') + '</span></div>' +
-    '<div class="slipgrid">' +
-      field('selection', 'Selection', val(f.selection)) +
-      field('event', 'Event', val(f.event)) +
-      field('stake', 'Stake £', val(f.stake, v => Number(v).toFixed(2)), 'decimal') +
-      field('odds', 'Odds', val(f.odds, v => Number(v).toFixed(2)), 'decimal') +
-      field('book', 'Bookmaker', val(f.bookmaker)) +
-      field('market', 'Market', val(f.market)) +
+    '<div class="sliphead">' +
+      '<span class="slipbook">' + esc(f.platform || f.bookmaker || label) + '</span>' +
+      /* The number in the corner of a real slip: how many bets were placed. */
+      '<span class="slipcount" title="Bets on this slip">' + count + '</span>' +
     '</div>' +
+    '<div class="sliplegs">' +
+      legs.map((leg, i) =>
+        '<div class="slipleg" data-leg="' + i + '">' +
+          '<div class="slipleg-top">' +
+            '<label class="sr" for="' + card.id + '-sel' + i + '">Selection ' + (i + 1) + '</label>' +
+            '<input class="field slipin slipleg-sel" id="' + card.id + '-sel' + i + '" ' +
+              'data-leg-field="selection" placeholder="Selection" value="' + esc(leg.selection || '') + '">' +
+            '<label class="sr" for="' + card.id + '-odds' + i + '">Odds for selection ' + (i + 1) + '</label>' +
+            '<input class="field slipin slipleg-odds m" id="' + card.id + '-odds' + i + '" ' +
+              'data-leg-field="odds" inputmode="decimal" placeholder="Odds" value="' + esc(price(leg.odds)) + '">' +
+          '</div>' +
+          '<label class="sr" for="' + card.id + '-ev' + i + '">Event for selection ' + (i + 1) + '</label>' +
+          '<input class="field slipin slipleg-ev" id="' + card.id + '-ev' + i + '" ' +
+            'data-leg-field="event" placeholder="Event" value="' + esc(leg.event || '') + '">' +
+        '</div>').join('') +
+    '</div>' +
+    (legs.length > 1
+      ? '<button class="pillbtn link slipaddleg" data-add-leg="1">Add another selection</button>'
+      : '') +
+    '<div class="slipfoot">' +
+      '<label class="slipfoot-cell"><span>Stake £</span>' +
+        '<input class="field slipin m" data-slip="stake" inputmode="decimal" value="' + esc(money(f.stake)) + '"></label>' +
+      /* The combined price, next to the leg prices rather than instead of
+         them. A slip prints both and correcting one leg should not force
+         anyone to work the accumulator out in their head. */
+      '<label class="slipfoot-cell"><span>Total odds</span>' +
+        '<input class="field slipin m" data-slip="odds" inputmode="decimal" value="' + esc(price(f.odds)) + '"></label>' +
+    '</div>' +
+    '<p class="sliphint" id="' + card.id + '-oddshint" hidden></p>' +
+    '<div class="slipfoot">' +
+      '<label class="slipfoot-cell"><span>Bookmaker</span>' +
+        '<input class="field slipin" data-slip="book" value="' + esc(f.bookmaker || f.platform || '') + '"></label>' +
+      '<label class="slipfoot-cell"><span>Market</span>' +
+        '<input class="field slipin" data-slip="market" value="' + esc(f.market || '') + '"></label>' +
+    '</div>' +
+    '<p class="sliptotal" id="' + card.id + '-returns"></p>' +
     '<p class="slipstage ' + stageNote[0] + '">' + esc(stageNote[1]) + '</p>' +
-    (missing.length
-      ? '<p class="hinttext">Slippery will not guess at numbers it cannot read. ' +
-        'Type what is missing, or retake the photo with the stake and odds in frame.</p>'
-      : '<p class="hinttext">Check it, then confirm. Nothing is saved until you do.</p>') +
+    '<p class="hinttext" id="' + card.id + '-hint">Check it, then confirm. Nothing is saved until you do.</p>' +
     '<div class="btnrow" style="margin-top:11px">' +
     '<button class="btn primary small" data-confirm-slip="1">Confirm</button>' +
     '<button class="btn ghost small" data-dismiss-card="1">Discard</button></div>';
 
   card.dataset.stage = stage || '';
   card.dataset.result = result || '';
-  /* Returns is what the slip paid out, so profit is returns minus stake —
+  /* Returns is what the slip paid out, so profit is returns minus stake,
      the same definition the engine uses, computed once. */
   card.dataset.returns = f.returns != null ? String(Math.round(f.returns * 100)) : '';
   syncSlipCard(card);
 }
 
-const RESULT_WORD = { won: 'won', lost: 'lost', void: 'void', cashed_out: 'cashed out' };
+/* A totals screen from another tracker. It fills the Type totals tab rather
+   than the ledger, because there are no individual bets behind it and
+   inventing some would be exactly the dishonesty this product exists to
+   stop. */
+function renderSummaryRead(card, label, f) {
+  const t = f.totals || {};
+  const row = (k, v) => v == null ? ''
+    : '<div class="reviewline"><span class="k">' + k + '</span><span class="v m">' + esc(String(v)) + '</span></div>';
+  card.innerHTML =
+    '<div class="cardhead"><span class="title">' + esc(f.platform || label) + '</span>' +
+    '<span class="tagbit">Summary, not slips</span></div>' +
+    '<p class="hinttext">That is a totals screen rather than a bet slip, so there are no ' +
+    'individual bets behind it. The figures can go in as a period total instead, and your ' +
+    'ledger will show them as carried over rather than as bets you can settle.</p>' +
+    '<div class="reviewbar" style="margin-top:11px">' +
+      row('Period', t.period) + row('Profit', t.profit) + row('Turnover', t.turnover) +
+      row('Bets', t.bets) + row('Won', t.won) + row('Lost', t.lost) +
+    '</div>' +
+    '<div class="btnrow" style="margin-top:11px">' +
+    '<button class="btn primary small" data-goto-totals="1">Open Type totals</button>' +
+    '<button class="btn ghost small" data-dismiss-card="1">Discard</button></div>';
+}
+
+/* Append an empty leg to a slip card. Ids stay unique by counting what is
+   already there, because two inputs sharing an id is one of the two class
+   of bug this codebase has been bitten by. */
+function addLeg(card) {
+  if (!card) return;
+  const legs = card.querySelector('.sliplegs');
+  if (!legs) return;
+  const i = legs.children.length;
+  const row = document.createElement('div');
+  row.className = 'slipleg';
+  row.setAttribute('data-leg', String(i));
+  row.innerHTML =
+    '<div class="slipleg-top">' +
+      '<label class="sr" for="' + card.id + '-sel' + i + '">Selection ' + (i + 1) + '</label>' +
+      '<input class="field slipin slipleg-sel" id="' + card.id + '-sel' + i + '" ' +
+        'data-leg-field="selection" placeholder="Selection">' +
+      '<label class="sr" for="' + card.id + '-odds' + i + '">Odds for selection ' + (i + 1) + '</label>' +
+      '<input class="field slipin slipleg-odds m" id="' + card.id + '-odds' + i + '" ' +
+        'data-leg-field="odds" inputmode="decimal" placeholder="Odds">' +
+    '</div>' +
+    '<label class="sr" for="' + card.id + '-ev' + i + '">Event for selection ' + (i + 1) + '</label>' +
+    '<input class="field slipin slipleg-ev" id="' + card.id + '-ev' + i + '" ' +
+      'data-leg-field="event" placeholder="Event">';
+  legs.appendChild(row);
+  row.querySelector('input').focus();
+  syncSlipCard(card);
+}
 
 /* Read the card's inputs into its dataset, and gate Confirm on the three
    fields a bet cannot exist without. Called on render and on every keystroke
@@ -550,16 +695,50 @@ function syncSlipCard(card) {
     const el = card.querySelector('[data-slip="' + k + '"]');
     return el ? el.value.trim() : '';
   };
+  const legs = $$('.slipleg', card).map(el => ({
+    selection: el.querySelector('[data-leg-field="selection"]').value.trim(),
+    event: el.querySelector('[data-leg-field="event"]').value.trim(),
+    odds: parseFloat(el.querySelector('[data-leg-field="odds"]').value)
+  })).filter(l => l.selection || l.event || Number.isFinite(l.odds));
+
   const stake = M.parseMoney(read('stake'));
   const odds = parseFloat(read('odds'));
-  const selection = read('selection');
+
+  /* A multiple is described by its legs joined, so the ledger row reads the
+     way the slip does rather than as one of the legs standing in for all of
+     them. */
+  const selection = legs.map(l => l.selection).filter(Boolean).join(' & ');
+  const event = legs.map(l => l.event).filter(Boolean).join(' & ');
 
   card.dataset.selection = selection;
-  card.dataset.event = read('event');
+  card.dataset.event = event;
   card.dataset.book = read('book');
   card.dataset.market = read('market');
   card.dataset.stake = stake != null && stake > 0 ? String(stake) : '';
   card.dataset.odds = Number.isFinite(odds) && odds > 1 ? String(odds) : '';
+  card.dataset.legs = String(legs.length);
+
+  /* The legs multiply out to the combined price. Saying so when they
+     disagree catches a mistyped leg, which is the error that silently
+     changes what the bet was worth. It is a note, not a block: a bookmaker
+     rounds, and each-way and system bets do not multiply at all. */
+  const hint = $(card.id + '-oddshint');
+  const priced = legs.filter(l => Number.isFinite(l.odds) && l.odds > 1);
+  if (hint) {
+    if (priced.length > 1 && Number.isFinite(odds) && odds > 1) {
+      const product = priced.reduce((a, l) => a * l.odds, 1);
+      const drift = Math.abs(product - odds) / odds;
+      hint.hidden = drift <= 0.02;
+      hint.textContent = 'Those legs multiply to ' + product.toFixed(2) +
+        ', not ' + odds.toFixed(2) + '. Check one of them.';
+    } else if (priced.length > 1 && !card.querySelector('[data-slip="odds"]').value.trim()) {
+      const product = priced.reduce((a, l) => a * l.odds, 1);
+      hint.hidden = false;
+      hint.textContent = 'Those legs multiply to ' + product.toFixed(2) + '.';
+    } else {
+      hint.hidden = true;
+    }
+  }
 
   const ready = Boolean(card.dataset.stake && card.dataset.odds && selection);
   card.dataset.ready = ready ? '1' : '0';
@@ -568,21 +747,42 @@ function syncSlipCard(card) {
     ? String(Math.round(Number(card.dataset.stake) * (Number(card.dataset.odds) - 1)))
     : '';
 
+  /* What it returns if it lands, spelled out, so nobody has to multiply a
+     stake by a price to sanity check the reading. */
+  const returns = $(card.id + '-returns');
+  if (returns) {
+    const has = card.dataset.stake && card.dataset.odds;
+    returns.textContent = has
+      ? 'Returns ' + M.money(Math.round(Number(card.dataset.stake) * Number(card.dataset.odds))) +
+        ', profit ' + M.money(Number(card.dataset.profit))
+      : '';
+  }
+
+  const missing = [];
+  if (!selection) missing.push('a selection');
+  if (!card.dataset.stake) missing.push('a stake');
+  if (!card.dataset.odds) missing.push('the odds');
+
   const btn = card.querySelector('[data-confirm-slip]');
   if (btn) {
     btn.disabled = !ready;
     btn.title = ready ? '' : 'Selection, stake and odds are needed first';
   }
-  const tag = card.querySelector('.tagbit');
-  if (tag) {
-    tag.className = 'tagbit ' + (ready ? 'ok' : 'warn');
-    tag.textContent = ready ? 'Looks right' : 'Needs a stake and odds';
+  const tag = card.querySelector('.slipcount');
+  if (tag) tag.classList.toggle('warn', !ready);
+  const note = $(card.id + '-hint');
+  if (note) {
+    note.textContent = ready
+      ? 'Check it, then confirm. Nothing is saved until you do.'
+      : 'Slippery will not guess at numbers it cannot read. Still needs ' +
+        (missing.length === 1 ? missing[0]
+          : missing.slice(0, -1).join(', ') + ' and ' + missing[missing.length - 1]) + '.';
   }
 }
 
 /* Confirm actually writes the bet. This is the step that used to be a
    toast and a fade: the card collapsed, the counters moved, and nothing was
-   ever stored — which is why importing appeared to work and then left the
+   ever stored, which is why importing appeared to work and then left the
    ledger empty. */
 async function confirmSlip(btn) {
   const card = btn.closest('.card');
@@ -635,12 +835,39 @@ async function confirmSlip(btn) {
   R.renderAll();
   collapse(card, 'Slip added to your ledger');
   setTimeout(updateImportTotals, 500);
+
+  /* Look the result up as part of the same action.
+     Confirming a slip for a game that finished this afternoon and then
+     having to find a refresh button is two steps for one intention. Only
+     for bets that landed unsettled and name a fixture, and debounced, so
+     confirming eight slips in a row is one lookup rather than eight. */
+  if (!outcome && card.dataset.event) settleSoon();
 }
 
-/* ---------------- CSV import ----------------
+/* One lookup for a burst of confirms. The server rate limits this anyway;
+   the delay is so a person adding a handful of slips does not spend their
+   allowance before they have finished adding them. */
+let settleTimer = null;
+function settleSoon() {
+  if (settleTimer) clearTimeout(settleTimer);
+  settleTimer = setTimeout(async () => {
+    settleTimer = null;
+    const r = await post('/api/settle');
+    if (!r.ok) return;                       // the button reports properly
+    if (r.body.settled || r.body.asked) {
+      await loadLedger();
+      toast(r.body.settled
+        ? r.body.settled + ' of those already had a result'
+        : 'One of those needs you to settle it');
+    }
+  }, 2500);
+}
+
+/* ---------------- spreadsheets ----------------
    Parsed in the browser, so the file never leaves the device unless the
    user goes ahead, and so a bad file gets an answer instantly instead of
-   after an upload. */
+   after an upload. Reached from the one drop zone rather than its own tab:
+   the file says what it is. */
 async function handleCsv(file) {
   if (!file) return;
   const report = $('csvReport');
@@ -657,31 +884,47 @@ async function handleCsv(file) {
     report.innerHTML = csvError('That file is over 4MB. Split it, or export a shorter date range.');
     return;
   }
+  showCsvReport(parseBetsCsv(text), file.name);
+}
 
-  const { bets, errors, mapped } = parseBetsCsv(text);
+function showCsvReport(parsed, label) {
+  const { bets, errors, mapped } = parsed;
+  const report = $('csvReport');
   /* Line numbers travel with the rows, so a server-side rejection can name
      the same line the file does. */
   bets.forEach((b, i) => { b.line = i + 2; });
 
   if (!bets.length) {
-    report.innerHTML = csvError(errors.length ? errors[0].why : 'Nothing in that file looked like a bet.');
+    report.innerHTML = csvError(errors.length ? errors[0].why : 'Nothing in there looked like a bet.');
     return;
   }
 
   const settled = bets.filter(b => b.outcome).length;
-  const net = bets.reduce((a, b) => a + (b.profitPence || 0), 0);
+  const net = bets.filter(b => b.outcome).reduce((a, b) => a + (b.profitPence || 0), 0);
   const staked = bets.reduce((a, b) => a + b.stakePence, 0);
 
   report.innerHTML =
-    '<div class="quadstat">' +
-      '<div><div class="k">Ready</div><div class="v">' + bets.length + '</div></div>' +
-      '<div><div class="k">Skipped</div><div class="v" style="color:var(--a)">' + errors.length + '</div></div>' +
-      '<div><div class="k">Staked</div><div class="v m">' + M.money0(staked) + '</div></div>' +
-      '<div><div class="k">Profit</div><div class="v m ' + M.tone(net) + '">' +
-        M.signed(net) + '</div></div>' +
+    '<div class="card pad" style="margin-top:12px">' +
+    '<div class="cardhead"><span class="title">' + esc(label) + '</span>' +
+    '<span class="tagbit ok">' + bets.length + (bets.length === 1 ? ' bet' : ' bets') + '</span></div>' +
+    '<div class="reviewbar">' +
+      '<div class="reviewline"><span class="k">Ready to add</span><span class="v">' + bets.length + '</span></div>' +
+      (errors.length
+        ? '<div class="reviewline"><span class="k">Rows skipped</span><span class="v warn">' + errors.length + '</span></div>'
+        : '') +
+      '<div class="reviewline"><span class="k">Staked across them</span><span class="v m">' + M.money0(staked) + '</span></div>' +
+      /* Only the settled rows have a profit. Adding an open bet in at zero
+         and calling the result "profit" was the figure that could not be
+         true of anything. */
+      (settled
+        ? '<div class="reviewline"><span class="k">Profit on the ' + settled + ' already settled</span>' +
+          '<span class="v m ' + M.tone(net) + '">' + M.signed(net) + '</span></div>'
+        : '') +
     '</div>' +
     '<p class="hinttext">Matched columns: ' + esc(mapped.join(', ') || 'none') + '. ' +
-      settled + ' of ' + bets.length + ' already settled; the rest will be graded when they finish.</p>' +
+      (settled === bets.length ? 'All of them are already settled.'
+        : settled ? settled + ' are already settled; the rest will be graded when they finish.'
+        : 'None are settled yet, so they will be graded when the games finish.') + '</p>' +
     (errors.length
       ? '<details class="disclose"><summary>' + errors.length + ' rows skipped</summary>' +
         errors.slice(0, 40).map(e => '<p class="hinttext">Line ' + e.line + ': ' + esc(e.why) + '</p>').join('') +
@@ -689,7 +932,7 @@ async function handleCsv(file) {
       : '') +
     '<div class="btnrow" style="margin-top:12px">' +
       '<button class="btn primary small" id="csvGo">Import ' + bets.length + ' bets</button>' +
-      '<button class="btn ghost small" id="csvCancel">Cancel</button></div>';
+      '<button class="btn ghost small" id="csvCancel">Cancel</button></div></div>';
 
   pendingCsv = bets;
 }
@@ -726,18 +969,44 @@ function showUpgrade(body) {
   go('pricing');
 }
 
+/* The review summary.
+   "Profit" used to add the potential return of an open bet to the settled
+   profit of a graded one and print the total with no label, so the number
+   was never true of anything. Open and settled are now counted separately
+   and the line says which it is showing. The whole bar hides when there is
+   nothing on screen to review, rather than sitting there reading zero. */
 function updateImportTotals() {
-  const cards = $$('#uploadResults .card');
-  const ready = cards.filter(c => c.dataset.ready === '1').length;
+  const cards = $$('#uploadResults .slipcard');
+  const bar = $('reviewBar');
+  if (bar) bar.hidden = cards.length === 0;
+  if (!cards.length) return;
+
+  const ready = cards.filter(c => c.dataset.ready === '1');
   const retake = cards.filter(c => c.dataset.ready === '0').length;
   const staked = cards.reduce((a, c) => a + (+c.dataset.stake || 0), 0);
-  const profit = cards.reduce((a, c) => a + (+c.dataset.profit || 0), 0);
-  setText('readyCount', String(ready));
+
+  /* A slip that already carries its own result has a real profit. One that
+     does not has a potential profit, and the two must not be added. */
+  const settled = ready.filter(c => c.dataset.result);
+  const open = ready.filter(c => !c.dataset.result);
+  const settledProfit = settled.reduce((a, c) =>
+    a + (c.dataset.returns ? Number(c.dataset.returns) - Number(c.dataset.stake || 0) : 0), 0);
+  const potential = open.reduce((a, c) => a + (+c.dataset.profit || 0), 0);
+
+  setText('readyCount', String(ready.length));
   setText('retakeCount', String(retake));
-  setText('importStaked', staked ? M.money(staked) : '—');
+  setText('importStaked', staked ? M.money(staked) : 'None');
+
+  const showSettled = settled.length > 0 && open.length === 0;
+  setText('importProfitLabel', showSettled
+    ? 'Profit on ' + (settled.length === 1 ? 'it' : 'those ' + settled.length)
+    : settled.length
+      ? 'If the ' + open.length + ' open ones win'
+      : 'If they all win');
+  const value = showSettled ? settledProfit : potential;
   const p = $('importProfit');
-  p.textContent = profit ? M.signed(profit) : '—';
-  p.className = 'v m ' + M.tone(profit);
+  p.textContent = value ? M.signed(value) : 'None';
+  p.className = 'v m ' + M.tone(value);
 }
 
 /* ---------------- totals ---------------- */
@@ -763,7 +1032,7 @@ function sumTotals() {
   });
   setHTML('totalsSummary', n
     ? n + ' filled · <b class="' + M.tone(sum) + '">' + M.money0s(sum) + '</b>'
-    : '—');
+    : 'None yet');
 }
 
 /* ---------------- events ---------------- */
@@ -926,7 +1195,7 @@ document.addEventListener('click', e => {
   /* `button[data-theme]`, NOT `[data-theme]`.
      The theme lives on <html data-theme="...">, so a bare attribute
      selector matched every click in the document once closest() walked far
-     enough up — and because this branch returns, it swallowed every branch
+     enough up, and because this branch returns, it swallowed every branch
      declared after it. That killed the signup wizard's Continue button, the
      unit row, the import tabs, both dropzones, and Confirm on an imported
      slip. Any delegated selector here must be specific enough that it
@@ -1007,7 +1276,7 @@ document.addEventListener('click', e => {
       b.setAttribute('aria-pressed', String(on));
     });
     paintSeg($('importSeg'));
-    ['importUpload', 'importTotals', 'importOther'].forEach(x => { $(x).hidden = x !== S.importView; });
+    ['importUpload', 'importTotals'].forEach(x => { $(x).hidden = x !== S.importView; });
     if (S.importView === 'importTotals') requestAnimationFrame(() => paintSeg($('totalsSeg')));
     return;
   }
@@ -1022,7 +1291,16 @@ document.addEventListener('click', e => {
     return;
   }
   if (c('#dropzone')) { $('slipFile').click(); return; }
-  if (c('#otherDrop')) { $('csvFile').click(); return; }
+  if ((el = c('#pasteGo'))) { handlePaste(el); return; }
+  /* An accumulator the reader only got half of. Adding the missing leg
+     beats retaking the photograph, which is the same reason every field is
+     editable in the first place. */
+  if ((el = c('[data-add-leg]'))) { addLeg(el.closest('.card')); return; }
+  if (c('[data-goto-totals]')) {
+    const tab = document.querySelector('#importSeg [data-import="importTotals"]');
+    if (tab) tab.click();
+    return;
+  }
   if ((el = c('[data-dismiss-card]'))) { collapse(el.closest('.card'), 'Discarded'); setTimeout(updateImportTotals, 500); return; }
   if ((el = c('[data-confirm-slip]'))) { confirmSlip(el); return; }
   if ((el = c('#csvGo'))) { runCsvImport(el); return; }
@@ -1133,7 +1411,7 @@ document.addEventListener('input', e => {
     return;
   }
   if (t.closest && t.closest('#totalsGrid')) { sumTotals(); return; }
-  if (t.matches && t.matches('[data-slip]')) {
+  if (t.matches && (t.matches('[data-slip]') || t.matches('[data-leg-field]'))) {
     const card = t.closest('.card');
     if (card) { syncSlipCard(card); updateImportTotals(); }
     return;
@@ -1159,7 +1437,6 @@ document.addEventListener('change', e => {
     go('pay');
   }
   else if (t.id === 'slipFile') { handleFiles(t.files); t.value = ''; }
-  else if (t.id === 'csvFile') { handleCsv(t.files && t.files[0]); t.value = ''; }
   else if (t.id === 'timezone' || t.id === 'exportFormat' || t.id === 'stakeAs') toast(t.value + ' selected');
 });
 

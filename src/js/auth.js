@@ -2,7 +2,7 @@
  *
  * Validation here is for the user's benefit only. Every rule is enforced
  * again on the server, and uniqueness of email and display name is a
- * database constraint, not a check — see api/_lib/db.js. A client-side
+ * database constraint, not a check, see api/_lib/db.js. A client-side
  * "is this taken?" is a race by definition.
  */
 import { $, $$, toast, paintSeg } from './dom.js';
@@ -13,7 +13,7 @@ let mode = 'up';
 let pendingEmail = '';
 let resetSent = false;
 /* There is no demo mode any more.
-   Signup used to fake an account when the API reported no database — it
+   Signup used to fake an account when the API reported no database, it
    accepted 000000 as a verification code and opened a dashboard. That is
    the one thing this product cannot do: an account that does not exist,
    holding bets that are not saved, is worse than an honest refusal. When
@@ -23,7 +23,7 @@ let resetSent = false;
 /* What to run once a session cookie actually exists.
  *
  * Signing in used to end with a click on the dashboard tab, which went
- * through go() — and go() refuses the app views when it has no user, because
+ * through go(), and go() refuses the app views when it has no user, because
  * it was still holding the signed-out session it read at boot. So a correct
  * password bounced straight back to the signup screen saying "create an
  * account, or log in". Nothing was wrong with the login; the client simply
@@ -84,7 +84,7 @@ export function identifierProblem(v) {
 }
 
 /* Eight characters with a capital and a symbol. Length still does most of
-   the work, so the meter keeps saying so — but 12 was turning people away at
+   the work, so the meter keeps saying so, but 12 was turning people away at
    the door for a tracker, not a bank. */
 export const PW_RULES = {
   len: v => v.length >= 8,
@@ -195,7 +195,7 @@ async function signup(next) {
 
   /* No mail provider on this deployment, or the send failed: the server
      signed the account in rather than issuing a code nobody could receive.
-     Skipping the verify step is the honest move — asking for a code that was
+     Skipping the verify step is the honest move, asking for a code that was
      never sent is the kind of dead end that makes people think the product
      is broken. */
   if (body.verified) {
@@ -313,7 +313,7 @@ async function resetFlow() {
     $('forgotSecond').hidden = false;
     const notice = $('forgotNotice');
     notice.hidden = false;
-    /* The same wording whether or not the account exists — the server
+    /* The same wording whether or not the account exists, the server
        answers identically on purpose, and a client that said "sent!" only
        for real accounts would give the whole thing away. */
     notice.textContent = body.message || 'If that account exists, a code is on its way.';

@@ -2,7 +2,7 @@
  *
  * The codes are a lookup table in source rather than rows in the database,
  * because they are product decisions and there is no admin screen to edit
- * them from. What the database holds is redemptions — who used what — since
+ * them from. What the database holds is redemptions, who used what, since
  * "once per account" is only true if a UNIQUE constraint enforces it.
  *
  * Two shapes, and they are genuinely different things:
@@ -13,7 +13,7 @@
  *
  * Codes are matched case-insensitively with spaces and dashes stripped:
  * people type them off a screenshot, and rejecting "ak5 wrd" teaches them
- * nothing. Ambiguity is not a risk here — these are handed out deliberately.
+ * nothing. Ambiguity is not a risk here, these are handed out deliberately.
  */
 
 export const CODES = {
@@ -50,7 +50,7 @@ export function lookup(input) {
 /**
  * When a redemption should stop paying for itself.
  *
- * Lifetime has no end date, which is the same NULL a free account carries —
+ * Lifetime has no end date, which is the same NULL a free account carries,
  * so `plan` is what tells them apart, never this. Months are added to the
  * later of now and any date the account already has, so redeeming a gift on
  * top of a paid month extends it rather than throwing the remainder away.

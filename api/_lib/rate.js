@@ -35,7 +35,7 @@ export async function limit(bucket, max, windowSeconds) {
  * Apply a limit and write the 429 if it is exceeded. Returns true to continue.
  *
  * `res` may be null, for the callers that must answer identically whether or
- * not the limit bit — /api/auth/forgot deliberately gives the same reply to
+ * not the limit bit, /api/auth/forgot deliberately gives the same reply to
  * every request, so it consumes the verdict rather than letting it write a
  * distinguishable response.
  */

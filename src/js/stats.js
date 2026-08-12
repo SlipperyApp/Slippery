@@ -85,7 +85,7 @@ function label(S, MS) {
 function splitBy(bets, key) {
   const m = new Map();
   for (const b of bets) {
-    const k = b[key] || '—';
+    const k = b[key] || 'Unspecified';
     m.set(k, (m.get(k) || 0) + b.profit);
   }
   return [...m.entries()].sort((a, b) => b[1] - a[1]);

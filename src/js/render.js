@@ -122,7 +122,7 @@ export function renderCalendar() {
                  ');border-color:rgba(' + rgb + ',' + (0.26 + r * 0.3).toFixed(3) + ')';
       } else if (has) {
         /* A day whose bets all voided: bets were placed, no money moved.
-           Neither green nor red — both would be a lie about the day. */
+           Neither green nor red, both would be a lie about the day. */
         style += ';background:rgba(255,255,255,.06);border-color:rgba(255,255,255,.14)';
       }
       const label = has
@@ -182,7 +182,7 @@ export function renderHeadline() {
   setText('statUnits', M.units(p.profit, S.unit));
   setText('statTurnover', M.money0(p.turnover));
   setText('statWinRate', p.winRate + '%');
-  setText('statAvgOdds', p.avgOdds ? p.avgOdds.toFixed(2) : '—');
+  setText('statAvgOdds', p.avgOdds ? p.avgOdds.toFixed(2) : 'None');
   const roi = $('statRoi');
   roi.textContent = M.pct(p.roi);
   roi.className = M.tone(p.roi);
@@ -689,7 +689,7 @@ export function renderAccount(user) {
   for (const id of ['linkCode', 'linkCodeSettings']) {
     const code = $(id);
     if (!code) continue;
-    code.textContent = user.linkCode || '—';
+    code.textContent = user.linkCode || 'Not linked yet';
     if (id === 'linkCodeSettings') code.hidden = !user.linkCode;
   }
 
