@@ -94,6 +94,11 @@ export let GROUPS = [];
 /** Everything the session knows about the signed-in user, or null. */
 export let ME = null;
 
+/* What is left of the free trial, as GET /api/bets reports it:
+   {endsAt, daysLeft, slipsLeft, slipsUsed, over, active}. Null on a paid
+   account, which is how the UI knows to say nothing at all. */
+export let TRIAL = null;
+
 /* ---------- hydration ---------- */
 
 /**
@@ -107,6 +112,11 @@ export function hydrate(payload) {
   LEDGER = settled;
   PENDING = running;
   DAY_TOTALS = buildDayTotals(LEDGER);
+  /* The trial is the server's arithmetic, not ours. Counting slips in the
+     browser would give a different answer to the one that actually blocks
+     the next upload, and "you have 3 left" followed by a refusal is worse
+     than no counter at all. Null when the account is paid. */
+  TRIAL = (payload && payload.trial) || null;
   return { settled: LEDGER.length, pending: PENDING.length };
 }
 

@@ -150,6 +150,16 @@
 .stepnote{color:var(--t2);font-size:13.5px;margin-bottom:13px;line-height:1.55}
 .stepnav{display:flex;gap:9px;margin-top:16px;&>*{flex:1}}
 
+/* "It never arrived" is usually "it arrived in spam".
+   Quiet, but not so quiet it reads as fine print: this is the sentence
+   that saves somebody from resending a code four times. The address is
+   monospaced because it is a thing to copy into a search box. */
+.spamnote{
+  margin-top:12px;padding:10px 12px;border-radius:11px;font-size:12px;line-height:1.55;
+  color:var(--t2);background:var(--c1);border:1px solid var(--e1);
+  & b{font-family:var(--fm);font-weight:550;font-size:11.5px;color:var(--t1);
+    overflow-wrap:anywhere}}
+
 .pwrules{list-style:none;margin-top:10px;display:flex;flex-direction:column;gap:5px;
   & li{display:flex;align-items:center;gap:9px;font-size:12.5px;color:var(--t3);
     transition:color var(--tb);

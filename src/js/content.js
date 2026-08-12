@@ -118,37 +118,37 @@ const HELP_FAQ = [
  */
 export const PLANS = [
   {
-    id: 'free', name: 'Free trial', blurb: 'Try it properly first.',
-    price: '£0', per: '', note: '20 slips included, no time limit',
-    adds: 'Everything you need to see whether it fits.',
+    id: 'free', name: 'Free trial', blurb: 'Two weeks, on us.',
+    price: '£0', per: '', note: '14 days or 35 slips, whichever runs out first',
+    adds: 'The whole product, nothing held back.',
     features: [
-      'Dashboard, profit calendar and ledger',
-      'Telegram bot, slip reading and settlement',
-      '20 slips, then it stops adding new ones'
+      '35 slips',
+      'Calendar, ledger and analytics',
+      'Telegram bot and slip reading',
+      'Cancel before it ends and pay nothing'
     ]
   },
   {
     id: 'monthly', name: 'Monthly', blurb: 'Pay as you go.',
-    price: '£3.49', per: ' per month', note: 'Cancel any time, keep the month you paid for',
-    adds: 'Everything in the free trial, plus:',
+    price: '£3.49', per: ' a month', note: 'Cancel any time',
+    adds: 'Everything in the trial, plus:',
     features: [
       'Unlimited slips',
-      'Analytics by bookmaker, market and tipster',
-      'Groups, following and followers',
+      'Groups and followers',
       'CSV import and export'
     ]
   },
   {
-    id: 'yearly', name: 'Yearly', blurb: 'Best value by a distance.',
-    price: '£29.99', per: ' per year', note: '£2.50 a month, saving £11.89 against monthly',
+    id: 'yearly', name: 'Yearly', blurb: 'The same thing, cheaper.',
+    price: '£29.99', per: ' a year', note: 'Works out at £2.50 a month',
     adds: 'Everything in monthly, plus:',
     flag: 'Save £11.89',
     featured: true,
     features: [
-      'The price of eight and a half months, for twelve',
-      'Unlimited history import, no row cap',
-      'Verification review, for the verified tick',
-      'Slips read first when the queue is busy'
+      'Two and a half months free',
+      'Unlimited history import',
+      'Verification review',
+      'Priority slip reading'
     ]
   }
 ];
@@ -219,7 +219,11 @@ export function renderStatic() {
     '<div class="note">' + esc(p.note) + '</div>' +
     '<p class="planadds">' + esc(p.adds) + '</p><ul>' +
     p.features.map(f => '<li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><path d="M20 6L9 17l-5-5"/></svg>' + esc(f) + '</li>').join('') +
-    '</ul><button class="btn ' + (p.featured ? 'primary' : 'ghost') + ' full" ' +
+    /* Monthly and yearly carry the same button treatment. A ghost button
+       next to a solid one reads as "this one is the wrong choice", and
+       neither of them is: the yearly card is already marked out by its
+       flag and its border, which is enough. */
+    '</ul><button class="btn ' + (p.id === 'free' ? 'ghost' : 'primary') + ' full" ' +
     (p.id === 'free' ? 'data-nav="setup"' : 'data-pay="' + p.id + '"') + '>' +
     (p.id === 'free' ? 'Start free' : 'Choose ' + esc(p.name.toLowerCase())) + '</button></div>').join(''));
 

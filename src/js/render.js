@@ -5,7 +5,7 @@ import { S } from './state.js';
 import * as M from './money.js';
 import {
   LEDGER, PENDING, PEOPLE, GROUPS, TODAY, THEMES, THEME_BG, BOOKS, TIPSTERS,
-  OUTCOME_ICON, OUTCOME_LABEL, outcomeGroup, personMonths, personDays, IMPORTED, ico
+  OUTCOME_ICON, OUTCOME_LABEL, outcomeGroup, personMonths, personDays, IMPORTED, ico, TRIAL
 } from './data.js';
 import {
   stats, lifetime, dayMap, monthTotal, dowLabels, dowOffset, weekRange, targetFor
@@ -728,6 +728,50 @@ export function renderAccount(user) {
    so every account read as the free trial however it was paying. */
 const PLAN_NAME = { free: 'Free trial', monthly: 'Monthly', yearly: 'Yearly', lifetime: 'Free for life' };
 
+/* The trial counter on the dashboard.
+ *
+ * Says whichever half is closer to running out, never both: "5 days and 22
+ * slips left" makes somebody do arithmetic to work out which one is going
+ * to stop them. The bar is whichever of the two is further along, so it
+ * always tracks the limit that will actually bite.
+ *
+ * On day one with nothing logged this is deliberately dull. It earns
+ * attention as it runs down and not before.
+ */
+export function renderTrial() {
+  const bar = $('trialBar');
+  if (!bar) return;
+  const t = TRIAL;
+  /* No trial object means a paid account, and a paid account is told
+     nothing at all. */
+  if (!t) { bar.hidden = true; return; }
+  bar.hidden = false;
+
+  const slipPart = t.slipsUsed / (t.slipsUsed + t.slipsLeft || 1);
+  /* daysLeft is null on accounts created before the trial existed; those
+     have a slip limit and no clock, so the bar tracks slips alone. */
+  const timePart = t.daysLeft == null ? 0 : 1 - Math.min(1, t.daysLeft / 14);
+  const filled = Math.max(slipPart, timePart);
+
+  bar.classList.toggle('done', !t.active);
+  bar.classList.toggle('warn', t.active && filled >= 0.75);
+  $('trialFill').style.setProperty('--f', filled.toFixed(3));
+
+  const go = $('trialGo');
+  if (go) go.textContent = t.active ? 'Subscribe' : 'Subscribe now';
+
+  if (!t.active) {
+    setHTML('trialText', t.over === 'time'
+      ? 'Your free trial has <b>finished</b>. Subscribe to keep logging slips.'
+      : 'You have used <b>all ' + (t.slipsUsed) + '</b> trial slips. Subscribe to keep going.');
+    return;
+  }
+  /* Whichever limit is nearer, in its own words. */
+  setHTML('trialText', slipPart >= timePart
+    ? 'Free trial: <b>' + t.slipsLeft + '</b> slip' + (t.slipsLeft === 1 ? '' : 's') + ' left'
+    : 'Free trial: <b>' + t.daysLeft + '</b> day' + (t.daysLeft === 1 ? '' : 's') + ' left');
+}
+
 export function renderPlan() {
   const plan = S.plan || 'free';
   const sel = $('planSelect');
@@ -746,13 +790,19 @@ export function renderPlan() {
     sel.value = plan;
   }
   const until = S.planUntil ? new Date(S.planUntil) : null;
+  /* The trial's numbers come from the server, so this row and the counter
+     on the dashboard cannot disagree with what actually blocks an upload.
+     35 is the fallback for the moment before the first ledger load. */
+  const cap = TRIAL ? TRIAL.slipsUsed + TRIAL.slipsLeft : 35;
   setText('planLimit', plan === 'free'
-    ? '20 slips on the free trial'
+    ? (TRIAL && TRIAL.daysLeft != null && TRIAL.active
+        ? cap + ' slips, ' + TRIAL.daysLeft + ' day' + (TRIAL.daysLeft === 1 ? '' : 's') + ' left'
+        : cap + ' slips on the free trial')
     : plan === 'lifetime'
       ? 'Unlimited, permanently'
       : until ? 'Unlimited until ' + DS.format(until) : 'Unlimited');
   setText('planUsage', plan === 'free'
-    ? Math.min(LEDGER.length + PENDING.length, 20) + ' of 20'
+    ? (TRIAL ? TRIAL.slipsUsed : Math.min(LEDGER.length + PENDING.length, cap)) + ' of ' + cap
     : M.plain(LEDGER.length + PENDING.length));
 }
 
@@ -765,4 +815,6 @@ export function renderAll() {
   renderGroups();
   renderPeople();
   renderPending();
+  renderTrial();
+  renderPlan();
 }

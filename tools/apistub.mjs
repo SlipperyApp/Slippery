@@ -91,9 +91,17 @@ export async function installStub(page, opts = {}) {
         body: JSON.stringify({ error: 'Log in to see your bets.' }) });
     }
     if (method === 'GET') {
+      /* A free account partway through its trial, so the audit actually
+         renders the trial counter rather than the paid state where it is
+         hidden. Nine slips in with four days left puts the bar in its
+         ordinary state, not the warning one. */
       return route.fulfill({ status: 200, contentType: 'application/json',
-        body: JSON.stringify({ bets: BETS, total: BETS.length, freeSlips: 20,
-          plan: 'yearly', planUntil: null, unlimited: true }) });
+        body: JSON.stringify({ bets: BETS, total: BETS.length, freeSlips: 35,
+          plan: 'free', planUntil: null, unlimited: false,
+          trial: {
+            endsAt: new Date(Date.now() + 4 * 86400000).toISOString(),
+            daysLeft: 4, slipsLeft: 26, slipsUsed: 9, over: null, active: true
+          } }) });
     }
     if (method === 'POST') {
       const sent = JSON.parse(route.request().postData() || '{}');

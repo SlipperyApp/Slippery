@@ -124,7 +124,9 @@ export default async function handler(req, res) {
         });
       }
       return json(res, 201, {
-        ok: true, name: user.display_name, emailSent: true, plan, grant, trial
+        ok: true, name: user.display_name, emailSent: true, plan, grant, trial,
+        /* So the verify screen can name what to look for in a spam folder. */
+        from: mail.fromAddress()
       });
     }
 

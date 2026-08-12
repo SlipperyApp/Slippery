@@ -1,12 +1,12 @@
 /* ============================================================
    THE SCROLL-JACKED SEQUENCE
    ============================================================
-   The page pins for three viewport heights while the wheel drives a
+   The page pins for under two viewport heights while the wheel drives a
    three-beat story. The brief previously rejected scroll jacking
    because mandatory snap traps people; this version is jacked without
    trapping, and the difference is worth writing down:
 
-     · The track is a real 240svh element. The scrollbar is honest,
+     · The track is a real 180svh element. The scrollbar is honest,
        the back button works, and a hard flick carries you straight
        through. Nothing intercepts wheel or touch events.
      · The stage is position:sticky, not fixed. It cannot escape its
@@ -35,12 +35,14 @@
   --s1:0;--s2:-1;--s3:-1;
 }
 
-/* Three beats. Each was a full viewport, so getting past the sequence took
-   three complete swipes on a phone before the page resumed, which is a long
-   time to spend on three sentences. Eighty percent of a viewport each still
-   gives every beat its own snap point and its own moment, and takes a third
-   less scrolling to clear. */
-.jack-track{height:240svh;pointer-events:none}
+/* Three beats, and getting through them is now most of one flick.
+   This started at 300svh, which is three full swipes on a phone to read
+   three sentences, and 240svh was still two. At 180svh the distance the
+   sequence occupies is 80svh, so 01 to 03 is less than one screen of
+   scrolling and a normal flick carries you the whole way. Below about
+   160svh the beats stop having a moment and start flashing past, which is
+   the failure in the other direction. */
+.jack-track{height:180svh;pointer-events:none}
 /* THE GEOMETRY IS NOT FREE.
    The stage is sticky and one viewport tall, so the distance the sequence
    actually has is `track - 100svh`, and motion.js maps progress across
@@ -48,12 +50,14 @@
    three snap points have to sit at 0, half and all of that distance, or the
    page snaps to a position where two scenes are half faded.
 
-   With a 240svh track the distance is 140svh, so the first two steps are
-   70svh each and the last is the 100svh tail that carries the pin to its
-   end: 70 + 70 + 100 = 240. Three equal steps only works when the track is
+   With a 180svh track the distance is 80svh, so the first two steps are
+   40svh each and the last is the 100svh tail that carries the pin to its
+   end: 40 + 40 + 100 = 180. Three equal steps only works when the track is
    300svh, which is what it used to be, and shortening it without moving
-   these apart is what left beat two measured at 0.875 present. */
-.jack-step{height:70svh;scroll-snap-align:start}
+   these apart is what left beat two measured at 0.875 present. Change the
+   track height and these two numbers change with it, or the page snaps to
+   a position where two scenes are half faded. */
+.jack-step{height:40svh;scroll-snap-align:start}
 .jack-step[data-step="2"]{height:100svh}
 
 .jack-stage{

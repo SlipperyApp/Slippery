@@ -29,6 +29,23 @@ export function provider() {
   return gmailReady() ? 'gmail' : resendReady() ? 'resend' : null;
 }
 
+/* The address our mail arrives from.
+ *
+ * Not a secret: it is on the front of every message we send, and the whole
+ * point of telling someone it is in their spam folder is telling them what
+ * to look for. It is still env-derived rather than hardcoded, because the
+ * From address changes with the mailbox the deployment sends through, and a
+ * "check your spam for X" that names the wrong X is worse than no note.
+ *
+ * The display name is stripped: a spam folder search wants the address. */
+export function fromAddress() {
+  const raw = process.env.MAIL_FROM ||
+    (gmailReady() ? process.env.GMAIL_USER : '') || '';
+  const angled = /<([^>]+)>/.exec(raw);
+  const addr = (angled ? angled[1] : raw).trim();
+  return /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(addr) ? addr : null;
+}
+
 export async function sendVerificationEmail(to, code) {
   return send(to, 'Your Slippery code: ' + code, codeText(code, VERIFY), codeHtml(code, VERIFY));
 }

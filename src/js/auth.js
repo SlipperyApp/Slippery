@@ -205,9 +205,10 @@ async function signup(next) {
     return;
   }
 
+  showSender(body.from);
   const hint = $('verifyHint');
   hint.hidden = false;
-  hint.textContent = 'Check your inbox, and your spam folder if it is not there in a minute.';
+  hint.textContent = 'Codes take a few seconds. This one is good for ten minutes.';
   next();
 }
 
@@ -276,10 +277,22 @@ export async function resend() {
    Two submits through the same button: ask for a code, then set the new
    password with it. Kept on one panel because the account being reset is
    the context, and moving to another screen is where people lose it. */
+/* Name the sender everywhere the spam note appears.
+   The address comes from the server because it depends on which mailbox the
+   deployment sends through; a note that names the wrong address sends
+   somebody searching their junk folder for a string that is not in it. When
+   the server does not report one, the generic wording in the markup stands
+   rather than being replaced by an empty element. */
+function showSender(address) {
+  if (!address) return;
+  for (const el of document.querySelectorAll('.mailfrom')) el.textContent = address;
+}
+
 export function forgot() {
   resetSent = false;
   $('forgotSecond').hidden = true;
   $('forgotNotice').hidden = true;
+  $('forgotSpam').hidden = true;
   const from = $('liUser').value.trim();
   if (from) $('fgUser').value = from;
   setMode('forgot');
@@ -317,6 +330,8 @@ async function resetFlow() {
        answers identically on purpose, and a client that said "sent!" only
        for real accounts would give the whole thing away. */
     notice.textContent = body.message || 'If that account exists, a code is on its way.';
+    showSender(body.from);
+    $('forgotSpam').hidden = false;
     setMode('forgot');
     $('fgCode').focus();
     return;

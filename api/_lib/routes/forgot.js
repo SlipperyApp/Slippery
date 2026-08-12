@@ -53,7 +53,10 @@ export default async function handler(req, res) {
         }
       }
     }
-    return json(res, 200, SAME_ANSWER);
+    /* The sender address goes back with the same answer for everybody, so
+       naming it cannot say whether the account exists. It is what somebody
+       types into the search box of a spam folder. */
+    return json(res, 200, Object.assign({ from: mail.fromAddress() }, SAME_ANSWER));
   } catch (err) {
     return fail(res, err, 'Could not start a password reset right now.');
   }

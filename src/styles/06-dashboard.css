@@ -5,26 +5,69 @@
    left a strip of raw sky between the header and the tabs. */
 #dash{padding-top:0}
 /* Overview / Ledger / Social.
-   Three full-size pills across the top of a 390px screen took a 61px band
-   out of the viewport and sat over the first card as you scrolled. Smaller
-   and centred: the same three targets, a shorter band, and the group reads
-   as one control rather than as a row that happens to start at the left
-   margin. Still 38px tall, which is the floor for something a thumb has to
-   hit accurately. */
+   These were three gradient pills, which is the loudest control on the page
+   spent on something you set once and then ignore. The numbers underneath
+   are the subject; the tabs are just where you are. So: small caps type, no
+   pill, and the selected one marked by a two pixel rule under the word.
+   The band is 34px instead of 61px, and nothing competes with the headline.
+
+   The buttons look small but are not small to hit. Each carries 11px of
+   vertical padding inside a 34px row, and the row is the full width of the
+   screen, so the touch target stays well past the 24px floor even though
+   the ink is 11px. Shrinking the target rather than the type would have
+   been the wrong half to cut. */
 .subnav{
-  position:sticky;top:57px;z-index:30;margin:0 -16px;padding:8px 0 7px;
+  position:sticky;top:57px;z-index:30;margin:0 -16px;padding:3px 0 0;
   background:color-mix(in srgb,var(--bg) 92%,transparent);
   box-shadow:0 8px 16px -10px rgba(0,0,0,.75);
-  & .inner{display:flex;gap:5px;justify-content:center;overflow-x:auto;padding:2px 16px;
+  & .inner{display:flex;gap:2px;justify-content:center;overflow-x:auto;padding:0 16px;
     scrollbar-width:none;overscroll-behavior-x:contain;
     &::-webkit-scrollbar{display:none}}
-  & button{font-size:12.5px;font-weight:550;color:var(--t2);
-    background:var(--c1);border:1px solid var(--e1);
-    padding:7px 15px;border-radius:999px;white-space:nowrap;min-height:38px;
-    transition:color var(--tb),background var(--tb),border-color var(--tb),transform var(--tf);
-    &:active{transform:scale(.96)}
-    &[aria-selected=true]{color:#08111f;background:linear-gradient(135deg,var(--p),var(--s));
-      border-color:transparent}}}
+  & button{position:relative;font-family:var(--fm);font-size:10.5px;font-weight:600;
+    letter-spacing:.13em;text-transform:uppercase;color:var(--t3);
+    background:none;border:0;padding:11px 13px 10px;white-space:nowrap;min-height:34px;
+    transition:color var(--tb),transform var(--tf);
+    &:active{transform:scale(.94)}
+    /* The rule. A pseudo-element rather than a border so the inactive tabs
+       do not shift by a pixel when selection moves. */
+    &::after{content:'';position:absolute;left:13px;right:13px;bottom:0;height:2px;
+      border-radius:2px;background:linear-gradient(90deg,var(--p),var(--s));
+      opacity:0;transform:scaleX(.4);transform-origin:center;
+      transition:opacity var(--tb),transform var(--tb) var(--ez)}
+    &[aria-selected=true]{color:var(--t1);
+      &::after{opacity:1;transform:none}}}}
+
+/* The trial counter.
+   Three states in one element, because a trial that is fine, a trial that
+   is nearly out and a trial that is over are the same fact at different
+   volumes, and moving between three separate components would make the
+   dashboard jump. Quiet by default; `.warn` when it is close; `.done` when
+   it has run out and the subscribe button is the only thing left to do. */
+.trialbar{
+  margin-bottom:10px;padding:9px 12px;border-radius:12px;
+  background:var(--c1);border:1px solid var(--e1);
+  transition:background var(--tb),border-color var(--tb);
+  & .trialbar-row{display:flex;align-items:center;justify-content:space-between;gap:10px}
+  & .trialbar-text{font-size:12px;color:var(--t2);line-height:1.45;
+    & b{color:var(--t1);font-family:var(--fm);font-weight:600;
+      font-variant-numeric:tabular-nums lining-nums}}
+  & .btn{flex:0 0 auto}
+  /* Progress through the trial, not remaining: it fills up as it runs out,
+     which is the direction people read a meter. */
+  & .trialbar-track{height:3px;border-radius:3px;background:var(--e2);
+    margin-top:8px;overflow:hidden;
+    & i{display:block;height:100%;border-radius:3px;background:var(--s);
+      transform-origin:left center;transform:scaleX(var(--f,0));
+      transition:transform 620ms var(--ez);will-change:transform}}
+  &.warn{border-color:rgba(var(--orb2),.42);background:rgba(var(--orb2),.09);
+    & .trialbar-track i{background:var(--a)}}
+  /* Out of trial. The semantic loss colour is not used here: this is not a
+     losing bet, it is a subscription prompt, and #FCA5A5 means one thing
+     across the whole product. */
+  &.done{border-color:rgba(var(--orb2),.55);background:rgba(var(--orb2),.14);
+    & .trialbar-text b{color:var(--a)}
+    & .trialbar-track i{background:var(--a)}}
+}
 
 .pane{display:none;&.on{display:block;animation:panein 300ms var(--ex)}}
 @keyframes panein{from{opacity:0;transform:translate3d(0,6px,0)}to{opacity:1;transform:none}}

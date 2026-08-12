@@ -1160,8 +1160,18 @@ function pollForLink(btn) {
   }, 6000);
 }
 
+/* The trial has stopped this upload. The server says which half ran out,
+   and the two need different sentences: somebody who burned 35 slips in
+   four days is being asked to subscribe early, which is a compliment, and
+   somebody whose fortnight is up is being asked at the normal time. The
+   old wording said "free slips used" either way, which is simply wrong
+   half the time. */
 function showUpgrade(body) {
-  toast('That is all ' + (body && body.freeSlips || 20) + ' free slips used.');
+  const over = body && body.over;
+  const cap = (body && body.freeSlips) || 35;
+  toast(over === 'time'
+    ? 'Your two week trial has finished. Pick a plan to carry on.'
+    : 'That is all ' + cap + ' trial slips. Pick a plan to carry on.');
   go('pricing');
 }
 

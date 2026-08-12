@@ -331,6 +331,7 @@
             </ul>
           </div>
           <div class="notice" id="forgotNotice" hidden></div>
+          <p class="spamnote" id="forgotSpam" hidden>Not there? Check your spam or junk folder for <b class="mailfrom">the Slippery address</b>, and mark it as not spam so the next one lands properly.</p>
           <button class="pillbtn link" id="forgotBack" style="margin-top:13px">Back to log in</button>
         </div>
       </div>
@@ -342,6 +343,12 @@
         <div class="stepglyph" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 6h16v12H4z"/><path d="M4 7l8 6 8-6"/></svg></div>
         <h2>Check your email</h2>
         <p class="stepnote">We sent a six digit code to <b id="verifyMail">your inbox</b>. It expires in ten minutes.</p>
+        <!-- The single most useful sentence on this screen. A first message
+             from an address nobody has written to lands in spam often
+             enough that "it never arrived" is usually "it did arrive". The
+             sender is filled in from the server, because the From address
+             depends on which mailbox the deployment is sending through. -->
+        <p class="spamnote">Not there? Check your spam or junk folder for <b class="mailfrom">the Slippery address</b>, and mark it as not spam so the next one lands properly.</p>
         <label class="sr" for="verifyCode">Verification code</label>
         <input class="field codeinput" id="verifyCode" inputmode="numeric" maxlength="6" autocomplete="one-time-code" placeholder="000000" aria-describedby="verifyErr">
         <p class="formerr" id="verifyErr" hidden></p>
@@ -552,6 +559,18 @@
     </div></div>
 
     <div class="pane on" id="paneOverview" role="tabpanel" aria-labelledby="tabOverview" tabindex="0">
+      <!-- What is left of the trial. Hidden entirely on a paid account, and
+           on a fresh one it is a thin line rather than a card, because on
+           day one there is nothing to worry about. It only becomes a card
+           when the trial is nearly out or already gone. -->
+      <div class="trialbar" id="trialBar" hidden>
+        <div class="trialbar-row">
+          <span class="trialbar-text" id="trialText"></span>
+          <button class="btn primary small" id="trialGo" data-pay="yearly">Subscribe</button>
+        </div>
+        <div class="trialbar-track" aria-hidden="true"><i id="trialFill"></i></div>
+      </div>
+
       <div class="card" id="newMonthCard" style="padding:15px;margin-bottom:10px;border-color:rgba(var(--orb2),.4);background:rgba(var(--orb2),.08)">
         <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:9px">
           <span class="eyebrow">New month</span>
