@@ -501,7 +501,7 @@ function renderSetupSummary() {
     ['Target', { day: 'Daily', week: 'Weekly', month: 'Monthly', year: 'Yearly' }[S.targetPeriod] + ' ' + M.money0(S.target)],
     ['Visibility', { public: 'Public', friends: 'Friends only', private: 'Private' }[S.privacy]],
     ['Theme', theme[1]],
-    ['History', S.migrateChoice ? { upload: 'Files uploaded', totals: 'Typed totals', other: 'Other format' }[S.migrateChoice] : 'Skipped']
+    ['History', (LEDGER.length + PENDING.length) ? M.plain(LEDGER.length + PENDING.length) + ' brought across' : 'Nothing yet']
   ].map(r => '<div class="summaryrow"><span>' + esc(r[0]) + '</span><span>' + esc(r[1]) + '</span></div>').join('');
 }
 
@@ -591,16 +591,20 @@ const isSpreadsheet = file =>
   CSV_LIKE.test(file.name || '') ||
   /^text\/(csv|tab-separated-values|plain)$/.test(file.type || '');
 
-async function handleFiles(files) {
+async function handleFiles(files, into) {
   const list = Array.prototype.slice.call(files || []).slice(0, 8);
   if (!list.length) return;
-  const wrap = $('uploadResults');
+  /* The signup wizard has its own containers, because two elements cannot
+     share an id and the wizard is on screen while the Import view is not.
+     Everything else about the flow is identical. */
+  const wrap = $(into && into.results || 'uploadResults');
+  const reportId = into && into.report || 'csvReport';
 
   for (const file of list) {
     /* A spreadsheet is parsed in the browser: the file never leaves the
        device unless the user goes ahead, and a bad file gets an answer
        instantly rather than after an upload. */
-    if (isSpreadsheet(file)) { await handleCsv(file); continue; }
+    if (isSpreadsheet(file)) { await handleCsv(file, reportId); continue; }
 
     const id = 'up' + (++uploadSeq);
     const card = document.createElement('div');
@@ -995,9 +999,9 @@ function settleSoon() {
    user goes ahead, and so a bad file gets an answer instantly instead of
    after an upload. Reached from the one drop zone rather than its own tab:
    the file says what it is. */
-async function handleCsv(file) {
+async function handleCsv(file, reportId) {
   if (!file) return;
-  const report = $('csvReport');
+  const report = $(reportId || 'csvReport');
   report.innerHTML = '<p class="hinttext">Reading ' + esc(file.name) + '…</p>';
 
   let text;
@@ -1011,12 +1015,12 @@ async function handleCsv(file) {
     report.innerHTML = csvError('That file is over 4MB. Split it, or export a shorter date range.');
     return;
   }
-  showCsvReport(parseBetsCsv(text), file.name);
+  showCsvReport(parseBetsCsv(text), file.name, reportId);
 }
 
-function showCsvReport(parsed, label) {
+function showCsvReport(parsed, label, reportId) {
   const { bets, errors, mapped } = parsed;
-  const report = $('csvReport');
+  const report = $(reportId || 'csvReport');
   /* Line numbers travel with the rows, so a server-side rejection can name
      the same line the file does. */
   bets.forEach((b, i) => { b.line = i + 2; });
@@ -1085,7 +1089,8 @@ async function runCsvImport(btn) {
 
   const n = r.body.imported || 0;
   pendingCsv = null;
-  $('csvReport').innerHTML = '<p class="hinttext">Imported ' + n + ' bets.' +
+  const report = btn.closest('#setupCsvReport') ? $('setupCsvReport') : $('csvReport');
+  report.innerHTML = '<p class="hinttext">Imported ' + n + ' bets.' +
     (r.body.rejected && r.body.rejected.length ? ' ' + r.body.rejected.length + ' rows were rejected.' : '') + '</p>';
   toast(n + ' bets imported');
   await loadLedger();
@@ -1167,7 +1172,7 @@ function showUpgrade(body) {
    and the line says which it is showing. The whole bar hides when there is
    nothing on screen to review, rather than sitting there reading zero. */
 function updateImportTotals() {
-  const cards = $$('#uploadResults .slipcard');
+  const cards = $$('.slipcard');
   const bar = $('reviewBar');
   if (bar) bar.hidden = cards.length === 0;
   if (!cards.length) return;
@@ -1453,11 +1458,6 @@ document.addEventListener('click', e => {
     f.focus();
     return;
   }
-  if ((el = c('[data-migrate]'))) {
-    S.migrateChoice = el.getAttribute('data-migrate');
-    $$('[data-migrate]').forEach(b => b.setAttribute('aria-pressed', String(b === el)));
-    return;
-  }
 
   if ((el = c('#importSeg button'))) {
     S.importView = el.getAttribute('data-import');
@@ -1482,6 +1482,7 @@ document.addEventListener('click', e => {
     return;
   }
   if (c('#dropzone')) { $('slipFile').click(); return; }
+  if (c('#setupDrop')) { $('setupFile').click(); return; }
   if ((el = c('#pasteGo'))) { handlePaste(el); return; }
   /* An accumulator the reader only got half of. Adding the missing leg
      beats retaking the photograph, which is the same reason every field is
@@ -1495,7 +1496,12 @@ document.addEventListener('click', e => {
   if ((el = c('[data-dismiss-card]'))) { collapse(el.closest('.card'), 'Discarded'); setTimeout(updateImportTotals, 500); return; }
   if ((el = c('[data-confirm-slip]'))) { confirmSlip(el); return; }
   if ((el = c('#csvGo'))) { runCsvImport(el); return; }
-  if (c('#csvCancel')) { pendingCsv = null; $('csvReport').innerHTML = ''; return; }
+  if ((el = c('#csvCancel'))) {
+    pendingCsv = null;
+    const box = el.closest('#setupCsvReport') || el.closest('#csvReport');
+    if (box) box.innerHTML = '';
+    return;
+  }
   if (c('#totalsSave')) {
     const btn = c('#totalsSave');
     btn.textContent = 'Totals added'; btn.disabled = true;
@@ -1658,6 +1664,10 @@ document.addEventListener('change', e => {
     go('pay');
   }
   else if (t.id === 'slipFile') { handleFiles(t.files); t.value = ''; }
+  else if (t.id === 'setupFile') {
+    handleFiles(t.files, { results: 'setupResults', report: 'setupCsvReport' });
+    t.value = '';
+  }
   else if (t.id === 'timezone' || t.id === 'exportFormat' || t.id === 'stakeAs') toast(t.value + ' selected');
 });
 

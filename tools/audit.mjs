@@ -598,6 +598,31 @@ async function main() {
     await page.evaluate(() => document.getElementById('authGo').click());
     await page.waitForTimeout(700);
     if (await step() !== '1') fail('signup', 'a valid form did not advance to the verify step');
+
+    /* The history step used to be three buttons that chose a format and
+       imported nothing. It is the real drop zone now, so a slip dropped
+       during signup has to reach the reader and produce a card you can
+       confirm, exactly as it does on the Import screen. */
+    await page.evaluate(() => {
+      /* Straight to the step rather than through verification, which needs
+         a code this stub does not model. */
+      document.querySelectorAll('#setup .step').forEach(s => s.classList.remove('on'));
+      document.querySelector('#setup .step[data-step="4"]').classList.add('on');
+    });
+    await page.waitForTimeout(150);
+    await page.setInputFiles('#setupFile', {
+      name: 'slip.jpg', mimeType: 'image/jpeg', buffer: Buffer.from('a-slip')
+    });
+    await page.waitForTimeout(800);
+    const wizardCard = await page.evaluate(() => {
+      const c = document.querySelector('#setupResults .slipcard');
+      if (!c) return null;
+      const btn = c.querySelector('[data-confirm-slip]');
+      return { ready: c.dataset.ready, stake: c.dataset.stake, disabled: btn ? btn.disabled : null };
+    });
+    if (!wizardCard) fail('signup', 'a slip dropped during signup produced no review card');
+    else if (wizardCard.ready !== '1' || wizardCard.disabled)
+      fail('signup', 'the signup import produced a card that cannot be confirmed');
     await page.close();
   }
 

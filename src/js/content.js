@@ -233,7 +233,6 @@ export function renderStatic() {
   renderHeroHeading();
   renderPreview();
   renderBotChat();
-  renderMigrateOptions();
   renderGuide();
 }
 
@@ -319,21 +318,6 @@ function renderBotChat() {
     '\n\nNet ' + M.signed(net) + ', staked ' + M.money(staked) + '</div></div>');
 }
 const kv = (k, v) => '<div class="kvline"><span>' + k + '</span><b>' + v + '</b></div>';
-
-function renderMigrateOptions() {
-  const opts = [
-    ['upload', 'CSV, Excel or screenshots', 'Whatever you already have',
-      '<path d="M12 16V4M7 9l5-5 5 5M4 20h16"/>'],
-    ['totals', 'Type totals', 'Daily, weekly, monthly or yearly',
-      '<rect x="3" y="4" width="18" height="17" rx="2"/><path d="M3 9h18"/>'],
-    ['other', 'Other format', 'From another tracker, we will try to convert it',
-      '<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6M9 15h6"/>']
-  ];
-  setHTML('migrateList', opts.map(o =>
-    '<button class="optioncard" data-migrate="' + o[0] + '" aria-pressed="' + (S.migrateChoice === o[0]) + '">' +
-    '<span class="glyph" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">' +
-    o[3] + '</svg></span><span><span class="t">' + o[1] + '</span><span class="s">' + o[2] + '</span></span></button>').join(''));
-}
 
 /* ---------------- the how-it-works guide ----------------
    Five steps, each with the panel it describes, all on screen at once.

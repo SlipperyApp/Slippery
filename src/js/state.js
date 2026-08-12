@@ -40,7 +40,6 @@ export const S = {
   filter: 'all',
   query: '',
   peopleQuery: '',
-  migrateChoice: '',
   name: '',
   plan: 'free',           // free | monthly | yearly | lifetime
   planUntil: null,
