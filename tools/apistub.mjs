@@ -193,8 +193,24 @@ export async function installStub(page, opts = {}) {
     months: [0, 0, 0, 0, 0, 0, 12000, 4400, 9100, 0, 0, 0],
     all: 25500, b: 34, roi: 0.11, v: false, pv: 'public', mu: true, ing: false, er: false, gr: [0]
   }];
-  await page.route('**/api/groups', route => {
+  /* The trailing * matters: the directory is GET /api/groups?browse=1, and
+     a pattern without it does not match a URL with a query string, so the
+     request would fall through to the dev server and 404. */
+  const DIRECTORY = [
+    { id: 'p1', name: 'Acca Merchants', members: 34, joined: false, full: false },
+    { id: 'p2', name: 'Bankroll Club', members: 12, joined: true, full: false },
+    { id: 'p3', name: 'Chalk Only', members: 200, joined: false, full: true },
+    { id: 'p4', name: 'Sunday League Syndicate', members: 7, joined: false, full: false }
+  ];
+  await page.route('**/api/groups*', route => {
     const method = route.request().method();
+    const url = new URL(route.request().url());
+    if (method === 'GET' && url.searchParams.has('browse')) {
+      const q = (url.searchParams.get('q') || '').toLowerCase();
+      const rows = q ? DIRECTORY.filter(g => g.name.toLowerCase().includes(q)) : DIRECTORY;
+      return route.fulfill({ status: 200, contentType: 'application/json',
+        body: JSON.stringify({ groups: rows, limit: 100 }) });
+    }
     if (method === 'GET') {
       return route.fulfill({ status: 200, contentType: 'application/json',
         body: JSON.stringify({ groups: GROUPS, people: PEOPLE }) });
@@ -207,6 +223,17 @@ export async function installStub(page, opts = {}) {
     if (sent.code) {
       return route.fulfill({ status: 201, contentType: 'application/json',
         body: JSON.stringify({ joined: true, group: { id: 'g2', name: 'Joined Group' } }) });
+    }
+    if (sent.join) {
+      return route.fulfill({ status: 201, contentType: 'application/json',
+        body: JSON.stringify({ joined: true, group: { id: sent.join, name: 'Acca Merchants' } }) });
+    }
+    /* A taken name is the interesting create response, since the whole
+       point of platform-wide uniqueness is that this path is reachable. */
+    if (String(sent.name || '').toLowerCase() === 'acca merchants') {
+      return route.fulfill({ status: 409, contentType: 'application/json',
+        body: JSON.stringify({ error: 'The name ' + sent.name + ' is taken. Group names are one per platform.',
+          field: 'name', taken: true }) });
     }
     return route.fulfill({ status: 201, contentType: 'application/json',
       body: JSON.stringify({ group: { id: 'g2', name: sent.name, visibility: sent.visibility,

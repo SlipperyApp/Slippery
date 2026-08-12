@@ -208,6 +208,22 @@ export async function ensureSchema() {
       created_at timestamptz NOT NULL DEFAULT now()
     )`;
   await sql`CREATE UNIQUE INDEX IF NOT EXISTS groups_code_key ON groups (join_code)`;
+  /* Group names are unique across the whole platform, first come first
+     served. Folded to lower case so "The Ultras" cannot sit next to "the
+     ultras" and confuse everyone about which one they were invited to.
+     Backfilled for rows that predate the column. */
+  await sql`ALTER TABLE groups ADD COLUMN IF NOT EXISTS name_lower text`;
+  await sql`UPDATE groups SET name_lower = lower(name) WHERE name_lower IS NULL`;
+  /* Guarded. If two groups already share a name this index cannot be
+     created, and letting that throw would take down every endpoint that
+     calls ensureSchema, which is all of them. Log it and carry on: the
+     pre-check in api/groups.js still refuses a duplicate, and
+     GET /api/sources reports whether the real constraint is in place. */
+  try {
+    await sql`CREATE UNIQUE INDEX IF NOT EXISTS groups_name_key ON groups (name_lower)`;
+  } catch (err) {
+    console.error('[slippery] groups_name_key not created:', err.message);
+  }
 
   /* Membership. The composite primary key IS the "already a member" check:
      joining twice is an insert that the database refuses, rather than a

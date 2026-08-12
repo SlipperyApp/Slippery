@@ -735,6 +735,7 @@
       </div>
       <div class="seg" id="socialSeg" role="group" aria-label="Social scope" style="margin-bottom:12px">
         <button class="on" data-social="socialGroups" aria-pressed="true">Groups</button>
+        <button data-social="socialBrowse" aria-pressed="false">Browse</button>
         <button data-social="socialFollowing" aria-pressed="false">Following</button>
         <button data-social="socialFollowers" aria-pressed="false">Followers</button>
       </div>
@@ -751,6 +752,20 @@
              separate view: a group is two fields, and losing the board you
              are looking at to fill them in is a worse trade than the space. -->
         <div id="groupForms" hidden></div>
+      </div>
+
+      <!-- The directory. Public groups only, alphabetically, and nothing
+           about them beyond a name and a head count: a directory is a list
+           of doors, not a window. Private groups are absent rather than
+           shown locked, because a locked row still says the group exists
+           and what it is called. -->
+      <div id="socialBrowse" hidden>
+        <div class="searchbox">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>
+          <label class="sr" for="browseSearch">Search public groups</label>
+          <input class="field" id="browseSearch" type="search" placeholder="Find a group by name…" autocomplete="off">
+        </div>
+        <div id="browseList" aria-live="polite"></div>
       </div>
 
       <div id="socialFollowing" hidden>

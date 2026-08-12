@@ -17,7 +17,7 @@
  * a group you chose to join.
  */
 import { json, methodGuard, readJson, fail } from './_lib/http.js';
-import { db, ensureSchema, configured, uniqueViolation } from './_lib/db.js';
+import { db, ensureSchema, configured, uniqueViolation, violatedIndex } from './_lib/db.js';
 import { sessionUser } from './_lib/auth.js';
 import { limit } from './_lib/rate.js';
 import { randomBytes } from 'node:crypto';
@@ -55,11 +55,22 @@ export default async function handler(req, res) {
     const user = await sessionUser(req);
     if (!user) return json(res, 401, { error: 'Log in to see your groups.' });
 
-    if (req.method === 'GET') return list(res, user);
+    if (req.method === 'GET') {
+      /* One endpoint, because Vercel Hobby allows twelve functions in total
+         and a browse screen is not worth one of them. */
+      const url = new URL(req.url, 'http://x');
+      if (url.searchParams.has('browse')) return browse(res, user, url.searchParams.get('q') || '');
+      return list(res, user);
+    }
 
     const body = await readJson(req, 8 * 1024);
     if (req.method === 'DELETE') return leave(res, user, body);
-    return body && body.code ? joinGroup(res, user, body) : create(res, user, body);
+    if (body && body.code) return joinGroup(res, user, body);
+    /* Joining a public group from the browse list needs no code: it is
+       public, that is what public means. Private groups are never in the
+       list, so an id alone can only ever open a public door. */
+    if (body && body.join) return joinPublic(res, user, body);
+    return create(res, user, body);
   } catch (err) {
     return fail(res, err, 'Your groups could not be reached.');
   }
@@ -161,7 +172,72 @@ async function list(res, user) {
 
 const initials = name => String(name || '?').replace(/[^A-Za-z0-9]/g, '').slice(0, 2).toUpperCase() || '?';
 
+/* ---------------- browse ----------------
+ *
+ * Public groups, alphabetically, with how many people are in each and
+ * whether you are already one of them.
+ *
+ * What deliberately does NOT leave here: join codes, member names, and any
+ * figure at all. A directory is a list of doors, not a window. Someone who
+ * has not joined has no business seeing who is inside or how they are
+ * doing, and a join code in a public listing would make "private group,
+ * public code" a contradiction the moment a group flipped visibility.
+ *
+ * Private groups are absent entirely rather than shown locked. A locked row
+ * still tells you the group exists and what it is called, and the person
+ * who ticked "private" was not agreeing to that.
+ */
+const BROWSE_LIMIT = 100;
+
+async function browse(res, user, query) {
+  const sql = db();
+  /* Folded the same way the unique index folds, so a search matches the
+     thing that decides. */
+  const q = String(query || '').trim().toLowerCase().slice(0, 40);
+  const rows = q
+    ? await sql`
+        SELECT g.id, g.name, g.created_at,
+               (SELECT count(*)::int FROM group_members m WHERE m.group_id = g.id) AS members,
+               EXISTS (SELECT 1 FROM group_members m
+                       WHERE m.group_id = g.id AND m.user_id = ${user.id}) AS joined
+        FROM groups g
+        WHERE g.visibility = 'public' AND g.name_lower LIKE ${'%' + q + '%'}
+        ORDER BY g.name_lower
+        LIMIT ${BROWSE_LIMIT}`
+    : await sql`
+        SELECT g.id, g.name, g.created_at,
+               (SELECT count(*)::int FROM group_members m WHERE m.group_id = g.id) AS members,
+               EXISTS (SELECT 1 FROM group_members m
+                       WHERE m.group_id = g.id AND m.user_id = ${user.id}) AS joined
+        FROM groups g
+        WHERE g.visibility = 'public'
+        ORDER BY g.name_lower
+        LIMIT ${BROWSE_LIMIT}`;
+
+  return json(res, 200, {
+    groups: rows.map(g => ({
+      id: g.id,
+      name: g.name,
+      members: g.members,
+      joined: g.joined,
+      since: g.created_at,
+      full: g.members >= MAX_MEMBERS
+    })),
+    limit: BROWSE_LIMIT
+  });
+}
+
 /* ---------------- create ---------------- */
+
+/* One wording for a taken name, wherever it is discovered.
+   Named rather than inlined because the pre-check and the constraint have
+   to say the same thing: two different messages for the same fact would
+   read as two different problems. */
+const nameTaken = (res, name) => json(res, 409, {
+  error: 'The name ' + name + ' is taken. Group names are one per platform.',
+  field: 'name', taken: true
+});
+
 async function create(res, user, body) {
   const problem = nameProblem(body && body.name);
   if (problem) return json(res, 400, { error: problem, field: 'name' });
@@ -178,16 +254,31 @@ async function create(res, user, body) {
   }
 
   const name = String(body.name).trim();
+  const lower = name.toLowerCase();
+
+  /* A courtesy check, not the decision. Two people creating "The Ultras" at
+     the same moment can both read "free" here and both proceed; the unique
+     index below is what actually stops the second one. This exists only so
+     that the ordinary case, where the name has been taken for a week,
+     answers without depending on a constraint that could not be created
+     because of pre-existing duplicates. */
+  const clash = await sql`SELECT name FROM groups WHERE name_lower = ${lower} LIMIT 1`;
+  if (clash.length) return nameTaken(res, name);
 
   /* Retry on a code collision rather than checking first: the codes are
      random, the index is what actually decides, and a check-then-insert is
-     a race by construction. */
+     a race by construction.
+
+     A NAME collision is different, and it is not retryable: names are
+     unique across the whole platform, first come first served, so the only
+     answer is to tell the person and let them pick another. Which index
+     fired decides which of those two happened. */
   for (let attempt = 0; attempt < 5; attempt++) {
     const code = groupCode();
     try {
       const rows = await sql`
-        INSERT INTO groups (name, owner_id, visibility, join_code)
-        VALUES (${name}, ${user.id}, ${visibility}, ${code})
+        INSERT INTO groups (name, name_lower, owner_id, visibility, join_code)
+        VALUES (${name}, ${lower}, ${user.id}, ${visibility}, ${code})
         RETURNING id, name, visibility, join_code`;
       const g = rows[0];
       await sql`INSERT INTO group_members (group_id, user_id) VALUES (${g.id}, ${user.id})`;
@@ -196,6 +287,8 @@ async function create(res, user, body) {
       });
     } catch (err) {
       if (!uniqueViolation(err)) throw err;
+      if (violatedIndex(err).includes('name')) return nameTaken(res, name);
+      /* A code clash. Round again with a new one. */
     }
   }
   return json(res, 503, { error: 'Could not allocate a join code. Try again.' });
@@ -217,6 +310,53 @@ async function joinGroup(res, user, body) {
 
   const size = await sql`SELECT count(*)::int AS n FROM group_members WHERE group_id = ${g.id}`;
   if (size[0].n >= MAX_MEMBERS) return json(res, 409, { error: 'That group is full.' });
+
+  try {
+    await sql`INSERT INTO group_members (group_id, user_id) VALUES (${g.id}, ${user.id})`;
+  } catch (err) {
+    if (!uniqueViolation(err)) throw err;
+    return json(res, 200, { joined: false, group: { id: g.id, name: g.name }, note: 'You are already in that group.' });
+  }
+  return json(res, 201, { joined: true, group: { id: g.id, name: g.name, visibility: g.visibility } });
+}
+
+/* ---------------- join a public group from the directory ----------------
+ *
+ * No code. The group said public, and a public group that still demands a
+ * code is a private group with extra steps.
+ *
+ * The visibility check is in the WHERE clause rather than read and then
+ * tested, so a private group's id is not a way in even if somebody learns
+ * one. It is the same query shape as the code path: find the door, then try
+ * the insert and let the primary key refuse a second membership.
+ */
+async function joinPublic(res, user, body) {
+  const id = String(body.join || '').trim();
+  if (!id) return json(res, 400, { error: 'Which group?' });
+  if (!(await limit('group-join:' + user.id, 20, 3600)).allowed) {
+    return json(res, 429, { error: 'Too many attempts. Try again later.' });
+  }
+
+  const sql = db();
+  let found;
+  try {
+    found = await sql`SELECT id, name, visibility FROM groups
+                      WHERE id = ${id} AND visibility = 'public'`;
+  } catch {
+    /* A malformed uuid is a 404, not a 500: it is somebody sending a bad
+       id, and Postgres raises rather than returning no rows. */
+    return json(res, 404, { error: 'That group is not open to join.' });
+  }
+  if (!found.length) return json(res, 404, { error: 'That group is not open to join.' });
+  const g = found[0];
+
+  const size = await sql`SELECT count(*)::int AS n FROM group_members WHERE group_id = ${g.id}`;
+  if (size[0].n >= MAX_MEMBERS) return json(res, 409, { error: 'That group is full.' });
+
+  const held = await sql`SELECT count(*)::int AS n FROM group_members WHERE user_id = ${user.id}`;
+  if (held[0].n >= MAX_GROUPS_PER_USER) {
+    return json(res, 409, { error: 'You are in ' + MAX_GROUPS_PER_USER + ' groups already.' });
+  }
 
   try {
     await sql`INSERT INTO group_members (group_id, user_id) VALUES (${g.id}, ${user.id})`;

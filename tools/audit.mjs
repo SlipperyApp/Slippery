@@ -907,6 +907,95 @@ async function main() {
     await page.close();
   }
 
+  /* ── social: the three-dot menu and the directory ─────────────
+     The join code and Leave used to sit open across the top of the board.
+     They are behind a menu now, and the two things worth asserting are
+     that the menu actually hides them until it is opened, and that the
+     directory never carries a join code, because a code in a public
+     listing would make "private group" meaningless the moment a group
+     changed visibility. */
+  {
+    const page = await browser.newPage({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 2 });
+    await installStub(page);
+    await page.goto(base, { waitUntil: 'networkidle' });
+    await page.evaluate(() => {
+      document.querySelector('[data-nav="dash"]').click();
+      document.getElementById('tabSocial').click();
+    });
+    await page.waitForTimeout(500);
+
+    const closed = await page.evaluate(() => {
+      const d = document.querySelector('.gmenu');
+      if (!d) return null;
+      const code = document.getElementById('groupShare');
+      const leave = document.getElementById('groupLeave');
+      /* checkVisibility, not offsetParent. A closed <details> hides its
+         content with content-visibility on the UA's ::details-content,
+         which leaves offsetParent set and would pass a test that only
+         looked at that. checkVisibility accounts for it. */
+      const shown = el => Boolean(el && el.checkVisibility({
+        contentVisibilityAuto: true, visibilityProperty: true, opacityProperty: true
+      }));
+      return {
+        open: d.hasAttribute('open'),
+        codeVisible: shown(code),
+        leaveVisible: shown(leave)
+      };
+    });
+    if (!closed) fail('social', 'the group board has no three-dot menu');
+    else {
+      if (closed.open) fail('social', 'the group menu starts open');
+      if (closed.codeVisible) fail('social', 'the join code is on the board rather than in the menu');
+      if (closed.leaveVisible) fail('social', 'Leave group is on the board rather than in the menu');
+    }
+
+    /* Opening it must actually reveal both, or they are unreachable. */
+    const opened = await page.evaluate(() => {
+      const d = document.querySelector('.gmenu');
+      d.querySelector('summary').click();
+      return {
+        code: Boolean(document.getElementById('groupShare')),
+        leave: Boolean(document.getElementById('groupLeave'))
+      };
+    });
+    await page.waitForTimeout(250);
+    if (opened && (!opened.code || !opened.leave))
+      fail('social', 'opening the group menu did not reveal the code and Leave');
+    await page.screenshot({ path: path.join(SHOT_DIR, 'social-menu.png') });
+
+    /* The directory. Alphabetical, no codes, and a Join on anything not
+       already joined or full. */
+    await page.evaluate(() => {
+      const d = document.querySelector('.gmenu');
+      if (d) d.removeAttribute('open');
+      document.querySelector('[data-social="socialBrowse"]').click();
+    });
+    await page.waitForTimeout(600);
+    const dir = await page.evaluate(() => {
+      const rows = [...document.querySelectorAll('.browserow')];
+      return {
+        n: rows.length,
+        names: rows.map(r => r.querySelector('.bname').textContent),
+        joins: rows.filter(r => r.querySelector('[data-browse-join]')).length,
+        html: document.getElementById('browseList').innerHTML
+      };
+    });
+    if (!dir.n) fail('social', 'the group directory rendered no rows');
+    else {
+      const sorted = [...dir.names].sort((a, b) => a.toLowerCase().localeCompare(b.toLowerCase()));
+      if (dir.names.join('|') !== sorted.join('|'))
+        fail('social', 'the directory is not alphabetical: ' + dir.names.join(', '));
+      if (!dir.joins) fail('social', 'no row in the directory offers a way to join');
+      /* Six upper-case characters with no vowel-free giveaway is what a
+         join code looks like; the stub uses QT9WFB. Nothing of that shape
+         belongs in a public listing. */
+      if (/\b[A-Z0-9]{6}\b/.test(dir.html.replace(/<[^>]+>/g, ' ')))
+        fail('social', 'something shaped like a join code is in the public directory');
+    }
+    await page.screenshot({ path: path.join(SHOT_DIR, 'social-browse.png') });
+    await page.close();
+  }
+
   /* ── the scroll-jacked sequence, beat by beat ────────────────── */
   {
     const page = await browser.newPage({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 2 });

@@ -113,9 +113,61 @@
   & .ml{font-family:var(--fm);font-size:8.5px;color:var(--t3)}}
 @keyframes sparkin{from{opacity:0;transform:scaleY(.2);transform-origin:bottom}}
 
-/* The join code and visibility, on the board itself. The code is the only
-   way anyone else gets into the group, and "private" is a promise the
-   person who made it should be able to check without opening a menu. */
-.groupmeta{
-  display:flex;align-items:center;gap:8px;flex-wrap:wrap;
-  padding:10px 0 2px;margin-bottom:4px;border-bottom:1px solid var(--e2)}
+/* The three-dot menu on a group.
+   Join code, visibility and leave. All three are things you do once, so
+   they sit behind the dots rather than across the top of the board where
+   they were competing with the leaderboard, and where Leave was a
+   thumb-width from the rows you were reading.
+
+   A <details>, not a scripted popover: it opens and closes on its own,
+   closes on Escape, and is keyboard operable with nothing to get wrong. */
+.gmenu{
+  position:relative;flex:0 0 auto;margin-left:2px;
+  & summary{
+    list-style:none;cursor:pointer;width:34px;height:34px;border-radius:9px;
+    display:grid;place-items:center;color:var(--t2);
+    transition:background var(--tb),color var(--tb);
+    &::-webkit-details-marker{display:none}
+    & svg{width:17px;height:17px;fill:currentColor}
+    &:hover{background:var(--c1);color:var(--t1)}}
+  &[open] summary{background:var(--c1);color:var(--t1)}
+  & .gmenu-body{
+    position:absolute;right:0;top:38px;z-index:40;min-width:212px;
+    padding:9px;border-radius:13px;
+    /* Opaque, not var(--card). Cards are translucent so the moving sky
+       shows through them, which is right for a card and wrong for a menu:
+       the leaderboard underneath read straight through the panel and the
+       two sets of text sat on top of each other. Mixed from --bg so it
+       still follows the theme, and no backdrop-filter, which is a budget
+       of about three elements on an iPhone and already spent. */
+    background:color-mix(in srgb,var(--bg) 92%,#fff 8%);
+    border:1px solid var(--e1);
+    box-shadow:0 18px 40px rgba(0,0,0,.55);
+    animation:gmenuin 160ms var(--ex)}
+  & .gmenu-row{
+    display:flex;align-items:center;justify-content:space-between;gap:10px;
+    padding:6px 4px;
+    & .k{font-size:11.5px;color:var(--t2)}}
+  & .gmenu-leave{
+    width:100%;text-align:left;margin-top:5px;padding:9px 8px;border-radius:9px;
+    font-size:12.5px;font-weight:550;color:var(--neg);min-height:38px;
+    border-top:1px solid var(--e2);
+    transition:background var(--tb);
+    &:hover{background:rgba(252,165,165,.09)}}}
+@keyframes gmenuin{from{opacity:0;transform:translate3d(0,-5px,0)}to{opacity:1;transform:none}}
+
+/* A row in the public group directory. Name, head count, a way in. */
+.browserow{
+  display:flex;align-items:center;gap:11px;padding:11px 12px;border-radius:12px;
+  border:1px solid var(--e1);background:var(--c2);margin-bottom:7px;
+  & .glyph{width:32px;height:32px;border-radius:10px;flex:0 0 auto;display:grid;place-items:center;
+    background:rgba(var(--orb2),.13);border:1px solid rgba(var(--orb2),.28);
+    & svg{width:15px;height:15px;color:var(--s)}}
+  & .body{flex:1;min-width:0}
+  & .bname{display:block;font-weight:600;font-size:13.5px;
+    white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  & .bsub{display:block;font-size:11.5px;color:var(--t2);margin-top:2px;
+    font-variant-numeric:tabular-nums lining-nums}
+  & .bin{flex:0 0 auto;font-family:var(--fm);font-size:10px;color:var(--t3);
+    letter-spacing:.06em;text-transform:uppercase}
+  & .btn{flex:0 0 auto}}

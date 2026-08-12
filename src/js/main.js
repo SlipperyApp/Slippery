@@ -76,10 +76,11 @@ function openGroupForm() {
     '<label class="label" for="groupName">Group name</label>' +
     '<input class="field" id="groupName" maxlength="40" placeholder="Sunday league" autocomplete="off">' +
     '<p class="formerr" id="groupNameErr" hidden></p>' +
+    '<p class="fineprint" style="margin-top:-4px">Group names are one per platform, first come first served.</p>' +
     '<p class="label">Who can join</p>' +
     '<div class="optionlist" id="groupVis">' +
-      visRow('private', 'Private', 'Invite only. The code is the only way in, and the group is never listed.') +
-      visRow('public', 'Public', 'Anyone with the code can join, and it can be listed for people to find.') +
+      visRow('private', 'Private', 'Invite only. The code is the only way in, and the group never appears in Browse.') +
+      visRow('public', 'Public', 'Listed in Browse for anyone to find and join. The code still works too.') +
     '</div>' +
     '<p class="fineprint" style="margin-top:11px">Everyone in a group sees everyone else in units. ' +
     'Your privacy setting applies to followers, not to a group you chose to join.</p>' +
@@ -151,7 +152,14 @@ async function createGroup(btn) {
   btn.disabled = false;
   btn.textContent = 'Create it';
   if (r.status === 401) { go('setup'); toast('Log in to start a group.'); return; }
-  if (!r.ok) { groupError('groupName', r.body.error || 'That group could not be created.'); return; }
+  if (!r.ok) {
+    groupError('groupName', r.body.error || 'That group could not be created.');
+    /* A taken name is the one failure where the fix is in the field they
+       are already looking at, so put the cursor back in it with the text
+       selected rather than making them clear it themselves. */
+    if (r.body.taken) { $('groupName').focus(); $('groupName').select(); }
+    return;
+  }
   closeGroupForm();
   await loadGroups();
   /* The code is the only way anyone else gets in, so it is the first thing
@@ -1104,6 +1112,57 @@ async function leaveGroup(id) {
   toast(r.body.dissolved ? 'You were the last one, so the group is gone' : 'Left the group');
 }
 
+/* ---------------- the group directory ----------------
+ *
+ * Fetched when the Browse tab is opened and on each search, never on a
+ * dashboard load: it lists every public group on the platform and most
+ * sessions never look at it.
+ *
+ * `browseSeq` is the reason typing quickly does not scramble the list. Two
+ * searches in flight can land in either order, and without a sequence
+ * number the slower one overwrites the faster, so the results shown are
+ * for a query the box no longer contains. Only the newest response paints.
+ */
+let browseSeq = 0;
+let browseTimer = null;
+
+async function loadBrowse(query) {
+  const seq = ++browseSeq;
+  R.renderBrowse(null);
+  const r = await get('/api/groups?browse=1' + (query ? '&q=' + encodeURIComponent(query) : ''));
+  if (seq !== browseSeq) return;          // a newer search has already answered
+  if (r.status === 401) { R.renderBrowse([], query); return; }
+  if (!r.ok) {
+    R.renderBrowse([], query);
+    toast(r.body.error || 'Could not reach the group directory.');
+    return;
+  }
+  R.renderBrowse(r.body.groups || [], query);
+}
+
+/* Typing is not a search. Waiting a beat turns eight keystrokes into one
+   request, and the sequence number above handles the ones that still
+   overlap. */
+function browseSearch(value) {
+  clearTimeout(browseTimer);
+  browseTimer = setTimeout(() => loadBrowse(value.trim()), 260);
+}
+
+async function joinPublicGroup(btn, id, name) {
+  btn.disabled = true;
+  const was = btn.textContent;
+  btn.textContent = 'Joining…';
+  const r = await post('/api/groups', { join: id });
+  btn.disabled = false;
+  btn.textContent = was;
+  if (!r.ok) { toast(r.body.error || 'Could not join that group.'); return; }
+  toast(r.body.joined ? 'Joined ' + name : (r.body.note || 'Already a member'));
+  await loadGroups();
+  /* Repaint the directory so the row says Joined rather than offering the
+     button again. */
+  await loadBrowse($('browseSearch').value.trim());
+}
+
 /* ---------------- Telegram ----------------
    The button used to relabel itself "Linked", disable, and show a green dot.
    Nothing was linked: the bot had never heard of the chat, and the first
@@ -1372,7 +1431,12 @@ document.addEventListener('click', e => {
       b.setAttribute('aria-pressed', String(on));
     });
     paintSeg($('socialSeg'));
-    ['socialGroups', 'socialFollowing', 'socialFollowers'].forEach(x => { $(x).hidden = x !== S.socialView; });
+    ['socialGroups', 'socialBrowse', 'socialFollowing', 'socialFollowers']
+      .forEach(x => { $(x).hidden = x !== S.socialView; });
+    /* The directory is fetched when it is opened, not on every dashboard
+       load. It is a list of every public group on the platform and most
+       sessions never look at it. */
+    if (S.socialView === 'socialBrowse') loadBrowse($('browseSearch').value.trim());
     return;
   }
   if ((el = c('[data-follow]'))) {
@@ -1577,6 +1641,10 @@ document.addEventListener('click', e => {
   }
   if ((el = c('#groupSave'))) { createGroup(el); return; }
   if ((el = c('#groupJoinGo'))) { joinGroup(el); return; }
+  if ((el = c('[data-browse-join]'))) {
+    joinPublicGroup(el, el.getAttribute('data-browse-join'), el.getAttribute('data-name') || 'the group');
+    return;
+  }
   if ((el = c('#groupShare'))) {
     const code = el.getAttribute('data-code') || '';
     /* Clipboard first, and the code stays on screen either way: a toast
@@ -1632,6 +1700,9 @@ document.addEventListener('input', e => {
   if (Auth.handleInput(t)) return;
   if (t.id === 'betSearch') { S.query = t.value.trim().toLowerCase(); R.renderLedger(); return; }
   if (t.id === 'peopleSearch') { S.peopleQuery = t.value.trim(); R.renderPeople(); return; }
+  /* The directory is on the server, so this search is a request, not a
+     filter over something already loaded. Debounced in browseSearch. */
+  if (t.id === 'browseSearch') { browseSearch(t.value); return; }
   if (t.id === 'targetSetup' || t.id === 'targetSettings') {
     const v = M.parseMoney(t.value);
     if (v != null) {

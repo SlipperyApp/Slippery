@@ -471,21 +471,34 @@ export function renderGroups() {
   $('groupBoard').hidden = false;
   const rows = groupRows(g);
   const totalUnits = rows.reduce((a, r) => a + r.v / r.un, 0);
+  /* The group's own actions live behind the three dots beside its name.
+     They used to sit open on the board: a join code the width of the card
+     and a "Leave group" button next to it, both of which you do once, and
+     neither of which is what you opened the board to look at. Worse,
+     "Leave" sat a thumb-width from the leaderboard you were reading.
+     Behind a menu they are still one tap away and out of the way.
+
+     A <details> rather than a scripted popover: it opens and closes with
+     no JavaScript, closes on Escape, and is keyboard operable without a
+     focus trap to get wrong. */
+  const menu = g.code
+    ? '<details class="gmenu"><summary aria-label="Group options"><svg viewBox="0 0 24 24" aria-hidden="true">' +
+      '<circle cx="12" cy="5" r="1.7"/><circle cx="12" cy="12" r="1.7"/><circle cx="12" cy="19" r="1.7"/>' +
+      '</svg></summary><div class="gmenu-body">' +
+      '<div class="gmenu-row"><span class="k">Visibility</span>' +
+      '<span class="privacytag ' + (g.visibility === 'public' ? 'public' : 'private') + '">' +
+      esc(g.visibility || 'private') + '</span></div>' +
+      '<div class="gmenu-row"><span class="k">Join code</span>' +
+      '<button class="pillbtn" id="groupShare" data-code="' + esc(g.code) + '">' +
+      esc(g.code) + '</button></div>' +
+      '<button class="gmenu-leave" id="groupLeave" data-id="' + esc(g.id || '') + '" ' +
+      'data-name="' + esc(g.name) + '">Leave group</button>' +
+      '</div></details>'
+    : '';
+
   $('groupBoard').innerHTML =
     '<div class="cardhead"><span class="title">' + esc(g.name) + '</span>' +
-    '<span class="meta">' + periodWord() + ' · in units</span></div>' +
-    /* The join code and how the group is set up, on the board rather than
-       buried: the code is the only way anyone else gets in, and "private"
-       is a promise the person who made it should be able to check. */
-    (g.code
-      ? '<div class="groupmeta">' +
-        '<span class="privacytag ' + (g.visibility === 'public' ? 'public' : 'private') + '">' +
-        esc(g.visibility || 'private') + '</span>' +
-        '<button class="pillbtn" id="groupShare" data-code="' + esc(g.code) + '">' +
-        'Code ' + esc(g.code) + '</button>' +
-        '<button class="pillbtn link" id="groupLeave" data-id="' + esc(g.id || '') + '">Leave group</button>' +
-        '</div>'
-      : '') +
+    '<span class="meta">' + periodWord() + ' · in units</span>' + menu + '</div>' +
     '<div class="duo"><div><div class="k">Group total</div><div class="v ' +
       M.tone(totalUnits) + '">' +
       ((totalUnits >= 0 ? '+' : '−') + Math.abs(totalUnits).toFixed(2) + 'u') + '</div></div>' +
@@ -504,6 +517,50 @@ export function renderGroups() {
           '<span class="sub" style="display:block">1u = ' + M.money0(p.un) + '</span></span></button>') +
       '<span class="val"><span class="n ' + M.tone(p.v) + '">' +
       M.units(p.v, p.un) + '</span><span class="s">' + M.money0s(p.v) + '</span></span></div>').join('');
+}
+
+/* ---------------- the group directory ----------------
+ *
+ * Public groups, alphabetically, exactly as the server sorted them. It is
+ * deliberately not re-sorted here: the server sorts on the same folded
+ * name the uniqueness index uses, and a second sort in the browser would
+ * put "the Ultras" and "The Ultras" in different places to the list they
+ * came from.
+ *
+ * A row carries a name, a head count and a way in. No figures, no member
+ * names: joining is how you see those, and a directory that previewed them
+ * would make every public group a leaderboard anyone can read.
+ */
+export function renderBrowse(groups, query) {
+  const el = $('browseList');
+  if (!el) return;
+  if (groups == null) {
+    el.innerHTML = '<div class="emptystate"><div class="t">Looking…</div></div>';
+    return;
+  }
+  if (!groups.length) {
+    el.innerHTML = '<div class="emptystate"><div class="t">' +
+      (query ? 'Nothing matching ' + esc(query) : 'No public groups yet') + '</div>' +
+      '<p>' + (query
+        ? 'Try a shorter search, or start a group with that name yourself.'
+        : 'Public groups appear here as people create them. Start one and it will be the first.') +
+      '</p></div>';
+    return;
+  }
+  el.innerHTML = groups.map(g =>
+    '<div class="browserow">' +
+    '<span class="glyph" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">' +
+    '<circle cx="9" cy="8" r="3.2"/><path d="M2.5 21v-1a5 5 0 0 1 5-5h3a5 5 0 0 1 5 5v1"/>' +
+    '<path d="M16 3.6a3.2 3.2 0 0 1 0 6.4"/></svg></span>' +
+    '<span class="body"><span class="bname">' + esc(g.name) + '</span>' +
+    '<span class="bsub">' + g.members + ' member' + (g.members === 1 ? '' : 's') + '</span></span>' +
+    (g.joined
+      ? '<span class="bin">Joined</span>'
+      : g.full
+        ? '<span class="bin">Full</span>'
+        : '<button class="btn ghost small" data-browse-join="' + esc(g.id) + '" ' +
+          'data-name="' + esc(g.name) + '">Join</button>') +
+    '</div>').join('');
 }
 
 /* ---------------- profile ---------------- */
