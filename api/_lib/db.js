@@ -75,6 +75,19 @@ export async function ensureSchema() {
      starts at 0, 'lifetime' adds the history imported as aggregates. Both
      are true; the user picks which one they mean. */
   await sql`ALTER TABLE users ADD COLUMN IF NOT EXISTS count_mode text NOT NULL DEFAULT 'tracker'`;
+  /* TAKE A BREAK. When the account is locked to itself until.
+   *
+   * The brief flags this and it went unbuilt for a long time. A red and
+   * green grid, a leaderboard and a streak counter are engagement
+   * mechanics, and this product points them at gambling. Shipping those
+   * without a way to stop is the part a regulator, and anyone doing
+   * diligence, asks about first.
+   *
+   * It is enforced on the server, and it cannot be shortened. A break you
+   * can end early by clicking twice is a suggestion, and the whole value
+   * of the thing is that the decision is made by the person who is calm
+   * and honoured by the person who is not. */
+  await sql`ALTER TABLE users ADD COLUMN IF NOT EXISTS break_until timestamptz`;
 
   /* The three constraints the product depends on. Partial indexes so a
      deleted account frees its email and name for reuse. */
@@ -135,6 +148,22 @@ export async function ensureSchema() {
       settle_reason text,
       source        text NOT NULL DEFAULT 'upload'
     )`;
+  /* WHEN THE BET WAS CAPTURED, in its own life rather than in clock time.
+   *
+   * 'prematch' means the slip was logged before a ball was kicked, which is
+   * the only capture that cannot be selective: at that moment nobody knows
+   * whether it wins. 'inplay' and 'settled' are both logged knowing
+   * something, and 'settled' is logged knowing everything.
+   *
+   * This is the column the whole product's claim rests on. "Real numbers,
+   * not a highlight reel" is unfalsifiable without it and provable with it:
+   * a record that is 90% prematch cannot be a highlight reel, because you
+   * cannot cherry-pick bets you logged before they resolved.
+   *
+   * Nullable, because bets that predate the column and CSV imports have no
+   * honest answer, and guessing one would be the exact dishonesty the
+   * metric exists to rule out. */
+  await sql`ALTER TABLE bets ADD COLUMN IF NOT EXISTS capture_stage text`;
   await sql`CREATE INDEX IF NOT EXISTS bets_user_idx ON bets (user_id, placed_at DESC)`;
   await sql`CREATE INDEX IF NOT EXISTS bets_pending_idx ON bets (status) WHERE status = 'pending'`;
 

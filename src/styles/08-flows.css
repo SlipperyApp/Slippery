@@ -577,6 +577,12 @@ input[type=date]{
     & svg{width:15px;height:15px;color:var(--s);flex:0 0 auto}}
   & .desc{font-size:12.5px;color:var(--t2);margin-top:4px;line-height:1.5}}
 
+/* The card form. Dimmed as a whole rather than field by field, so it
+   reads as one thing that is not ready instead of four broken inputs. */
+.paycard .payfields{
+  display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-top:12px;opacity:.55}
+.paycard input[disabled]{cursor:not-allowed}
+
 /* The confirm-your-name box for account deletion.
    In place rather than a modal: a modal over the settings page would hide
    the row that was tapped, and this is the moment somebody most needs to

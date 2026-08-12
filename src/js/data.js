@@ -112,6 +112,11 @@ export let TRIAL = null;
    anything, because there are no bets behind them. */
 export let PL = [];
 
+/* How much of the record was captured before anything was known.
+   {known, prematch, inplay, settled, rate} or null when nothing has a
+   stage. Null and a rate of 0 are different facts and stay different. */
+export let CAPTURE = null;
+
 /* ---------- hydration ---------- */
 
 /**
@@ -131,6 +136,7 @@ export function hydrate(payload) {
      than no counter at all. Null when the account is paid. */
   TRIAL = (payload && payload.trial) || null;
   PL = (payload && payload.pl) || [];
+  CAPTURE = (payload && payload.capture) || null;
   /* Period figures land on the calendar beside the bets. They are added
      after buildDayTotals so a day with both a bet and a typed figure shows
      the sum, which is what somebody who has entered both means. Only daily

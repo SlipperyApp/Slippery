@@ -24,6 +24,10 @@ const APP_VIEWS = ['dash', 'imp', 'settings', 'prof'];
    more, so an empty response renders the empty states rather than somebody
    else's numbers. */
 let sessionChecked = false;
+/* Where the user was trying to go before we knew who they were. Replayed
+   once the session lands, so a deep link into the app survives the round
+   trip instead of silently dropping them on the landing page. */
+let pendingView = null;
 
 /** Ask who we are. Returns the user, or null when signed out. */
 async function loadSession() {
@@ -31,6 +35,9 @@ async function loadSession() {
   sessionChecked = true;
   setMe(r.ok ? r.body.user : null);
   document.body.classList.toggle('signed-in', Boolean(r.ok && r.body.user));
+  /* Replayed AFTER setMe, or the replay re-runs the guard against a ME that
+     is still null and bounces the very navigation it exists to rescue. */
+  if (pendingView) { const v = pendingView; pendingView = null; go(v); }
   if (r.ok && r.body.configured === false) document.body.classList.add('no-backend');
   return r.ok ? r.body.user : null;
 }
@@ -210,7 +217,14 @@ function go(id, fromHistory) {
   /* The app views hold a real person's money. Without a session there is
      nothing to show, so asking to see them is a request to sign in, not a
      reason to render an empty dashboard and let them wonder. */
-  if (APP_VIEWS.includes(id) && sessionChecked && !ME) {
+  /* NO SESSION, NO APP SCREEN. The `sessionChecked` clause used to sit in
+     this condition, which meant the gate was open for the few hundred
+     milliseconds before /api/auth/me answered: a deep link or a fast tap
+     rendered the dashboard, and only the reply closed it again. The check
+     is now unconditional, and a navigation that arrives early is parked
+     and replayed once the session is known rather than allowed through. */
+  if (APP_VIEWS.includes(id) && !ME) {
+    if (!sessionChecked) { pendingView = id; return; }
     if (id !== 'setup') { go('setup'); toast('Create an account, or log in, to start tracking.'); }
     return;
   }
@@ -1138,6 +1152,10 @@ async function confirmSlip(btn) {
     /* Midday rather than midnight. A bet stamped 00:00 in one timezone is
        the previous day in another, and the whole product is a calendar. */
     placedAt: card.dataset.placed ? card.dataset.placed + 'T12:00:00' : undefined,
+    /* Where the bet was in its life when the slip was read. This is what
+       the capture rate is built from, and it is the reader's observation
+       rather than an inference: it comes off the slip, or it is absent. */
+    stage: card.dataset.stage || undefined,
     source: 'upload'
   });
 
@@ -1394,6 +1412,51 @@ function exportBets(format) {
      known to cancel the download if the object URL dies too soon. */
   setTimeout(() => URL.revokeObjectURL(url), 4000);
   toast(rows.length + ' bets exported');
+}
+
+/* ---------------- take a break ----------------
+ *
+ * The brief lists this under "flag, don't decide" and it went unbuilt for
+ * a long time. A product that turns a gambling record into a green and red
+ * grid with a leaderboard on top and offers no way to stop is the version
+ * of this that should not ship.
+ *
+ * The confirmation is deliberately blunt about the one property that
+ * matters: it cannot be undone. Everything else about the flow is designed
+ * to make it easy; that one line is designed to make it considered.
+ */
+const BREAK_LENGTHS = [
+  ['24h', '24 hours', 'A cooling-off day.'],
+  ['7d', 'A week', 'Long enough for a weekend of fixtures to pass.'],
+  ['30d', '30 days', 'A month off.'],
+  ['90d', '90 days', 'A quarter.'],
+  ['1y', 'A year', 'If you want real distance from it.']
+];
+let breakChoice = '7d';
+
+function openBreakBox() {
+  const box = $('breakBox');
+  if (!box) return;
+  box.hidden = !box.hidden;
+  if (box.hidden) return;
+  setHTML('breakChoices', BREAK_LENGTHS.map(([id, name, why]) =>
+    '<button class="optioncard" role="radio" aria-checked="' + (breakChoice === id) + '" ' +
+    'aria-pressed="' + (breakChoice === id) + '" data-break="' + id + '">' +
+    '<span><span class="t">' + esc(name) + '</span>' +
+    '<span class="s">' + esc(why) + '</span></span></button>').join(''));
+}
+
+async function startBreak(btn) {
+  btn.disabled = true;
+  btn.textContent = 'Starting…';
+  const r = await post('/api/auth/break', { length: breakChoice });
+  btn.disabled = false;
+  btn.textContent = 'Start the break';
+  if (!r.ok) { toast(r.body.error || 'Could not start that break.'); return; }
+  $('breakBox').hidden = true;
+  await loadSession();
+  R.renderAccount(ME);
+  toast('Break started. ' + r.body.note);
 }
 
 /* ---------------- destructive actions ----------------
@@ -2113,6 +2176,18 @@ document.addEventListener('click', e => {
     if (el.id === 'showTipster') { S.showTipster = on; R.renderRecentBets(); R.renderLedger(); R.renderPending(); }
     return;
   }
+  if (c('#breakOpen')) { openBreakBox(); return; }
+  if (c('#breakCancel')) { $('breakBox').hidden = true; return; }
+  if ((el = c('[data-break]'))) {
+    breakChoice = el.getAttribute('data-break');
+    $$('[data-break]').forEach(b => {
+      const on = b === el;
+      b.setAttribute('aria-checked', String(on));
+      b.setAttribute('aria-pressed', String(on));
+    });
+    return;
+  }
+  if ((el = c('#breakGo'))) { startBreak(el); return; }
   if (c('#exportGo')) { exportBets(($('exportFormat') || {}).value || 'CSV'); return; }
   if ((el = c('#resetBets'))) { resetBets(el); return; }
   if (c('#deleteAccount')) { openDeleteBox(); return; }

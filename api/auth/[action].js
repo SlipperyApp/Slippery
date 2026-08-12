@@ -1,4 +1,4 @@
-/* /api/auth/* — one function, ten actions.
+/* /api/auth/* — one function, eleven actions.
  *
  * WHY THIS IS A ROUTER AND NOT EIGHT FILES.
  * Vercel's Hobby plan allows twelve Serverless Functions per deployment, and
@@ -20,6 +20,7 @@
  * hold them in a table.
  */
 import { json } from '../_lib/http.js';
+import brk from '../_lib/routes/break.js';
 import close from '../_lib/routes/close.js';
 import forgot from '../_lib/routes/forgot.js';
 import login from '../_lib/routes/login.js';
@@ -31,7 +32,7 @@ import reset from '../_lib/routes/reset.js';
 import signup from '../_lib/routes/signup.js';
 import verify from '../_lib/routes/verify.js';
 
-const ROUTES = { close, forgot, login, logout, me, profile, resend, reset, signup, verify };
+const ROUTES = { break: brk, close, forgot, login, logout, me, profile, resend, reset, signup, verify };
 
 export default async function handler(req, res) {
   /* Vercel puts the [action] segment in req.query. Falling back to the path

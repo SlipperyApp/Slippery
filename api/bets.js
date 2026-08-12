@@ -20,6 +20,7 @@ import { sessionUser } from './_lib/auth.js';
 import { cashOutcome, ledgerOutcome, payoutFor } from '../src/js/settlement.js';
 import { limit } from './_lib/rate.js';
 import { unlimited, trialState, TRIAL_SLIPS } from './_lib/promo.js';
+import { onBreak } from './_lib/routes/break.js';
 
 /* The free trial: two weeks or 35 slips, whichever goes first. Counted on
    the server, because a limit enforced in the browser is a suggestion. */
@@ -51,6 +52,19 @@ export default async function handler(req, res) {
        because Vercel Hobby allows twelve functions in total and this is
        ledger data by any reading. The discriminator is explicit so a
        malformed bet can never be mistaken for one. */
+    /* A break stops anything that ADDS to the record. Reading it stays
+       open on purpose: somebody on a break should still be able to look at
+       what they already have, and locking them out of their own history
+       would make the break something to avoid taking. */
+    if (req.method !== 'GET' && onBreak(user)) {
+      return json(res, 423, {
+        error: 'You are on a break until ' +
+          new Date(user.break_until).toLocaleDateString('en-GB',
+            { day: 'numeric', month: 'long', year: 'numeric' }) +
+          '. Nothing new can be logged until then.',
+        breakUntil: user.break_until
+      });
+    }
     if (body && Array.isArray(body.pl)) return savePl(res, user, body.pl);
     if (body && body.removePl) return removePl(res, user, body.removePl);
     if (req.method === 'POST') return create(req, res, user, body);
@@ -66,11 +80,22 @@ async function list(res, user) {
   const sql = db();
   const rows = await sql`
     SELECT id, event, selection, market, bookmaker, odds, stake_pence,
-           profit_pence, outcome, status, placed_at, settled_at, settle_reason, source
+           profit_pence, outcome, status, capture_stage, placed_at, settled_at,
+           settle_reason, source
     FROM bets WHERE user_id = ${user.id}
     ORDER BY placed_at DESC LIMIT 2000`;
   const counted = await sql`
     SELECT count(*)::int AS n FROM bets WHERE user_id = ${user.id}`;
+  /* The capture rate, computed in the database rather than from the 2000
+     rows the list is capped at, so it stays true for an account with more
+     bets than the page shows. */
+  const cap = await sql`
+    SELECT
+      count(*) FILTER (WHERE capture_stage IS NOT NULL)::int AS known,
+      count(*) FILTER (WHERE capture_stage = 'prematch')::int AS prematch,
+      count(*) FILTER (WHERE capture_stage = 'inplay')::int AS inplay,
+      count(*) FILTER (WHERE capture_stage = 'settled')::int AS settled
+    FROM bets WHERE user_id = ${user.id}`;
   const pl = await sql`
     SELECT id, on_date, period, profit_pence, turnover_pence, bets, note, source
     FROM pl_entries WHERE user_id = ${user.id}
@@ -81,10 +106,21 @@ async function list(res, user) {
        behind them and nothing that counts bets may count these. */
     pl: pl.map(shapePl),
     total: counted[0].n,
+    /* Null when nothing has a known stage, which is different from zero
+       percent and has to stay different: one means "not measured", the
+       other means "every bet was logged after the fact". */
+    capture: cap[0].known ? {
+      known: cap[0].known,
+      prematch: cap[0].prematch,
+      inplay: cap[0].inplay,
+      settled: cap[0].settled,
+      rate: Math.round(cap[0].prematch / cap[0].known * 100)
+    } : null,
     freeSlips: FREE_SLIPS,
     plan: user.plan || 'free',
     planUntil: user.plan_until || null,
     unlimited: !capped(user),
+    breakUntil: user.break_until || null,
     trial: capped(user)
       ? trialState({ slipsUsed: counted[0].n, trialEndsAt: user.trial_ends_at })
       : null
@@ -252,12 +288,12 @@ async function create(req, res, user, body) {
 
   const rows = await sql`
     INSERT INTO bets (user_id, event, selection, market, bookmaker, odds,
-                      stake_pence, profit_pence, outcome, status, placed_at,
+                      stake_pence, profit_pence, outcome, status, capture_stage, placed_at,
                       settled_at, settle_reason, source)
     VALUES (${user.id}, ${str(body.event)}, ${str(body.selection)}, ${str(body.market)},
             ${str(body.book)}, ${odds}, ${stake},
             ${profit}, ${outcome},
-            ${outcome ? 'settled' : 'pending'}, ${placedAt},
+            ${outcome ? 'settled' : 'pending'}, ${captureStage(body)}, ${placedAt},
             ${outcome ? new Date() : null},
             ${outcome ? 'Result read from the slip' : null},
             ${body.source === 'telegram' ? 'telegram' : 'upload'})
@@ -411,6 +447,19 @@ async function remove(res, user, body) {
     DELETE FROM bets WHERE id = ${body.id} AND user_id = ${user.id} RETURNING id`;
   if (!rows.length) return json(res, 404, { error: 'That bet is not in your ledger.' });
   return json(res, 200, { deleted: rows[0].id });
+}
+
+/* Where the bet was in its life when it was captured.
+ *
+ * Taken from what the reader saw on the slip, never inferred from whether a
+ * result happened to be present: every slip prints a potential return, and
+ * "settled" guessed from that would mark honest prematch captures as
+ * after-the-fact. Unknown stays null, and null is excluded from the rate
+ * rather than counted either way. */
+const CAPTURE_STAGES = ['prematch', 'inplay', 'settled'];
+function captureStage(body) {
+  const v = String((body && body.stage) || '').toLowerCase();
+  return CAPTURE_STAGES.includes(v) ? v : null;
 }
 
 /* ---------------- validation ----------------

@@ -50,8 +50,27 @@ export async function settleForUser(userId) {
   /* One fetch for the whole window, not one per bet. A user with twelve
      pending bets on a Saturday would otherwise make twelve scrapes to
      answer one question, which is how a scraper earns a block. */
+  /* THE WINDOW IS WHAT THE BETS NEED, NOT A FIXED LOOKBACK.
+   *
+   * This used to pull LOOKBACK_DAYS every time regardless. Measured on
+   * production: one bet placed two days ago pulled 2814 fixtures and the
+   * request took 7.8 seconds against a ten second function ceiling, and the
+   * call before it returned nothing at all. That is not slow, it is a
+   * settlement path that fails silently on any account with a few more
+   * bets than mine.
+   *
+   * The oldest pending bet is the only thing that decides how far back to
+   * look. Most sweeps are one or two days wide now; the cap still applies
+   * so a bet somebody logged with a wrong date from last year cannot make
+   * the sweep pull a year. */
   const today = new Date();
-  const from = iso(new Date(today.getTime() - LOOKBACK_DAYS * 86400000));
+  const oldest = pending.reduce((a, b) => {
+    const t = new Date(b.placed_at).getTime();
+    return Number.isFinite(t) && t < a ? t : a;
+  }, today.getTime());
+  const daysBack = Math.min(LOOKBACK_DAYS,
+    Math.max(1, Math.ceil((today.getTime() - oldest) / 86400000) + 1));
+  const from = iso(new Date(today.getTime() - daysBack * 86400000));
   const to = iso(new Date(today.getTime() + 86400000));
 
   /* Only fetch what there are bets for. Someone with three football bets

@@ -5,7 +5,7 @@ import { S } from './state.js';
 import * as M from './money.js';
 import {
   LEDGER, PENDING, PEOPLE, GROUPS, TODAY, THEMES, THEME_BG, BOOKS, TIPSTERS,
-  OUTCOME_ICON, OUTCOME_LABEL, outcomeGroup, personMonths, personDays, IMPORTED, ico, TRIAL, FOUND, PL
+  OUTCOME_ICON, OUTCOME_LABEL, outcomeGroup, personMonths, personDays, IMPORTED, ico, TRIAL, FOUND, PL, CAPTURE
 } from './data.js';
 import {
   stats, lifetime, dayMap, monthTotal, dowLabels, dowOffset, weekRange, targetFor
@@ -232,6 +232,26 @@ export function renderHeadline() {
   const roi = $('statRoi');
   roi.textContent = M.pct(p.roi);
   roi.className = M.tone(p.roi);
+
+  /* The trust line. Hidden until there is something to be honest about:
+     an account with no bets carrying a "0% logged before kick-off" badge
+     would be accusing somebody of nothing. */
+  const capEl = $('captureLine');
+  if (capEl) {
+    if (!CAPTURE || !CAPTURE.known) {
+      capEl.hidden = true;
+    } else {
+      capEl.hidden = false;
+      $('captureFill').style.setProperty('--f', (CAPTURE.rate / 100).toFixed(3));
+      capEl.classList.toggle('strong', CAPTURE.rate >= 80);
+      setHTML('captureText',
+        '<b>' + CAPTURE.rate + '%</b> logged before kick-off' +
+        (CAPTURE.known < 5 ? ' <span class="capfew">(' + CAPTURE.known + ' so far)</span>' : ''));
+      capEl.setAttribute('aria-label',
+        CAPTURE.prematch + ' of ' + CAPTURE.known +
+        ' bets were logged before the game started. What this means.');
+    }
+  }
 
   /* All time reaches past the ledger into imported history. Saying so is
      the difference between a number that reconciles and one that lies. */
@@ -482,9 +502,9 @@ export function renderPeople() {
       found.innerHTML = FOUND == null
         ? '<div class="emptystate"><div class="t">Looking…</div></div>'
         : FOUND.length
-          ? '<div class="cardhead"><span class="title">Found ' + FOUND.length + '</span>' +
-            '<span class="meta">tap to follow</span></div>' + FOUND.map(foundRow).join('')
-          : '<div class="emptystate"><div class="t">Nobody by that name</div>' +
+          ? '<div class="cardhead"><span class="title">' + FOUND.length + ' Slipper' +
+            (FOUND.length === 1 ? '' : 's') + '</span><span class="meta">tap to follow</span></div>' + FOUND.map(foundRow).join('')
+          : '<div class="emptystate"><div class="t">No Slipper by that name</div>' +
             '<p>Display names are exact. Check the spelling with them.</p></div>';
     }
   }
@@ -498,14 +518,14 @@ export function renderPeople() {
     ? head('Following ' + following.length, periodWord() + ' · in their units') +
       following.map(p => personRow(p, 'following')).join('')
     : '<div class="emptystate"><div class="t">Not following anyone yet</div>' +
-      '<p>Search above by display name. What you can see of somebody is up ' +
-      'to them: public figures show, friends-only ones show once they follow ' +
-      'you back, and private ones never do.</p></div>';
+      '<p>Search above by name. What you see of a Slipper is their choice: ' +
+      'public shows, friends-only shows once they follow you back, private never does.</p></div>';
 
   $('followersList').innerHTML = followers.length
     ? head('Followers ' + followers.length, followers.filter(p => p.ing).length + ' mutual') +
       followers.map(p => personRow(p, 'followers')).join('')
-    : '<div class="emptystate"><div class="t">No followers yet</div><p>Share your name to get started.</p></div>';
+    : '<div class="emptystate"><div class="t">No followers yet</div>' +
+      '<p>Slippers who follow you appear here. Share your display name.</p></div>';
 
   $('followingSummary').innerHTML = duo('Following', following.length, totalUnits(following));
   $('followersSummary').innerHTML = duo('Followers', followers.length, totalUnits(followers));
@@ -535,8 +555,8 @@ export function renderGroups() {
   if (!GROUPS.length) {
     $('groupList').innerHTML =
       '<div class="emptystate"><div class="t">No groups yet</div>' +
-      '<p>Start one and share the code, or join a friend\'s. Groups rank in ' +
-      'units, so nobody sees anyone\'s stake sizes.</p></div>';
+      '<p>Start one and share the code, or join with a friend\'s. Ranked in units, ' +
+      'so no stake size is ever visible.</p></div>';
     /* Emptying a .card leaves its border and padding behind as a stray
        rounded box. Hide the element, not just its contents. */
     $('groupBoard').innerHTML = '';
@@ -816,7 +836,7 @@ export function renderPrivacy() {
       '<circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a15 15 0 0 1 0 18a15 15 0 0 1 0-18"/>'],
     ['friends', 'Friends only', 'Only people you follow back can see your figures',
       '<circle cx="9" cy="8" r="3.2"/><path d="M2.5 21v-1a5 5 0 0 1 5-5h3a5 5 0 0 1 5 5v1"/><path d="M16 3.6a3.2 3.2 0 0 1 0 6.4"/>'],
-    ['private', 'Private', 'Nobody sees your figures. Groups you join still do.',
+    ['private', 'Private', 'No Slipper sees your figures. Groups you join still do.',
       '<rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/>']
   ];
   const html = opts.map(o =>
@@ -934,6 +954,18 @@ export function renderAccount(user) {
     code.textContent = user.linkCode || 'Not linked yet';
     if (id === 'linkCodeSettings') code.hidden = !user.linkCode;
   }
+
+  /* On a break, the settings row says so and the button goes away: there
+     is nothing to set, and offering the control again would imply it could
+     be changed. */
+  const brk = user.breakUntil ? new Date(user.breakUntil) : null;
+  const onBreak = brk && brk > new Date();
+  setText('breakNote', onBreak
+    ? 'On a break until ' + DF.format(brk)
+    : 'Turns off logging for as long as you choose');
+  const breakBtn = $('breakOpen');
+  if (breakBtn) breakBtn.hidden = Boolean(onBreak);
+  document.body.classList.toggle('on-break', Boolean(onBreak));
 
   const v = $('verifyState');
   if (v) {

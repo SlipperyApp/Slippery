@@ -129,7 +129,7 @@ export async function sessionUser(req) {
   const rows = await sql`
     SELECT u.id, u.email, u.display_name, u.email_verified, u.unit_pence,
            u.plan, u.plan_until, u.promo_code, u.verified, u.trial_ends_at,
-           u.privacy, u.count_mode, u.telegram_id, u.link_code, u.created_at
+           u.privacy, u.count_mode, u.break_until, u.telegram_id, u.link_code, u.created_at
     FROM auth_sessions s JOIN users u ON u.id = s.user_id
     WHERE s.token_hash = ${sha256(token)} AND s.expires_at > now() AND u.deleted_at IS NULL`;
   return rows[0] || null;

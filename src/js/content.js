@@ -90,7 +90,7 @@ const HOME_FAQ = [
   ['Can it settle bets on its own?', 'Standard markets settle themselves once the result is in. Anything it cannot grade with certainty comes to you instead, because a wrong grade is worse than no grade.'],
   ['What happens if a game is postponed or abandoned?', 'Postponed and cancelled games are voided and your stake comes back. Abandoned games come to you, because bookmakers settle those differently from each other.'],
   ['Does extra time count?', 'No. Everything settles on ninety minutes. If the ninety minute score is not in the feed, the bet is handed to you rather than settled on a score that includes extra time.'],
-  ['Who can see my numbers?', 'Whoever you choose: public, people you follow back, or nobody. Group members always see the units of everyone in that group.'],
+  ['Who can see my numbers?', 'Whoever you choose: every Slipper, only those you follow back, or none. Group members always see the units of everyone in that group.'],
   ['What is a unit?', 'Your standard stake. Units let groups rank people without anyone seeing how much money is involved.'],
   ['What does it cost?', 'Two weeks free with up to 35 slips in that window, then £3.49 a month or £29.99 a year.'],
   ['When is it on the App Store?', 'Coming soon. It runs in your browser today and installs to your home screen from the share sheet, so it behaves like an app already, and the Telegram bot works now. The App Store version follows.']
@@ -100,7 +100,7 @@ const HELP_FAQ = [
   ['A slip could not be read', 'Slippery never guesses at numbers it cannot see, so it asks for a clearer photo. Crop to the slip, avoid glare, and keep the stake, odds and result in frame.'],
   ['What the pace marker means', 'The pale line on the target bar shows how far through the period you are. If the green bar is past it, you are ahead of pace.'],
   ['What is a unit', 'A unit is your standard stake, set in Settings. Units let you compare with other people without anyone seeing the money.'],
-  ['Who can see my numbers', 'Public means anyone who finds you. Friends only means people you follow back. Private means nobody. Group members always see units of everyone in that group.'],
+  ['Who can see my numbers', 'Public means any Slipper who finds you. Friends only means Slippers you follow back. Private means none. Group members always see units of everyone in that group.'],
   ['Why can I not change my display name', 'Names are permanent so a record always belongs to the same person, and nobody can take a name someone else built a history under.'],
   ['The same bet appeared twice', 'Slippery flags slips that settle identically, such as away goals under 0.5 and BTTS No, and offers to consolidate them so your numbers are not counted twice.'],
   ['Correcting a slip Slippery misread', 'Every field on an uploaded slip is editable before you confirm it, and nothing is saved until you do. A bet already in your ledger can be settled by hand from the running list.']

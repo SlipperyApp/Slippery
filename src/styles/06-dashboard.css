@@ -135,6 +135,30 @@
       font-variant-numeric:tabular-nums lining-nums}}
   & .imported{margin-top:8px;font-size:11px;color:var(--t3);line-height:1.5}}
 
+/* The trust line.
+   Quiet by default and lit when it is high, because a strong number here is
+   the product's whole argument and a weak one is not something to shame
+   anybody with. A button rather than a label: it explains itself on tap,
+   since "logged before kick-off" only means something once you know why it
+   is the one figure that cannot be gamed by leaving losers out. */
+.capture{
+  display:flex;align-items:center;gap:9px;width:100%;text-align:left;
+  margin-top:11px;padding:8px 0 2px;
+  transition:opacity var(--tb);
+  &:hover{opacity:.82}
+  & .capbar{
+    flex:0 0 44px;height:3px;border-radius:3px;background:var(--e1);overflow:hidden;
+    & i{display:block;height:100%;border-radius:3px;background:var(--t3);
+      transform-origin:left center;transform:scaleX(var(--f,0));
+      transition:transform 720ms var(--ez);will-change:transform}}
+  & .captext{font-size:11px;color:var(--t2);line-height:1.4;
+    & b{font-family:var(--fm);font-weight:600;color:var(--t2);
+      font-variant-numeric:tabular-nums lining-nums}}
+  & .capfew{color:var(--t3)}
+  &.strong{
+    & .capbar i{background:var(--pos)}
+    & .captext b{color:var(--pos)}}}
+
 /* target + pace */
 .goal{
   padding:12px 16px 14px;border-top:1px solid var(--e2);margin-top:12px;

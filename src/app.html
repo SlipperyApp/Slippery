@@ -213,7 +213,7 @@
       <div class="card feature premium reveal">
         <div class="glyph" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 21h8M12 17v4"/><path d="M7 4h10v5a5 5 0 0 1-10 0z"/><path d="M17 5h3v2a3 3 0 0 1-3 3M7 5H4v2a3 3 0 0 0 3 3"/></svg></div>
         <h3>Groups and following</h3>
-        <p>Start a group, follow people whose numbers you rate, and choose who sees yours. Ranked in units, so nobody sees anyone's stake sizes.</p>
+        <p>Start a group, follow Slippers whose numbers you rate, and choose who sees yours. Ranked in units, so nobody sees a stake size.</p>
       </div>
     </div>
 
@@ -581,10 +581,36 @@
       <p class="stepnote" id="payPromoNote" aria-live="polite" style="margin:9px 0 0;font-size:12.5px"></p>
     </div>
 
-    <div class="card pad alertcard" style="margin-top:10px">
-      <div class="alerthead"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M12 9v4M12 17h.01"/><path d="M10.3 3.9L1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/></svg>Card payment is not switched on yet</div>
-      <p class="hinttext">The plan is to take your card when the trial starts and charge it when the fortnight ends, so nothing stops working the day it runs out. That needs a payment processor account in the business name, which only the owner can open, and until it exists no page here will ask you for card details. Card numbers must never touch a server that is not set up to take them. Until it is connected, the trial runs its full two weeks and paid plans are granted by promo code.</p>
+    <!-- THE CARD FORM.
+         Laid out exactly as it will be when a processor is connected, and
+         every field disabled with a real reason attached. Two things this
+         is careful about:
+
+         · It never accepts a card number. Not disabled-then-enabled by a
+           flag, not posted anywhere: the inputs have no name and no
+           handler. A page that collects a PAN before there is somewhere
+           compliant to send it is the single worst thing this codebase
+           could ship, and "it is only a placeholder" is exactly how that
+           happens.
+         · It does not pretend. The notice says what is missing and who can
+           fix it, so nobody taps Pay and wonders what went wrong. -->
+    <div class="card pad paycard" style="margin-top:10px">
+      <div class="cardhead"><span class="title">Card details</span>
+        <span class="tagbit">Not live yet</span></div>
+      <div class="payfields" aria-hidden="true">
+        <label class="slipcell wide"><span>Card number</span>
+          <input class="field slipin m" placeholder="•••• •••• •••• ••••" disabled></label>
+        <label class="slipcell"><span>Expiry</span>
+          <input class="field slipin m" placeholder="MM / YY" disabled></label>
+        <label class="slipcell"><span>Security code</span>
+          <input class="field slipin m" placeholder="•••" disabled></label>
+        <label class="slipcell wide"><span>Name on card</span>
+          <input class="field slipin" placeholder="As printed" disabled></label>
+      </div>
+      <button class="btn primary full" style="margin-top:13px" disabled>Start the free trial</button>
+      <p class="hinttext">Taking cards needs a payment processor account in the business name, which only the owner can open. Until it exists these fields do nothing and no page here will ask for a card. Paid plans are granted by promo code, and the trial runs its full two weeks.</p>
     </div>
+
     <p class="fineprint" style="margin-top:14px">Prices in GBP. Slippery never handles stakes or winnings.</p>
   </div>
 </section>
@@ -665,6 +691,18 @@
             <span>ROI <b id="statRoi"></b></span>
           </div>
           <p class="imported" id="importedNote" hidden></p>
+          <!-- THE TRUST LINE.
+               The claim this product makes is that the figure above is real
+               rather than a highlight reel, and until now nothing on the
+               screen supported it. This does: the share of the record that
+               was logged before a ball was kicked. You cannot cherry-pick
+               bets you committed to before they resolved, so a high number
+               here is the one statistic in a betting tracker that cannot be
+               gamed by omission. -->
+          <button class="capture" id="captureLine" hidden data-nav-help="capture">
+            <span class="capbar" aria-hidden="true"><i id="captureFill"></i></span>
+            <span class="captext" id="captureText"></span>
+          </button>
         </div>
         <div class="goal">
           <div class="head"><span class="mut" id="goalLabel"></span><span class="pctval" id="goalPct"></span></div>
@@ -826,8 +864,8 @@
       <div id="socialFollowing" hidden>
         <div class="searchbox">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>
-          <label class="sr" for="peopleSearch">Search people</label>
-          <input class="field" id="peopleSearch" type="search" placeholder="Find someone by name…" autocomplete="off">
+          <label class="sr" for="peopleSearch">Search Slippers</label>
+          <input class="field" id="peopleSearch" type="search" placeholder="Find a Slipper by name…" autocomplete="off">
         </div>
         <!-- Search results sit above the list rather than replacing it, so
              following somebody does not lose the list you were looking at.
@@ -1049,11 +1087,11 @@
 
         <div class="card settingcard">
       <h2 class="cardtitle"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg>Who can see your figures</h2>
-      <p class="desc">What people following you can see.</p>
+      <p class="desc">What Slippers following you can see.</p>
       <div class="optionlist" id="privacySettings"></div>
       <div class="fieldrow"><span class="lab">Share units only<small>Never your stake sizes</small></span>
         <button class="switch" role="switch" aria-checked="true" aria-label="Share units only"></button></div>
-      <div class="fieldrow"><span class="lab">Let people find me by name</span>
+      <div class="fieldrow"><span class="lab">Let Slippers find me by name</span>
         <button class="switch" role="switch" aria-checked="true" aria-label="Discoverable by name"></button></div>
     </div>
 
@@ -1143,6 +1181,23 @@
         </span></div>
       <div class="fieldrow"><span class="lab">Slip images<small>Kept 90 days, then deleted automatically</small></span>
         <button class="pillbtn" id="purgeImages">Delete now</button></div>
+      <!-- Take a break. Not buried, and not dressed up as a feature.
+           The brief flags that the red and green grid and the rankings are
+           engagement mechanics; this is the counterweight, and it only
+           counts for anything if it is easy to find and impossible to
+           undo. -->
+      <div class="fieldrow"><span class="lab">Take a break<small id="breakNote">Turns off logging for as long as you choose</small></span>
+        <button class="pillbtn" id="breakOpen">Set</button></div>
+      <div class="dangerbox" id="breakBox" hidden>
+        <p class="dangerlead">Logging stops for the whole break. Your record stays exactly as it is, and you can still look at it. <b>A break cannot be shortened or cancelled.</b></p>
+        <div class="optionlist" id="breakChoices" role="radiogroup" aria-label="How long"></div>
+        <div class="btnrow" style="margin-top:11px">
+          <button class="btn ghost small" id="breakCancel">Not now</button>
+          <button class="btn danger small" id="breakGo">Start the break</button>
+        </div>
+        <p class="fineprint" style="margin-top:11px">Gambling should not stop being fun. <a href="https://www.begambleaware.org" target="_blank" rel="noopener">BeGambleAware</a> and <a href="https://www.gamcare.org.uk" target="_blank" rel="noopener">GamCare</a> are there whenever you want them.</p>
+      </div>
+
       <div class="fieldrow"><span class="lab">Reset all bets<small>Deletes every bet and slip image. Keeps your account.</small></span>
         <button class="pillbtn danger" id="resetBets">Reset</button></div>
       <div class="fieldrow"><span class="lab">Delete account<small>Everything goes. This cannot be undone.</small></span>
