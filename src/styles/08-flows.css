@@ -676,3 +676,49 @@ input[type=date]{
   color:#1b1205;background:var(--a);border-radius:8px;
   padding:5px 8px;letter-spacing:-.02em;
 }
+
+/* ---------- the auth screen ----------
+ *
+ * This is the first thing anyone sees after deciding to try the product,
+ * and it was the plainest screen in the build: a generic card with a
+ * person glyph on top, indistinguishable from a settings panel.
+ *
+ * Three changes, all about the moment rather than the decoration. The
+ * reassurance rail states the three things somebody weighs before typing
+ * an email into a gambling-adjacent product, before the form rather than
+ * in fine print under it. The card gets its own weight so it reads as the
+ * subject of the page. And the password fields can be revealed, which was
+ * missing entirely: a rule list demanding a capital and a symbol, with no
+ * way to see what you typed, is how people end up locked out of an account
+ * they created ninety seconds ago. */
+.authrail{
+  display:grid;grid-template-columns:1fr;gap:7px;margin-bottom:14px;
+  & span{
+    display:flex;flex-direction:column;gap:1px;
+    padding:10px 13px;border-radius:12px;
+    border:1px solid var(--e2);background:var(--c1);
+    font-size:11.5px;color:var(--t2);line-height:1.4}
+  & b{font-size:12.5px;color:var(--t1);font-weight:600}}
+@media (min-width:560px){.authrail{grid-template-columns:repeat(3,1fr)}}
+
+.authcard{
+  border-color:var(--e1);
+  box-shadow:0 22px 50px -30px rgba(0,0,0,.8)}
+
+/* The reveal. Inside the field rather than beside it, so the input keeps
+   its full width and the two password boxes stay the same size as every
+   other field on the form. */
+.pwwrap{
+  position:relative;display:block;
+  & input{width:100%;padding-right:46px}}
+.pweye{
+  position:absolute;right:5px;top:50%;transform:translateY(-50%);
+  width:36px;height:36px;border-radius:9px;display:grid;place-items:center;
+  color:var(--t3);transition:color var(--tf),background var(--tf);
+  & svg{width:17px;height:17px}
+  &:hover{color:var(--t1);background:var(--c1)}
+  /* Struck through when the password is showing, so the button states
+     what will happen next rather than what is happening now. */
+  &[aria-pressed=true]{color:var(--s);
+    &::after{content:'';position:absolute;left:8px;right:8px;top:50%;height:1.5px;
+      background:currentColor;transform:rotate(-45deg);border-radius:2px}}}

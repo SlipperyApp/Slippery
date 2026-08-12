@@ -285,8 +285,16 @@
     <div class="wizbar" id="wizbar" aria-hidden="true"></div>
 
     <div class="step on" data-step="0">
-      <div class="card settingcard">
-        <div class="stepglyph" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="8" r="4"/><path d="M4 21v-1a6 6 0 0 1 6-6h4a6 6 0 0 1 6 6v1"/></svg></div>
+      <!-- The reassurance rail. Three facts a person weighs before typing
+           an email into a gambling-adjacent product, said before the form
+           rather than in fine print under it. Above the form on a phone,
+           beside it on a desktop. -->
+      <div class="authrail" aria-hidden="true">
+        <span><b>Two weeks free</b>35 slips, no card</span>
+        <span><b>Your figures are yours</b>Private by default</span>
+        <span><b>Delete it all, any time</b>One button, really gone</span>
+      </div>
+      <div class="card settingcard authcard">
         <div class="seg" id="authSeg" role="group" aria-label="Account" style="margin-bottom:16px">
           <button class="on" data-auth="up" aria-pressed="true">Create account</button>
           <button data-auth="in" aria-pressed="false">Log in</button>
@@ -308,7 +316,7 @@
           <input class="field" id="suEmail" type="email" autocomplete="email" spellcheck="false" placeholder="you@example.com" aria-describedby="suEmailErr">
           <p class="formerr" id="suEmailErr" hidden></p>
           <label class="label" for="suPw">Password</label>
-          <input class="field" id="suPw" type="password" autocomplete="new-password" placeholder="Create a password…" aria-describedby="suPwErr">
+          <span class="pwwrap"><input class="field" id="suPw" type="password" autocomplete="new-password" placeholder="Create a password…" aria-describedby="suPwErr"><button type="button" class="pweye" data-reveal="suPw" aria-label="Show password" aria-pressed="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" aria-hidden="true"><path d="M2 12s3.8-6.5 10-6.5S22 12 22 12s-3.8 6.5-10 6.5S2 12 2 12z"/><circle cx="12" cy="12" r="2.6"/></svg></button></span>
           <p class="formerr" id="suPwErr" hidden></p>
           <ul class="pwrules" id="pwRules" aria-live="polite">
             <li data-rule="len"><i aria-hidden="true"></i>8 characters or more</li>
@@ -316,7 +324,7 @@
             <li data-rule="sym"><i aria-hidden="true"></i>One special character</li>
           </ul>
           <label class="label" for="suPw2">Confirm password</label>
-          <input class="field" id="suPw2" type="password" autocomplete="new-password" placeholder="Type it again…" aria-describedby="suPw2Err">
+          <span class="pwwrap"><input class="field" id="suPw2" type="password" autocomplete="new-password" placeholder="Type it again…" aria-describedby="suPw2Err"><button type="button" class="pweye" data-reveal="suPw2" aria-label="Show confirm password" aria-pressed="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" aria-hidden="true"><path d="M2 12s3.8-6.5 10-6.5S22 12 22 12s-3.8 6.5-10 6.5S2 12 2 12z"/><circle cx="12" cy="12" r="2.6"/></svg></button></span>
           <p class="formerr" id="suPw2Err" hidden></p>
           <label class="label" for="suName">Display name <span class="hint">permanent, 20 max</span></label>
           <div style="display:flex;gap:8px">
@@ -349,7 +357,7 @@
           <input class="field" id="liUser" type="text" autocomplete="username" spellcheck="false" autocapitalize="none" placeholder="DariusOdds or you@example.com" aria-describedby="liUserErr">
           <p class="formerr" id="liUserErr" hidden></p>
           <label class="label" for="liPw">Password</label>
-          <input class="field" id="liPw" type="password" autocomplete="current-password" placeholder="Your password…" aria-describedby="liPwErr">
+          <span class="pwwrap"><input class="field" id="liPw" type="password" autocomplete="current-password" placeholder="Your password…" aria-describedby="liPwErr"><button type="button" class="pweye" data-reveal="liPw" aria-label="Show password" aria-pressed="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" aria-hidden="true"><path d="M2 12s3.8-6.5 10-6.5S22 12 22 12s-3.8 6.5-10 6.5S2 12 2 12z"/><circle cx="12" cy="12" r="2.6"/></svg></button></span>
           <p class="formerr" id="liPwErr" hidden></p>
           <button class="pillbtn link" id="forgotPw" style="margin-top:13px">Forgotten your password?</button>
         </div>
@@ -368,7 +376,7 @@
             <input class="field codeinput" id="fgCode" inputmode="numeric" maxlength="6" autocomplete="one-time-code" placeholder="000000" aria-describedby="fgCodeErr">
             <p class="formerr" id="fgCodeErr" hidden></p>
             <label class="label" for="fgPw">New password</label>
-            <input class="field" id="fgPw" type="password" autocomplete="new-password" placeholder="Create a new password…" aria-describedby="fgPwErr">
+            <span class="pwwrap"><input class="field" id="fgPw" type="password" autocomplete="new-password" placeholder="Create a new password…" aria-describedby="fgPwErr"><button type="button" class="pweye" data-reveal="fgPw" aria-label="Show new password" aria-pressed="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" aria-hidden="true"><path d="M2 12s3.8-6.5 10-6.5S22 12 22 12s-3.8 6.5-10 6.5S2 12 2 12z"/><circle cx="12" cy="12" r="2.6"/></svg></button></span>
             <p class="formerr" id="fgPwErr" hidden></p>
             <ul class="pwrules" id="fgPwRules" aria-live="polite">
               <li data-rule="len"><i aria-hidden="true"></i>8 characters or more</li>

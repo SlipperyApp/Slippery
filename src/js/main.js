@@ -2176,6 +2176,25 @@ document.addEventListener('click', e => {
     if (el.id === 'showTipster') { S.showTipster = on; R.renderRecentBets(); R.renderLedger(); R.renderPending(); }
     return;
   }
+  if ((el = c('[data-reveal]'))) {
+    /* Show the password. Missing entirely before this, on a form that
+       demands a capital and a symbol: a rule list you cannot check
+       against what you typed is how somebody gets locked out of an
+       account they made ninety seconds ago. */
+    const field = $(el.getAttribute('data-reveal'));
+    if (!field) return;
+    const showing = field.type === 'text';
+    field.type = showing ? 'password' : 'text';
+    el.setAttribute('aria-pressed', String(!showing));
+    el.setAttribute('aria-label', (showing ? 'Show ' : 'Hide ') +
+      (el.getAttribute('aria-label') || '').replace(/^(Show|Hide) /, ''));
+    /* Keep the caret where it was. Changing `type` moves it to the end in
+       every engine, which is maddening mid-word. */
+    const at = field.selectionStart;
+    field.focus();
+    try { field.setSelectionRange(at, at); } catch { /* not all types allow it */ }
+    return;
+  }
   if (c('#breakOpen')) { openBreakBox(); return; }
   if (c('#breakCancel')) { $('breakBox').hidden = true; return; }
   if ((el = c('[data-break]'))) {
