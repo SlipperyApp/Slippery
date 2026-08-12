@@ -72,7 +72,10 @@ export async function settleForUser(userId) {
      "still running", and the more annoying of the two failures. */
   const unmatched = bySport.football.filter(b => !feed.matchFixture(b.event, football.fixtures));
   const extra = unmatched.length
-    ? await feed.lookupEach(unmatched.map(b => b.event))
+    /* The window goes through so the widened re-pull knows where to look.
+       Without it lookupEach could only use SofaScore search, which is 403
+       from a serverless IP, so in production it returned nothing at all. */
+    ? await feed.lookupEach(unmatched.map(b => b.event), 8, from, to)
     : new Map();
 
   let settled = 0, asked = 0, stillRunning = 0;

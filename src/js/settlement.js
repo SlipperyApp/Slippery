@@ -126,8 +126,13 @@ export const NEEDS_MORE = [
   /\bwinning margin\b/, /\bhalf ?time\/full ?time\b/, /\bht\/ft\b/
 ];
 
-export function parseSelection(raw, fx) {
+/* `market` is the bookmaker's own label for the bet, when the slip carried
+   one. It is a hint, never an override: the selection text still has to
+   name a side and a line, and anything that cannot be read is still
+   refused. It exists because of the handicap case below. */
+export function parseSelection(raw, fx, market) {
   const t = norm(raw), st = soft(raw);
+  const mk = norm(market || '');
   let m, side;
   if (!t) return null;
 
@@ -158,9 +163,32 @@ export function parseSelection(raw, fx) {
     return { market: 'correct_score', hg: +m[1], ag: +m[2] };
   }
 
+  /* HANDICAPS.
+   *
+   * These three patterns all require the word "handicap", "hcp" or "ah", or
+   * brackets. Bookmakers do not print it that way. Every slip this codebase
+   * has seen prints "Arsenal -1" or "Bayern Munich -1.5", the team then a
+   * signed number, and none of those matched: measured against a live feed,
+   * 9 handicap bets out of 300 parsed and the other 291 came back "could
+   * not read this market with confidence". Refusing is safe, but refusing
+   * the normal form of the commonest handicap bet is not useful.
+   *
+   * The fourth pattern reads the bare form. It is guarded so it cannot
+   * swallow an over/under line, which is the one thing nearby that also
+   * ends in a number:
+   *   · the number must carry an explicit + or -, and a total never does
+   *     ("Over 2.5", not "Over +2.5"); and
+   *   · sideOf must find one of the two teams in the text, which a totals
+   *     selection has no reason to name.
+   * The bookmaker's market label counts as corroboration when the slip
+   * gave us one, but it is never enough on its own. */
   m = t.match(/([+-]?\d+(?:\.\d+)?)\s*(?:goal)?\s*(?:handicap|hcp|ah)\b/) ||
       t.match(/\b(?:handicap|hcp|ah)\s*([+-]?\d+(?:\.\d+)?)/) ||
       t.match(/\(([+-]\d+(?:\.\d+)?)\)/);
+  if (!m && (/\bhandicap|\bhcp\b|\bah\b|\bspread\b/.test(mk) || /[+-]\d/.test(t))) {
+    const bare = t.match(/(?:^|[^\d.])([+-]\d+(?:\.\d+)?)\s*$/);
+    if (bare) m = bare;
+  }
   if (m) {
     side = sideOf(t, fx);
     if (!side) return null;
@@ -327,6 +355,18 @@ export const EXTRA     = { AET: 1, PEN: 1, FT_PEN: 1, 'AFTER ET': 1, PENALTIES: 
                            'AFTER EXTRA TIME': 1, 'PENALTY SHOOTOUT': 1 };
 export const DEAD_VOID = { POSTPONED: 1, CANCELLED: 1, CANCELED: 1, WO: 1, AWARDED: 1 };
 export const DEAD_ASK  = { ABANDONED: 1, INTERRUPTED: 1, SUSPENDED: 1 };
+/* Finished, but the feed cannot prove the 90-minute score.
+ *
+ * FlashScore reports this for cup ties: the match is over, and the score it
+ * publishes may include extra time it did not break out. Settling on that
+ * would break the one rule this file exists for.
+ *
+ * It used to fall through to `pending`, which is the wrong kind of safe.
+ * Pending means "still running" everywhere it is shown, so a finished cup
+ * tie sat in the running list forever and the user was never told it needed
+ * them. Over a three day window that was 274 of 1291 fixtures. Asking is
+ * the honest answer: the bet is over, we will not guess it, you decide. */
+export const FINISHED_UNPROVABLE = { FINISHED_UNKNOWN: 1, 'FINISHED UNKNOWN': 1 };
 
 /* Extra time never counts unless the market says so. If the feed gives an
    explicit 90 minute score we use it. If it does not, we hand the bet to
@@ -405,6 +445,9 @@ export function settleTennis(bet, fx) {
   if (TENNIS_DEAD_ASK[st]) {
     return { status: 'ask',
              reason: 'Match ' + st.toLowerCase() + '. Bookmakers settle these differently, so you decide' };
+  }
+  if (FINISHED_UNPROVABLE[st]) {
+    return { status: 'ask', reason: 'Finished, but the feed did not prove the set score' };
   }
   if (!FINISHED[st]) return { status: 'pending', reason: 'Not finished (' + fx.status + ')' };
   if (typeof fx.hg !== 'number' || typeof fx.ag !== 'number') {
@@ -521,6 +564,11 @@ export function settle(bet, fx) {
                reason: 'Went to extra time and the 90 minute score is not in the feed' };
     }
     use = n;
+  } else if (FINISHED_UNPROVABLE[st]) {
+    /* Over, but not provably at 90 minutes. Ask rather than leave it
+       looking like it is still being played. */
+    return { status: 'ask',
+             reason: 'Finished, but the feed cannot prove the 90 minute score on this one' };
   } else if (!FINISHED[st]) {
     return { status: 'pending', reason: 'Not finished (' + fx.status + ')' };
   }
@@ -531,7 +579,7 @@ export function settle(bet, fx) {
 
   if (bet.legs && bet.legs.length) return settleMulti(bet, use);
 
-  const p = parseSelection(bet.selection, use);
+  const p = parseSelection(bet.selection, use, bet.market);
   if (!p) return { status: 'ask', reason: 'Could not read this market with confidence' };
   if (p.market === 'needs_more') {
     return { status: 'ask', reason: 'Needs player, event or in play detail we do not have' };
@@ -572,7 +620,7 @@ export function settleMulti(bet, fxDefault) {
       return { status: 'pending', reason: 'A leg is still running' };
     }
 
-    const p = parseSelection(leg.selection, fx);
+    const p = parseSelection(leg.selection, fx, leg.market || bet.market);
     if (!p || p.market === 'needs_more') {
       return { status: 'ask', reason: 'Cannot grade leg: ' + leg.selection };
     }

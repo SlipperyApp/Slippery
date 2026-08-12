@@ -35,6 +35,7 @@
  * 54 and friends) are undocumented, and one of them is very likely "after
  * extra time", so they get the same unrecognised status and the same ask.
  */
+import * as net from './net.js';
 
 const BASE = 'https://global.flashscore.ninja/2/x/feed/';
 /* The feed requires this header. It is not a secret or a credential: it is a
@@ -81,16 +82,9 @@ export function isLeague(competition) {
    settles" path. */
 export const AC_STATUS = { 3: 'FT', 4: 'POSTPONED', 5: 'CANCELLED' };
 
-async function getFeed(sportId, dayOffset) {
+async function getFeed(sportId, dayOffset, timeout) {
   const url = BASE + 'f_' + sportId + '_' + dayOffset + '_3_en_1';
-  const res = await fetch(url, { headers: HEADERS });
-  if (res.status === 403 || res.status === 429) {
-    const err = new Error('FlashScore refused the request (' + res.status + ').');
-    err.statusCode = res.status;
-    err.blocked = true;
-    throw err;
-  }
-  if (!res.ok) throw new Error('FlashScore returned ' + res.status + '.');
+  const res = await net.get(url, { headers: HEADERS, timeout });
   return res.text();
 }
 
@@ -229,12 +223,22 @@ export function finishedBetween(dateFrom, dateTo) { return pull('football', date
 export function finishedTennis(dateFrom, dateTo) { return pull('tennis', dateFrom, dateTo); }
 
 /** One cheap request, to report whether this host can reach the feed. */
+/* One wording for what went wrong, and it has to name the real cause.
+   This printed "blocked (undefined)" because it read err.statusCode while
+   net.js sets err.status, so /api/sources could not tell anyone WHY a
+   source was refusing. A diagnostics endpoint that cannot diagnose is
+   worse than none. */
+const probeWhy = err =>
+  err.blocked ? 'blocked (' + (err.status || 'refused') + ')'
+  : err.timedOut ? 'too slow to be usable'
+  : err.message;
+
 export async function reachable() {
   try {
     const text = await getFeed(SPORT_ID.football, 0);
     const n = parseFeed(text).length;
     return n ? { ok: true, events: n } : { ok: false, why: 'feed was empty' };
   } catch (err) {
-    return { ok: false, why: err.blocked ? 'blocked (' + (err.statusCode || '') + ')' : err.message };
+    return { ok: false, why: probeWhy(err) };
   }
 }

@@ -6,6 +6,7 @@
  * went past 90 minutes it can only tell the engine to ask. That is why it
  * sits behind the scrapers rather than in front of them.
  */
+import * as net from './net.js';
 const FD_BASE = 'https://api.football-data.org/v4';
 
 export function configured() { return Boolean(process.env.FOOTBALL_DATA_TOKEN); }
@@ -88,17 +89,11 @@ export async function finishedBetween(dateFrom, dateTo) {
     throw err;
   }
   const url = FD_BASE + '/matches?dateFrom=' + dateFrom + '&dateTo=' + dateTo;
-  const res = await fetch(url, { headers: { 'X-Auth-Token': process.env.FOOTBALL_DATA_TOKEN } });
-  if (res.status === 429) {
-    const err = new Error('The results feed is rate limiting us. Try again shortly.');
-    err.statusCode = 429;
-    throw err;
-  }
-  if (!res.ok) {
-    const err = new Error('The results feed returned ' + res.status + '.');
-    err.statusCode = 502;
-    throw err;
-  }
+  /* Through net.js for the deadline. 429 comes back flagged `blocked`,
+     which is right for the chain's purposes: the free tier allows ten
+     requests a minute and asking again inside the same sweep will not
+     help. */
+  const res = await net.get(url, { headers: { 'X-Auth-Token': process.env.FOOTBALL_DATA_TOKEN } });
   const body = await res.json();
   return (body.matches || []).map(normalise).filter(Boolean);
 }
@@ -108,10 +103,11 @@ export async function finishedBetween(dateFrom, dateTo) {
 export async function reachable() {
   if (!configured()) return { ok: false, why: 'FOOTBALL_DATA_TOKEN not set' };
   try {
-    const res = await fetch(FD_BASE + '/competitions/PL', {
-      headers: { 'X-Auth-Token': process.env.FOOTBALL_DATA_TOKEN }
+    await net.get(FD_BASE + '/competitions/PL', {
+      headers: { 'X-Auth-Token': process.env.FOOTBALL_DATA_TOKEN },
+      timeout: net.PROBE_TIMEOUT_MS
     });
-    return res.ok ? { ok: true } : { ok: false, why: 'returned ' + res.status };
+    return { ok: true };
   } catch (err) {
     return { ok: false, why: err.message };
   }

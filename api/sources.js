@@ -12,6 +12,7 @@
 import { json, methodGuard, fail } from './_lib/http.js';
 import { configured as dbConfigured } from './_lib/db.js';
 import { probeSources } from './_lib/fixtures.js';
+import { breakerState } from './_lib/net.js';
 import * as mail from './_lib/mail.js';
 
 export default async function handler(req, res) {
@@ -38,7 +39,12 @@ export default async function handler(req, res) {
         ADMIN_SECRET: has('ADMIN_SECRET')
       },
       mail: mail.provider(),
-      sources: await probeSources()
+      sources: await probeSources(),
+      /* What the circuit breaker currently believes, in seconds remaining.
+         Empty is the healthy state. If a source you expect to work is in
+         here, it refused this instance recently and the chain is skipping
+         it on purpose rather than silently failing. */
+      blocked: breakerState()
     });
   } catch (err) {
     return fail(res, err, 'Could not probe the results sources.');

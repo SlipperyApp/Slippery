@@ -23,6 +23,7 @@
  * there. So it settles reliably but not instantly, which is the honest
  * trade for being the source that actually responds.
  */
+import * as net from './net.js';
 import { parseDelimited } from '../../src/js/csv.js';
 
 const BASE = 'https://www.football-data.co.uk';
@@ -54,16 +55,17 @@ const HEADERS = {
   'Accept': 'text/csv, text/plain, */*'
 };
 
-async function getCsv(url) {
-  const res = await fetch(url, { headers: HEADERS });
-  if (res.status === 403 || res.status === 429) {
-    const err = new Error('football-data.co.uk refused the request (' + res.status + ').');
-    err.statusCode = res.status;
-    err.blocked = true;
+async function getCsv(url, timeout) {
+  let res;
+  try {
+    res = await net.get(url, { headers: HEADERS, timeout });
+  } catch (err) {
+    /* A missing season file is not a failure: the CSV for a season that has
+       not started yet simply is not published, and the caller wants null so
+       it can try the previous season. Everything else propagates. */
+    if (err.status === 404) return null;
     throw err;
   }
-  if (res.status === 404) return null;      // season not started, or no such file
-  if (!res.ok) throw new Error('football-data.co.uk returned ' + res.status + '.');
   return res.text();
 }
 
@@ -171,12 +173,22 @@ export async function finishedBetween(dateFrom, dateTo) {
 }
 
 /** One cheap request, to report whether this host can reach the site. */
+/* One wording for what went wrong, and it has to name the real cause.
+   This printed "blocked (undefined)" because it read err.statusCode while
+   net.js sets err.status, so /api/sources could not tell anyone WHY a
+   source was refusing. A diagnostics endpoint that cannot diagnose is
+   worse than none. */
+const probeWhy = err =>
+  err.blocked ? 'blocked (' + (err.status || 'refused') + ')'
+  : err.timedOut ? 'too slow to be usable'
+  : err.message;
+
 export async function reachable() {
   try {
     const text = await getCsv(BASE + '/new/SWE.csv');
     if (text === null) return { ok: false, why: 'file not found' };
     return { ok: true, rows: text.split('\n').length - 1 };
   } catch (err) {
-    return { ok: false, why: err.blocked ? 'blocked (' + err.statusCode + ')' : err.message };
+    return { ok: false, why: probeWhy(err) };
   }
 }

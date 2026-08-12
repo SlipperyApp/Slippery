@@ -15,6 +15,7 @@
  * machine outright. Whether it answers a Vercel function is a question only
  * production can settle, which is what /api/sources exists to ask.
  */
+import * as net from './net.js';
 
 const BASE = 'https://site.api.espn.com/apis/site/v2/sports/soccer';
 
@@ -121,19 +122,12 @@ export function normalise(ev) {
   return fixture;
 }
 
-async function get(url) {
-  const res = await fetch(url, { headers: HEADERS });
-  if (res.status === 403 || res.status === 429) {
-    const err = new Error('ESPN refused the request (' + res.status + ').');
-    err.statusCode = res.status;
-    err.blocked = true;
-    throw err;
-  }
-  if (!res.ok) {
-    const err = new Error('ESPN returned ' + res.status + '.');
-    err.statusCode = 502;
-    throw err;
-  }
+/* Every scraper fetches through net.js, which adds the thing all five were
+   missing: a deadline. A host that accepts the connection and then hangs
+   used to consume the whole ten second function budget, so the chain never
+   reached the source that would have answered and nothing settled at all. */
+async function get(url, timeout) {
+  const res = await net.get(url, { headers: HEADERS, timeout });
   return res.json();
 }
 
@@ -173,11 +167,21 @@ export async function finishedBetween(dateFrom, dateTo) {
 }
 
 /** One cheap request, to report whether this host can reach ESPN at all. */
+/* One wording for what went wrong, and it has to name the real cause.
+   This printed "blocked (undefined)" because it read err.statusCode while
+   net.js sets err.status, so /api/sources could not tell anyone WHY a
+   source was refusing. A diagnostics endpoint that cannot diagnose is
+   worse than none. */
+const probeWhy = err =>
+  err.blocked ? 'blocked (' + (err.status || 'refused') + ')'
+  : err.timedOut ? 'too slow to be usable'
+  : err.message;
+
 export async function reachable() {
   try {
     const body = await get(BASE + '/eng.1/scoreboard');
     return { ok: true, events: (body.events || []).length };
   } catch (err) {
-    return { ok: false, why: err.blocked ? 'blocked (' + err.statusCode + ')' : err.message };
+    return { ok: false, why: probeWhy(err) };
   }
 }

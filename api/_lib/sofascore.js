@@ -23,6 +23,7 @@
  * one fixture shape settlement.js accepts:
  *   { id, status, home, away, hg, ag, hth, hta, ft90h, ft90a }
  */
+import * as net from './net.js';
 import { foldName } from './fixtures.js';
 
 const BASE = 'https://api.sofascore.com/api/v1';
@@ -115,21 +116,8 @@ const num = v => typeof v === 'number' && Number.isFinite(v);
 
 /* ---------------- network ---------------- */
 
-async function get(path) {
-  const res = await fetch(BASE + path, { headers: HEADERS });
-  if (res.status === 403 || res.status === 429) {
-    /* The bot filter. Distinct error so the caller can fall back rather
-       than treat it as "no fixtures today" and leave bets pending forever. */
-    const err = new Error('SofaScore refused the request (' + res.status + ').');
-    err.statusCode = res.status;
-    err.blocked = true;
-    throw err;
-  }
-  if (!res.ok) {
-    const err = new Error('SofaScore returned ' + res.status + '.');
-    err.statusCode = 502;
-    throw err;
-  }
+async function get(path, timeout) {
+  const res = await net.get(BASE + path, { headers: HEADERS, timeout });
   return res.json();
 }
 
@@ -193,12 +181,22 @@ export async function searchEvent(eventText) {
 }
 
 /** One cheap request, to report whether this host can reach SofaScore. */
+/* One wording for what went wrong, and it has to name the real cause.
+   This printed "blocked (undefined)" because it read err.statusCode while
+   net.js sets err.status, so /api/sources could not tell anyone WHY a
+   source was refusing. A diagnostics endpoint that cannot diagnose is
+   worse than none. */
+const probeWhy = err =>
+  err.blocked ? 'blocked (' + (err.status || 'refused') + ')'
+  : err.timedOut ? 'too slow to be usable'
+  : err.message;
+
 export async function reachable() {
   try {
     const body = await get('/sport/football/scheduled-events/' +
       new Date().toISOString().slice(0, 10));
     return { ok: true, events: (body.events || []).length };
   } catch (err) {
-    return { ok: false, why: err.blocked ? 'blocked (' + err.statusCode + ')' : err.message };
+    return { ok: false, why: probeWhy(err) };
   }
 }

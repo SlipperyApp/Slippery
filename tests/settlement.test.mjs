@@ -689,3 +689,93 @@ test('vsLine is symmetric around the line', () => {
   assert.equal(vsLine(2, 2.25), HALF_LOST);
   assert.equal(vsLine(3, 2.75), HALF_WON);
 });
+
+/* ---- finished, but not provably at 90 minutes ----
+ *
+ * FlashScore reports FINISHED_UNKNOWN for cup ties: the match is over and
+ * the score it publishes may silently include extra time. This used to fall
+ * through to `pending`, which reads as "still being played" everywhere it
+ * is shown, so a finished cup tie sat in the running list forever and the
+ * user was never prompted. Measured against a live three day window it was
+ * 274 fixtures out of 1291.
+ *
+ * The requirement is not that it settles. It is that it never settles, AND
+ * never hides. */
+test('a finished fixture with no provable 90 minute score asks, it does not sit pending', () => {
+  const fx = { status: 'FINISHED_UNKNOWN', home: 'Morocco W', away: 'South Africa W', hg: 2, ag: 1 };
+  const r = settle(
+    { event: 'Morocco W v South Africa W', selection: 'Morocco W to win',
+      market: 'Match result', book: 'bet365', odds: 2.0, stakePence: 1000 }, fx);
+  assert.equal(r.status, 'ask', 'must not settle on a score that may include extra time');
+  assert.notEqual(r.status, 'pending', 'and must not look like it is still running');
+  assert.match(r.reason, /90 minute/);
+});
+
+test('a genuinely unfinished fixture is still pending, not ask', () => {
+  /* The distinction has to survive: a match at half time is not something
+     to prompt the user about. */
+  const fx = { status: 'HT', home: 'Arsenal', away: 'Spurs', hg: 1, ag: 0 };
+  const r = settle(
+    { event: 'Arsenal v Spurs', selection: 'Arsenal to win',
+      market: 'Match result', book: 'bet365', odds: 2.0, stakePence: 1000 }, fx);
+  assert.equal(r.status, 'pending');
+});
+
+test('an unprovable tennis result asks rather than sitting pending', () => {
+  const fx = { status: 'FINISHED_UNKNOWN', sport: 'tennis', home: 'Alcaraz', away: 'Sinner' };
+  const r = settle(
+    { event: 'Alcaraz v Sinner', selection: 'Alcaraz to win',
+      market: 'Match result', book: 'bet365', odds: 2.0, stakePence: 1000 }, fx);
+  assert.equal(r.status, 'ask');
+});
+
+/* ---- the bare handicap form ----
+ *
+ * Bookmakers print a handicap as "Arsenal -1", the team then a signed
+ * number. The parser required the literal word "handicap", "hcp" or "ah",
+ * or brackets, so against a live feed 9 handicap bets out of 300 parsed and
+ * 291 came back "could not read this market with confidence".
+ *
+ * The rules being locked here are the brief's, and they are the reason this
+ * cannot just be made permissive: bet365 is Asian, so a whole line PUSHES;
+ * everyone else is European, where the handicap draw is its own outcome and
+ * that same scoreline LOSES. */
+test('a bare handicap parses without the word handicap in it', () => {
+  const fx = { status: 'FT', home: 'Bayern Munich', away: 'Mainz', hg: 3, ag: 1 };
+  const r = settle({ event: 'Bayern Munich v Mainz', selection: 'Bayern Munich -1',
+    market: 'Asian Handicap', book: 'bet365', odds: 1.55, stakePence: 1000 }, fx);
+  assert.equal(r.status, 'settled');
+  assert.equal(r.outcome, 'won', '3-1 covers -1 outright');
+});
+
+test('a whole line pushes at bet365 and loses everywhere else', () => {
+  /* Home wins by exactly one: the handicap lands dead. */
+  const fx = { status: 'FT', home: 'Bayern Munich', away: 'Mainz', hg: 2, ag: 1 };
+  const asian = settle({ event: 'Bayern Munich v Mainz', selection: 'Bayern Munich -1',
+    market: 'Asian Handicap', book: 'bet365', odds: 1.9, stakePence: 1000 }, fx);
+  assert.equal(asian.status, 'settled');
+  assert.equal(asian.outcome, 'void', 'bet365 is Asian, a whole line pushes');
+  assert.equal(asian.profit, 0);
+
+  const euro = settle({ event: 'Bayern Munich v Mainz', selection: 'Bayern Munich -1',
+    market: 'Handicap', book: 'Paddy Power', odds: 1.9, stakePence: 1000 }, fx);
+  assert.equal(euro.status, 'settled');
+  assert.equal(euro.outcome, 'lost',
+    'European handicap: the handicap draw is its own outcome, so -1 acts like -1.5');
+});
+
+test('a bare signed number is not read as a handicap when no team is named', () => {
+  /* The guard that stops this swallowing a totals line. */
+  const fx = { status: 'FT', home: 'Arsenal', away: 'Spurs', hg: 2, ag: 1 };
+  const r = settle({ event: 'Arsenal v Spurs', selection: 'Over 2.5 Goals',
+    market: 'Over/Under', book: 'bet365', odds: 1.9, stakePence: 1000 }, fx);
+  assert.equal(r.status, 'settled');
+  assert.equal(r.outcome, 'won', 'still a totals bet, 3 goals beats 2.5');
+});
+
+test('the market label alone never invents a side', () => {
+  const fx = { status: 'FT', home: 'Arsenal', away: 'Spurs', hg: 2, ag: 1 };
+  const r = settle({ event: 'Arsenal v Spurs', selection: 'Handicap -1',
+    market: 'Asian Handicap', book: 'bet365', odds: 1.9, stakePence: 1000 }, fx);
+  assert.equal(r.status, 'ask', 'no team named, so there is no side to grade');
+});

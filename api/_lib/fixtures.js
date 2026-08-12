@@ -14,6 +14,7 @@
  * cannot prove it, which makes the engine ask instead of settling on a score
  * that includes extra time. That is the single most valuable line in here.
  */
+import * as net from './net.js';
 
 
 /* Always true: the scrapers need no key, so a deployment with nothing
@@ -43,35 +44,53 @@ import * as flashscore from './flashscore.js';
  * reachable answer. soccerdata is Python and cannot run in a Node function,
  * so this borrows the shape, not the code.
  *
- * Order is by data quality, and quality here means one thing: can it prove
- * the 90-minute score on a tie that went to extra time? ESPN can, from its
- * per-period linescores. SofaScore can, from normaltime. football-data.org's
- * free tier cannot, and so it sits last and mostly returns "ask".
+ * ORDER IS BY WHAT ANSWERS FROM A DATACENTER IP, THEN BY DATA QUALITY, AND
+ * THAT IS A CHANGE. It used to be quality alone, which put ESPN and
+ * SofaScore first because both can prove a 90-minute score from period
+ * detail. Both refuse a serverless IP with a 403, verified live against the
+ * deployment, so every single settlement run spent its first two round
+ * trips being told no before reaching a source that works. Under a ten
+ * second function ceiling that is not merely wasteful, it is the difference
+ * between finishing the chain and being killed part way through it.
  *
- * All of these are blocked by IP reputation rather than by policy, and each
- * host gets a different answer, ESPN and SofaScore both refuse this
- * development machine. That is precisely why it is a chain and why
- * /api/sources exists: production can be asked directly.
+ * FlashScore leads because it satisfies both tests at once: it answers from
+ * a datacenter IP, because the feed is the one its own front end reads
+ * rather than a page behind a bot filter, AND it publishes period scores,
+ * so it can prove 90 minutes on a tie that went to extra time. It is also
+ * the only source with tennis. It is the right primary on merit; it was
+ * third by accident of history.
+ *
+ * ESPN and SofaScore stay in the chain rather than being deleted. They are
+ * blocked by IP reputation, not by policy, and that changes: a different
+ * region or a proxy makes them reachable again, and they are the highest
+ * quality sources when they are. The circuit breaker below means being
+ * blocked costs one request every five minutes instead of one per run.
  *
  * RESULTS_PROVIDER pins one source by name when you want to. */
+/* How far back to widen when a bet went unmatched. A week covers the usual
+   cause, which is a fixture that settled outside the day the sweep asked
+   for. FlashScore serves at most six days per pull, so this is the
+   practical ceiling too. */
+const LOOKBACK_DAYS = 6;
+
 const pinned = () => (process.env.RESULTS_PROVIDER || '').trim().toLowerCase();
 const wanted = name => { const p = pinned(); return !p || p === 'off' ? p !== 'off' : p === name; };
 
 const SOURCES = [
+  /* Answers from a datacenter IP and publishes period scores, so it can
+     prove a 90-minute score. Cup ties come back with a status the engine
+     does not recognise, on purpose: the feed cannot prove 90 minutes on
+     them and a bet graded on 120 is not recoverable. */
+  { name: 'flashscore', mod: flashscore, enabled: () => wanted('flashscore') },
+  /* Also answers, because it is a static CSV rather than an endpoint behind
+     a bot filter. League fixtures only, so full time IS 90 minutes; cup
+     ties are absent and stay pending, which is the right failure. */
+  { name: 'football-data-uk', mod: footballdatauk, enabled: () => wanted('football-data-uk') },
+  /* Highest quality of the five when reachable: per-period linescores. */
   { name: 'espn',      mod: espn,      enabled: () => wanted('espn') },
   { name: 'sofascore', mod: sofascore, enabled: () => wanted('sofascore') },
-  /* The one that actually answers from a datacenter IP, because it is a
-     static file rather than an endpoint behind a bot filter. League
-     fixtures only, so full time IS 90 minutes; cup ties are absent and
-     stay pending, which is the right failure. */
-  { name: 'football-data-uk', mod: footballdatauk, enabled: () => wanted('football-data-uk') },
-  /* The one that also has tennis, and covers the leagues outside Europe
-     that football-data.co.uk does not publish. It answers from a datacenter
-     IP because it is the feed FlashScore's own front end reads rather than
-     a page behind a bot filter. Its cup ties come back with a status the
-     engine does not recognise, on purpose: the feed cannot prove a 90
-     minute score and a bet graded on 120 minutes is not recoverable. */
-  { name: 'flashscore', mod: flashscore, enabled: () => wanted('flashscore') },
+  /* Last, and mostly returns "ask": the free tier reports fullTime
+     INCLUDING extra time and cannot break out 90 minutes. */
   { name: 'football-data', mod: footballdata,
     enabled: () => wanted('football-data') && Boolean(process.env.FOOTBALL_DATA_TOKEN),
     acceptEmpty: true }
@@ -99,6 +118,10 @@ export async function resolveFinished(dateFrom, dateTo) {
   const tried = [];
   for (const source of SOURCES) {
     if (!source.enabled()) continue;
+    /* Skip a host that refused us minutes ago. Two of the five refuse a
+       serverless IP permanently, and re-asking them on every run spent two
+       round trips of a ten second budget to be told 403 twice. */
+    if (net.isBlocked(source.name)) { tried.push(source.name + ': blocked (cached)'); continue; }
     try {
       const fixtures = await source.mod.finishedBetween(dateFrom, dateTo);
       if (fixtures.length || source.acceptEmpty) {
@@ -108,8 +131,14 @@ export async function resolveFinished(dateFrom, dateTo) {
     } catch (err) {
       /* Blocked is the expected failure, these are scrapers and they are
          blocked by IP reputation, which differs per host. Record it and try
-         the next one rather than giving up on settlement entirely. */
-      tried.push(source.name + ': ' + (err.blocked ? 'blocked' : err.message));
+         the next one rather than giving up on settlement entirely.
+
+         Only a `blocked` failure opens the breaker. A timeout is not
+         evidence the host refuses us, and treating one slow response as a
+         refusal would take a working source out for five minutes. */
+      if (err.blocked) net.markBlocked(source.name);
+      tried.push(source.name + ': ' +
+        (err.blocked ? 'blocked' : err.timedOut ? 'timed out' : err.message));
     }
   }
   const err = new Error('No results source could be reached (' + tried.join('; ') + ').');
@@ -132,29 +161,37 @@ export async function resolveTennis(dateFrom, dateTo) {
   const tried = [];
   for (const source of TENNIS_SOURCES) {
     if (!source.enabled()) continue;
+    if (net.isBlocked(source.name)) { tried.push(source.name + ': blocked (cached)'); continue; }
     try {
       const fixtures = await source.mod.finishedTennis(dateFrom, dateTo);
       if (fixtures.length) return { provider: source.name, fixtures, tried };
       tried.push(source.name + ': no fixtures');
     } catch (err) {
-      tried.push(source.name + ': ' + (err.blocked ? 'blocked' : err.message));
+      if (err.blocked) net.markBlocked(source.name);
+      tried.push(source.name + ': ' +
+        (err.blocked ? 'blocked' : err.timedOut ? 'timed out' : err.message));
     }
   }
   return { provider: null, fixtures: [], tried };
 }
 
-/** Ask every source whether this host can reach it. Diagnostics only. */
+/* Ask every source whether this host can reach it. Diagnostics only.
+ *
+ * Deliberately ignores the circuit breaker and asks for real. The breaker
+ * is an optimisation for the settlement path; this endpoint exists to
+ * answer "what can production reach RIGHT NOW", and consulting a cache
+ * would make it report its own memory instead. Probed in parallel, because
+ * five sequential timeouts is longer than the function lives. */
 export async function probeSources() {
-  const out = [];
-  for (const source of SOURCES) {
-    if (!source.enabled()) { out.push({ name: source.name, ok: false, why: 'not configured' }); continue; }
+  const results = await Promise.all(SOURCES.map(async source => {
+    if (!source.enabled()) return { name: source.name, ok: false, why: 'not configured' };
     try {
-      out.push(Object.assign({ name: source.name }, await source.mod.reachable()));
+      return Object.assign({ name: source.name }, await source.mod.reachable());
     } catch (err) {
-      out.push({ name: source.name, ok: false, why: err.message });
+      return { name: source.name, ok: false, why: err.message };
     }
-  }
-  return out;
+  }));
+  return results;
 }
 
 /**
@@ -168,21 +205,64 @@ export async function probeSources() {
  * @param {string[]} eventTexts the `event` field of each unmatched bet
  * @returns {Promise<Map<string, object>>} eventText -> fixture
  */
-export async function lookupEach(eventTexts, cap = 8) {
+export async function lookupEach(eventTexts, cap = 8, dateFrom, dateTo) {
   const found = new Map();
-  /* Only SofaScore has a search endpoint. If it is pinned off or blocked
-     this quietly returns nothing and the sweep's own matches stand. */
-  if (pinned() && pinned() !== 'sofascore') return found;
+  if (!eventTexts.length) return found;
 
-  for (const text of eventTexts.slice(0, cap)) {
-    try {
-      const fx = await sofascore.searchEvent(text);
-      if (fx) found.set(text, fx);
-    } catch (err) {
-      /* One blocked or malformed lookup must not abandon the rest, and must
-         not fail the whole settle: the sweep's matches are already good. */
-      if (err.blocked) break;
+  /* PATH ONE: SofaScore's search endpoint, which is exact and per bet.
+     Only worth trying if it is reachable, and it usually is not from a
+     serverless IP. Skipped entirely when the breaker knows it is blocked,
+     so the common case costs nothing. */
+  const canSearch = (!pinned() || pinned() === 'sofascore') && !net.isBlocked('sofascore');
+  if (canSearch) {
+    for (const text of eventTexts.slice(0, cap)) {
+      try {
+        const fx = await sofascore.searchEvent(text);
+        if (fx) found.set(text, fx);
+      } catch (err) {
+        /* One blocked or malformed lookup must not abandon the rest, and
+           must not fail the whole settle: the sweep's matches are good. */
+        if (err.blocked) { net.markBlocked('sofascore'); break; }
+      }
     }
+    if (found.size === eventTexts.length) return found;
+  }
+
+  /* PATH TWO: widen the window on whatever source does answer.
+   *
+   * This is the half that was missing, and its absence was a silent hole
+   * rather than a visible failure. lookupEach only ever went through
+   * SofaScore's search, SofaScore is 403 from a serverless IP, so in
+   * production this function returned an empty map every time. A bet the
+   * day sweep did not cover stayed pending forever, which on screen is
+   * indistinguishable from "still running" and is the more annoying of the
+   * two failures.
+   *
+   * One widened pull rather than one request per bet: the day feeds are
+   * cheap and shared, so ten unmatched bets cost the same as one. The
+   * window reaches a week back, because the reason a bet went unmatched is
+   * usually that it settled outside the day the sweep asked for.
+   */
+  if (!dateFrom) return found;
+  const outstanding = eventTexts.filter(t => !found.has(t));
+  if (!outstanding.length) return found;
+
+  const from = new Date(dateFrom + 'T00:00:00Z');
+  from.setUTCDate(from.getUTCDate() - LOOKBACK_DAYS);
+  const wideFrom = from.toISOString().slice(0, 10);
+  const wideTo = dateTo || dateFrom;
+
+  try {
+    const { fixtures } = await resolveFinished(wideFrom, wideTo);
+    for (const text of outstanding) {
+      const fx = matchFixture(text, fixtures);
+      /* matchFixture returns null unless exactly one fixture matches, so an
+         ambiguous name settles nothing rather than settling wrongly. */
+      if (fx) found.set(text, fx);
+    }
+  } catch {
+    /* Nothing reachable. The sweep's own matches stand and the rest stay
+       pending, which is the honest outcome. */
   }
   return found;
 }
