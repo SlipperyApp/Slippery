@@ -201,6 +201,51 @@ export async function installStub(page, opts = {}) {
     months: [0, 0, 0, 0, 0, 0, 12000, 4400, 9100, 0, 0, 0],
     all: 25500, b: 34, roi: 0.11, v: false, pv: 'public', mu: true, ing: false, er: false, gr: [0]
   }];
+  /* Following and followers.
+     Three states worth having on screen at once: somebody public whose
+     figures show, somebody on 'friends' who follows back so they also
+     show, and somebody on 'friends' who does not, whose row exists with no
+     figures in it. That last one is the case the "private" wording is for,
+     and it is the one a regression would quietly turn into zeros. */
+  const FOLLOWING = [
+    { n: 'ColdLine', a: 'CO', un: 2500,
+      months: [0, 0, 0, 0, 0, 3200, 800, 5400, 0, 0, 0, 0],
+      all: 9400, b: 21, roi: 0.07, v: true, pv: 'public', mu: true, ing: true, er: false, gr: [] },
+    { n: 'QuietStake', a: 'QU', un: 10000,
+      months: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+      all: 0, b: 0, roi: 0, v: false, pv: 'friends', mu: false, ing: true, er: false, gr: [] }
+  ];
+  const FOLLOWERS = [
+    { n: 'NorthEdge', a: 'NO', un: 5000,
+      months: [0, 0, 0, 0, 0, 0, -4100, 2600, 0, 0, 0, 0],
+      all: -1500, b: 17, roi: -0.02, v: false, pv: 'friends', mu: false, ing: false, er: true, gr: [] }
+  ];
+  await page.route('**/api/people*', route => {
+    const method = route.request().method();
+    const url = new URL(route.request().url());
+    if (method === 'GET' && url.searchParams.get('q')) {
+      const q = url.searchParams.get('q').toLowerCase();
+      return route.fulfill({ status: 200, contentType: 'application/json',
+        body: JSON.stringify({ people: FOLLOWING.concat(FOLLOWERS)
+          .filter(p => p.n.toLowerCase().includes(q))
+          .map(p => ({ n: p.n, a: p.a, pv: p.pv, v: p.v, ing: p.ing })) }) });
+    }
+    if (method === 'GET') {
+      return route.fulfill({ status: 200, contentType: 'application/json',
+        body: JSON.stringify({ following: FOLLOWING, followers: FOLLOWERS }) });
+    }
+    const sent = JSON.parse(route.request().postData() || '{}');
+    return route.fulfill({ status: method === 'DELETE' ? 200 : 201, contentType: 'application/json',
+      body: JSON.stringify({ following: method !== 'DELETE', name: sent.follow }) });
+  });
+
+  await page.route('**/api/auth/profile', route => {
+    const sent = JSON.parse(route.request().postData() || '{}');
+    return route.fulfill({ status: 200, contentType: 'application/json',
+      body: JSON.stringify({ ok: true, unitPence: sent.unitPence || 10000,
+        privacy: sent.privacy || 'friends' }) });
+  });
+
   /* The trailing * matters: the directory is GET /api/groups?browse=1, and
      a pattern without it does not match a URL with a query string, so the
      request would fall through to the dev server and 404. */

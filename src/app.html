@@ -774,6 +774,10 @@
           <label class="sr" for="peopleSearch">Search people</label>
           <input class="field" id="peopleSearch" type="search" placeholder="Find someone by name…" autocomplete="off">
         </div>
+        <!-- Search results sit above the list rather than replacing it, so
+             following somebody does not lose the list you were looking at.
+             Hidden entirely until there is a query. -->
+        <div class="card pad" id="peopleFound" style="margin-bottom:10px" hidden></div>
         <div id="followingSummary"></div>
         <div class="card pad"><div id="followingList"></div></div>
       </div>

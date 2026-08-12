@@ -66,6 +66,11 @@ export async function ensureSchema() {
   /* When the free trial runs out. Two weeks and 35 slips, whichever comes
      first, so both halves of the limit need somewhere to live. */
   await sql`ALTER TABLE users ADD COLUMN IF NOT EXISTS trial_ends_at timestamptz`;
+  /* Who may see your figures. 'friends' by default, which here means people
+     you follow back: a tracker's default should not be to publish somebody's
+     losses to anyone who asks. This lived only in the browser until now, so
+     the toggle changed a label and no server ever heard about it. */
+  await sql`ALTER TABLE users ADD COLUMN IF NOT EXISTS privacy text NOT NULL DEFAULT 'friends'`;
 
   /* The three constraints the product depends on. Partial indexes so a
      deleted account frees its email and name for reuse. */
@@ -236,6 +241,39 @@ export async function ensureSchema() {
       PRIMARY KEY (group_id, user_id)
     )`;
   await sql`CREATE INDEX IF NOT EXISTS group_members_user_idx ON group_members (user_id)`;
+
+  /* Following.
+   *
+   * Deliberately one directional. Following someone is not a request they
+   * have to accept, and it does not oblige them to follow back: what it
+   * gives you is their figures appearing in your Following list, and only
+   * as far as their privacy setting allows. That is why there is no
+   * pending/accepted state here, which is the usual reason a follow table
+   * grows a status column and then a whole approval flow.
+   *
+   * "Friends" is derived rather than stored: two rows pointing at each
+   * other. A stored friendship would be a third fact that can disagree
+   * with the two follow rows, and then something has to decide which is
+   * true.
+   *
+   * The composite primary key IS the "already following" check, the same
+   * way group_members works: following twice is an insert the database
+   * refuses, not a SELECT two simultaneous taps can both pass.
+   */
+  await sql`
+    CREATE TABLE IF NOT EXISTS follows (
+      follower_id uuid NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      followee_id uuid NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      created_at  timestamptz NOT NULL DEFAULT now(),
+      PRIMARY KEY (follower_id, followee_id),
+      /* You cannot follow yourself. Cheap to say here, and it saves every
+         caller from having to remember. */
+      CHECK (follower_id <> followee_id)
+    )`;
+  /* Both directions get an index: "who do I follow" and "who follows me"
+     are both first-class questions, and the primary key only serves the
+     first. */
+  await sql`CREATE INDEX IF NOT EXISTS follows_followee_idx ON follows (followee_id)`;
 
   _ready = true;
 }

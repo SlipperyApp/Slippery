@@ -4,7 +4,7 @@ import { S, canUsePeriod, periodNeedsFocus } from './state.js';
 import * as M from './money.js';
 import {
   LEDGER, PENDING, PEOPLE, GROUPS, TODAY, THEMES, THEME_BG, BOOKS, TIPSTERS,
-  TARGETS, hydrate, hydrateSocial, addBet, settleLocal, setMe, ME, ico
+  TARGETS, FOUND, hydrate, hydrateSocial, hydratePeople, setFound, addBet, settleLocal, setMe, ME, ico
 } from './data.js';
 import { settle, settleCashOut, ledgerOutcome } from './settlement.js';
 import { stats, dayMap, monthTotal, targetFor, weekRange, invalidateDays } from './stats.js';
@@ -45,7 +45,11 @@ async function loadLedger() {
   invalidateDays();
   R.renderAll();
   renderNewMonth();          // depends on the ledger, so it re-runs with it
-  loadGroups();              // its own request, and not worth blocking on
+  /* Their own requests, and not worth blocking the ledger on. Groups and
+     follows are separate questions and a failure in one must not empty the
+     other. */
+  loadGroups();
+  loadPeople();
   return true;
 }
 
@@ -1152,6 +1156,111 @@ function browseSearch(value) {
   browseTimer = setTimeout(() => loadBrowse(value.trim()), 260);
 }
 
+/* ---------------- following ----------------
+ *
+ * Following is a server fact now. It used to flip a boolean on an object in
+ * memory, show a toast, and be gone on the next reload, and worse, the same
+ * click recalculated `mu` locally, so tapping Follow on somebody with a
+ * 'friends' setting revealed their figures in the browser without anybody
+ * having agreed to it. What you may see is the server's decision.
+ *
+ * The button is updated optimistically because a follow that takes a moment
+ * to appear feels broken, and put back if the request fails.
+ */
+async function toggleFollow(name) {
+  /* The row can be in either list: somebody you already follow, or a
+     search result you have not. Both need the button to move. */
+  const rows = [PEOPLE.find(x => x.n === name), (FOUND || []).find(x => x.n === name)].filter(Boolean);
+  const wasFollowing = rows.some(x => x.ing);
+  for (const x of rows) x.ing = !wasFollowing;
+  R.renderPeople();
+  if (S.view === 'prof') R.renderProfile(name);
+
+  const r = wasFollowing
+    ? await del('/api/people', { follow: name })
+    : await post('/api/people', { follow: name });
+
+  if (!r.ok) {
+    for (const x of rows) x.ing = wasFollowing;
+    R.renderPeople();
+    toast(r.body.error || 'That did not go through.');
+    return;
+  }
+  toast(r.body.following ? 'Now following ' + r.body.name : 'Unfollowed ' + r.body.name);
+  /* Re-read rather than patching in place: whether their figures are now
+     visible depends on their privacy setting and on whether they follow
+     back, and neither of those is knowable here. */
+  await loadPeople();
+}
+
+/* Finding somebody to follow.
+   Same shape as the group directory search, and for the same reason: two
+   requests in flight can land in either order, and the slower one must not
+   repaint results for a query the box no longer holds. */
+let findSeq = 0;
+let findTimer = null;
+
+function findPeople(query) {
+  clearTimeout(findTimer);
+  if (!query) { setFound(null); R.renderPeople(); return; }
+  setFound(null);
+  R.renderPeople();                      // shows "Looking…"
+  findTimer = setTimeout(async () => {
+    const seq = ++findSeq;
+    const r = await get('/api/people?q=' + encodeURIComponent(query));
+    if (seq !== findSeq || S.peopleQuery !== query) return;
+    setFound(r.ok ? (r.body.people || []) : []);
+    R.renderPeople();
+  }, 280);
+}
+
+/* The two lists, from the server. */
+async function loadPeople() {
+  const r = await get('/api/people');
+  if (!r.ok) return;
+  hydratePeople(r.body);
+  R.renderPeople();
+  R.renderGroups();
+  if (S.view === 'prof' && S.profile) R.renderProfile(S.profile);
+}
+
+/* The unit size is saved, because the group boards divide by it.
+ *
+ * It never was. Setting £50 during setup left the database on its 10000
+ * default, so every board ranked you against a unit you had not chosen, and
+ * units are the entire basis of the ranking.
+ *
+ * Debounced: typing a custom unit fires on every keystroke, and £1, £15,
+ * £150 are three saves for one decision. Failures are quiet on purpose,
+ * this is a background write behind a value already on screen, and a toast
+ * per keystroke would be worse than the problem. */
+let unitTimer = null;
+function saveUnit() {
+  clearTimeout(unitTimer);
+  unitTimer = setTimeout(async () => {
+    const r = await post('/api/auth/profile', { unitPence: S.unit });
+    if (!r.ok && r.status !== 401) console.warn('[slippery] unit not saved:', r.body.error);
+  }, 700);
+}
+
+/* Privacy is an account setting, so it is saved. This used to change a
+   label and nothing else: the app said "your figures are now private" and
+   no server ever heard about it. */
+async function setPrivacy(value) {
+  const was = S.privacy;
+  S.privacy = value;
+  R.renderPrivacy();
+  const r = await post('/api/auth/profile', { privacy: value });
+  if (!r.ok) {
+    S.privacy = was;
+    R.renderPrivacy();
+    toast(r.body.error || 'Could not save that setting.');
+    return;
+  }
+  toast('Your figures are now ' + (value === 'private' ? 'private'
+    : value === 'friends' ? 'visible to friends only' : 'public'));
+}
+
 async function joinPublicGroup(btn, id, name) {
   btn.disabled = true;
   const was = btn.textContent;
@@ -1443,29 +1552,12 @@ document.addEventListener('click', e => {
     if (S.socialView === 'socialBrowse') loadBrowse($('browseSearch').value.trim());
     return;
   }
-  if ((el = c('[data-follow]'))) {
-    const name = el.getAttribute('data-follow');
-    const p = PEOPLE.find(x => x.n === name);
-    if (p) {
-      p.ing = !p.ing;
-      if (p.pv === 'friends') p.mu = p.ing && p.er;
-      toast(p.ing ? 'Now following ' + p.n : 'Unfollowed ' + p.n);
-    }
-    R.renderPeople(); R.renderGroups();
-    if (S.view === 'prof') R.renderProfile(name);
-    return;
-  }
+  if ((el = c('[data-follow]'))) { toggleFollow(el.getAttribute('data-follow')); return; }
   if ((el = c('[data-profile]'))) { if (R.renderProfile(el.getAttribute('data-profile'))) go('prof'); return; }
   if (c('#profileBack')) { go('dash'); showPane('social'); return; }
   if ((el = c('[data-group]'))) { S.group = +el.getAttribute('data-group'); R.renderGroups(); return; }
 
-  if ((el = c('[data-privacy]'))) {
-    S.privacy = el.getAttribute('data-privacy');
-    R.renderPrivacy();
-    toast('Your figures are now ' + (S.privacy === 'private' ? 'private'
-      : S.privacy === 'friends' ? 'visible to friends only' : 'public'));
-    return;
-  }
+  if ((el = c('[data-privacy]'))) { setPrivacy(el.getAttribute('data-privacy')); return; }
   /* `button[data-theme]`, NOT `[data-theme]`.
      The theme lives on <html data-theme="...">, so a bare attribute
      selector matched every click in the document once closest() walked far
@@ -1499,7 +1591,7 @@ document.addEventListener('click', e => {
     const row = el.closest('.unitrow');
     const custom = row.id === 'unitRowSettings' ? $('unitCustomSettings') : $('unitCustomSetup');
     custom.hidden = raw !== 'custom';
-    if (raw === 'custom') custom.focus(); else S.unit = +raw;
+    if (raw === 'custom') custom.focus(); else { S.unit = +raw; saveUnit(); }
     R.renderMisc();
     drawAll();
     return;
@@ -1703,7 +1795,7 @@ document.addEventListener('input', e => {
   const t = e.target;
   if (Auth.handleInput(t)) return;
   if (t.id === 'betSearch') { S.query = t.value.trim().toLowerCase(); R.renderLedger(); return; }
-  if (t.id === 'peopleSearch') { S.peopleQuery = t.value.trim(); R.renderPeople(); return; }
+  if (t.id === 'peopleSearch') { S.peopleQuery = t.value.trim(); findPeople(S.peopleQuery); return; }
   /* The directory is on the server, so this search is a request, not a
      filter over something already loaded. Debounced in browseSearch. */
   if (t.id === 'browseSearch') { browseSearch(t.value); return; }
@@ -1719,7 +1811,7 @@ document.addEventListener('input', e => {
   }
   if (t.id === 'unitCustomSetup' || t.id === 'unitCustomSettings') {
     const v = M.parseMoney(t.value);
-    if (v != null && v > 0) { S.unit = v; R.renderMisc(); drawAll(); }
+    if (v != null && v > 0) { S.unit = v; R.renderMisc(); drawAll(); saveUnit(); }
     return;
   }
   if (t.closest && t.closest('#totalsGrid')) { sumTotals(); return; }

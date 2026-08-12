@@ -5,7 +5,7 @@ import { S } from './state.js';
 import * as M from './money.js';
 import {
   LEDGER, PENDING, PEOPLE, GROUPS, TODAY, THEMES, THEME_BG, BOOKS, TIPSTERS,
-  OUTCOME_ICON, OUTCOME_LABEL, outcomeGroup, personMonths, personDays, IMPORTED, ico, TRIAL
+  OUTCOME_ICON, OUTCOME_LABEL, outcomeGroup, personMonths, personDays, IMPORTED, ico, TRIAL, FOUND
 } from './data.js';
 import {
   stats, lifetime, dayMap, monthTotal, dowLabels, dowOffset, weekRange, targetFor
@@ -382,13 +382,20 @@ function personRow(p, mode) {
     ? '<span class="n ' + M.tone(v) + '">' + M.units(v, p.un) + '</span>' +
       '<span class="s">' + M.money0s(v) + '</span>'
     : '<span class="hidden-note">' + LOCK + (p.pv === 'private' ? 'Private' : 'Friends only') + '</span>';
-  const tag = '<span class="privacytag ' + p.pv + '">' + p.pv + '</span>';
+  /* No privacy tag on the row.
+     A name, a tick, a tag, a figure and a Follow button do not fit across
+     390px, and what gave way was the name: "ColdLine" rendered as "Co…".
+     The tag was the least useful of the five, because the value column
+     already says "Friends only" or "Private" when it applies, and for
+     everybody else the tag was telling you about a setting of theirs that
+     changes nothing you can see. It survives on the profile, where there
+     is room for it. */
   return '<div class="person">' +
     '<button class="who" data-profile="' + esc(p.n) + '" style="display:flex;align-items:center;gap:11px;text-align:left;min-width:0;flex:1">' +
       '<span class="avatar" aria-hidden="true">' + esc(p.a) + '</span>' +
       '<span style="min-width:0">' +
-        '<span class="nm"><span translate="no">' + esc(p.n) + '</span>' + (p.v ? VERIFIED : '') + tag + '</span>' +
-        '<span class="sub" style="display:block">1u = ' + M.money0(p.un) + (p.mu ? ' · follows you back' : '') + '</span>' +
+        '<span class="nm"><span translate="no">' + esc(p.n) + '</span>' + (p.v ? VERIFIED : '') + '</span>' +
+        '<span class="sub" style="display:block">1u = ' + M.money0(p.un) + (p.mu ? ' · mutual' : '') + '</span>' +
       '</span>' +
     '</button>' +
     '<span class="val">' + val + '</span>' +
@@ -397,18 +404,57 @@ function personRow(p, mode) {
   '</div>';
 }
 
+/* A search result.
+ *
+ * Deliberately not a personRow: someone you have not followed has no
+ * figures you are entitled to, no unit size worth showing, and rendering
+ * them in the same shape as a real row would leave a line of zeros that
+ * reads as somebody who has broken even. A name, a tick, and a way to
+ * follow them is the whole of it. */
+function foundRow(p) {
+  return '<div class="person">' +
+    '<span class="avatar" aria-hidden="true">' + esc(p.a) + '</span>' +
+    '<span class="who"><span class="nm"><span translate="no">' + esc(p.n) + '</span>' +
+    (p.v ? VERIFIED : '') + '</span></span>' +
+    '<button class="followbtn" data-follow="' + esc(p.n) + '" aria-pressed="' + !!p.ing + '">' +
+    (p.ing ? 'Following' : 'Follow') + '</button></div>';
+}
+
 export function renderPeople() {
   const q = S.peopleQuery.toLowerCase();
-  const following = q ? PEOPLE.filter(p => p.n.toLowerCase().includes(q)) : PEOPLE.filter(p => p.ing);
+  /* Searching asks the server, because the point of a search is to find
+     people you are not already connected to, and those are exactly the
+     ones not in PEOPLE. Filtering the list you already have could only
+     ever return people you already follow. */
+  const found = $('peopleFound');
+  if (found) {
+    if (!q) {
+      found.hidden = true;
+      found.innerHTML = '';
+    } else {
+      found.hidden = false;
+      found.innerHTML = FOUND == null
+        ? '<div class="emptystate"><div class="t">Looking…</div></div>'
+        : FOUND.length
+          ? '<div class="cardhead"><span class="title">Found ' + FOUND.length + '</span>' +
+            '<span class="meta">tap to follow</span></div>' + FOUND.map(foundRow).join('')
+          : '<div class="emptystate"><div class="t">Nobody by that name</div>' +
+            '<p>Display names are exact. Check the spelling with them.</p></div>';
+    }
+  }
+
+  const following = PEOPLE.filter(p => p.ing);
   const followers = PEOPLE.filter(p => p.er);
   const totalUnits = list => list.filter(visible).reduce((a, p) => a + personValue(p) / p.un, 0);
   const head = (t, r) => '<div class="cardhead"><span class="title">' + t + '</span><span class="meta">' + r + '</span></div>';
 
   $('followingList').innerHTML = following.length
-    ? head(q ? 'Results ' + following.length : 'Following ' + following.length,
-           periodWord() + ' · in their units') + following.map(p => personRow(p, 'following')).join('')
-    : '<div class="emptystate"><div class="t">Nobody here</div><p>' +
-      (q ? 'Nobody matches that name.' : 'Search above to find people.') + '</p></div>';
+    ? head('Following ' + following.length, periodWord() + ' · in their units') +
+      following.map(p => personRow(p, 'following')).join('')
+    : '<div class="emptystate"><div class="t">Not following anyone yet</div>' +
+      '<p>Search above by display name. What you can see of somebody is up ' +
+      'to them: public figures show, friends-only ones show once they follow ' +
+      'you back, and private ones never do.</p></div>';
 
   $('followersList').innerHTML = followers.length
     ? head('Followers ' + followers.length, followers.filter(p => p.ing).length + ' mutual') +
@@ -754,7 +800,12 @@ export function renderAccount(user) {
   setText('accountEmail', user.email || '');
   S.plan = user.plan || 'free';
   S.planUntil = user.planUntil || null;
+  /* The saved setting wins over whatever the form is showing. These two
+     used to live only in the browser, so a reload silently reset them to
+     the defaults in state.js while the account kept its real values. */
+  if (user.privacy) S.privacy = user.privacy;
   renderPlan();
+  renderPrivacy();
   /* Telegram: connected, or plainly not. */
   const dot = $('tgState');
   if (dot) {

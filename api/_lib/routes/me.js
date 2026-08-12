@@ -47,6 +47,7 @@ export default async function handler(req, res) {
            was proven: this one is a grant the owner controls. */
         verified: Boolean(user.verified),
         trialEndsAt: user.trial_ends_at || null,
+        privacy: user.privacy || 'friends',
         /* Telegram state is real or absent. The settings page used to show
            a link code and a "connected since" date that were written into
            the markup, so an account with no bot linked was told it had

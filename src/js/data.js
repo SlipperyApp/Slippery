@@ -201,8 +201,54 @@ export function betsOn(month, day) {
    a cast of invented friends. */
 export function hydrateSocial(payload) {
   GROUPS = (payload && payload.groups) || [];
-  PEOPLE = (payload && payload.people) || [];
+  /* Group members are merged rather than replacing the list, because the
+     same person can be both somebody you follow and somebody in your
+     Sunday league, and two sources overwriting each other made them
+     flicker between having figures and not. */
+  PEOPLE = merge(PEOPLE.filter(p => p.ing || p.er), (payload && payload.people) || []);
   return { groups: GROUPS.length, people: PEOPLE.length };
+}
+
+/* Search results, from GET /api/people?q=. Null while a search is in
+   flight, which is different from an empty array: one is "looking", the
+   other is "nobody by that name". */
+export let FOUND = null;
+export function setFound(list) { FOUND = list; }
+
+/** Following and followers, from GET /api/people. */
+export function hydratePeople(payload) {
+  const following = (payload && payload.following) || [];
+  const followers = (payload && payload.followers) || [];
+  /* Keep whoever is only here because you share a group with them. */
+  PEOPLE = merge(following.concat(followers), PEOPLE.filter(p => p.gr && p.gr.length));
+  return { following: following.length, followers: followers.length };
+}
+
+/* One row per display name, first source wins.
+ *
+ * Order matters and is the caller's choice: whichever list is passed first
+ * is the authority. The follow lists know about privacy and mutuality; the
+ * group response knows about group membership and nothing else, so it goes
+ * second and only contributes people the first list did not mention.
+ *
+ * `gr` is unioned rather than overwritten, or somebody you follow who is
+ * also in two of your groups would lose the group links. */
+function merge(primary, secondary) {
+  const out = [];
+  const at = new Map();
+  for (const list of [primary, secondary]) {
+    for (const p of list) {
+      const seen = at.get(p.n);
+      if (seen == null) {
+        at.set(p.n, out.length);
+        out.push({ ...p, gr: [...(p.gr || [])] });
+      } else {
+        const row = out[seen];
+        for (const g of (p.gr || [])) if (!row.gr.includes(g)) row.gr.push(g);
+      }
+    }
+  }
+  return out.sort((a, b) => a.n.toLowerCase().localeCompare(b.n.toLowerCase()));
 }
 
 /* Twelve monthly totals for one person, in pence.
