@@ -19,11 +19,11 @@ import { db, ensureSchema, configured } from './_lib/db.js';
 import { sessionUser } from './_lib/auth.js';
 import { cashOutcome, ledgerOutcome, payoutFor } from '../src/js/settlement.js';
 import { limit } from './_lib/rate.js';
-import { unlimited } from './_lib/promo.js';
+import { unlimited, trialState, TRIAL_SLIPS } from './_lib/promo.js';
 
-/* The free tier. Counted on the server, because a limit enforced in the
-   browser is a suggestion. */
-const FREE_SLIPS = 20;
+/* The free trial: two weeks or 35 slips, whichever goes first. Counted on
+   the server, because a limit enforced in the browser is a suggestion. */
+const FREE_SLIPS = TRIAL_SLIPS;
 
 /* limit() answers {allowed, retryAfter}. Testing the object is always true,
    which silently disabled both burst limits below. */
@@ -71,7 +71,10 @@ async function list(res, user) {
     freeSlips: FREE_SLIPS,
     plan: user.plan || 'free',
     planUntil: user.plan_until || null,
-    unlimited: !capped(user)
+    unlimited: !capped(user),
+    trial: capped(user)
+      ? trialState({ slipsUsed: counted[0].n, trialEndsAt: user.trial_ends_at })
+      : null
   });
 }
 
@@ -111,10 +114,13 @@ async function create(req, res, user, body) {
      so deleting bets cannot be used to reset it. */
   if (capped(user)) {
     const used = await sql`SELECT count(*)::int AS n FROM bets WHERE user_id = ${user.id}`;
-    if (used[0].n >= FREE_SLIPS) {
+    const trial = trialState({ slipsUsed: used[0].n, trialEndsAt: user.trial_ends_at });
+    if (!trial.active) {
       return json(res, 402, {
-        error: 'You have used all ' + FREE_SLIPS + ' free slips.',
-        upgrade: true, used: used[0].n, freeSlips: FREE_SLIPS
+        error: trial.over === 'time'
+          ? 'Your two week free trial has finished.'
+          : 'You have used all ' + FREE_SLIPS + ' slips in your free trial.',
+        upgrade: true, over: trial.over, used: used[0].n, freeSlips: FREE_SLIPS, trial
       });
     }
   }
@@ -168,11 +174,20 @@ async function createMany(req, res, user, rows) {
   const sql = db();
   if (capped(user)) {
     const used = await sql`SELECT count(*)::int AS n FROM bets WHERE user_id = ${user.id}`;
+    const trial = trialState({ slipsUsed: used[0].n, trialEndsAt: user.trial_ends_at });
+    if (!trial.active) {
+      return json(res, 402, {
+        error: trial.over === 'time'
+          ? 'Your two week free trial has finished.'
+          : 'You have used all ' + FREE_SLIPS + ' slips in your free trial.',
+        upgrade: true, over: trial.over, used: used[0].n, freeSlips: FREE_SLIPS, trial
+      });
+    }
     if (used[0].n + rows.length > FREE_SLIPS) {
       return json(res, 402, {
         error: 'That import needs ' + rows.length + ' slips and you have ' +
-               Math.max(0, FREE_SLIPS - used[0].n) + ' left on the free tier.',
-        upgrade: true, used: used[0].n, freeSlips: FREE_SLIPS
+               trial.slipsLeft + ' left in your free trial.',
+        upgrade: true, used: used[0].n, freeSlips: FREE_SLIPS, trial
       });
     }
   }

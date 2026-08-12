@@ -8,7 +8,10 @@
  */
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { lookup, normalise, planUntil, unlimited, CODES } from '../api/_lib/promo.js';
+import {
+  lookup, normalise, planUntil, unlimited, CODES,
+  trialEnd, trialState, TRIAL_DAYS, TRIAL_SLIPS
+} from '../api/_lib/promo.js';
 
 test('codes are matched however they are typed', () => {
   assert.equal(normalise('ak5 wrd'), 'AK5WRD');
@@ -67,6 +70,55 @@ test('unlimited is decided by plan and date together', () => {
   assert.equal(unlimited('monthly', new Date('2026-09-01T00:00:00Z'), now), true);
   assert.equal(unlimited('monthly', new Date('2026-08-01T00:00:00Z'), now), false, 'expired');
   assert.equal(unlimited('yearly', null, now), true, 'paid with no end recorded');
+});
+
+test('ULTRAS carries the tick and the others do not', () => {
+  assert.equal(lookup('ULTRAS').verify, true);
+  for (const code of ['AK5WRD', 'GIFT1', 'GIFT2']) {
+    assert.ok(!lookup(code).verify, code + ' must not hand out a verified tick');
+  }
+});
+
+/* ---- the free trial ---- */
+
+test('the trial is two weeks and 35 slips', () => {
+  assert.equal(TRIAL_DAYS, 14);
+  assert.equal(TRIAL_SLIPS, 35);
+  const from = new Date('2026-08-12T00:00:00Z');
+  assert.equal(trialEnd(from).toISOString().slice(0, 10), '2026-08-26');
+});
+
+test('a trial with time and slips left is active', () => {
+  const now = new Date('2026-08-12T00:00:00Z');
+  const s = trialState({ slipsUsed: 4, trialEndsAt: '2026-08-17T00:00:00Z' }, now);
+  assert.equal(s.active, true);
+  assert.equal(s.over, null);
+  assert.equal(s.slipsLeft, 31);
+  assert.equal(s.daysLeft, 5);
+});
+
+test('running out of slips and running out of time are different answers', () => {
+  const now = new Date('2026-08-12T00:00:00Z');
+  const bySlips = trialState({ slipsUsed: 35, trialEndsAt: '2026-08-26T00:00:00Z' }, now);
+  assert.equal(bySlips.over, 'slips', 'so the prompt can say which limit it was');
+  assert.equal(bySlips.active, false);
+
+  const byTime = trialState({ slipsUsed: 2, trialEndsAt: '2026-08-11T00:00:00Z' }, now);
+  assert.equal(byTime.over, 'time');
+  assert.equal(byTime.active, false);
+  assert.equal(byTime.daysLeft, 0, 'never negative');
+});
+
+test('an account from before the trial existed is not retroactively expired', () => {
+  const s = trialState({ slipsUsed: 3, trialEndsAt: null }, new Date());
+  assert.equal(s.active, true);
+  assert.equal(s.endsAt, null);
+  assert.equal(s.daysLeft, null);
+});
+
+test('slips left never goes negative', () => {
+  const s = trialState({ slipsUsed: 99, trialEndsAt: '2099-01-01T00:00:00Z' });
+  assert.equal(s.slipsLeft, 0);
 });
 
 test('every code declares a plan the entitlement check understands', () => {

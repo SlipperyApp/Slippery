@@ -128,7 +128,8 @@ export async function sessionUser(req) {
      just all undefined. */
   const rows = await sql`
     SELECT u.id, u.email, u.display_name, u.email_verified, u.unit_pence,
-           u.plan, u.plan_until, u.promo_code, u.telegram_id, u.link_code, u.created_at
+           u.plan, u.plan_until, u.promo_code, u.verified, u.trial_ends_at,
+           u.telegram_id, u.link_code, u.created_at
     FROM auth_sessions s JOIN users u ON u.id = s.user_id
     WHERE s.token_hash = ${sha256(token)} AND s.expires_at > now() AND u.deleted_at IS NULL`;
   return rows[0] || null;
@@ -220,7 +221,10 @@ export async function findByIdentifier(identifier) {
    Its own table and its own TTL. A reset token grants a password change,
    which is strictly more than a verification code grants, so the two never
    share storage: a bug in one flow must not become a takeover in the other. */
-const RESET_TTL_MIN = 30;
+/* Ten minutes, the same as a verification code. Two different expiry
+   windows for two six-digit codes is a detail nobody can hold, and the
+   emails would have to explain which one they were looking at. */
+const RESET_TTL_MIN = 10;
 const MAX_RESET_ATTEMPTS = 5;
 
 export async function issueResetCode(userId) {

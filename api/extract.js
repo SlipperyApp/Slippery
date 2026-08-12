@@ -254,6 +254,18 @@ export default async function handler(req, res) {
       usage: { input: message.usage.input_tokens, output: message.usage.output_tokens }
     });
   } catch (err) {
+    /* A 400 here is our bug, not the user's: a schema the model API will not
+       accept, or a request shape it rejects. Say what it actually said, or
+       the only place the reason exists is a log nobody can read while the
+       reader is down. Anthropic's validation messages describe the schema,
+       never the key or the image. */
+    if (err && err.status === 400) {
+      console.error('[slippery] extract schema rejected:', err.message);
+      return json(res, 500, {
+        error: 'The slip reader is misconfigured on this deployment.',
+        detail: String(err.message || '').slice(0, 400)
+      });
+    }
     return fail(res, err, 'The slip reader is unavailable right now.');
   }
 }

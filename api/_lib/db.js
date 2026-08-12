@@ -59,6 +59,13 @@ export async function ensureSchema() {
      they are told apart by `plan`, never by this. */
   await sql`ALTER TABLE users ADD COLUMN IF NOT EXISTS plan_until timestamptz`;
   await sql`ALTER TABLE users ADD COLUMN IF NOT EXISTS promo_code text`;
+  /* The verified tick. A column rather than a derived fact, because it is
+     granted and can be taken away: a code may hand it out, and the owner
+     needs to be able to remove it later without rewriting history. */
+  await sql`ALTER TABLE users ADD COLUMN IF NOT EXISTS verified boolean NOT NULL DEFAULT false`;
+  /* When the free trial runs out. Two weeks and 35 slips, whichever comes
+     first, so both halves of the limit need somewhere to live. */
+  await sql`ALTER TABLE users ADD COLUMN IF NOT EXISTS trial_ends_at timestamptz`;
 
   /* The three constraints the product depends on. Partial indexes so a
      deleted account frees its email and name for reuse. */

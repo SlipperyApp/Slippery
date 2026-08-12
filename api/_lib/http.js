@@ -46,9 +46,17 @@ export function clientIp(req) {
 }
 
 /* Errors are logged with their message only. Never log a request body: on
-   these routes it holds passwords and slip images. */
+   these routes it holds passwords and slip images.
+ *
+ * `.status` as well as `.statusCode`. The Anthropic SDK puts the HTTP status
+ * on `.status`, so a 400 from the model API arrived here looking like an
+ * unknown error, was reported as a 500, and its message, the one thing that
+ * says WHAT was wrong, was replaced by the generic fallback. The slip reader
+ * failed for days that way: a specific, fixable complaint from the API,
+ * rendered as "the slip reader is unavailable right now". */
 export function fail(res, err, fallbackMessage) {
-  const status = err && err.statusCode ? err.statusCode : 500;
-  console.error('[slippery]', status, err && err.message ? err.message : 'unknown error');
-  json(res, status, { error: status === 500 ? fallbackMessage : (err.message || fallbackMessage) });
+  const status = (err && (err.statusCode || err.status)) || 500;
+  const detail = err && err.message ? err.message : 'unknown error';
+  console.error('[slippery]', status, detail);
+  json(res, status, { error: status === 500 ? fallbackMessage : (detail || fallbackMessage) });
 }

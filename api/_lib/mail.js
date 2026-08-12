@@ -89,9 +89,9 @@ const VERIFY = {
   window: 'ten minutes'
 };
 const RESET = {
-  lead: 'Here is your password reset code. It expires in thirty minutes.',
+  lead: 'Here is your password reset code. It expires in ten minutes.',
   ignore: 'If you did not ask to reset your password, ignore this email. Your password has not changed.',
-  window: 'thirty minutes'
+  window: 'ten minutes'
 };
 
 const codeText = (code, copy) => `Your Slippery code is ${code}.

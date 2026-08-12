@@ -9,7 +9,7 @@ import { json, methodGuard, readJson, clientIp, fail } from '../http.js';
 import { db, ensureSchema, configured, uniqueViolation, violatedIndex } from '../db.js';
 import { guard } from '../rate.js';
 import * as mail from '../mail.js';
-import { lookup as lookupPromo, planUntil } from '../promo.js';
+import { lookup as lookupPromo, planUntil, trialEnd, TRIAL_DAYS, TRIAL_SLIPS } from '../promo.js';
 import {
   hashPassword, issueVerificationCode, linkCode, createSession, setSessionCookie,
   emailProblem, passwordProblem, nameProblem
@@ -56,6 +56,14 @@ export default async function handler(req, res) {
        for, which is exactly what "free trial" means. */
     const plan = promo ? promo.plan : 'free';
     const until = promo ? planUntil(promo) : null;
+    /* The trial clock starts at signup and is written down rather than
+       derived from created_at, so extending somebody's trial later is an
+       UPDATE rather than a lie about when they joined. A code that grants a
+       plan still gets a date: if the plan lapses, the trial is what is left,
+       and a NULL here would read as "trial never started". */
+    const trialEndsAt = trialEnd();
+    /* The tick, if the code carries one. */
+    const verified = Boolean(promo && promo.verify);
 
     const sql = db();
     const passwordHash = await hashPassword(password);
@@ -65,10 +73,11 @@ export default async function handler(req, res) {
       const rows = await sql`
         INSERT INTO users (email, email_lower, display_name, name_lower,
                            password_hash, age_confirmed, link_code,
-                           plan, plan_until, promo_code)
+                           plan, plan_until, promo_code, verified, trial_ends_at)
         VALUES (${email}, ${email.toLowerCase()}, ${name}, ${name.toLowerCase()},
                 ${passwordHash}, true, ${linkCode()},
-                ${plan}, ${until}, ${promo ? promo.code : null})
+                ${plan}, ${until}, ${promo ? promo.code : null},
+                ${verified}, ${trialEndsAt})
         RETURNING id, display_name`;
       user = rows[0];
       if (promo) {
@@ -91,6 +100,10 @@ export default async function handler(req, res) {
     }
 
     const grant = promo ? { code: promo.code, label: promo.label, note: promo.note } : null;
+    /* What the new account actually has: a fortnight and 35 slips. Sent back
+       with the signup so the client can say so straight away rather than
+       waiting for the first ledger load to reveal it. */
+    const trial = { endsAt: trialEndsAt.toISOString(), days: TRIAL_DAYS, slips: TRIAL_SLIPS };
 
     if (mail.configured()) {
       const code = await issueVerificationCode(user.id);
@@ -106,11 +119,13 @@ export default async function handler(req, res) {
         const token = await createSession(user.id);
         setSessionCookie(res, token);
         return json(res, 201, {
-          ok: true, name: user.display_name, emailSent: false, verified: true, plan, grant,
+          ok: true, name: user.display_name, emailSent: false, verified: true, plan, grant, trial,
           notice: 'We could not send the code just now, so you are signed in already.'
         });
       }
-      return json(res, 201, { ok: true, name: user.display_name, emailSent: true, plan, grant });
+      return json(res, 201, {
+        ok: true, name: user.display_name, emailSent: true, plan, grant, trial
+      });
     }
 
     /* No mail provider on this deployment.
@@ -124,7 +139,7 @@ export default async function handler(req, res) {
     const token = await createSession(user.id);
     setSessionCookie(res, token);
     return json(res, 201, {
-      ok: true, name: user.display_name, emailSent: false, verified: true, plan, grant,
+      ok: true, name: user.display_name, emailSent: false, verified: true, plan, grant, trial,
       notice: 'Email verification is off on this deployment, so you are signed in already.'
     });
   } catch (err) {

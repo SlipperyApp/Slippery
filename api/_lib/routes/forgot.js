@@ -13,7 +13,7 @@ import { identifierProblem, findByIdentifier, issueResetCode } from '../auth.js'
 
 const SAME_ANSWER = {
   ok: true,
-  message: 'If that account exists, a reset code is on its way. It expires in thirty minutes.'
+  message: 'If that account exists, a reset code is on its way. It expires in ten minutes.'
 };
 
 export default async function handler(req, res) {

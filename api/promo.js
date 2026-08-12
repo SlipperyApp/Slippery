@@ -39,9 +39,19 @@ export default async function handler(req, res) {
     /* A lifetime code beats anything already on the account, and nothing
        downgrades one. Otherwise redeeming a gift month on a lifetime account
        would quietly put an expiry date on it. */
+
+    /* The tick is granted separately from the plan, because it survives the
+       plan running out: ULTRAS is handed to people whose figures the owner
+       already knows are real, and that does not stop being true in month
+       three. It is only ever turned on here, never off, so redeeming a
+       different code later cannot quietly strip it. */
+    if (promo.verify) {
+      await sql`UPDATE users SET verified = true WHERE id = ${user.id}`;
+    }
+
     if (user.plan === 'lifetime') {
       return json(res, 200, {
-        ok: true, plan: 'lifetime', planUntil: null,
+        ok: true, plan: 'lifetime', planUntil: null, verified: Boolean(promo.verify) || Boolean(user.verified),
         label: promo.label, note: 'This account is already free for life.'
       });
     }
@@ -53,6 +63,7 @@ export default async function handler(req, res) {
       ok: true,
       plan: promo.plan,
       planUntil: until ? until.toISOString() : null,
+      verified: Boolean(promo.verify) || Boolean(user.verified),
       label: promo.label,
       note: promo.note
     });
