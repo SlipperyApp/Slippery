@@ -15,7 +15,7 @@
  */
 import { timingSafeEqual } from 'node:crypto';
 import { json, methodGuard, readJson, fail } from './_lib/http.js';
-import { db, ensureSchema, configured as dbConfigured } from './_lib/db.js';
+import { db, ensureSchema, configured as dbConfigured, uniqueViolation } from './_lib/db.js';
 import { cashOutcome } from '../src/js/settlement.js';
 
 /* The free tier, counted here as well as in /api/bets, the bot is a second
@@ -92,7 +92,15 @@ const isImageDocument = doc =>
 async function handleCommand(token, chatId, text, from) {
   const [command] = text.split(/\s+/);
   switch (command.toLowerCase().replace(/@.*$/, '')) {
-    case '/start':
+    case '/start': {
+      /* Telegram passes whatever followed ?start= in the deep link as the
+         first argument, so opening t.me/SlipperyAppBot?start=SLIP-7F3A
+         arrives here as "/start SLIP-7F3A". Linking on that is the whole
+         one-tap flow: without it the button on the site opened a chat that
+         said "send /link followed by your code" and the user had to go back
+         and copy it by hand. */
+      const payload = (text.split(/\s+/)[1] || '').trim();
+      if (payload) { await handleLink(token, chatId, '/link ' + payload, from); return; }
       await send(token, chatId,
         'Welcome to Slippery.\n\n' +
         'Forward me a bet slip the moment you *place* it. I read the stake, odds ' +
@@ -104,6 +112,7 @@ async function handleCommand(token, chatId, text, from) {
         'the code shown there, or send /link followed by your code.\n\n' +
         'Send a slip whenever you are ready.');
       break;
+    }
     case '/help':
       await send(token, chatId,
         '*What I do*\n' +
@@ -164,10 +173,24 @@ async function handleLink(token, chatId, text, from) {
     return;
   }
   await ensureSchema();
-  const rows = await db()`
-    UPDATE users SET telegram_id = ${from && from.id}
-    WHERE link_code = ${code} AND deleted_at IS NULL
-    RETURNING display_name`;
+  /* One Telegram account links to one Slippery account. The partial unique
+     index on telegram_id enforces that, so relinking to a different account
+     has to clear the old row first rather than hitting a constraint and
+     telling the user their correct code did not work. */
+  let rows;
+  try {
+    rows = await db()`
+      UPDATE users SET telegram_id = ${from && from.id}
+      WHERE link_code = ${code} AND deleted_at IS NULL
+      RETURNING display_name`;
+  } catch (err) {
+    if (!uniqueViolation(err)) throw err;
+    await db()`UPDATE users SET telegram_id = NULL WHERE telegram_id = ${from && from.id}`;
+    rows = await db()`
+      UPDATE users SET telegram_id = ${from && from.id}
+      WHERE link_code = ${code} AND deleted_at IS NULL
+      RETURNING display_name`;
+  }
   await send(token, chatId, rows.length
     ? 'Linked to *' + esc(rows[0].display_name) + '*. Send me a slip whenever you are ready.'
     : 'That code did not match an account. Check Settings for the current one.');

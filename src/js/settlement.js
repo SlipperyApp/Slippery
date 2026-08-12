@@ -20,6 +20,8 @@
    Money is integer pence throughout. Never floats.
    ====================================================================== */
 
+import { sportOf, HORSES_REASON } from './sports.js';
+
 /* ---- how each bookmaker settles.
    Asian: a whole-number handicap can push and the stake comes back.
    European (3 way): the same scoreline is a loss, because the handicap
@@ -353,14 +355,152 @@ export function describe(p, fx, r, book) {
          ' → ' + r.replace('_', ' ') + extra;
 }
 
+/* =========================================================================
+   TENNIS
+   =========================================================================
+   Its own grader, not a football market list with the words changed. The
+   unit of a tennis result is the set, the fixture carries the games in each
+   one, and none of the football markets mean anything here.
+
+   What it will grade, and only from what the feed proves:
+     match winner        from sets won
+     set betting (2-0)   from sets won
+     total sets          from sets won
+     total games         from every set's games, and only when every set is
+                         present, because a missing set makes the total a
+                         floor rather than a number
+   Everything else, including games handicaps and anything in-play, asks.
+
+   A retirement is always ask. Bookmakers differ irreconcilably: some void
+   the match market, some pay the player who advanced, and the totals markets
+   are voided by some and settled by others. There is no answer that is right
+   for every user, so there is no answer here. */
+export const TENNIS_DEAD_VOID = { POSTPONED: 1, CANCELLED: 1, CANCELED: 1 };
+export const TENNIS_DEAD_ASK = {
+  RETIRED: 1, WALKOVER: 1, WO: 1, ABANDONED: 1, INTERRUPTED: 1, SUSPENDED: 1, AWARDED: 1
+};
+
+/** Total games across every set, or null when a set is missing. */
+export function totalGames(fx) {
+  if (!Array.isArray(fx.sets) || !fx.sets.length) return null;
+  let total = 0;
+  for (const set of fx.sets) {
+    if (typeof set[0] !== 'number' || typeof set[1] !== 'number') return null;
+    total += set[0] + set[1];
+  }
+  /* The sets played must account for the sets won, or the feed has given a
+     partial match and the total is a floor rather than a figure. */
+  if (typeof fx.hg === 'number' && typeof fx.ag === 'number' &&
+      fx.sets.length < fx.hg + fx.ag) return null;
+  return total;
+}
+
+export function settleTennis(bet, fx) {
+  const st = String(fx.status || '').toUpperCase().trim();
+  if (TENNIS_DEAD_VOID[st]) {
+    return { status: 'settled', result: VOID, outcome: 'void',
+             payout: bet.stakePence, profit: 0,
+             reason: 'Match ' + st.toLowerCase() + ', stake returned' };
+  }
+  if (TENNIS_DEAD_ASK[st]) {
+    return { status: 'ask',
+             reason: 'Match ' + st.toLowerCase() + '. Bookmakers settle these differently, so you decide' };
+  }
+  if (!FINISHED[st]) return { status: 'pending', reason: 'Not finished (' + fx.status + ')' };
+  if (typeof fx.hg !== 'number' || typeof fx.ag !== 'number') {
+    return { status: 'ask', reason: 'Result came back without a set score' };
+  }
+
+  const t = norm(bet.selection);
+  const st_ = soft(bet.selection);
+  if (!t) return { status: 'ask', reason: 'Could not read this market with confidence' };
+  if (NEEDS_MORE.some(re => re.test(st_)) || /\bace|double fault|break of serve|service game/.test(st_)) {
+    return { status: 'ask', reason: 'Needs player or in play detail we do not have' };
+  }
+
+  const side = sideOf(bet.selection, fx);
+  const won = fx.hg > fx.ag ? 'home' : 'away';
+  let r = null, market = '';
+
+  /* Set betting, before the plain winner: "Alcaraz 2-0" names a player AND
+     a scoreline, and reading only the name would settle a 2-1 as a win. */
+  let m = /\b(\d)\s*[- ]\s*(\d)\b/.exec(t);
+  if (m && side && Number(m[1]) + Number(m[2]) <= 5) {
+    market = 'set betting';
+    const forSide = side === 'home' ? [fx.hg, fx.ag] : [fx.ag, fx.hg];
+    r = (Number(m[1]) === forSide[0] && Number(m[2]) === forSide[1]) ? WON : LOST;
+  } else if (/\bstraight sets?\b/.test(t) && side) {
+    market = 'straight sets';
+    const dropped = side === 'home' ? fx.ag : fx.hg;
+    r = (side === won && dropped === 0) ? WON : LOST;
+  } else if (/\bto win a set\b/.test(t) && side) {
+    market = 'to win a set';
+    r = ((side === 'home' ? fx.hg : fx.ag) >= 1) ? WON : LOST;
+  } else if ((m = /\b(over|under)\b.*?(\d+(?:\.\d+)?)\s*(games?|sets?)?/.exec(t))) {
+    const line = Number(m[2]);
+    const isGames = /games?/.test(t) || line > 6;
+    const value = isGames ? totalGames(fx) : fx.hg + fx.ag;
+    if (value == null) {
+      return { status: 'ask', reason: 'The feed did not give every set, so the games total cannot be proved' };
+    }
+    market = isGames ? 'total games' : 'total sets';
+    /* Whole lines push, exactly as they do in football. */
+    r = vsLine(value, line);
+    if (m[1] === 'under') r = flip(r);
+  } else if ((m = /\b(?:(first|1st|second|2nd|third|3rd|fourth|4th|fifth|5th)|set (\d))\b/.exec(t)) && side) {
+    /* One named set. The feed gives the games in each, so this is provable
+       rather than inferred, and it must be handled explicitly: falling
+       through to the branch below would have graded "first set winner" as
+       the match winner, which is right about half the time. */
+    const ordinals = { first: 1, '1st': 1, second: 2, '2nd': 2, third: 3, '3rd': 3,
+                       fourth: 4, '4th': 4, fifth: 5, '5th': 5 };
+    const n = m[1] ? ordinals[m[1]] : Number(m[2]);
+    const set = Array.isArray(fx.sets) ? fx.sets[n - 1] : null;
+    if (!set) {
+      return { status: 'ask', reason: 'The feed did not give set ' + n + ' on its own' };
+    }
+    market = 'set ' + n;
+    const mine = side === 'home' ? set[0] : set[1];
+    const theirs = side === 'home' ? set[1] : set[0];
+    r = mine > theirs ? WON : LOST;
+  } else if (side && !/\bsets?\b|\bgames?\b/.test(t)) {
+    market = 'match winner';
+    r = side === won ? WON : LOST;
+  }
+
+  if (!r) return { status: 'ask', reason: 'Market understood but the feed lacks the data' };
+  if (r === HALF_WON || r === HALF_LOST) {
+    return { status: 'ask', reason: 'Quarter lines in tennis are settled differently per bookmaker' };
+  }
+
+  const payout = payoutFor(r, bet.stakePence, bet.odds);
+  const games = totalGames(fx);
+  return { status: 'settled', result: r, market,
+           outcome: ledgerOutcome(r), payout,
+           profit: payout - bet.stakePence,
+           reason: market + ', ' + fx.hg + '-' + fx.ag + ' in sets' +
+                   (games != null ? ' (' + games + ' games)' : '') +
+                   ' → ' + r.replace('_', ' ') };
+}
+
 /**
  * Grade a single bet against a fixture.
- * @param {{selection:string, stakePence:number, odds:number, book?:string, legs?:Array}} bet
+ * @param {{selection:string, stakePence:number, odds:number, book?:string, legs?:Array, sport?:string}} bet
  * @param {object|null} fx  fixture result from the feed
  * @returns {{status:'settled'|'ask'|'pending', ...}}
  */
 export function settle(bet, fx) {
   if (!fx) return { status: 'pending', reason: 'No result yet' };
+
+  /* Route before parsing. The football market list is greedy enough to find
+     something it recognises in a tennis or a racing selection, and grading
+     "Over 2.5" on a tennis match against goals is exactly the silent wrong
+     answer this engine exists to avoid. */
+  const sport = sportOf({ event: fx.event || bet.event, selection: bet.selection,
+                          market: bet.market, sport: bet.sport || fx.sport });
+  if (sport === 'horses') return { status: 'ask', reason: HORSES_REASON };
+  if (sport === 'tennis') return settleTennis(bet, fx);
+
   const st = String(fx.status || '').toUpperCase().trim();
 
   if (DEAD_VOID[st]) {

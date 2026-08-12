@@ -11,6 +11,7 @@
  * for the user, because a wrong grade is worse than no grade.
  */
 import { settle } from '../../src/js/settlement.js';
+import { sportOf, HORSES_REASON } from '../../src/js/sports.js';
 import { db } from './db.js';
 import * as feed from './fixtures.js';
 
@@ -27,7 +28,7 @@ const MAX_BETS = 100;
 export async function settleForUser(userId) {
   const sql = db();
   const pending = await sql`
-    SELECT id, event, selection, bookmaker, odds, stake_pence, placed_at
+    SELECT id, event, selection, market, bookmaker, odds, stake_pence, placed_at
     FROM bets
     WHERE user_id = ${userId} AND status IN ('pending', 'ask')
       AND placed_at > now() - interval '30 days'
@@ -37,19 +38,39 @@ export async function settleForUser(userId) {
     return { provider: null, checked: 0, settled: 0, asked: 0, stillRunning: 0, bets: [] };
   }
 
+  /* Split by sport before anything is fetched.
+     A racing bet has no feed to look up, and a tennis bet must not be
+     matched against a list of football fixtures, so the sport decides both
+     which fixtures to pull and which rules grade it. */
+  const bySport = { football: [], tennis: [], horses: [] };
+  for (const bet of pending) {
+    bySport[sportOf({ event: bet.event, selection: bet.selection, market: bet.market })].push(bet);
+  }
+
   /* One fetch for the whole window, not one per bet. A user with twelve
      pending bets on a Saturday would otherwise make twelve scrapes to
      answer one question, which is how a scraper earns a block. */
   const today = new Date();
   const from = iso(new Date(today.getTime() - LOOKBACK_DAYS * 86400000));
   const to = iso(new Date(today.getTime() + 86400000));
-  const { provider, fixtures } = await feed.resolveFinished(from, to);
+
+  /* Only fetch what there are bets for. Someone with three football bets
+     should not make a tennis request, and someone with only racing bets
+     should make none at all. */
+  const football = bySport.football.length
+    ? await feed.resolveFinished(from, to)
+    : { provider: null, fixtures: [] };
+  const tennis = bySport.tennis.length
+    ? await feed.resolveTennis(from, to)
+    : { provider: null, fixtures: [] };
+  const provider = [football.provider, tennis.provider].filter(Boolean).join(' + ') || null;
+  const fixtures = football.fixtures.concat(tennis.fixtures);
 
   /* Anything the sweep did not match gets one direct lookup each. A sweep
      only sees the days and competitions it pulled, so a bet outside that
      window would otherwise stay pending forever, indistinguishable from
      "still running", and the more annoying of the two failures. */
-  const unmatched = pending.filter(b => !feed.matchFixture(b.event, fixtures));
+  const unmatched = bySport.football.filter(b => !feed.matchFixture(b.event, football.fixtures));
   const extra = unmatched.length
     ? await feed.lookupEach(unmatched.map(b => b.event))
     : new Map();
@@ -57,12 +78,26 @@ export async function settleForUser(userId) {
   let settled = 0, asked = 0, stillRunning = 0;
   const bets = [];
 
-  for (const bet of pending) {
-    const fixture = feed.matchFixture(bet.event, fixtures) || extra.get(bet.event);
+  /* Racing never reaches a feed. It is recorded as needing the user, once,
+     with the reason, so it stops looking identical to a bet that is still
+     running. */
+  for (const bet of bySport.horses) {
+    await sql`
+      UPDATE bets SET status = 'ask', settle_reason = ${HORSES_REASON}
+      WHERE id = ${bet.id} AND user_id = ${userId}`;
+    asked++;
+    bets.push({ id: bet.id, ask: HORSES_REASON });
+  }
+
+  for (const bet of bySport.football.concat(bySport.tennis)) {
+    const pool = bySport.tennis.includes(bet) ? tennis.fixtures : football.fixtures;
+    const fixture = feed.matchFixture(bet.event, pool) || extra.get(bet.event);
     if (!fixture) { stillRunning++; continue; }
 
     const out = settle({
       selection: bet.selection,
+      market: bet.market,
+      event: bet.event,
       stakePence: bet.stake_pence,
       odds: Number(bet.odds),
       book: bet.bookmaker

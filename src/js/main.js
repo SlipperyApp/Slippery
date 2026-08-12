@@ -1099,6 +1099,62 @@ async function leaveGroup(id) {
   toast(r.body.dissolved ? 'You were the last one, so the group is gone' : 'Left the group');
 }
 
+/* ---------------- Telegram ----------------
+   The button used to relabel itself "Linked", disable, and show a green dot.
+   Nothing was linked: the bot had never heard of the chat, and the first
+   slip forwarded to it got "that code did not match an account".
+
+   It opens the real deep link now. Telegram passes everything after
+   ?start= to the bot as the first argument of /start, so the code travels
+   with the tap and the bot links the chat without anyone typing anything.
+   Then the page waits for the server to agree, because the bot is the only
+   thing that actually knows. */
+const BOT = 'SlipperyAppBot';
+let linkPoll = null;
+
+function openTelegram(btn) {
+  const code = (($('linkCode') || {}).textContent || '').trim();
+  if (!code || code === 'Not linked yet') {
+    toast('Your link code loads with your account. Log in first.');
+    return;
+  }
+  const url = 'https://t.me/' + BOT + '?start=' + encodeURIComponent(code);
+  /* noopener: without it the opened tab gets a handle on this window. */
+  window.open(url, '_blank', 'noopener');
+  btn.textContent = 'Waiting for Telegram…';
+  btn.disabled = true;
+  pollForLink(btn);
+}
+
+/* Ten checks, six seconds apart. Linking happens in another app, so there
+   is no event to listen for, and a minute is long enough for someone to
+   switch across, press start and come back. It gives up quietly rather than
+   polling forever in a background tab. */
+function pollForLink(btn) {
+  if (linkPoll) clearInterval(linkPoll);
+  let tries = 0;
+  linkPoll = setInterval(async () => {
+    tries++;
+    const r = await get('/api/auth/me');
+    const linked = r.ok && r.body.user && r.body.user.telegramLinked;
+    if (linked) {
+      clearInterval(linkPoll); linkPoll = null;
+      R.renderAccount(r.body.user);
+      const dot = $('telegramLinked');
+      if (dot) dot.hidden = false;
+      if (btn) { btn.textContent = 'Linked'; btn.disabled = true; }
+      toast('Telegram linked. Forward a slip whenever you like.');
+      return;
+    }
+    if (tries >= 10) {
+      clearInterval(linkPoll); linkPoll = null;
+      if (btn) { btn.textContent = 'Open Telegram and link'; btn.disabled = false; }
+      toast('Not linked yet. In the chat, send: /link ' +
+        (($('linkCode') || {}).textContent || '').trim());
+    }
+  }, 6000);
+}
+
 function showUpgrade(body) {
   toast('That is all ' + (body && body.freeSlips || 20) + ' free slips used.');
   go('pricing');
@@ -1546,7 +1602,7 @@ document.addEventListener('click', e => {
     toast(MS.format(new Date(TODAY.year, TODAY.month, 1)) + ' target set to ' + M.money0(v));
     return;
   }
-  if ((el = c('#telegramLink'))) { el.textContent = 'Linked'; el.disabled = true; $('telegramLinked').hidden = false; return; }
+  if ((el = c('#telegramLink')) || (el = c('#telegramLinkSettings'))) { openTelegram(el); return; }
 });
 
 function handleWizard(dir) {

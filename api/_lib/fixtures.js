@@ -34,6 +34,7 @@ import * as espn from './espn.js';
 import * as sofascore from './sofascore.js';
 import * as footballdata from './footballdata.js';
 import * as footballdatauk from './footballdatauk.js';
+import * as flashscore from './flashscore.js';
 
 /* The scraper chain, in order of preference.
  *
@@ -64,9 +65,24 @@ const SOURCES = [
      fixtures only, so full time IS 90 minutes; cup ties are absent and
      stay pending, which is the right failure. */
   { name: 'football-data-uk', mod: footballdatauk, enabled: () => wanted('football-data-uk') },
+  /* The one that also has tennis, and covers the leagues outside Europe
+     that football-data.co.uk does not publish. It answers from a datacenter
+     IP because it is the feed FlashScore's own front end reads rather than
+     a page behind a bot filter. Its cup ties come back with a status the
+     engine does not recognise, on purpose: the feed cannot prove a 90
+     minute score and a bet graded on 120 minutes is not recoverable. */
+  { name: 'flashscore', mod: flashscore, enabled: () => wanted('flashscore') },
   { name: 'football-data', mod: footballdata,
     enabled: () => wanted('football-data') && Boolean(process.env.FOOTBALL_DATA_TOKEN),
     acceptEmpty: true }
+];
+
+/* Tennis has one source, because only one of these has tennis at all.
+   Kept separate from the football chain rather than folded into it: they
+   answer different questions and a football fixture list is not a fallback
+   for a tennis one. */
+const TENNIS_SOURCES = [
+  { name: 'flashscore', mod: flashscore, enabled: () => wanted('flashscore') }
 ];
 
 /**
@@ -101,6 +117,30 @@ export async function resolveFinished(dateFrom, dateTo) {
   err.tried = tried;
   err.blocked = tried.every(t => /blocked/.test(t));
   throw err;
+}
+
+/**
+ * Finished tennis across a window.
+ *
+ * Separate from resolveFinished because the shapes are different: a tennis
+ * fixture carries sets rather than goals, and the engine grades it with
+ * different rules. Returning an empty list rather than throwing when nothing
+ * is reachable is deliberate here, a user with no tennis bets should not see
+ * a settlement failure because a tennis feed was down.
+ */
+export async function resolveTennis(dateFrom, dateTo) {
+  const tried = [];
+  for (const source of TENNIS_SOURCES) {
+    if (!source.enabled()) continue;
+    try {
+      const fixtures = await source.mod.finishedTennis(dateFrom, dateTo);
+      if (fixtures.length) return { provider: source.name, fixtures, tried };
+      tried.push(source.name + ': no fixtures');
+    } catch (err) {
+      tried.push(source.name + ': ' + (err.blocked ? 'blocked' : err.message));
+    }
+  }
+  return { provider: null, fixtures: [], tried };
 }
 
 /** Ask every source whether this host can reach it. Diagnostics only. */
