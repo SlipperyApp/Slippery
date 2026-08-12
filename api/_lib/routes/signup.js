@@ -5,15 +5,15 @@
  * "free" and both insert; only a UNIQUE index actually decides. So the insert
  * runs optimistically and the constraint violation is the answer.
  */
-import { json, methodGuard, readJson, clientIp, fail } from '../_lib/http.js';
-import { db, ensureSchema, configured, uniqueViolation, violatedIndex } from '../_lib/db.js';
-import { guard } from '../_lib/rate.js';
-import * as mail from '../_lib/mail.js';
-import { lookup as lookupPromo, planUntil } from '../_lib/promo.js';
+import { json, methodGuard, readJson, clientIp, fail } from '../http.js';
+import { db, ensureSchema, configured, uniqueViolation, violatedIndex } from '../db.js';
+import { guard } from '../rate.js';
+import * as mail from '../mail.js';
+import { lookup as lookupPromo, planUntil } from '../promo.js';
 import {
   hashPassword, issueVerificationCode, linkCode, createSession, setSessionCookie,
   emailProblem, passwordProblem, nameProblem
-} from '../_lib/auth.js';
+} from '../auth.js';
 
 export default async function handler(req, res) {
   if (!methodGuard(req, res, ['POST'])) return;

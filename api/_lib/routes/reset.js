@@ -5,13 +5,13 @@
  * for, and sending them back to a login form to type it again is the step
  * where people give up.
  */
-import { json, methodGuard, readJson, clientIp, fail } from '../_lib/http.js';
-import { ensureSchema, configured } from '../_lib/db.js';
-import { guard } from '../_lib/rate.js';
+import { json, methodGuard, readJson, clientIp, fail } from '../http.js';
+import { ensureSchema, configured } from '../db.js';
+import { guard } from '../rate.js';
 import {
   identifierProblem, findByIdentifier, checkResetCode, setPassword,
   passwordProblem, createSession, setSessionCookie
-} from '../_lib/auth.js';
+} from '../auth.js';
 
 export default async function handler(req, res) {
   if (!methodGuard(req, res, ['POST'])) return;

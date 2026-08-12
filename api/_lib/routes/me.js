@@ -1,9 +1,9 @@
 /* GET /api/auth/me, who the session cookie belongs to. */
-import { json, methodGuard, fail } from '../_lib/http.js';
-import { configured, ensureSchema } from '../_lib/db.js';
-import { sessionUser } from '../_lib/auth.js';
-import { limit } from '../_lib/rate.js';
-import { settleForUser } from '../_lib/settling.js';
+import { json, methodGuard, fail } from '../http.js';
+import { configured, ensureSchema } from '../db.js';
+import { sessionUser } from '../auth.js';
+import { limit } from '../rate.js';
+import { settleForUser } from '../settling.js';
 
 /* limit() returns {allowed, retryAfter}. Testing the object itself is always
    true, which meant this re-scraped on every single page load rather than

@@ -1,7 +1,7 @@
 /* POST /api/auth/logout */
-import { json, methodGuard, fail } from '../_lib/http.js';
-import { configured } from '../_lib/db.js';
-import { destroySession, clearSessionCookie } from '../_lib/auth.js';
+import { json, methodGuard, fail } from '../http.js';
+import { configured } from '../db.js';
+import { destroySession, clearSessionCookie } from '../auth.js';
 
 export default async function handler(req, res) {
   if (!methodGuard(req, res, ['POST'])) return;

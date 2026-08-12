@@ -5,11 +5,11 @@
  * endpoint into a way to test whether an address is registered, on a
  * gambling product, that is a genuinely harmful thing to leak.
  */
-import { json, methodGuard, readJson, clientIp, fail } from '../_lib/http.js';
-import { ensureSchema, configured } from '../_lib/db.js';
-import { guard } from '../_lib/rate.js';
-import * as mail from '../_lib/mail.js';
-import { identifierProblem, findByIdentifier, issueResetCode } from '../_lib/auth.js';
+import { json, methodGuard, readJson, clientIp, fail } from '../http.js';
+import { ensureSchema, configured } from '../db.js';
+import { guard } from '../rate.js';
+import * as mail from '../mail.js';
+import { identifierProblem, findByIdentifier, issueResetCode } from '../auth.js';
 
 const SAME_ANSWER = {
   ok: true,

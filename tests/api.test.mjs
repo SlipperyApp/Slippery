@@ -33,6 +33,14 @@ const fakeReq = (over = {}) => Object.assign({
   socket: { remoteAddress: '127.0.0.1' }
 }, over);
 
+/* Every module Vercel would turn into a function, plus the handlers behind
+   the auth router. The router lives at api/auth/[action].js and the eight
+   handlers it dispatches to live under api/_lib/routes/, where Vercel does
+   not route them, because the Hobby plan allows twelve functions and eight
+   auth files plus everything else is sixteen. */
+const AUTH_ROUTES = ['forgot', 'login', 'logout', 'me', 'resend', 'reset', 'signup', 'verify'];
+const authRoute = name => new URL('_lib/routes/' + name + '.js', API).href;
+
 async function handlers() {
   const out = [];
   for (const entry of await readdir(API, { withFileTypes: true })) {
@@ -43,8 +51,26 @@ async function handlers() {
       }
     } else if (entry.name.endsWith('.js')) out.push(entry.name);
   }
+  for (const name of AUTH_ROUTES) out.push('_lib/routes/' + name + '.js');
   return out.sort();
 }
+
+test('the function count stays under what Vercel will actually deploy', async () => {
+  /* Going over twelve does not warn: the build fails, the previous
+     deployment keeps serving, and every push still reports success while
+     the live site quietly stops changing. */
+  const routed = [];
+  const walk = async (dir, prefix) => {
+    for (const entry of await readdir(dir, { withFileTypes: true })) {
+      if (entry.name.startsWith('_')) continue;
+      if (entry.isDirectory()) await walk(new URL(entry.name + '/', dir), prefix + entry.name + '/');
+      else if (entry.name.endsWith('.js')) routed.push(prefix + entry.name);
+    }
+  };
+  await walk(API, '');
+  assert.ok(routed.length <= 12,
+    'Vercel Hobby allows 12 serverless functions and api/ has ' + routed.length + ': ' + routed.join(', '));
+});
 
 test('every api handler imports cleanly and exports a default function', async () => {
   const files = await handlers();
@@ -57,7 +83,7 @@ test('every api handler imports cleanly and exports a default function', async (
 
 test('an unsupported method is a 405 with an Allow header, never a crash', async () => {
   /* DELETE is not allowed anywhere except /api/bets. */
-  for (const f of ['extract.js', 'settle.js', 'auth/login.js', 'auth/signup.js']) {
+  for (const f of ['extract.js', 'settle.js', '_lib/routes/login.js', '_lib/routes/signup.js']) {
     const mod = await import(new URL(f, API).href);
     const res = fakeRes();
     await mod.default(fakeReq({ method: 'TRACE' }), res);
@@ -70,7 +96,7 @@ test('without a database, endpoints answer 503 and name what is missing', async 
   const had = process.env.DATABASE_URL;
   delete process.env.DATABASE_URL;
   try {
-    for (const [f, method] of [['bets.js', 'GET'], ['settle.js', 'POST'], ['auth/signup.js', 'POST']]) {
+    for (const [f, method] of [['bets.js', 'GET'], ['settle.js', 'POST'], ['_lib/routes/signup.js', 'POST']]) {
       const mod = await import(new URL(f, API).href);
       const res = fakeRes();
       await mod.default(fakeReq({ method }), res);
@@ -91,7 +117,7 @@ test('/api/auth/me reports "not configured" rather than failing', async () => {
   const had = process.env.DATABASE_URL;
   delete process.env.DATABASE_URL;
   try {
-    const mod = await import(new URL('auth/me.js', API).href);
+    const mod = await import(authRoute('me'));
     const res = fakeRes();
     await mod.default(fakeReq({ method: 'GET' }), res);
     assert.equal(res.statusCode, 200);
@@ -125,4 +151,34 @@ test('every function path in vercel.json matches a file that exists', async () =
     const rel = cron.path.replace(/^\/api\//, '') + '.js';
     assert.ok(files.includes(rel), 'cron points at ' + cron.path + ', which does not exist');
   }
+});
+
+/* The auth router.
+ *
+ * The URLs did not change when eight files became one, so the thing worth
+ * testing is that every one of them still resolves and that nothing else
+ * does. `constructor` is in there on purpose: a plain property lookup on the
+ * table would find Object.prototype.constructor and call it with (req, res).
+ */
+test('the auth router dispatches every action and refuses anything else', async () => {
+  const mod = await import(new URL('auth/[action].js', API).href);
+  for (const action of AUTH_ROUTES) {
+    const res = fakeRes();
+    /* TRACE is allowed nowhere, so a 405 proves the handler ran and a 404
+       proves the router did not find it. Either way it is not a crash. */
+    await mod.default(fakeReq({ method: 'TRACE', query: { action } }), res);
+    assert.notEqual(res.statusCode, 404, action + ' did not reach its handler');
+  }
+  for (const action of ['constructor', 'toString', '__proto__', 'nope', '']) {
+    const res = fakeRes();
+    await mod.default(fakeReq({ method: 'GET', query: { action } }), res);
+    assert.equal(res.statusCode, 404, JSON.stringify(action) + ' should not resolve to a handler');
+  }
+});
+
+test('the auth router falls back to the path when there is no query', async () => {
+  const mod = await import(new URL('auth/[action].js', API).href);
+  const res = fakeRes();
+  await mod.default(fakeReq({ method: 'TRACE', url: '/api/auth/login' }), res);
+  assert.equal(res.statusCode, 405, 'the path segment should have selected login');
 });

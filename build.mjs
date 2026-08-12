@@ -5,7 +5,7 @@
  */
 import { build as esbuild } from 'esbuild';
 import { readFile, writeFile, mkdir, readdir } from 'node:fs/promises';
-import { existsSync } from 'node:fs';
+import { existsSync, readdirSync } from 'node:fs';
 import { createHash } from 'node:crypto';
 import path from 'node:path';
 
@@ -230,6 +230,8 @@ async function main() {
   await writeFile(out('sw.js'), SW.replace('__BUILD__', buildId));
   await writeFile(out('icon.svg'), ICON_SVG);
 
+  countFunctions();
+
   const kb = n => (n / 1024).toFixed(1) + 'kB';
   console.log('  css     ' + kb(css.length) + ' from ' + fileCount + ' files, ' + classCount + ' owned classes');
   console.log('  js      ' + kb(js.length) + ' bundled and minified');
@@ -239,6 +241,44 @@ async function main() {
   if (!existsSync(out('icon-192.png'))) {
     console.log('  note    PNG icons missing, run: node tools/icons.mjs');
   }
+}
+
+/* Vercel's Hobby plan allows twelve Serverless Functions per deployment,
+   and every .js under api/ that is not in an underscore-prefixed directory
+   is one. Going over does not warn or degrade: the build fails, the previous
+   deployment keeps serving, and the site quietly stops changing while every
+   push still reports success. That is how five commits went live-looking and
+   were not live, so the count is checked here where it is impossible to
+   miss. Put shared code in api/_lib/, and route several endpoints through
+   one function the way api/auth/[action].js does. */
+const FUNCTION_LIMIT = 12;
+
+function countFunctions() {
+  const found = [];
+  const walk = dir => {
+    for (const entry of readdirSync(dir, { withFileTypes: true })) {
+      /* Vercel does not route anything under an underscore-prefixed
+         directory, which is exactly why _lib works. */
+      if (entry.isDirectory()) {
+        if (!entry.name.startsWith('_')) walk(path.join(dir, entry.name));
+      } else if (entry.name.endsWith('.js')) {
+        found.push(path.join(dir, entry.name));
+      }
+    }
+  };
+  if (!existsSync('api')) return;
+  walk('api');
+
+  if (found.length > FUNCTION_LIMIT) {
+    throw new Error(
+      'Too many Serverless Functions: ' + found.length + ', and Vercel Hobby allows ' +
+      FUNCTION_LIMIT + '.\nThe deployment will FAIL TO BUILD and the old one will keep ' +
+      'serving, so the site looks fine and stops updating.\n\n' +
+      found.map(f => '  ' + f).join('\n') +
+      '\n\nFold some of these into one function with a [param] route, or move shared ' +
+      'code under api/_lib/ where Vercel does not route it.');
+  }
+  console.log('  api     ' + found.length + ' of ' + FUNCTION_LIMIT + ' serverless functions');
 }
 
 main().catch(err => {

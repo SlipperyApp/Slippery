@@ -1,8 +1,8 @@
 /* POST /api/auth/verify, confirm the six digit code, then sign in. */
-import { json, methodGuard, readJson, clientIp, fail } from '../_lib/http.js';
-import { db, ensureSchema, configured } from '../_lib/db.js';
-import { guard } from '../_lib/rate.js';
-import { checkVerificationCode, createSession, setSessionCookie } from '../_lib/auth.js';
+import { json, methodGuard, readJson, clientIp, fail } from '../http.js';
+import { db, ensureSchema, configured } from '../db.js';
+import { guard } from '../rate.js';
+import { checkVerificationCode, createSession, setSessionCookie } from '../auth.js';
 
 export default async function handler(req, res) {
   if (!methodGuard(req, res, ['POST'])) return;

@@ -4,13 +4,13 @@
  * reliably than which of their addresses they signed up with, and the display
  * name is already unique, so there is no reason to insist on one of them.
  */
-import { json, methodGuard, readJson, clientIp, fail } from '../_lib/http.js';
-import { ensureSchema, configured } from '../_lib/db.js';
-import { guard } from '../_lib/rate.js';
+import { json, methodGuard, readJson, clientIp, fail } from '../http.js';
+import { ensureSchema, configured } from '../db.js';
+import { guard } from '../rate.js';
 import {
   verifyPassword, equalisePasswordTiming, createSession, setSessionCookie,
   identifierProblem, findByIdentifier
-} from '../_lib/auth.js';
+} from '../auth.js';
 
 export default async function handler(req, res) {
   if (!methodGuard(req, res, ['POST'])) return;
