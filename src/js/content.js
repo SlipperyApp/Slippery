@@ -548,7 +548,7 @@ export const SECTIONS = [
             'Imported history is excluded, not guessed',
             'One number nobody can game'],
     demo: 'capture',
-    said: 'A record that is <b>90% pre-match</b> cannot be a highlight reel. That is the whole argument.'
+    said: 'Same bettor. Same eight bets. <b class="down">\u2212\u00a394.25</b> is the true record, <b class="up">+\u00a3412.60</b> is what memory keeps.'
   },
   {
     accent: 'a1',
@@ -600,6 +600,113 @@ export const SECTIONS = [
 ];
 
 
+/* ---------- the divergence ----------
+ *
+ * Eight real-shaped bets, four winners and four losers, netting a loss.
+ * The numbers are chosen so the honest total is NEGATIVE and the selective
+ * one is strongly positive: that gap is the entire point, and a worked
+ * example where both come out positive would prove nothing.
+ *
+ * Arithmetic checked against the running animation, not by eye: the winners
+ * sum to +412.60 and the losers to -506.85, so the honest total is -94.25,
+ * the same figure the dashboard uses. One number, one story, everywhere.
+ * The first three are all winners on purpose, so the two columns start
+ * identical and visibly come apart rather than being different from the
+ * first frame. */
+const DIVERGE = [
+  ['Arsenal, 1.80', 11600, true],
+  ['Over 2.5, 2.10', 9200, true],
+  ['Bayern -1, 1.55', 7860, true],
+  ['Spurs draw, 3.40', -12000, false],
+  ['BTTS, 1.90', 12600, true],
+  ['Under 3.5, 1.70', -14500, false],
+  ['Liverpool, 1.45', -9185, false],
+  ['Acca, 6.20', -15000, false]
+];
+
+const money = p => (p < 0 ? '\u2212' : '+') + '\u00a3' +
+  (Math.abs(p) / 100).toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+
+function divergeMarkup() {
+  const row = (b, ghost) =>
+    '<div class="drow ' + (b[2] ? 'w' : 'l') + (ghost ? ' dhide' : '') + '">' +
+    '<i aria-hidden="true"></i><span>' + esc(b[0]) + '</span></div>';
+  return '<div class="demohead">' + ico('i-scales') + 'Same eight bets, two records</div>' +
+    '<div class="diverge">' +
+      '<div class="dcol honest"><span class="dhead">Captured at placement</span>' +
+        '<span class="dtot neg" id="divA">\u00a30.00</span>' +
+        '<div class="drows">' + DIVERGE.map(b => row(b, false)).join('') + '</div>' +
+        '<span class="dsub">All eight. It could not know which would land.</span></div>' +
+      '<div class="dcol reel"><span class="dhead">Filled in afterwards</span>' +
+        '<span class="dtot pos" id="divB">\u00a30.00</span>' +
+        '<div class="drows">' + DIVERGE.map(b => row(b, !b[2])).join('') + '</div>' +
+        '<span class="dsub">Only the ones worth remembering.</span></div>' +
+    '</div>';
+}
+
+/* Run it. One timeline drives both columns, so the rows land in step and
+   the gap opens on screen rather than being there when you arrive.
+ *
+ * Observed rather than started on load: a page nobody has scrolled to
+ * should not be spending frames, and restarting on re-entry is what makes
+ * it worth watching twice. */
+function playDiverge() {
+  const stage = $('divergeDemo');
+  if (!stage) return;
+  const rowsA = [...stage.querySelectorAll('.dcol.honest .drow')];
+  const rowsB = [...stage.querySelectorAll('.dcol.reel .drow')];
+  const a = $('divA'), b = $('divB');
+  let timers = [];
+
+  const paint = (el, pence) => {
+    el.textContent = money(pence);
+    el.className = 'dtot ' + (pence < 0 ? 'neg' : 'pos');
+  };
+
+  const settle = () => {
+    /* The end state, with no motion. Reduced motion gets this immediately
+       and so does anything that scrolls past mid-run: an animation frozen
+       half way through would misstate both totals. */
+    rowsA.forEach(r => r.classList.add('in'));
+    rowsB.forEach(r => r.classList.add('in'));
+    paint(a, DIVERGE.reduce((t, x) => t + x[1], 0));
+    paint(b, DIVERGE.filter(x => x[2]).reduce((t, x) => t + x[1], 0));
+  };
+
+  const stop = () => { timers.forEach(clearTimeout); timers = []; };
+
+  const run = () => {
+    stop();
+    rowsA.forEach(r => r.classList.remove('in'));
+    rowsB.forEach(r => r.classList.remove('in'));
+    paint(a, 0); paint(b, 0);
+    let ta = 0, tb = 0;
+    DIVERGE.forEach((bet, i) => {
+      timers.push(setTimeout(() => {
+        rowsA[i].classList.add('in');
+        ta += bet[1];
+        paint(a, ta);
+        /* The flattering column only ever receives a winner, which is the
+           whole mechanism: it is not lying about any single bet, it is
+           just never told about the others. */
+        if (bet[2]) { rowsB[i].classList.add('in'); tb += bet[1]; paint(b, tb); }
+      }, 340 + i * 260));
+    });
+    /* Hold on the finished state, then go again, so somebody who arrives
+       part way through still sees it from the start. */
+    timers.push(setTimeout(run, 340 + DIVERGE.length * 260 + 4200));
+  };
+
+  if (RM) { settle(); return; }
+  if (typeof IntersectionObserver !== 'function') { settle(); return; }
+  new IntersectionObserver(entries => {
+    for (const e of entries) {
+      if (e.isIntersecting) run();
+      else { stop(); settle(); }
+    }
+  }, { threshold: 0.35 }).observe(stage);
+}
+
 /* Build every section from SECTIONS. One function, so a new section is a
    data entry rather than a block of markup, and so the six parts cannot
    drift apart between sections. */
@@ -615,13 +722,7 @@ function sectionRow(r) {
 /* The demos. Real markup, never a screenshot: a screenshot ages the day
    the product changes and a screen reader cannot read one. */
 function sectionDemo(kind) {
-  if (kind === 'capture') {
-    const bars = [['Before kick-off', 90, 'up'], ['In play', 7, ''], ['After it settled', 3, 'down']];
-    return '<div class="demohead">' + ico('i-chart') + 'How this record was captured</div>' +
-      bars.map(b => '<div class="demobar ' + b[2] + '"><span class="bl">' + b[0] +
-        '</span><span class="bv">' + b[1] + '%</span>' +
-        '<span class="bt"><i style="--f:' + (b[1] / 100) + '"></i></span></div>').join('');
-  }
+  if (kind === 'capture') return divergeMarkup();
   if (kind === 'settle') {
     const rows = [['Arsenal v Spurs', 'Over 2.5, 3-1', 'Settled', 'up'],
                   ['Bayern v Mainz', 'Bayern -1, 2-1 at bet365', 'Void, whole line', ''],
@@ -656,7 +757,9 @@ export function renderSections() {
       '<div class="sect-rows">' + s.rows.map(sectionRow).join('') + '</div>' +
       '<div class="sect-ticks">' + s.ticks.map(t =>
         '<span>' + tick + esc(t) + '</span>').join('') + '</div>' +
-      '<div class="sect-demo">' + sectionDemo(s.demo) +
+      '<div class="sect-demo"' + (s.demo === 'capture' ? ' id="divergeDemo"' : '') + '>' +
+        sectionDemo(s.demo) +
         '<p class="sect-said">' + s.said + '</p></div>' +
     '</section>').join('');
+  playDiverge();
 }
