@@ -141,6 +141,7 @@ export const SLIP_SCHEMA = {
   required: ['readable', 'doc_type', 'platform', 'bet_type', 'bet_count',
              'selection', 'event', 'market', 'bookmaker', 'odds',
              'stake', 'returns', 'result', 'stage', 'kickoff', 'legs',
+             'free_bet', 'each_way', 'price_source',
              'selections', 'totals', 'pl_rows', 'placed_at', 'unreadable_fields', 'notes'],
   properties: {
     readable: { type: 'boolean' },
@@ -171,6 +172,15 @@ export const SLIP_SCHEMA = {
        watched. Reading it off the slip beats inferring it from whether a
        result happens to be printed. */
     stage: oneOf(['prematch', 'inplay', 'settled']),
+    /* Booleans, not unions, so they cost nothing against the sixteen
+       union-typed parameter limit that once broke this whole endpoint. */
+    free_bet: { type: 'boolean' },
+    each_way: { type: 'boolean' },
+    /* WHICH price was taken, when a screen shows more than one. A
+       value-finding tool prints the bookmaker's price and a sharp book's
+       price side by side, and averaging them or picking the larger would
+       invent a bet nobody placed. */
+    price_source: { type: 'string' },
     kickoff: { type: 'string' },
     legs: { type: 'integer' },
     selections: { type: 'array', items: LEG_SCHEMA },
@@ -229,6 +239,9 @@ Field notes:
   they belong here even when the combined price is also printed.
 - stake and returns: the money amounts, as numbers with no currency symbol.
   Return the total stake. On an each-way slip that is the combined stake.
+  On a cashed out slip, returns is the amount ACTUALLY RETURNED, never the
+  potential returns printed above it. Those two figures sit next to each
+  other and taking the wrong one turns a small loss into a large win.
 - bet_count: how many separate bets are on the image. A slip with four legs is
   ONE bet with four selections, so bet_count is 1 and legs is 4.
 - result: only if the slip states it. An unsettled slip is "open". Never infer
@@ -250,6 +263,28 @@ Field notes:
   "Both teams to score", "Anytime scorer".
 - legs: number of selections. 1 for a single.
 - placed_at: ISO 8601 if a date is legible, otherwise "".
+- free_bet: true only if the slip says the stake is not returned, for
+  example "Free Bet", "Bonus Bet", "Stake not returned". A free bet's
+  returns exclude the stake, so logging it as an ordinary bet overstates
+  the profit by the stake every single time. false if it does not say so.
+- each_way: true if the slip is each way. An each way bet is two bets, so
+  the stake field is the COMBINED stake: a "£10 each way" slip has a stake
+  of 20. If you cannot tell whether a printed stake is per part or
+  combined, return 0 rather than choosing.
+- price_source: when the image shows MORE THAN ONE price for the same
+  selection, name whose price you took, for example "Flutter" or "bet365".
+  Take the price at the bookmaker the bet was actually placed with, which
+  is normally the one next to the stake or the account branding. NEVER
+  average two prices and never take the better one because it is better.
+  If you cannot tell which was bet at, return 0 for odds and say so in
+  unreadable_fields. "" when only one price is shown.
+
+WHAT IS NOT A BET FIELD. Value-finding and tipping tools print their own
+workings next to the bet: "Value: 2.38x", "138% edge", "EV +12.4%",
+"Confidence: High", model ratings, star ratings, tipster names. None of
+those is odds, stake or returns. Ignore them completely rather than
+putting them in a numeric field because they look like numbers.
+
 - readable: false if there is nothing useful to extract at all.
 - notes: at most one short sentence, and only if something would confuse the
   person reading the result later. Otherwise "".
@@ -399,6 +434,9 @@ export function sanitise(f) {
   const unenum = key => {
     if (out[key] === UNKNOWN) { out[key] = null; bad.add(key); }
   };
+
+  /* An empty price_source is "only one price was shown", not a failure. */
+  if (out.price_source === '') out.price_source = null;
 
   reject(out, 'odds', okOdds);
   reject(out, 'stake', v => typeof v === 'number' && isFinite(v) && v > 0 && v < 1e7);

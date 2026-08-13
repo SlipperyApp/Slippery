@@ -104,9 +104,33 @@ export async function ensureSchema() {
      and typeable is that it is short lived. Ten minutes, in promo-style:
      the number lives in bot-strings.js as LINK_TTL_MS. */
   await sql`ALTER TABLE users ADD COLUMN IF NOT EXISTS link_code_expires_at timestamptz`;
+  /* A used code stays in the column with a used-at stamp rather than being
+     nulled. Nulling it works, and makes "already used" indistinguishable
+     from "never existed", so somebody who sends the same code twice is
+     told it does not match an account and goes looking for a mistake they
+     did not make. The claim query requires used_at IS NULL, so keeping the
+     code does not make it usable. */
+  await sql`ALTER TABLE users ADD COLUMN IF NOT EXISTS link_code_used_at timestamptz`;
   /* When the chat was connected, so Settings and /whoami can say. */
   await sql`ALTER TABLE users ADD COLUMN IF NOT EXISTS telegram_linked_at timestamptz`;
   await sql`ALTER TABLE users ADD COLUMN IF NOT EXISTS telegram_username text`;
+
+  /* TELEGRAM REDELIVERS.
+     Any update the webhook does not answer 200 for is sent again, every few
+     seconds, and a function that times out mid-write has already done half
+     the work. Without a record of what has been seen, one forwarded slip
+     becomes three bets. The primary key IS the check: the second insert of
+     the same update_id is refused by the database rather than by a SELECT
+     that two concurrent deliveries can both pass.
+
+     Rows are pruned on write rather than by a cron, because this table is
+     only ever read by the insert that fails. */
+  await sql`
+    CREATE TABLE IF NOT EXISTS telegram_updates (
+      update_id  bigint PRIMARY KEY,
+      seen_at    timestamptz NOT NULL DEFAULT now()
+    )`;
+  await sql`CREATE INDEX IF NOT EXISTS telegram_updates_seen_idx ON telegram_updates (seen_at)`;
 
   await sql`
     CREATE TABLE IF NOT EXISTS verification_codes (

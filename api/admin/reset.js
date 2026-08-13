@@ -35,7 +35,35 @@ function secretMatches(given) {
   return timingSafeEqual(a, b);
 }
 
-const SCOPES = ['accounts', 'bets', 'sessions'];
+const SCOPES = ['accounts', 'bets', 'sessions', 'everything'];
+
+/* EVERY TABLE, in an order that never leans on cascade behaviour.
+ *
+ * users cascades to most of these, so one DELETE would do it. It is written
+ * out anyway, children first, for two reasons: the count per table is the
+ * evidence the owner asked for, and a cascade that quietly stops working
+ * after a schema change would leave rows behind while still reporting
+ * success. Deleting a table that is already empty costs nothing.
+ *
+ * rate_limits has no user_id and would otherwise keep a fresh signup locked
+ * out of the very flow this just cleared. */
+const WIPE_ORDER = [
+  'group_requests',
+  'group_members',
+  'groups',
+  'follows',
+  'pl_entries',
+  'slip_drafts',
+  'slips',
+  'bets',
+  'promo_redemptions',
+  'password_resets',
+  'verification_codes',
+  'auth_sessions',
+  'telegram_updates',
+  'users',
+  'rate_limits'
+];
 
 export default async function handler(req, res) {
   if (!methodGuard(req, res, ['POST'])) return;
@@ -58,10 +86,41 @@ export default async function handler(req, res) {
     await ensureSchema();
 
     const body = await readJson(req, 4 * 1024);
+
+    /* THE FULL WIPE NEEDS THE SENTENCE TYPED OUT.
+       A scope name is a word somebody could send by accident from a script
+       they half-remembered. "DELETE EVERYTHING" is not. Both are required
+       and neither has a default, so a request missing either deletes
+       nothing rather than everything. */
+    const confirm = String((body && body.confirm) || '');
+    if (confirm === 'DELETE EVERYTHING') {
+      const sql = db();
+      const deleted = {};
+      for (const table of WIPE_ORDER) {
+        try {
+          /* Table names cannot be parameterised, so this list is a
+             hardcoded constant and nothing from the request reaches it. */
+          const rows = await sql(`DELETE FROM ${table} RETURNING 1`);
+          deleted[table] = rows.length;
+        } catch (err) {
+          /* A table that does not exist on this deployment yet is reported
+             rather than taking the whole wipe down. */
+          deleted[table] = 'skipped: ' + String(err.message || err).slice(0, 60);
+        }
+      }
+      return json(res, 200, {
+        ok: true, scope: 'everything', deleted,
+        note: 'Every account, bet, figure, group, draft, session and stored slip image is gone. ' +
+          'Emails and display names are free to reuse.'
+      });
+    }
+
     const scope = String(body.scope || '');
-    if (!SCOPES.includes(scope)) {
+    if (!SCOPES.includes(scope) || scope === 'everything') {
       return json(res, 400, {
-        error: 'Name a scope. Nothing was deleted.',
+        error: scope === 'everything'
+          ? 'A full wipe needs {"confirm":"DELETE EVERYTHING"}. Nothing was deleted.'
+          : 'Name a scope, or send {"confirm":"DELETE EVERYTHING"}. Nothing was deleted.',
         scopes: SCOPES
       });
     }
@@ -71,25 +130,24 @@ export default async function handler(req, res) {
     if (scope === 'sessions') {
       /* Signs everyone out. Accounts and bets are untouched. */
       const rows = await sql`DELETE FROM auth_sessions RETURNING 1`;
-      return json(res, 200, { ok: true, scope, sessions: rows.length });
+      return json(res, 200, { ok: true, scope, deleted: { auth_sessions: rows.length } });
     }
 
     if (scope === 'bets') {
-      const rows = await sql`DELETE FROM bets RETURNING 1`;
-      await sql`DELETE FROM slips`;
-      await sql`DELETE FROM slip_drafts`;
-      return json(res, 200, { ok: true, scope, bets: rows.length });
+      const bets = await sql`DELETE FROM bets RETURNING 1`;
+      const slips = await sql`DELETE FROM slips RETURNING 1`;
+      const drafts = await sql`DELETE FROM slip_drafts RETURNING 1`;
+      return json(res, 200, {
+        ok: true, scope,
+        deleted: { bets: bets.length, slips: slips.length, slip_drafts: drafts.length }
+      });
     }
 
-    /* accounts: everything. Users cascade to bets, slips, drafts, sessions,
-       verification codes, resets and redemptions, so one statement is the
-       whole job, but rate_limits has no user_id and would otherwise keep a
-       fresh signup locked out of the flow it just cleared. */
     const users = await sql`DELETE FROM users RETURNING 1`;
-    await sql`DELETE FROM rate_limits`;
+    const limits = await sql`DELETE FROM rate_limits RETURNING 1`;
     return json(res, 200, {
       ok: true, scope,
-      accounts: users.length,
+      deleted: { users: users.length, rate_limits: limits.length },
       note: 'Emails and display names are free to reuse.'
     });
   } catch (err) {

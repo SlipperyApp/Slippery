@@ -18,11 +18,13 @@ import { json, methodGuard, readJson, fail } from './_lib/http.js';
 import { db, ensureSchema, configured as dbConfigured, uniqueViolation } from './_lib/db.js';
 import { cashOutcome } from '../src/js/settlement.js';
 import { BOT, looksLikeCode, normaliseCode } from './_lib/bot-strings.js';
+import { unlimited, trialState, TRIAL_SLIPS } from './_lib/promo.js';
+import { limit } from './_lib/rate.js';
 
-/* The free tier, counted here as well as in /api/bets, the bot is a second
-   door into the same ledger, and a limit enforced at only one door is not a
-   limit. */
-const FREE_SLIPS = 20;
+/* The free tier used to be counted here against a hardcoded 20 while the
+   app counted against 35, so the bot cut somebody off fifteen slips early
+   and neither number was the one the dashboard displayed. Both doors read
+   trialState from promo.js now, which is the only place the figures live. */
 
 const API = token => 'https://api.telegram.org/bot' + token + '/';
 const MAX_PHOTO_BYTES = 8 * 1024 * 1024;
@@ -33,18 +35,54 @@ export default async function handler(req, res) {
   const secret = process.env.TELEGRAM_WEBHOOK_SECRET;
   try {
     if (!token) return json(res, 503, { error: 'Bot token not configured.' });
-    /* Without a secret the webhook URL is guessable and anyone could post a
-       forged update. That is a real risk, but a bot that refuses every
-       message is not a bot, so it runs, loudly, and every path below still
-       requires the chat to be linked to an account before it touches the
-       ledger. Set TELEGRAM_WEBHOOK_SECRET and this stops being permissive. */
+
+    /* THE SECRET IS NOT OPTIONAL ANY MORE.
+       This used to run without one and log a warning, on the reasoning
+       that a bot which refuses every message is not a bot. That is true
+       and it is the wrong trade: the webhook URL is public, so without the
+       header anybody who guesses it can post updates that look like they
+       came from Telegram, and the only thing between a forged update and
+       somebody's ledger is a chat id an attacker chooses. It refuses. */
     if (!secret) {
-      console.warn('[slippery] TELEGRAM_WEBHOOK_SECRET is unset; updates are unauthenticated');
-    } else if (!secretMatches(req.headers['x-telegram-bot-api-secret-token'], secret)) {
+      console.error('[slippery] TELEGRAM_WEBHOOK_SECRET is unset; refusing every update');
+      return json(res, 503, { error: 'Webhook secret not configured.' });
+    }
+    if (!secretMatches(req.headers['x-telegram-bot-api-secret-token'], secret)) {
       return json(res, 401, { error: 'Bad secret token.' });
     }
 
     const update = await readJson(req, 1024 * 1024);
+
+    /* ONE UPDATE, ONCE.
+       Telegram redelivers anything it does not get a 200 for, every few
+       seconds, and a function that times out halfway through a write has
+       already done half the work. Without this, one forwarded slip becomes
+       three bets. The primary key is the check: the second insert of the
+       same id is refused by the database rather than by a SELECT two
+       concurrent deliveries can both pass.
+
+       If the database is unreachable the update is processed anyway. A
+       duplicate bet is bad; silently dropping every slip somebody sends
+       during an outage is worse, and the confirm step is still a human
+       tapping a button. */
+    if (update.update_id != null && dbConfigured()) {
+      try {
+        await ensureSchema();
+        await db()`INSERT INTO telegram_updates (update_id) VALUES (${update.update_id})`;
+        /* Pruned here rather than by a cron: this table is only ever read
+           by the insert that fails, so it can be trimmed on the way past. */
+        if (Math.random() < 0.02) {
+          await db()`DELETE FROM telegram_updates WHERE seen_at < now() - interval '2 days'`;
+        }
+      } catch (err) {
+        if (uniqueViolation(err)) {
+          console.log('[slippery] telegram update already handled');
+          return json(res, 200, { ok: true, duplicate: true });
+        }
+        console.error('[slippery] telegram dedupe unavailable:', err && err.message);
+      }
+    }
+
     const message = update.message || update.edited_message;
     const callback = update.callback_query;
 
@@ -62,8 +100,35 @@ export default async function handler(req, res) {
       await handleCommand(token, chatId, text, message.from);
       return json(res, 200, { ok: true });
     }
-    if (message.photo || isImageDocument(message.document)) {
+    if (message.photo || isReadableDocument(message.document)) {
       await handleSlip(token, chatId, message, message.from);
+      return json(res, 200, { ok: true });
+    }
+
+    /* EVERYTHING ELSE SOMEBODY CAN SEND, ANSWERED BY NAME.
+       Replying "send me a bet slip" to a voice note reads as a bot that
+       did not notice what arrived. */
+    if (message.voice || message.audio || message.video_note) {
+      await send(token, chatId, BOT.gotVoice);
+      return json(res, 200, { ok: true });
+    }
+    if (message.sticker) { await send(token, chatId, BOT.gotSticker); return json(res, 200, { ok: true }); }
+    if (message.location || message.venue) {
+      await send(token, chatId, BOT.gotLocation);
+      return json(res, 200, { ok: true });
+    }
+    if (message.document) {
+      const kind = (message.document.file_name || '').split('.').pop().toLowerCase();
+      await send(token, chatId, BOT.gotFile(kind && kind.length <= 5 ? kind.toUpperCase() + ' file' : 'file'));
+      return json(res, 200, { ok: true });
+    }
+    if (message.video) { await send(token, chatId, BOT.gotFile('video')); return json(res, 200, { ok: true }); }
+
+    /* Text that reads like somebody typing a bet out. They get a useful
+       answer rather than the generic nudge, because they are trying to do
+       the right thing in the wrong format. */
+    if (text && LOOKS_LIKE_BET.test(text)) {
+      await send(token, chatId, BOT.gotTextBet);
       return json(res, 200, { ok: true });
     }
     /* Everything else: say what the bot actually wants, rather than going
@@ -84,8 +149,17 @@ function secretMatches(given, expected) {
   return a.length === b.length && timingSafeEqual(a, b);
 }
 
-const isImageDocument = doc =>
-  doc && typeof doc.mime_type === 'string' && doc.mime_type.startsWith('image/');
+/* Images and PDFs both go to the reader. A PDF is how bookmakers send a
+   statement, and the extractor already handles one. */
+const isReadableDocument = doc =>
+  doc && typeof doc.mime_type === 'string' &&
+  (doc.mime_type.startsWith('image/') || doc.mime_type === 'application/pdf');
+
+/* Somebody typing a bet out rather than sending the slip: a price, a stake
+   or a market in a sentence. Deliberately loose, because the reply is a
+   nudge rather than an action. */
+const LOOKS_LIKE_BET =
+  /\b(\d+\.\d{1,2}|\d+\/\d+)\b|\b(?:£|GBP)\s?\d|\bover\b|\bunder\b|\bacca\b|\bbtts\b|\bhandicap\b|\bwin\b/i;
 
 async function handleCommand(token, chatId, text, from) {
   const [command] = text.split(/\s+/);
@@ -98,8 +172,15 @@ async function handleCommand(token, chatId, text, from) {
          said "send /link followed by your code" and the user had to go back
          and copy it by hand. */
       const payload = (text.split(/\s+/)[1] || '').trim();
+      /* A deep link is exactly /link with the code. t.me/Bot?start=ABC123
+         arrives here as "/start ABC123", so it goes through the same
+         handler and gets the same answers, rather than a second
+         implementation that can drift from the first. */
       if (payload) { await handleLink(token, chatId, '/link ' + payload, from); return; }
-      await send(token, chatId, BOT.welcome);
+      /* Somebody who is already linked has done the setup. Repeating the
+         how-to at them is noise. */
+      const who = await linkedAccount(from);
+      await send(token, chatId, who ? BOT.welcomeBack(esc(who.display_name)) : BOT.welcome);
       break;
     }
     case '/help':
@@ -186,40 +267,63 @@ async function handleLink(token, chatId, text, from) {
     SELECT id, display_name FROM users
     WHERE telegram_id = ${telegramId} AND deleted_at IS NULL`;
 
-  const claimed = await sql`
-    SELECT id, display_name FROM users
-    WHERE link_code = ${code} AND deleted_at IS NULL
-      AND (link_code_expires_at IS NULL OR link_code_expires_at > now())`;
+  /* Every account holding this code, whatever state it is in, so the four
+     ways a code can fail are told apart instead of collapsing into one
+     unhelpful "that did not match". */
+  const holders = await sql`
+    SELECT id, display_name, telegram_id, link_code_expires_at, link_code_used_at
+    FROM users WHERE link_code = ${code} AND deleted_at IS NULL`;
 
-  if (!claimed.length) {
-    /* Tell an expired code apart from a wrong one. "That did not work" for
-       a code somebody read correctly thirty seconds too late sends them
-       looking for a mistake they did not make. */
-    const stale = await sql`
-      SELECT 1 FROM users
-      WHERE link_code = ${code} AND deleted_at IS NULL
-        AND link_code_expires_at IS NOT NULL AND link_code_expires_at <= now()`;
-    await send(token, chatId, stale.length ? BOT.linkExpired : BOT.linkNoMatch);
+  if (!holders.length) { await send(token, chatId, BOT.linkNoMatch); return; }
+  const target = holders[0];
+
+  if (target.link_code_used_at) { await send(token, chatId, BOT.linkUsed); return; }
+  if (target.link_code_expires_at && new Date(target.link_code_expires_at) <= new Date()) {
+    await send(token, chatId, BOT.linkExpired);
     return;
   }
 
   if (existing.length) {
-    if (existing[0].id === claimed[0].id) {
+    /* Already this account: a no-op that says so, not an error. */
+    if (existing[0].id === target.id) {
       await send(token, chatId, BOT.linkAlready(esc(existing[0].display_name)));
       return;
     }
+    /* Already a DIFFERENT account: refuse. Moving it silently would send
+       somebody's slips to another ledger with nothing saying so. */
     await send(token, chatId, BOT.linkTakenByOther(esc(existing[0].display_name)));
     return;
   }
 
-  /* The code is burned on use. A link code that still works after it has
-     been used is a link code somebody can screenshot and reuse. */
+  /* The ACCOUNT is already on another chat. Refused rather than replaced,
+     and this is the deliberate choice of the two: replacing means anybody
+     who gets hold of a code can quietly take over where an account's slips
+     arrive, and the real owner sees nothing at all. */
+  if (target.telegram_id && String(target.telegram_id) !== String(telegramId)) {
+    await send(token, chatId, BOT.linkAccountElsewhere);
+    return;
+  }
+
+  /* Stamped used rather than blanked. A code that still works after being
+     used is one somebody can screenshot; a code that vanishes cannot be
+     told apart from one that never existed. */
   await sql`
     UPDATE users
     SET telegram_id = ${telegramId}, telegram_linked_at = now(),
-        link_code = NULL, link_code_expires_at = NULL
-    WHERE id = ${claimed[0].id}`;
-  await send(token, chatId, BOT.linked(esc(claimed[0].display_name)));
+        telegram_username = ${(from && from.username) || null},
+        link_code_used_at = now(), link_code_expires_at = NULL
+    WHERE id = ${target.id}`;
+  await send(token, chatId, BOT.linked(esc(target.display_name)));
+}
+
+/* Which account, if any, this Telegram user is linked to. */
+async function linkedAccount(from) {
+  if (!dbConfigured() || !(from && from.id)) return null;
+  await ensureSchema();
+  const rows = await db()`
+    SELECT id, display_name FROM users
+    WHERE telegram_id = ${from.id} AND deleted_at IS NULL`;
+  return rows[0] || null;
 }
 
 async function handleWhoami(token, chatId, from) {
@@ -278,34 +382,81 @@ async function refuseUnlinked(token, chatId) {
   await send(token, chatId, BOT.notLinked + (first ? BOT.notLinkedHow : ''));
 }
 
-async function handleSlip(token, chatId, message, from) {
-  /* REFUSE BEFORE READING, NOT AFTER.
-     This used to download the image, send it to the reader, print every
-     field back and then quietly log nothing, because the chat was not
-     linked. It looked exactly like success. It also spent an Anthropic
-     call on somebody who could not have a bet saved. */
-  if (dbConfigured()) {
-    await ensureSchema();
-    const who = await db()`
-      SELECT id FROM users WHERE telegram_id = ${from && from.id} AND deleted_at IS NULL`;
-    if (!who.length) { await refuseUnlinked(token, chatId); return; }
+/* EVERY REASON NOT TO READ, CHECKED BEFORE READING.
+ *
+ * This used to download the image, send it to Anthropic, print every field
+ * back with a Confirm button and then quietly log nothing, because the
+ * chat was not linked. It looked exactly like success, and it spent a paid
+ * call doing it. Each gate below is a database read or a config check that
+ * costs nothing, and each one names the actual reason.
+ *
+ * @returns {Promise<{user?:object}|null>} null when the slip must not be read.
+ */
+async function slipGate(token, chatId, from) {
+  if (!dbConfigured()) { await send(token, chatId, BOT.noDatabase); return null; }
+  if (!process.env.ANTHROPIC_API_KEY) { await send(token, chatId, BOT.noReader); return null; }
+
+  await ensureSchema();
+  const rows = await db()`
+    SELECT id, display_name, plan, plan_until, trial_ends_at, break_until
+    FROM users WHERE telegram_id = ${from && from.id} AND deleted_at IS NULL`;
+  if (!rows.length) { await refuseUnlinked(token, chatId); return null; }
+  const user = rows[0];
+
+  /* A break is enforced on the server and cannot be shortened, including
+     from here. The bot is a second door into the same ledger, and a limit
+     enforced at one door is not a limit. */
+  if (user.break_until && new Date(user.break_until) > new Date()) {
+    await send(token, chatId, BOT.onBreak(dayLabel(user.break_until)));
+    return null;
   }
 
-  await send(token, chatId, BOT.reading);
+  /* One chat, a slip a few seconds. Somebody holding the shutter down on a
+     photo album would otherwise drain the reader's budget. */
+  if (!(await limit('tg-slip:' + chatId, 12, 300)).allowed) {
+    await send(token, chatId, BOT.tooFast);
+    return null;
+  }
+
+  /* The trial's two halves fail differently and deserve different
+     sentences: 35 slips in four days is somebody being asked early, which
+     is a compliment, and a fortnight running out is the ordinary time. */
+  if (!unlimited(user.plan, user.plan_until)) {
+    const used = await db()`SELECT count(*)::int AS n FROM bets WHERE user_id = ${user.id}`;
+    const trial = trialState({ slipsUsed: used[0].n, trialEndsAt: user.trial_ends_at });
+    if (!trial.active) {
+      await send(token, chatId,
+        trial.over === 'slips' ? BOT.trialOverSlips(TRIAL_SLIPS) : BOT.trialOverDays);
+      return null;
+    }
+  }
+  return { user };
+}
+
+const dayLabel = d => new Date(d).toLocaleDateString('en-GB',
+  { day: 'numeric', month: 'long', timeZone: 'Europe/London' });
+
+async function handleSlip(token, chatId, message, from) {
+  const gate = await slipGate(token, chatId, from);
+  if (!gate) return;
+
+  /* Sent once and then edited in place, so the chat does not fill with a
+     "Reading…" line above every card. */
+  const statusId = await send(token, chatId, BOT.reading);
 
   const fileId = message.photo
     ? message.photo[message.photo.length - 1].file_id   // largest rendition
     : message.document.file_id;
 
   const file = await tg(token, 'getFile', { file_id: fileId });
-  if (!file.ok) { await send(token, chatId, BOT.downloadFailed); return; }
+  if (!file.ok) { await replace(token, chatId, statusId, BOT.downloadFailed); return; }
   if (file.result.file_size && file.result.file_size > MAX_PHOTO_BYTES) {
-    await send(token, chatId, BOT.tooLarge);
+    await replace(token, chatId, statusId, BOT.tooLarge);
     return;
   }
 
   const bin = await fetch('https://api.telegram.org/file/bot' + token + '/' + file.result.file_path);
-  if (!bin.ok) { await send(token, chatId, BOT.downloadFailed); return; }
+  if (!bin.ok) { await replace(token, chatId, statusId, BOT.downloadFailed); return; }
   const base64 = Buffer.from(await bin.arrayBuffer()).toString('base64');
 
   const origin = process.env.PUBLIC_ORIGIN || 'https://slippery-iota.vercel.app';
@@ -316,13 +467,14 @@ async function handleSlip(token, chatId, message, from) {
   });
   const payload = await read.json().catch(() => ({}));
   if (!read.ok) {
-    await send(token, chatId, BOT.readerFailed(esc(payload.error || 'the reader is unavailable')));
+    await replace(token, chatId, statusId,
+      BOT.readerFailed(esc(payload.error || 'the reader is unavailable')));
     return;
   }
 
   const f = payload.fields || {};
   if (!f.readable) {
-    await send(token, chatId, BOT.unreadable);
+    await replace(token, chatId, statusId, BOT.unreadable);
     return;
   }
 
@@ -371,7 +523,8 @@ async function handleSlip(token, chatId, message, from) {
       ? [[{ text: BOT.btnConfirm, callback_data: 'ok:' + draftId }, { text: BOT.btnDiscard, callback_data: 'no:' + draftId }]]
       : [[{ text: BOT.btnEdit, callback_data: 'edit' }]];
 
-  await send(token, chatId,
+  /* The "Reading…" line becomes the card. */
+  await replace(token, chatId, statusId,
     (missing.length ? BOT.slipHeadPartial : BOT.slipHeadOk) + body + stageLine +
     (missing.length
       ? BOT.slipMissing(missing.join(', '))
@@ -409,17 +562,40 @@ async function confirmDraft(token, chatId, draftId, from) {
   try {
     await ensureSchema();
     const sql = db();
+    /* CLAIM IT WITH THE DELETE, NOT WITH A SELECT.
+       Tapping Confirm twice, or Telegram redelivering the callback, used
+       to run two SELECTs that both found the draft and both inserted a
+       bet. Deleting first means exactly one caller gets the row back and
+       every other one gets nothing, decided by the database rather than by
+       timing. */
     const rows = await sql`
-      SELECT d.id, d.fields, d.user_id, u.plan
-      FROM slip_drafts d JOIN users u ON u.id = d.user_id
-      WHERE d.id = ${draftId} AND u.deleted_at IS NULL`;
-    if (!rows.length) { await send(token, chatId, BOT.draftGone); return; }
+      DELETE FROM slip_drafts d
+      USING users u
+      WHERE d.id = ${draftId} AND u.id = d.user_id AND u.deleted_at IS NULL
+      RETURNING d.id, d.fields, d.user_id, d.created_at, u.plan, u.plan_until, u.trial_ends_at`;
+    if (!rows.length) { await send(token, chatId, BOT.alreadyLogged); return; }
 
-    const { fields: f, user_id: userId, plan } = rows[0];
-    if ((plan || 'free') === 'free') {
+    /* A day old is stale. The odds on the slip may have been a price that
+       no longer exists, and somebody scrolling back through a chat and
+       tapping an old Confirm should get a fresh read rather than a bet
+       logged from a reading they have forgotten making. */
+    if (rows[0].created_at && Date.now() - new Date(rows[0].created_at) > 24 * 3600 * 1000) {
+      await send(token, chatId, BOT.draftExpired);
+      return;
+    }
+
+    const { fields: f, user_id: userId, plan, plan_until: planUntil,
+            trial_ends_at: trialEndsAt } = rows[0];
+    /* The same rules /api/bets applies, from the same module. The bot is a
+       second door into one ledger, and a limit enforced at one door is not
+       a limit. This used to count against a hardcoded 20 while the app
+       counted against 35. */
+    if (!unlimited(plan, planUntil)) {
       const used = await sql`SELECT count(*)::int AS n FROM bets WHERE user_id = ${userId}`;
-      if (used[0].n >= FREE_SLIPS) {
-        await send(token, chatId, BOT.trialUsedUp(FREE_SLIPS));
+      const trial = trialState({ slipsUsed: used[0].n, trialEndsAt });
+      if (!trial.active) {
+        await send(token, chatId,
+          trial.over === 'slips' ? BOT.trialOverSlips(TRIAL_SLIPS) : BOT.trialOverDays);
         return;
       }
     }
@@ -453,7 +629,6 @@ async function confirmDraft(token, chatId, draftId, from) {
               ${outcome ? 'settled' : 'pending'}, now(),
               ${outcome ? new Date() : null},
               ${outcome ? 'Result read from the slip' : null}, 'telegram')`;
-    await sql`DELETE FROM slip_drafts WHERE id = ${draftId}`;
 
     const net = await sql`
       SELECT COALESCE(sum(profit_pence), 0)::int AS net, count(*)::int AS n
@@ -478,14 +653,32 @@ async function tg(token, method, payload) {
   });
   return res.json().catch(() => ({ ok: false }));
 }
-function send(token, chatId, text, replyMarkup) {
-  return tg(token, 'sendMessage', {
+/* Sent messages come back with an id, so the "Reading your slip…" line can
+   become the card rather than sitting above it forever. */
+async function send(token, chatId, text, replyMarkup) {
+  const r = await tg(token, 'sendMessage', {
     chat_id: chatId,
     text,
     parse_mode: 'Markdown',
-    disable_web_page_preview: true,
     ...(replyMarkup ? { reply_markup: replyMarkup } : {})
   });
+  return r && r.ok && r.result ? r.result.message_id : null;
+}
+
+/* Edit in place, falling back to a new message. Telegram refuses an edit
+   whose text is identical to what is there, and refuses one on a message
+   older than 48 hours; neither is worth losing the reply over. */
+async function replace(token, chatId, messageId, text, replyMarkup) {
+  if (!messageId) return send(token, chatId, text, replyMarkup);
+  const r = await tg(token, 'editMessageText', {
+    chat_id: chatId,
+    message_id: messageId,
+    text,
+    parse_mode: 'Markdown',
+    ...(replyMarkup ? { reply_markup: replyMarkup } : {})
+  });
+  if (r && r.ok) return messageId;
+  return send(token, chatId, text, replyMarkup);
 }
 /* Markdown parse_mode means an unescaped * or _ in a bookmaker name breaks
    the whole message. */

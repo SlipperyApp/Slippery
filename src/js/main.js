@@ -2649,6 +2649,7 @@ async function init() {
     if (!user) return;
     R.renderAccount(user);
     await loadLedger();
+    startLive();
     if (!stayPut) go('dash');
   });
 
@@ -2663,6 +2664,8 @@ async function init() {
   if (user) {
     R.renderAccount(user);
     await loadLedger();
+    /* Watch for bets the bot writes while this tab is open. */
+    startLive();
     /* Land a signed-in visitor on their dashboard rather than the pitch,
        unless they asked for a particular view. */
     if (S.view === 'landing' && !location.hash) go('dash');
@@ -2684,6 +2687,50 @@ async function init() {
       w.classList.add('tumble');
     }, 8000);
   }
+}
+
+/* ---------------- the bot writes, the dashboard notices ----------------
+ *
+ * A bet confirmed in Telegram is written by the server, and the dashboard
+ * has no idea. Before this you had to pull to refresh or log in again to
+ * see a bet you had just logged from your phone, which makes the whole
+ * "forward a slip and it appears" claim false in the one moment somebody
+ * is watching for it.
+ *
+ * Polling, not a socket. A socket needs a long-lived connection and Vercel
+ * functions do not have one; the honest version of live on this stack is
+ * asking again. Twice a minute while the tab is in front of somebody, and
+ * never while it is hidden, so a dashboard left open in a background tab
+ * costs nothing.
+ *
+ * The immediate refetch on becoming visible is the one that matters. The
+ * ordinary sequence is: open the dashboard, switch to Telegram, forward a
+ * slip, tap Confirm, switch back. Coming back to the tab is exactly when
+ * the new bet should already be there. */
+const LIVE_MS = 30000;
+let liveTimer = null;
+
+async function refreshQuietly() {
+  if (!ME || document.hidden) return;
+  if (S.view !== 'dash') return;
+  const before = LEDGER.length + PENDING.length;
+  const r = await get('/api/bets');
+  if (!r.ok) return;
+  hydrate(r.body);
+  R.renderAll();
+  const after = LEDGER.length + PENDING.length;
+  /* Only says something when something arrived. A toast every thirty
+     seconds saying nothing changed is worse than no toast. */
+  if (after > before) {
+    toast((after - before) + (after - before === 1 ? ' bet' : ' bets') + ' arrived from Telegram');
+  }
+}
+
+function startLive() {
+  if (liveTimer) return;
+  liveTimer = setInterval(refreshQuietly, LIVE_MS);
+  /* Coming back to the tab beats waiting out the interval. */
+  addEventListener('visibilitychange', () => { if (!document.hidden) refreshQuietly(); });
 }
 
 /* Back and forward. `fromHistory` stops go() from pushing the entry it is

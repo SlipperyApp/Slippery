@@ -14,10 +14,13 @@ import { configured as dbConfigured } from './_lib/db.js';
 import { probeSources } from './_lib/fixtures.js';
 import { breakerState } from './_lib/net.js';
 import * as mail from './_lib/mail.js';
-import { webhookStatus } from './_lib/telegram-setup.js';
+import { webhookStatus, ensureWebhookOnce } from './_lib/telegram-setup.js';
 
 export default async function handler(req, res) {
   if (!methodGuard(req, res, ['GET'])) return;
+  /* One check per cold instance, not awaited: a redeployed bot otherwise
+     answers nothing until the cron runs twenty minutes later. */
+  ensureWebhookOnce();
   try {
     const has = name => Boolean(process.env[name]);
     return json(res, 200, {

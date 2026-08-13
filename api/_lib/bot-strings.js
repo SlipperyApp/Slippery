@@ -25,7 +25,20 @@
  *   · Say "I" for the bot. It is answering, not narrating.
  *   · A refusal explains itself in one sentence. "I will not guess at
  *     numbers I cannot see" is the tone; "invalid input" is not.
+ *   · About 280 characters. A chat message longer than that is scrolled
+ *     past, and the reply to a refusal is the one somebody most needs to
+ *     read. Enforced by tests/bot-strings.test.mjs.
+ *
+ * THE TWO EXEMPTIONS, and why. `help` has to list seven commands and
+ * `welcome` has to explain what the product is to somebody who has just
+ * opened the chat. Both are reference text somebody reads deliberately
+ * rather than a reply they are trying to get past, so they are allowed
+ * 600. Nothing else is, and the test names them so a third one cannot be
+ * added quietly.
  */
+export const LONG_ALLOWED = ['welcome', 'help'];
+export const MAX_LEN = 280;
+export const MAX_LEN_LONG = 600;
 
 /* The one place the trial numbers are worded for chat. The figures
    themselves come from promo.js so the bot and the app cannot disagree. */
@@ -59,6 +72,21 @@ export const BOT = {
     'ask for a clearer photo rather than invent a stake.',
 
   unknownCommand: 'I do not know that one. /help lists what I can do.',
+
+  /* THINGS THAT ARE NOT A SLIP AND NOT A COMMAND.
+     Each gets its own line, because "send me a bet slip" in reply to a
+     voice note reads as a bot that did not notice what you sent. */
+  gotVoice:
+    'I cannot listen to audio. Send a screenshot of the slip and I will read it.',
+  gotSticker:
+    'Nice. I read bet slips though, so send me a screenshot of one.',
+  gotLocation:
+    'I do not do anything with locations. Send a screenshot of a bet slip instead.',
+  gotFile: kind =>
+    'I cannot read a ' + kind + '. Send a screenshot, a photo, or a PDF of the slip.',
+  gotTextBet:
+    'That looks like a bet, but I only log what I can see on a slip. ' +
+    'Send the screenshot and I will read the stake and price off it.',
 
   /* Anything that is not a command and not an image. */
   nudge:
@@ -105,9 +133,29 @@ export const BOT = {
     'I will not move it without being told to. Send /unlink first if you ' +
     'really want to connect it to a different account.',
   linkAlready: name => 'This chat is already linked to *' + name + '*. Nothing to do.',
+  /* A code that has been claimed once. Told apart from a code that never
+     existed, because somebody sending the same code twice is otherwise
+     told it does not match an account and goes hunting a mistake they did
+     not make. */
+  linkUsed:
+    'That code has already been used. Open Settings and generate a new one.',
+  /* THE ACCOUNT IS ON ANOTHER CHAT. Refuse, do not replace.
+     Replacing would mean somebody who gets hold of a code can silently
+     take over where an account's slips arrive, and the real owner would
+     see nothing at all. Unlinking from the old chat is deliberate and
+     takes one message. */
+  linkAccountElsewhere:
+    'That account is already linked to a different Telegram chat.\n\n' +
+    'Send /unlink from that chat first, or unlink it in Settings.',
   linked: name =>
     'Linked to *' + name + '*. Send me a slip whenever you are ready.',
   linkNoDb: 'Account linking is not available on this deployment yet.',
+
+  /* /start from a chat that is already linked. Names the account and stops:
+     repeating the how-to at somebody who has already done it is noise. */
+  welcomeBack: name =>
+    'This chat is linked to *' + name + '*.\n\n' +
+    'Forward me a slip when you place a bet, and I will read it and log it.',
 
   whoami: (name, since) =>
     'This chat is linked to *' + name + '*, since ' + since + '.\n\n' +
@@ -123,6 +171,27 @@ export const BOT = {
   /* ---------------- reading a slip ---------------- */
 
   reading: 'Reading your slip…',
+
+  /* ---- refusals that come BEFORE an extraction call ----
+     Each one costs nothing and saves an Anthropic call on a slip that
+     could not have been logged anyway. */
+  trialOverSlips: n =>
+    'That is all ' + n + ' free slips used, so I have stopped reading. ' +
+    'Subscribe in the app and send it again. Everything logged stays where it is.',
+  trialOverDays:
+    'Your two week trial is over, so I have stopped reading slips. ' +
+    'Subscribe in the app and send it again. Everything logged stays where it is.',
+  onBreak: until =>
+    'You are on a break until ' + until + ', so I am not logging anything. ' +
+    'A break can be extended but never shortened, including by me.',
+  noReader:
+    'The slip reader is not switched on for this deployment ' +
+    '(ANTHROPIC_API_KEY is not set), so I cannot read that. Nothing was logged.',
+  noDatabase:
+    'This deployment has no database connected (DATABASE_URL is not set), ' +
+    'so there is nowhere to save a bet. Nothing was logged.',
+  tooFast:
+    'That is a lot of slips at once. Give me a minute and send the next one.',
   downloadFailed: 'I could not download that image. Try sending it again.',
   tooLarge: 'That image is too large for me to read. Try a screenshot instead.',
   readerFailed: why => 'I could not read that one: ' + why + '. Nothing was logged.',
@@ -160,6 +229,10 @@ export const BOT = {
   /* ---------------- logging ---------------- */
 
   discarded: 'Discarded. Nothing was logged.',
+  draftExpired:
+    'That reading is more than a day old, so I have let it go. ' +
+    'Send the slip again and I will read it fresh.',
+  alreadyLogged: 'That one is already logged. I have not added it twice.',
   draftGone: 'That slip has already been dealt with.',
   logNoDb: 'This deployment has no database yet, so I cannot log that.',
   logFailed: 'Something went wrong saving that. Nothing was logged, try again.',

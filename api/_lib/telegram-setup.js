@@ -56,6 +56,34 @@ export function webhookUrl() {
   return base ? base.replace(/\/+$/, '') + '/api/telegram' : '';
 }
 
+/* COLD START REGISTRATION.
+ *
+ * The cron fixes the webhook within twenty minutes, which is twenty
+ * minutes of a redeployed bot answering nothing. The webhook handler
+ * itself cannot fix it, because a broken webhook means no updates arrive
+ * to trigger it. So every other function checks on its first invocation
+ * after a cold start: one getWebhookInfo, once per instance, not awaited
+ * by anything a user is waiting on.
+ *
+ * Once per INSTANCE rather than once per request. A serverless instance
+ * serves many requests and lives for minutes, so this is a handful of
+ * calls a day rather than one per page load. */
+let checkedThisInstance = false;
+
+export function ensureWebhookOnce() {
+  if (checkedThisInstance) return;
+  checkedThisInstance = true;
+  if (!process.env.TELEGRAM_BOT_TOKEN) return;
+  /* Deliberately not awaited. Nobody's request should wait on Telegram,
+     and a failure here must not fail the request that triggered it. */
+  ensureWebhook()
+    .then(r => {
+      if (r.state === 'registered') console.log('[slippery] telegram webhook registered on cold start');
+      else if (r.state !== 'ok') console.warn('[slippery] telegram webhook', r.state, r.why || '');
+    })
+    .catch(err => console.warn('[slippery] telegram webhook check failed:', err && err.message));
+}
+
 /**
  * Make sure Telegram is pointed here. Safe to call as often as you like.
  *
