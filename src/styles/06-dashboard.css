@@ -16,11 +16,20 @@
    screen, so the touch target stays well past the 24px floor even though
    the ink is 11px. Shrinking the target rather than the type would have
    been the wrong half to cut. */
+/* Full window width, buttons still on the content column.
+   The bar used to live inside .wrap and bleed with margin:0 -16px, which
+   made it exactly the column plus its padding: on a wide browser it
+   stopped at 692px while the page carried on either side of it, and it
+   read as a floating strip rather than a header. It is now a sibling of
+   the column, so width:100% is the window, and .inner re-applies the same
+   660px maximum the content uses so nothing moves horizontally. */
 .subnav{
-  position:sticky;top:57px;z-index:30;margin:0 -16px;padding:3px 0 0;
+  position:sticky;top:57px;z-index:30;padding:3px 0 0;
   background:color-mix(in srgb,var(--bg) 92%,transparent);
   box-shadow:0 8px 16px -10px rgba(0,0,0,.75);
-  & .inner{display:flex;gap:2px;justify-content:center;overflow-x:auto;padding:0 16px;
+  border-bottom:1px solid var(--e2);
+  & .inner{display:flex;gap:2px;justify-content:center;overflow-x:auto;
+    max-width:660px;margin:0 auto;padding:0 16px;
     scrollbar-width:none;overscroll-behavior-x:contain;
     &::-webkit-scrollbar{display:none}}
   & button{position:relative;font-family:var(--fm);font-size:10.5px;font-weight:600;

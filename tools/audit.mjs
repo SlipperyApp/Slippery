@@ -927,11 +927,33 @@ async function main() {
     const before = posted.length;
     await page.evaluate(() => { const b = document.getElementById('csvGo'); if (b) b.click(); });
     await page.waitForTimeout(600);
-    const bulk = posted.slice(before).find(b => Array.isArray(b.bets));
-    if (!bulk) fail('import', 'the CSV import button did not POST the bets');
-    else if (bulk.bets.length !== 2) fail('import', 'POSTed ' + bulk.bets.length + ' bets, expected 2');
-    else if (bulk.bets[0].stakePence !== 2000)
-      fail('import', 'CSV stake became ' + bulk.bets[0].stakePence + ' pence, expected 2000');
+    /* AN IMPORT IS A DATED FIGURE, NEVER A GAME.
+       This used to POST every parsed row as a bet. Those bets could not
+       settle, could not be checked against a slip, and landed in every
+       per-market breakdown as rows nobody could verify. The two fixture
+       rows are on two different dates, so they must arrive as two dated
+       profit and loss figures carrying their own turnover and count. */
+    const bulk = posted.slice(before).find(b => Array.isArray(b.pl));
+    if (posted.slice(before).some(b => Array.isArray(b.bets)))
+      fail('import', 'a CSV import POSTed bets, but an imported row has no slip behind it ' +
+        'and must arrive as a dated figure');
+    if (!bulk) fail('import', 'the CSV import button did not POST any figures');
+    else if (bulk.pl.length !== 2)
+      fail('import', 'POSTed ' + bulk.pl.length + ' dated figures, expected 2');
+    else {
+      const byDate = Object.fromEntries(bulk.pl.map(r => [r.date, r]));
+      const aug9 = byDate['2026-08-09'];
+      if (!aug9) fail('import', 'no figure landed on 2026-08-09, got ' + Object.keys(byDate).join(', '));
+      else {
+        if (aug9.period !== 'day') fail('import', 'an imported figure was not a day figure');
+        if (aug9.profitPence !== 1700)
+          fail('import', 'CSV profit became ' + aug9.profitPence + ' pence, expected 1700');
+        if (aug9.turnoverPence !== 2000)
+          fail('import', 'CSV turnover became ' + aug9.turnoverPence + ' pence, expected 2000');
+        if (aug9.bets !== 1)
+          fail('import', 'the figure claimed ' + aug9.bets + ' bets behind it, expected 1');
+      }
+    }
 
     await page.close();
   }

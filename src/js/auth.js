@@ -268,9 +268,67 @@ export async function submitVerify(next) {
   next();
 }
 
+/* Resend, with a cooldown and an honest answer.
+ *
+ * This was reported as "resending code doesn't let it resend to me", and
+ * there were two reasons for that, neither of them visible from the
+ * button. The server answered 200 whether or not the mail actually left,
+ * so a deployment with no mailer, or a send that threw, still said "New
+ * code sent". And the endpoint is rate limited to five in fifteen minutes,
+ * which the button gave no sign of, so pressing it repeatedly quietly did
+ * nothing from the sixth press on.
+ *
+ * The server now distinguishes those cases. This shows them, and stops the
+ * button lying about being available. */
+let resendUntil = 0;
+let resendTimer = 0;
+
+function paintResend() {
+  const btn = $('verifyResend');
+  if (!btn) return;
+  const left = Math.ceil((resendUntil - Date.now()) / 1000);
+  if (left > 0) {
+    btn.disabled = true;
+    btn.textContent = 'Resend code in ' + left + 's';
+  } else {
+    btn.disabled = false;
+    btn.textContent = 'Resend code';
+    clearInterval(resendTimer);
+    resendTimer = 0;
+  }
+}
+
 export async function resend() {
-  const { ok, body } = await post('/api/auth/resend', { email: pendingEmail });
-  toast(ok ? 'New code sent' : (body.error || 'Could not resend just now'));
+  if (Date.now() < resendUntil) return;
+  if (!pendingEmail) {
+    toast('Go back a step and enter your email first.');
+    return;
+  }
+  const btn = $('verifyResend');
+  if (btn) { btn.disabled = true; btn.textContent = 'Sending…'; }
+
+  const { ok, status, body } = await post('/api/auth/resend', { email: pendingEmail });
+
+  if (ok) {
+    showSender(body.from);
+    toast('New code sent to ' + pendingEmail);
+    const hint = $('verifyHint');
+    if (hint) {
+      hint.hidden = false;
+      hint.textContent = 'A new code is on its way. The previous one has stopped working.';
+    }
+    /* Thirty seconds is long enough that a second press is a real decision
+       and short enough that a genuinely lost email is not a wait. */
+    resendUntil = Date.now() + 30000;
+  } else if (status === 429) {
+    toast('Too many codes requested. Wait a few minutes, or use Change email.');
+    resendUntil = Date.now() + 120000;
+  } else {
+    toast(body.error || 'The code did not go out. Try again in a moment.');
+  }
+
+  paintResend();
+  if (!resendTimer && Date.now() < resendUntil) resendTimer = setInterval(paintResend, 1000);
 }
 
 /* ---- password reset ----

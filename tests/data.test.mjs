@@ -12,10 +12,19 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import {
-  LEDGER, PENDING, IMPORTED, DAY_TOTALS, TODAY,
-  hydrate, setImported, addBet, settleLocal, monthTotal, yearTotal, betsOn
+  LEDGER, PENDING, DAY_TOTALS, TODAY,
+  hydrate, addBet, settleLocal, monthTotal, yearTotal, betsOn
 } from '../src/js/data.js';
-import { lifetime } from '../src/js/stats.js';
+import { lifetime, importedTotals, usablePl } from '../src/js/stats.js';
+
+/* Imported history is a dated profit or loss with nothing behind it. There
+   used to be a second store, IMPORTED, holding it as one aggregate blob
+   that nothing ever wrote to, so imports moved the profit and loss figure
+   by exactly zero while still drawing on the calendar. These rows are the
+   one representation now. */
+const iso = day => new Date(Date.UTC(TODAY.year, TODAY.month, day)).toISOString().slice(0, 10);
+const plRow = (day, period, profit, over = {}) => Object.assign(
+  { date: iso(day), period, profit, turnover: 0, bets: 0, source: 'import' }, over);
 
 /* A day builder, so the fixtures below read as bets rather than as dates. */
 const at = (day, over = {}) => Object.assign({
@@ -31,7 +40,6 @@ const load = bets => hydrate({ bets });
 
 test('a fresh store is empty, and says so rather than inventing a figure', () => {
   load([]);
-  setImported(null);
   assert.equal(LEDGER.length, 0);
   assert.equal(PENDING.length, 0);
   assert.equal(monthTotal(TODAY.month), 0);
@@ -72,28 +80,65 @@ test('the month is exactly the sum of its days, and the year of its months', () 
 });
 
 test('all time is the ledger plus imports, and cannot drift from either', () => {
-  load([at(3, { profit: 9000, stake: 10000 }), at(5, { profit: -4000, stake: 4000 })]);
-  setImported({ profit: 1_000_000, turnover: 20_000_000, bets: 2000, won: 1100, lost: 800, cash: 100 });
+  hydrate({
+    bets: [at(3, { profit: 9000, stake: 10000 }), at(5, { profit: -4000, stake: 4000 })],
+    pl: [plRow(12, 'day', 1_000_000, { turnover: 20_000_000, bets: 2000 })]
+  });
 
   const l = lifetime();
+  const imp = importedTotals();
   const ledgerProfit = LEDGER.reduce((a, b) => a + b.profit, 0);
   const ledgerTurnover = LEDGER.reduce((a, b) => a + b.stake, 0);
 
-  assert.equal(l.profit, ledgerProfit + IMPORTED.profit);
-  assert.equal(l.turnover, ledgerTurnover + IMPORTED.turnover);
-  assert.equal(l.bets, LEDGER.length + IMPORTED.bets);
+  assert.equal(imp.profit, 1_000_000);
+  assert.equal(l.profit, ledgerProfit + imp.profit);
+  assert.equal(l.turnover, ledgerTurnover + imp.turnover);
+  assert.equal(l.bets, LEDGER.length + imp.bets);
   /* The exact figure matters less than the fact that there is only one way
      to compute it. Recomputing it here by hand must agree. */
-  assert.equal(l.roi, (ledgerProfit + IMPORTED.profit) / (ledgerTurnover + IMPORTED.turnover) * 100);
+  assert.equal(l.roi, (ledgerProfit + imp.profit) / (ledgerTurnover + imp.turnover) * 100);
 });
 
 test('imports alone still reconcile, with an empty ledger', () => {
-  load([]);
-  setImported({ profit: 500_000, turnover: 10_000_000, bets: 1200, won: 600, lost: 550, cash: 50 });
+  hydrate({ bets: [], pl: [plRow(9, 'day', 500_000, { turnover: 10_000_000, bets: 1200 })] });
   const l = lifetime();
   assert.equal(l.profit, 500_000);
   assert.equal(l.bets, 1200);
   assert.equal(l.turnover, 10_000_000);
+});
+
+test('an imported figure actually reaches the profit and loss', () => {
+  /* The bug this exists for: rows were written, drawn on the calendar, and
+     then left out of every total, so importing a year of history moved the
+     headline figure by nothing at all. */
+  hydrate({ bets: [], pl: [] });
+  const before = lifetime().profit;
+  hydrate({ bets: [], pl: [plRow(6, 'day', 25_000)] });
+  assert.equal(lifetime().profit, before + 25_000);
+});
+
+test('a month figure and its own days never both count', () => {
+  /* Somebody can hold a total for the month and totals for four days in
+     it. Adding both counts the month twice; the finer record wins. */
+  hydrate({
+    bets: [],
+    pl: [
+      plRow(1, 'month', 90_000, { bets: 40 }),
+      plRow(4, 'day', 10_000, { bets: 3 }),
+      plRow(11, 'day', -6_000, { bets: 2 })
+    ]
+  });
+  const kept = usablePl();
+  assert.equal(kept.length, 2, 'the month is dropped, its two days survive');
+  assert.ok(kept.every(p => p.period === 'day'));
+  assert.equal(importedTotals().profit, 4_000);
+  assert.equal(importedTotals().bets, 5);
+});
+
+test('a month figure with no days inside it still counts', () => {
+  hydrate({ bets: [], pl: [plRow(1, 'month', 90_000, { bets: 40 })] });
+  assert.equal(importedTotals().profit, 90_000);
+  assert.equal(importedTotals().bets, 40);
 });
 
 test('money stays integer pence through the whole store', () => {
@@ -107,7 +152,6 @@ test('money stays integer pence through the whole store', () => {
 
 test('adding a bet lands it in the right list and moves the day total', () => {
   load([]);
-  setImported(null);
   addBet({ id: 'n1', event: 'A v B', selection: 'Over 2.5', stake: 5000, odds: 2,
            profit: null, outcome: null, status: 'pending',
            placedAt: new Date(TODAY.year, TODAY.month, 6, 12, 0).toISOString() });
@@ -118,7 +162,6 @@ test('adding a bet lands it in the right list and moves the day total', () => {
 
 test('settling a running bet moves it, and every view moves with it', () => {
   load([]);
-  setImported(null);
   addBet({ id: 'n2', event: 'A v B', selection: 'Over 2.5', stake: 10000, odds: 1.9,
            profit: null, outcome: null, status: 'pending',
            placedAt: new Date(TODAY.year, TODAY.month, 8, 12, 0).toISOString() });
@@ -136,7 +179,6 @@ test('settling a running bet moves it, and every view moves with it', () => {
 
 test('a void settles to zero profit with the stake returned', () => {
   load([]);
-  setImported(null);
   addBet({ id: 'n3', event: 'A v B', selection: 'Over 2.5', stake: 12000, odds: 2.1,
            profit: null, outcome: null, status: 'pending',
            placedAt: new Date(TODAY.year, TODAY.month, 11, 12, 0).toISOString() });

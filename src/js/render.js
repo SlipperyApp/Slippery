@@ -5,9 +5,10 @@ import { S } from './state.js';
 import * as M from './money.js';
 import {
   LEDGER, PENDING, PEOPLE, GROUPS, TODAY, THEMES, THEME_BG, BOOKS, TIPSTERS,
-  OUTCOME_ICON, OUTCOME_LABEL, outcomeGroup, personMonths, personDays, IMPORTED, ico, TRIAL, FOUND, PL, CAPTURE
+  OUTCOME_ICON, OUTCOME_LABEL, outcomeGroup, personMonths, personDays, ico, TRIAL, FOUND, PL, CAPTURE
 } from './data.js';
 import {
+  importedTotals,
   stats, lifetime, dayMap, monthTotal, dowLabels, dowOffset, weekRange, targetFor
 } from './stats.js';
 
@@ -259,13 +260,21 @@ export function renderHeadline() {
     }
   }
 
-  /* All time reaches past the ledger into imported history. Saying so is
-     the difference between a number that reconciles and one that lies. */
+  /* The period figure reaches past the ledger into imported history. Saying
+     so is the difference between a number that reconciles and one that
+     lies, and it is now said in whatever period is on screen rather than
+     only on all time: an imported March shows up when you look at March.
+
+     The figures used to be written, drawn on the calendar and then left
+     out of every total, so importing a year of history moved the profit
+     and loss by exactly nothing. */
   const note = $('importedNote');
+  const imp = importedTotals();
   if (p.includesImported) {
     note.hidden = false;
     note.textContent = M.plain(p.ledgerBets) + ' slips in the ledger, plus ' +
-      M.plain(IMPORTED.bets) + ' bets imported from 2023–2025 as totals.';
+      (imp.bets ? M.plain(imp.bets) + ' imported bets' : 'imported figures') +
+      ' with no slips behind them.';
   } else note.hidden = true;
 
   $('kpiRow').innerHTML = [

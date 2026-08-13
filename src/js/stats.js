@@ -7,7 +7,7 @@
  * screen it is counted here, from records.
  */
 import {
-  LEDGER, PENDING, DAY_TOTALS, IMPORTED, TODAY, monthTotal as monthTotalOf,
+  LEDGER, PENDING, DAY_TOTALS, PL, TODAY, monthTotal as monthTotalOf,
   TARGETS, outcomeGroup, betsOn
 } from './data.js';
 import { S } from './state.js';
@@ -55,8 +55,7 @@ export function monthTotal(month) {
   return Object.keys(d).reduce((a, k) => a + d[k], 0);
 }
 
-/* Which bets fall inside the current period. All time is the only period
-   that reaches past the ledger into imported history, and it says so. */
+/* Which bets fall inside the current period. */
 function scopeBets(S) {
   if (S.period === 'a') return LEDGER.slice();
   if (S.period === 'd' && S.focus != null) return betsOn(S.month, S.focus);
@@ -65,6 +64,93 @@ function scopeBets(S) {
     return LEDGER.filter(b => b.month === S.month && b.day >= r.a && b.day <= r.b);
   }
   return LEDGER.filter(b => b.month === S.month);
+}
+
+/* ---------------- imported figures ----------------
+ *
+ * Imported history is a dated profit or loss with nothing behind it: no
+ * fixture, no selection, no odds. That is deliberate and it is the whole
+ * simplification. Trying to reconstruct individual games from somebody's
+ * old spreadsheet produced bets that could not be settled, could not be
+ * checked against a slip, and polluted every per-market breakdown with
+ * rows nobody could verify.
+ *
+ * These figures were being written and shown on the calendar and then
+ * left out of every total, which is why importing a year of history moved
+ * the profit and loss figure by exactly zero. They are counted here now,
+ * in whatever period is on screen, with two rules:
+ *
+ *   · A row only counts in a period at least as wide as itself. A month's
+ *     total does not belong in a single day, and counting it there would
+ *     show a Tuesday that made a month's profit.
+ *   · Turnover and bet counts come along, so return on turnover stays
+ *     honest rather than dividing a bigger profit by the same stake.
+ */
+const WIDTH = { day: 0, week: 1, month: 2, year: 3 };
+
+/* The span a row covers, as inclusive day numbers, so overlaps can be
+   compared without date arithmetic at every call site. */
+const DAYNUM = iso => Math.floor(Date.parse(iso + 'T00:00:00Z') / 86400000);
+function span(p) {
+  const t = Date.parse(p.date + 'T00:00:00Z');
+  if (!Number.isFinite(t)) return null;
+  const d = new Date(t);
+  if (p.period === 'day') return [DAYNUM(p.date), DAYNUM(p.date)];
+  if (p.period === 'week') return [DAYNUM(p.date), DAYNUM(p.date) + 6];
+  if (p.period === 'month') {
+    const a = Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), 1);
+    const b = Date.UTC(d.getUTCFullYear(), d.getUTCMonth() + 1, 0);
+    return [Math.floor(a / 86400000), Math.floor(b / 86400000)];
+  }
+  const a = Date.UTC(d.getUTCFullYear(), 0, 1);
+  const b = Date.UTC(d.getUTCFullYear(), 11, 31);
+  return [Math.floor(a / 86400000), Math.floor(b / 86400000)];
+}
+
+/* THE OVERLAP RULE.
+ *
+ * Somebody can hold a figure for March and figures for four days in March.
+ * Both are things they told us, and adding them together counts March
+ * twice. A coarser row is therefore dropped whenever a finer row falls
+ * inside it: the more detailed record wins, because it is the one that can
+ * be checked against a calendar.
+ *
+ * Computed once per call rather than per period, because it is the same
+ * answer whatever is on screen. */
+export function usablePl() {
+  const rows = PL.map(p => ({ p, s: span(p), w: WIDTH[p.period] }))
+    .filter(x => x.s && x.w != null)
+    .sort((a, b) => a.w - b.w);
+  const kept = [];
+  for (const x of rows) {
+    const covered = kept.some(k => k.w < x.w && k.s[0] >= x.s[0] && k.s[1] <= x.s[1]);
+    if (!covered) kept.push(x);
+  }
+  return kept.map(x => x.p);
+}
+
+function plInScope(S) {
+  const scope = S.period === 'a' ? 3
+    : S.period === 'd' && S.focus != null ? 0
+    : S.period === 'w' && S.focus != null ? 1
+    : 2;
+  const out = [];
+  for (const p of usablePl()) {
+    const w = WIDTH[p.period];
+    if (w == null || w > scope) continue;
+    if (scope === 3) { out.push(p); continue; }
+
+    const d = new Date(p.date + 'T12:00:00');
+    if (Number.isNaN(d.getTime())) continue;
+    if (d.getFullYear() !== TODAY.year || d.getMonth() !== S.month) continue;
+    if (scope === 2) { out.push(p); continue; }
+
+    const day = d.getDate();
+    if (scope === 0) { if (day === S.focus) out.push(p); continue; }
+    const r = weekRange(S.month, S.focus, S.weekStart);
+    if (day >= r.a && day <= r.b) out.push(p);
+  }
+  return out;
 }
 
 function label(S, MS) {
@@ -113,17 +199,21 @@ export function stats(S, MS) {
     if (b.odds > 1) { oddsSum += b.odds; oddsN++; }
   }
 
-  if (all) {
-    profit += IMPORTED.profit;
-    turnover += IMPORTED.turnover;
-    won += IMPORTED.won;
-    lost += IMPORTED.lost;
-    cash += IMPORTED.cash;
+  /* Imported figures, in whatever period is on screen. They carry no
+     outcome, so they move profit and turnover and never touch the win
+     rate: a figure with no bets behind it cannot be a win or a loss, and
+     counting it as either would corrupt the one number people check. */
+  const pl = plInScope(S);
+  let importedProfit = 0, importedTurnover = 0, importedBets = 0;
+  for (const p of pl) {
+    importedProfit += p.profit || 0;
+    importedTurnover += p.turnover || 0;
+    importedBets += p.bets || 0;
   }
+  profit += importedProfit;
+  turnover += importedTurnover;
 
-  /* All time is the ledger plus whatever the user imported. There is no
-     separate lifetime constant to disagree with it. */
-  const count = all ? bets.length + IMPORTED.bets : bets.length;
+  const count = bets.length + importedBets;
   const settled = won + lost + cash;
   const graded = won + lost;
 
@@ -160,7 +250,7 @@ export function stats(S, MS) {
     byBook: splitBy(bets, 'book'),
     byMarket: splitBy(bets, 'market'),
     byTipster: splitBy(bets.filter(b => b.tipster), 'tipster'),
-    includesImported: all,
+    includesImported: importedBets > 0 || importedProfit !== 0,
     ledgerBets: bets.length
   };
 }
@@ -176,15 +266,26 @@ export function stats(S, MS) {
  *
  * Period figures (typed P/L, imported P/L rows) are in NEITHER. They have
  * no bets behind them at all, so counting them would be inventing bets. */
+export function importedTotals() {
+  let profit = 0, turnover = 0, bets = 0;
+  for (const p of usablePl()) {
+    profit += p.profit || 0;
+    turnover += p.turnover || 0;
+    bets += p.bets || 0;
+  }
+  return { profit, turnover, bets };
+}
+
 export function betCount(S, scoped) {
   const here = scoped == null ? LEDGER.length + PENDING.length : scoped;
-  return S.countMode === 'lifetime' ? here + IMPORTED.bets : here;
+  return S.countMode === 'lifetime' ? here + importedTotals().bets : here;
 }
 
 /** Lifetime figures, always the same numbers wherever they appear.
     Derived, never stored: ledger + imports, computed the one way. */
 export function lifetime() {
-  let profit = IMPORTED.profit, turnover = IMPORTED.turnover, oddsSum = 0, oddsN = 0;
+  const imp = importedTotals();
+  let profit = imp.profit, turnover = imp.turnover, oddsSum = 0, oddsN = 0;
   for (const b of LEDGER) {
     profit += b.profit;
     turnover += b.stake;
@@ -194,7 +295,7 @@ export function lifetime() {
     profit, turnover,
     /* This one is always the true lifetime total; the toggle decides what
        gets DISPLAYED, and callers pick. */
-    bets: LEDGER.length + IMPORTED.bets,
+    bets: LEDGER.length + imp.bets,
     trackerBets: LEDGER.length,
     roi: turnover ? profit / turnover * 100 : 0,
     avgOdds: oddsN ? oddsSum / oddsN : 0

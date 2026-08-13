@@ -69,10 +69,9 @@
            obvious next step, and the second one here is a lower-commitment
            way in for somebody not ready to hand over an email. -->
       <div class="herocta reveal">
-        <button class="btn primary" data-nav="setup">Start free</button>
-        <button class="herolink" data-nav="demo">or look around a live one first</button>
+        <button class="btn primary" data-nav="setup">Start Tracking Free</button>
+        <button class="herolink" data-nav="demo">or see a live demo first</button>
       </div>
-      <p class="herofree reveal">Two weeks free. 35 slips. No card.</p>
       <!-- BROWSER CHROME, holding the real thing.
            A dashboard floating on a gradient reads as an illustration. The
            same dashboard inside a window with traffic lights and a URL bar
@@ -342,15 +341,6 @@
         </div>
 
         <div id="authSignup">
-          <!-- The single 18+ warning on the whole site, placed where it is
-               actually load-bearing: the moment an account is created. -->
-          <div class="agegate" role="note">
-            <span class="agegate-badge" aria-hidden="true">18+</span>
-            <p><b>Strictly for adults.</b> Slippery is a tracker for people who already bet.
-              It does not take bets and never handles money. If betting has stopped being
-              fun, free and confidential help is at
-              <a href="https://www.begambleaware.org" rel="noopener noreferrer" target="_blank">BeGambleAware</a>.</p>
-          </div>
           <h2>Create your account</h2>
           <p class="stepnote">One minute and you are in.</p>
           <label class="label" for="suEmail">Email</label>
@@ -374,10 +364,10 @@
           </div>
           <p class="stepnote" id="nameStatus" aria-live="polite" style="margin:8px 0 0;font-size:12.5px">Three characters or more, letters and numbers.</p>
           <p class="formerr" id="suNameErr" hidden></p>
-          <label class="label" for="suPromo">Promo code <span class="hint">optional</span></label>
-          <input class="field" id="suPromo" spellcheck="false" autocapitalize="characters" maxlength="24" placeholder="If you were given one…" aria-describedby="suPromoErr promoStatus">
-          <p class="stepnote" id="promoStatus" aria-live="polite" style="margin:8px 0 0;font-size:12.5px">Leave it blank if you do not have one.</p>
-          <p class="formerr" id="suPromoErr" hidden></p>
+          <!-- The promo field used to sit here as well as on the plan
+               screen. Two places to type one code is two places to mistype
+               it, and a code entered before a plan is chosen cannot show
+               what it is worth. It lives on the plan screen only. -->
           <label class="fieldrow" for="ageOk" style="margin-top:14px;cursor:pointer">
             <span class="lab">I am 18 or over<small>Slippery is strictly for adults</small></span>
             <input type="checkbox" id="ageOk" style="width:22px;height:22px;flex:0 0 auto;accent-color:var(--p)">
@@ -463,7 +453,7 @@
       <div class="card settingcard">
         <div class="stepglyph" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/></svg></div>
         <h2>Pick your plan</h2>
-        <p class="stepnote">Start free and change later, or go straight to unlimited.</p>
+        <p class="stepnote">Start free and change later.</p>
         <div class="planpick" id="planChoice" role="radiogroup" aria-label="Plan"></div>
         <div class="promobox" id="promoBox">
           <label class="label" for="planPromo">Promo code</label>
@@ -642,7 +632,7 @@
       <button class="btn primary small" data-nav="setup">Start free</button>
     </div>
     <h1 style="font-size:26px;margin-top:14px">See it before you sign up.</h1>
-    <p class="lede">This is the Slippery dashboard running on 486 sample bets across 120 days. Nothing here is editable and no account is needed. It is the same interface you get, with someone else's numbers in it.</p>
+    <p class="lede">This is the Slippery dashboard running on 486 sample bets across 120 days, read only and with no account needed, the same interface you get with someone else's numbers in it.</p>
     <p class="demodisc">The figures below are a fabricated sample, not a real bettor's record. They are here to show what the analysis looks like, not to suggest a typical result. Nobody made this money.</p>
     <div id="demoBody"></div>
     <div class="lastcta" style="margin-top:26px">
@@ -728,14 +718,24 @@
 
 <!-- ══════════════ DASHBOARD ══════════════ -->
 <section class="view" id="dash" aria-label="Dashboard">
-  <div class="wrap">
-    <h1 class="sr">Your dashboard</h1>
-    <div class="subnav"><div class="inner" id="subnav" role="tablist" aria-label="Dashboard sections">
-      <button role="tab" aria-selected="true" aria-controls="paneOverview" id="tabOverview" data-pane="overview">Overview</button>
-      <button role="tab" aria-selected="false" aria-controls="paneLedger" id="tabLedger" data-pane="ledger">Ledger</button>
-      <button role="tab" aria-selected="false" aria-controls="paneSocial" id="tabSocial" data-pane="social">Social</button>
-    </div></div>
+  <h1 class="sr">Your dashboard</h1>
+  <!-- OUTSIDE .wrap, deliberately.
+       The sticky bar was inside the 660px column and bled to it with a
+       negative margin, so on a desktop browser its background stopped
+       dead at 692px with the page continuing either side of it. Sitting
+       outside the column lets the bar be as wide as the window while its
+       three buttons stay centred on the same 660px the content uses.
 
+       Not done with 100vw: on a desktop with a classic scrollbar, 100vw
+       counts the scrollbar's width and pushes the page sideways, which is
+       the overflow bug this codebase has already paid for once. -->
+  <div class="subnav"><div class="inner" id="subnav" role="tablist" aria-label="Dashboard sections">
+    <button role="tab" aria-selected="true" aria-controls="paneOverview" id="tabOverview" data-pane="overview">Overview</button>
+    <button role="tab" aria-selected="false" aria-controls="paneLedger" id="tabLedger" data-pane="ledger">Ledger</button>
+    <button role="tab" aria-selected="false" aria-controls="paneSocial" id="tabSocial" data-pane="social">Social</button>
+  </div></div>
+
+  <div class="wrap">
     <div class="pane on" id="paneOverview" role="tabpanel" aria-labelledby="tabOverview" tabindex="0">
       <!-- What is left of the trial. Hidden entirely on a paid account, and
            on a fresh one it is a thin line rather than a card, because on

@@ -92,7 +92,14 @@ export let DAY_TOTALS = {};
    aggregates by the Import flow. Zeroed for a new account, this is the
    one place the old build invented a figure, and it must not do so again:
    all time is exactly the ledger plus whatever the user actually imported. */
-export let IMPORTED = { profit: 0, turnover: 0, bets: 0, won: 0, lost: 0, cash: 0, years: [] };
+/* IMPORTED lived here: one aggregate blob of imported history, holding a
+   profit, a turnover and a bet count. Nothing ever wrote to it, so it was
+   always zeros, and importing a year of history moved the profit and loss
+   figure by exactly nothing while still drawing on the calendar.
+
+   Imported history is now the PL rows below and nothing else. A dated
+   figure with no fixture behind it is what an import actually is, and
+   stats.js sums those rows into whatever period is on screen. */
 
 /* Social. Empty until the groups API exists; the views render their empty
    states rather than a cast of invented friends. */
@@ -153,9 +160,6 @@ export function hydrate(payload) {
   return { settled: LEDGER.length, pending: PENDING.length, pl: PL.length };
 }
 
-export function setImported(totals) {
-  IMPORTED = Object.assign({ profit: 0, turnover: 0, bets: 0, won: 0, lost: 0, cash: 0, years: [] }, totals || {});
-}
 export function setMe(user) { ME = user || null; }
 
 /** Add one bet without refetching the world, used after a confirm. */

@@ -191,8 +191,33 @@
       & i{background:var(--pos);border-color:var(--pos);
         &::after{transform:rotate(-45deg) scale(1)}}}}}
 
-.codeinput{font-family:var(--fm);font-size:26px;letter-spacing:.34em;
-  text-align:center;padding:15px 12px;min-height:60px}
+/* SIX BOXES, NOT ONE WIDE INPUT.
+   A centred input with letter-spacing looks even until you type: the
+   spacing is applied AFTER each glyph, so the trailing gap sits inside the
+   centred block and the whole string drifts left by half a space. It also
+   drifted differently at one digit than at six, so the code appeared to
+   move as it was typed.
+
+   The input is still one field, which is what makes paste and the iOS
+   one-time-code autofill work, but it is drawn as six cells by a repeating
+   background, and the letter-spacing is compensated with an equal
+   text-indent so the glyphs land in the middle of their cells. */
+.codeinput{
+  font-family:var(--fm);font-size:24px;font-weight:600;
+  letter-spacing:26px;text-indent:26px;
+  text-align:center;padding:16px 0;min-height:64px;width:100%;
+  background-image:repeating-linear-gradient(
+    to right,
+    var(--c1) 0 44px,
+    transparent 44px 50px);
+  background-position:center;background-repeat:no-repeat;
+  background-size:294px 100%;
+  &::placeholder{color:var(--t3);opacity:.55}}
+@media (max-width:359px){
+  .codeinput{font-size:20px;letter-spacing:20px;text-indent:20px;
+    background-size:246px 100%;
+    background-image:repeating-linear-gradient(
+      to right,var(--c1) 0 36px,transparent 36px 42px)}}
 .linkcode{font-family:var(--fm);font-size:16px;letter-spacing:.12em;color:var(--s);
   background:rgba(var(--orb2),.1);border:1px dashed rgba(var(--orb2),.4);
   border-radius:11px;padding:13px;text-align:center;margin:11px 0}
@@ -675,21 +700,12 @@ input[type=date]{
     place-items:center;background:rgba(var(--orb1),.2);border:1px solid rgba(var(--orb1),.4);
     & svg{width:26px;height:26px;color:var(--s)}}}
 
-/* The 18+ notice. One instance, on signup. Amber rather than the loss red,
-   because it is a condition of use and not a loss. */
-.agegate{
-  display:flex;gap:12px;align-items:flex-start;
-  border:1px solid rgba(245,158,11,.38);background:rgba(245,158,11,.09);
-  border-radius:13px;padding:13px 14px;margin-bottom:18px;
-  & p{margin:0;font-size:12.5px;line-height:1.55;color:var(--t2)}
-  & b{color:var(--t1);font-weight:650}
-  & a{color:var(--a);text-decoration:underline;text-underline-offset:2px}
-}
-.agegate-badge{
-  flex:0 0 auto;font-family:var(--fm);font-size:12px;font-weight:700;
-  color:#1b1205;background:var(--a);border-radius:8px;
-  padding:5px 8px;letter-spacing:-.02em;
-}
+/* The amber 18+ notice that sat on top of the signup form is gone. It was
+   a paragraph of policy in the way of a four field form, and policy reads
+   better where somebody can find it deliberately: it is now section 3 of
+   the Terms. The 18+ checkbox stays on the form, because that one is the
+   consent rather than the explanation, and the 18+ roundel is in the
+   footer of every page. */
 
 /* ---------- the auth screen ----------
  *

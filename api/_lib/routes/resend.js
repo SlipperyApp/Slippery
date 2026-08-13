@@ -19,13 +19,31 @@ export default async function handler(req, res) {
     const rows = await db()`
       SELECT id FROM users
       WHERE email_lower = ${email.toLowerCase()} AND deleted_at IS NULL AND email_verified = false`;
-    /* Always report success. A different answer for "no such account" turns
-       this endpoint into an address checker. */
+
+    /* Whether the ADDRESS exists stays secret, or this endpoint becomes an
+       account checker. Whether the SEND worked does not: reporting "New
+       code sent" when the mailer is not configured, or when the send threw,
+       leaves somebody refreshing an inbox that will never receive anything.
+       That is the dead end this button was reported for.
+
+       So: the same answer for a known and an unknown address, and a
+       different answer when we know the mail did not leave. */
+    if (!mail.configured()) {
+      return json(res, 503, {
+        error: 'This deployment cannot send email yet, so a new code cannot be issued.',
+        needs: 'mail'
+      });
+    }
     if (rows.length) {
       const code = await issueVerificationCode(rows[0].id);
-      if (mail.configured()) await mail.sendVerificationEmail(email, code);
+      try {
+        await mail.sendVerificationEmail(email, code);
+      } catch (err) {
+        console.error('resend: send failed', err && err.message);
+        return json(res, 502, { error: 'The email did not go out. Try again in a moment.' });
+      }
     }
-    return json(res, 200, { ok: true });
+    return json(res, 200, { ok: true, from: mail.fromAddress() });
   } catch (err) {
     return fail(res, err, 'Could not resend that code right now.');
   }

@@ -107,13 +107,13 @@ const HOME_FAQ = [
 ];
 
 const HELP_FAQ = [
-  ['A slip could not be read', 'Slippery never guesses at numbers it cannot see, so it asks for a clearer photo. Crop to the slip, avoid glare, and keep the stake, odds and result in frame.'],
-  ['What the pace marker means', 'The pale line on the target bar shows how far through the period you are. If the green bar is past it, you are ahead of pace.'],
-  ['What is a unit', 'A unit is your standard stake, set in Settings. Units let you compare with other people without anyone seeing the money.'],
-  ['Who can see my numbers', 'Public means any Slipper who finds you. Friends only means Slippers you follow back. Private means none. Group members always see units of everyone in that group.'],
-  ['Why can I not change my display name', 'Names are permanent so a record always belongs to the same person, and nobody can take a name someone else built a history under.'],
-  ['The same bet appeared twice', 'Slippery flags slips that settle identically, such as away goals under 0.5 and BTTS No, and offers to consolidate them so your numbers are not counted twice.'],
-  ['Correcting a slip Slippery misread', 'Every field on an uploaded slip is editable before you confirm it, and nothing is saved until you do. A bet already in your ledger can be settled by hand from the running list.']
+  ['Why could a slip not be read?', 'Slippery never guesses at numbers it cannot see, so it asks for a clearer photo. Crop to the slip, avoid glare, and keep the stake, odds and result in frame.'],
+  ['What does the pace marker mean?', 'The pale line on the target bar shows how far through the period you are. If the green bar is past it, you are ahead of pace.'],
+  ['What is a unit?', 'A unit is your standard stake, set in Settings. Units let you compare with other people without anyone seeing the money.'],
+  ['Who can see my numbers?', 'Public means any Slipper who finds you. Friends only means Slippers you follow back. Private means none. Group members always see units of everyone in that group.'],
+  ['Why can I not change my display name?', 'Names are permanent so a record always belongs to the same person, and nobody can take a name someone else built a history under.'],
+  ['Why has the same bet appeared twice?', 'Slippery flags slips that settle identically, such as away goals under 0.5 and BTTS No, and offers to consolidate them so your numbers are not counted twice.'],
+  ['How do I correct a slip Slippery misread?', 'Every field on an uploaded slip is editable before you confirm it, and nothing is saved until you do. A bet already in your ledger can be settled by hand from the running list.']
 ];
 
 /* The three plans, defined once.
@@ -191,7 +191,8 @@ const TERMS = [
   ['h2', '2. What Slippery is not'],
   ['p', 'Slippery is not a bookmaker, a betting exchange, a broker or a tipping service. It does not accept bets, hold funds, pay winnings, take a share of a stake or offer advice on what to bet. It holds no Gambling Commission licence because it carries out no licensable activity. Nothing shown in the product is a recommendation to place a bet.'],
 
-  ['h2', '3. Age'],
+  ['h2', '3. Age, and what this is for'],
+  ['p', 'Strictly for adults. Slippery is a tracker for people who already bet. It does not take bets and never handles money. If betting has stopped being fun, free and confidential help is at BeGambleAware.org.'],
   ['p', 'You must be 18 or over. You confirm this when you create an account. Where we have reason to believe an account holder is under 18 we will suspend the account and delete the data on it.'],
 
   ['h2', '4. Your account'],

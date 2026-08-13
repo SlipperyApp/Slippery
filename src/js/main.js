@@ -4,10 +4,10 @@ import { S, canUsePeriod, periodNeedsFocus } from './state.js';
 import * as M from './money.js';
 import {
   LEDGER, PENDING, PEOPLE, GROUPS, TODAY, THEMES, THEME_BG, BOOKS, TIPSTERS,
-  TARGETS, FOUND, PL, IMPORTED, hydrate, hydrateSocial, hydratePeople, setFound, addBet, settleLocal, setMe, ME, ico
+  TARGETS, FOUND, PL, hydrate, hydrateSocial, hydratePeople, setFound, addBet, settleLocal, setMe, ME, ico
 } from './data.js';
 import { settle, settleCashOut, ledgerOutcome } from './settlement.js';
-import { stats, dayMap, monthTotal, targetFor, weekRange, invalidateDays } from './stats.js';
+import { stats, dayMap, monthTotal, targetFor, weekRange, invalidateDays, importedTotals } from './stats.js';
 import * as R from './render.js';
 import * as C from './content.js';
 import * as P from './pages.js';
@@ -840,9 +840,10 @@ function renderSummaryRead(card, label, f) {
     card.innerHTML =
       '<div class="cardhead"><span class="title">' + esc(f.platform || label) + '</span>' +
       '<span class="tagbit">' + rows.length + ' dated figure' + (rows.length === 1 ? '' : 's') + '</span></div>' +
-      '<p class="hinttext">Read off the screen with a date on each one. They go on your ' +
-      'calendar as figures rather than as bets, because there are no slips behind them and ' +
-      'inventing some would make your bet count wrong forever.</p>' +
+      '<p class="hinttext">Read off the screen with a date on each one. They count in your ' +
+      'profit and loss and sit on the calendar on their own dates, as figures rather than as ' +
+      'bets: there are no slips behind them, and inventing some would make your bet count ' +
+      'wrong forever.</p>' +
       '<div class="plpreview">' + rows.map((r, i) =>
         '<div class="plrow"><span class="pld">' + esc(r.label || r.date) +
         (r.label ? '<span class="plt">' + esc(r.date) + '</span>' : '') + '</span>' +
@@ -868,7 +869,7 @@ function renderSummaryRead(card, label, f) {
           '. Some rows are probably off the top of the screenshot.</p>'
         : '') +
       '<div class="btnrow" style="margin-top:11px">' +
-      '<button class="btn primary small" data-import-plrows="1">Add ' + rows.length + ' to calendar</button>' +
+      '<button class="btn primary small" data-import-plrows="1">Add ' + rows.length + ' figures</button>' +
       '<button class="btn ghost small" data-dismiss-card="1">Discard</button></div>';
     card.dataset.plrows = JSON.stringify(rows);
     return;
@@ -914,11 +915,11 @@ async function importPlRows(btn) {
   btn.disabled = false;
 
   if (r.status === 401) { go('setup'); toast('Log in to import.'); return; }
-  if (!r.ok) { btn.textContent = 'Add to calendar'; toast(r.body.error || 'That import did not go through.'); return; }
+  if (!r.ok) { btn.textContent = 'Add figures'; toast(r.body.error || 'That import did not go through.'); return; }
 
   collapse(card);
   await loadLedger();
-  toast(r.body.saved + ' figure' + (r.body.saved === 1 ? '' : 's') + ' added to your calendar');
+  toast(r.body.saved + ' figure' + (r.body.saved === 1 ? '' : 's') + ' added to your profit and loss');
   updateImportTotals();
 }
 
@@ -1285,11 +1286,52 @@ const csvError = msg =>
   '<p class="hinttext" style="border-top-color:rgba(252,165,165,.22)">' + esc(msg) +
   ' Nothing was imported.</p></div>';
 
+/* AN IMPORT IS A DATED FIGURE, NEVER A GAME.
+ *
+ * This used to POST every parsed row as a bet, which looked richer and was
+ * wrong in three ways at once. The bets could not settle, because there is
+ * no slip and no fixture behind a spreadsheet row. They could not be
+ * checked, because there is no image to check them against. And they
+ * landed in every per-market and per-bookmaker breakdown as rows nobody
+ * could verify, which is exactly the "highlight reel" problem the product
+ * exists to stop, arriving through the back door.
+ *
+ * So the rows are summed by date and saved as dated profit and loss. The
+ * figures are real and they count; the fixtures behind them are not
+ * claimed. That also makes a re-import safe, because the server upserts on
+ * (user, date, period) rather than appending. */
+function foldToDays(rows) {
+  const byDate = new Map();
+  for (const b of rows) {
+    /* A row with no usable date cannot go on a calendar, so it is reported
+       rather than quietly dropped onto today. */
+    const iso = String(b.placedAt || b.date || '').slice(0, 10);
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(iso)) continue;
+    const d = byDate.get(iso) || { date: iso, period: 'day', profitPence: 0,
+      turnoverPence: 0, bets: 0, source: 'import' };
+    /* parseBetsCsv hands back stakePence and profitPence, already whole
+       pence. A pending row has profit null, which contributes nothing to a
+       figure but still counts as a bet that was placed that day. */
+    d.profitPence += Math.round(b.profitPence || 0);
+    d.turnoverPence += Math.round(b.stakePence || 0);
+    d.bets += 1;
+    byDate.set(iso, d);
+  }
+  return [...byDate.values()].sort((a, b) => a.date.localeCompare(b.date));
+}
+
 async function runCsvImport(btn) {
   if (!pendingCsv) return;
+  const days = foldToDays(pendingCsv);
+  const undated = pendingCsv.length - days.reduce((a, d) => a + d.bets, 0);
+  if (!days.length) {
+    toast('No row in that file carried a date, so there is nothing to place.');
+    return;
+  }
+
   btn.disabled = true;
   btn.textContent = 'Importing…';
-  const r = await post('/api/bets', { bets: pendingCsv });
+  const r = await post('/api/bets', { pl: days });
   btn.disabled = false;
 
   if (r.status === 402) { showUpgrade(r.body); btn.textContent = 'Import'; return; }
@@ -1297,12 +1339,16 @@ async function runCsvImport(btn) {
   if (r.status === 503) { showBackendNotice(r.body); btn.textContent = 'Import'; return; }
   if (!r.ok) { toast(r.body.error || 'That import did not go through.'); btn.textContent = 'Import'; return; }
 
-  const n = r.body.imported || 0;
+  const bets = days.reduce((a, d) => a + d.bets, 0);
+  const net = days.reduce((a, d) => a + d.profitPence, 0);
   pendingCsv = null;
   const report = btn.closest('#setupCsvReport') ? $('setupCsvReport') : $('csvReport');
-  report.innerHTML = '<p class="hinttext">Imported ' + n + ' bets.' +
-    (r.body.rejected && r.body.rejected.length ? ' ' + r.body.rejected.length + ' rows were rejected.' : '') + '</p>';
-  toast(n + ' bets imported');
+  report.innerHTML = '<p class="hinttext">' + bets + ' rows became <b>' + days.length +
+    ' dated figures</b>, ' + M.signed(net) + ' in total. They count in your profit and loss ' +
+    'and sit on the calendar on their own dates. They are not logged as individual bets, ' +
+    'because a spreadsheet row has no slip behind it and nothing here can settle it.' +
+    (undated > 0 ? ' ' + undated + ' rows had no usable date and were left out.' : '') + '</p>';
+  toast(days.length + ' dated figures imported');
   await loadLedger();
 }
 
@@ -2175,7 +2221,7 @@ document.addEventListener('click', e => {
     });
     paintSeg($('countSeg'));
     setText('countModeNote', S.countMode === 'lifetime'
-      ? 'Includes ' + M.plain(IMPORTED.bets) + ' bets brought across at import'
+      ? 'Includes ' + M.plain(importedTotals().bets) + ' bets brought across at import'
       : 'Only bets logged here, starting at 0');
     R.renderAll();
     saveCountMode();
