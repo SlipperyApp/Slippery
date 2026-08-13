@@ -6,7 +6,8 @@
   "scripts": {
     "build": "node build.mjs",
     "test": "node --test \"tests/**/*.test.mjs\"",
-    "verify": "node build.mjs && node --test \"tests/**/*.test.mjs\" && node tools/audit.mjs"
+    "verify": "node build.mjs && node --test \"tests/**/*.test.mjs\" && node tools/audit.mjs && node tools/strings.mjs --check",
+    "strings": "node tools/strings.mjs"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.116.0",
