@@ -34,7 +34,13 @@ export const USER = {
   verified: false,
   trialEndsAt: null,
   telegramLinked: true,
-  linkCode: 'SLIP-7F3A',
+  telegramUsername: 'dariusodds',
+  telegramLinkedAt: '2026-02-14T10:00:00Z',
+  /* No code while linked. The two halves of the card are mutually
+     exclusive, and a stub that hands back both cannot catch a page that
+     shows both. */
+  linkCode: null,
+  linkCodeExpiresAt: null,
   since: '2026-02-14T10:00:00Z'
 };
 
@@ -87,10 +93,29 @@ export async function installStub(page, opts = {}) {
      caught it. */
   let signedIn = opts.signedIn !== false;
 
+  /* Mutable, so Unlink can be tested for what it actually does rather
+     than for what it says. A frozen user object would let a button that
+     lies pass. */
+  let user = { ...USER };
+
   await page.route('**/api/auth/me', route => route.fulfill({
     status: 200, contentType: 'application/json',
-    body: JSON.stringify({ configured: true, user: signedIn ? USER : null })
+    body: JSON.stringify({ configured: true, user: signedIn ? user : null })
   }));
+
+  await page.route('**/api/auth/link', route => {
+    const sent = JSON.parse(route.request().postData() || '{}');
+    if (sent.action === 'unlink') {
+      const was = user.telegramLinked;
+      user = { ...user, telegramLinked: false, telegramUsername: null, telegramLinkedAt: null };
+      return route.fulfill({ status: 200, contentType: 'application/json',
+        body: JSON.stringify({ unlinked: was, telegramLinked: false }) });
+    }
+    const expires = new Date(Date.now() + 10 * 60 * 1000).toISOString();
+    user = { ...user, linkCode: 'K7M2QP', linkCodeExpiresAt: expires };
+    return route.fulfill({ status: 200, contentType: 'application/json',
+      body: JSON.stringify({ linkCode: 'K7M2QP', linkCodeExpiresAt: expires, ttlMs: 600000 }) });
+  });
 
   await page.route('**/api/bets', route => {
     const method = route.request().method();

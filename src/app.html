@@ -1198,16 +1198,34 @@
         <select class="select compact" id="profitFormat"><option>Currency</option><option>Units</option><option>Both</option></select></div>
     </div>
 
+    <!-- THE BOT LINK.
+         Two states, and the page only ever shows the one that is true,
+         because the old card showed a code and a "connected since" line
+         written into the markup, so an account with no bot linked was told
+         it had one.
+
+         Linked: which Telegram account, since when, and Unlink.
+         Not linked: a six character code with a live countdown, a
+         regenerate button, and the one-tap deep link. -->
     <div class="card settingcard">
       <h2 class="cardtitle"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="#i-telegram"/></svg>Telegram bot</h2>
-      <div class="livedot"><i aria-hidden="true"></i><span id="tgState">Checking…</span></div>
-      <p class="linkcode" translate="no" id="linkCodeSettings" hidden></p>
-      <div class="fieldrow"><span class="lab">Daily summary</span>
-        <button class="switch" role="switch" aria-checked="true" aria-label="Daily summary"></button></div>
-      <div class="fieldrow"><span class="lab">Confirm before logging<small>Off logs clean slips straight away</small></span>
-        <button class="switch" role="switch" aria-checked="true" aria-label="Confirm before logging"></button></div>
-      <div class="fieldrow"><span class="lab">Not connected?<small>Opens the bot with your code already in it</small></span>
-        <button class="pillbtn link" id="telegramLinkSettings">Link Telegram</button></div>
+
+      <div id="tgLinked" hidden>
+        <div class="livedot"><i aria-hidden="true"></i><span id="tgState">Connected</span></div>
+        <p class="desc" id="tgSince"></p>
+        <div class="fieldrow"><span class="lab">Disconnect this chat<small>Nothing is deleted. Every bet stays on your account.</small></span>
+          <button class="pillbtn danger" id="tgUnlink">Unlink</button></div>
+      </div>
+
+      <div id="tgUnlinked" hidden>
+        <p class="desc">Send this code to the bot as <span translate="no">/link CODE</span>, or tap the button and it travels with you.</p>
+        <p class="linkcode" translate="no" id="linkCodeSettings">------</p>
+        <p class="hinttext" id="tgCountdown" aria-live="polite">No code yet.</p>
+        <div class="btnrow" style="margin-top:11px">
+          <button class="btn primary small" id="telegramLinkSettings">Open Telegram</button>
+          <button class="btn ghost small" id="tgNewCode">New code</button>
+        </div>
+      </div>
     </div>
 
     <div class="card settingcard">

@@ -958,6 +958,67 @@ async function main() {
     await page.close();
   }
 
+  /* ── Unlink actually unlinks ──────────────────────────────────
+     Four controls in this codebase once confirmed actions they never
+     performed, so this one is checked against the state rather than
+     against its own toast. Three things have to be true afterwards: the
+     server was asked, the session says it is no longer linked, and the
+     card is showing the unlinked half. A button that says "unlinked"
+     while the chat still posts into the ledger is worse than one that
+     does nothing at all. */
+  {
+    const page = await browser.newPage({ viewport: { width: 390, height: 844 } });
+    const posted = [];
+    page.on('request', r => {
+      if (r.method() === 'POST' && r.url().includes('/api/auth/link')) {
+        try { posted.push(JSON.parse(r.postData() || '{}')); } catch { posted.push({}); }
+      }
+    });
+    await installStub(page);
+    await page.goto(base, { waitUntil: 'networkidle' });
+    await page.evaluate(() => { const b = document.querySelector('[data-nav="settings"]'); if (b) b.click(); });
+    await page.waitForTimeout(400);
+
+    const before = await page.evaluate(() => ({
+      linkedShown: !document.getElementById('tgLinked').hidden,
+      unlinkedShown: !document.getElementById('tgUnlinked').hidden,
+      state: (document.getElementById('tgState') || {}).textContent || ''
+    }));
+    if (!before.linkedShown) fail('telegram', 'a linked account is not shown as linked');
+    if (before.unlinkedShown) fail('telegram', 'both halves of the Telegram card are visible at once');
+    if (!/dariusodds/i.test(before.state))
+      fail('telegram', 'the linked state does not name the Telegram account: ' + before.state);
+
+    await page.evaluate(() => { const b = document.getElementById('tgUnlink'); if (b) b.click(); });
+    await page.waitForTimeout(600);
+
+    if (!posted.some(p => p.action === 'unlink'))
+      fail('telegram', 'Unlink did not ask the server to unlink anything');
+
+    const after = await page.evaluate(() => ({
+      linkedShown: !document.getElementById('tgLinked').hidden,
+      unlinkedShown: !document.getElementById('tgUnlinked').hidden
+    }));
+    if (after.linkedShown) fail('telegram', 'Unlink said it worked and the card still shows linked');
+    if (!after.unlinkedShown) fail('telegram', 'after unlinking there is no way to link again');
+
+    /* And a fresh code, with a countdown that is actually counting. */
+    await page.evaluate(() => { const b = document.getElementById('tgNewCode'); if (b) b.click(); });
+    await page.waitForTimeout(600);
+    const coded = await page.evaluate(() => ({
+      code: (document.getElementById('linkCodeSettings') || {}).textContent || '',
+      countdown: (document.getElementById('tgCountdown') || {}).textContent || ''
+    }));
+    if (!/^[A-Z0-9]{6}$/.test(coded.code.trim()))
+      fail('telegram', 'New code produced "' + coded.code + '", expected six characters');
+    if (/[OIL01U]/.test(coded.code.trim()))
+      fail('telegram', 'the code contains a character people mistype: ' + coded.code);
+    if (!/expires in \d+:\d\d/i.test(coded.countdown))
+      fail('telegram', 'a ten minute code has no visible countdown: ' + coded.countdown);
+
+    await page.close();
+  }
+
   /* ── social: the three-dot menu and the directory ─────────────
      The join code and Leave used to sit open across the top of the board.
      They are behind a menu now, and the two things worth asserting are

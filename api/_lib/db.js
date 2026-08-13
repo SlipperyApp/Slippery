@@ -99,6 +99,14 @@ export async function ensureSchema() {
             ON users (telegram_id) WHERE telegram_id IS NOT NULL AND deleted_at IS NULL`;
   await sql`CREATE UNIQUE INDEX IF NOT EXISTS users_link_code_key
             ON users (link_code) WHERE link_code IS NOT NULL`;
+  /* A link code expires. Without an end date a code screenshotted once is
+     a permanent key to somebody's ledger, and the whole reason it is short
+     and typeable is that it is short lived. Ten minutes, in promo-style:
+     the number lives in bot-strings.js as LINK_TTL_MS. */
+  await sql`ALTER TABLE users ADD COLUMN IF NOT EXISTS link_code_expires_at timestamptz`;
+  /* When the chat was connected, so Settings and /whoami can say. */
+  await sql`ALTER TABLE users ADD COLUMN IF NOT EXISTS telegram_linked_at timestamptz`;
+  await sql`ALTER TABLE users ADD COLUMN IF NOT EXISTS telegram_username text`;
 
   await sql`
     CREATE TABLE IF NOT EXISTS verification_codes (

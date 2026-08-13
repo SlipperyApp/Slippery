@@ -986,22 +986,12 @@ export function renderAccount(user) {
   });
   renderPlan();
   renderPrivacy();
-  /* Telegram: connected, or plainly not. */
-  const dot = $('tgState');
-  if (dot) {
-    dot.textContent = user.telegramLinked
-      ? 'Connected' + (user.since ? ' since ' + DF.format(new Date(user.since)) : '')
-      : 'Not connected yet';
-    dot.closest('.livedot').classList.toggle('off', !user.telegramLinked);
-  }
-  /* The same code appears during setup and in Settings; both come from the
-     session, so they cannot show different codes. */
-  for (const id of ['linkCode', 'linkCodeSettings']) {
-    const code = $(id);
-    if (!code) continue;
-    code.textContent = user.linkCode || 'Not linked yet';
-    if (id === 'linkCodeSettings') code.hidden = !user.linkCode;
-  }
+  /* TELEGRAM: ONE STATE AT A TIME.
+     The card used to show a code and a "connected since" line whatever the
+     truth was, so an account with no bot linked was told it had one. The
+     two halves are now mutually exclusive and both are driven from the
+     session rather than from the markup. */
+  renderTelegram(user);
 
   /* On a break, the settings row says so and the button goes away: there
      is nothing to set, and offering the control again would imply it could
@@ -1134,4 +1124,60 @@ export function renderAll() {
   renderTrial();
   renderPlan();
   renderPl();
+}
+
+
+/* ---------------- the Telegram link ----------------
+ *
+ * The countdown is the point. A code with ten minutes on it and no visible
+ * clock is a code somebody types out at minute eleven and is told did not
+ * match, with nothing on screen having changed. One interval for the whole
+ * app, cleared whenever the state is repainted, so switching views does
+ * not leave timers running in the background.
+ */
+let linkTick = null;
+
+export function renderTelegram(user) {
+  const linked = Boolean(user && user.telegramLinked);
+  const on = $('tgLinked'), off = $('tgUnlinked');
+  if (on) on.hidden = !linked;
+  if (off) off.hidden = linked;
+
+  if (linkTick) { clearInterval(linkTick); linkTick = null; }
+
+  if (linked) {
+    setText('tgState', user.telegramUsername ? 'Connected as @' + user.telegramUsername : 'Connected');
+    const at = user.telegramLinkedAt ? new Date(user.telegramLinkedAt) : null;
+    setText('tgSince', at && !Number.isNaN(at.getTime())
+      ? 'Linked on ' + DF.format(at) + '. Slips forwarded to the bot land on this account.'
+      : 'Slips forwarded to the bot land on this account.');
+    return;
+  }
+
+  const code = $('linkCodeSettings');
+  if (code) code.textContent = user && user.linkCode ? user.linkCode : '------';
+  paintCountdown(user && user.linkCodeExpiresAt);
+  if (user && user.linkCodeExpiresAt) {
+    linkTick = setInterval(() => paintCountdown(user.linkCodeExpiresAt), 1000);
+  }
+}
+
+function paintCountdown(expiresAt) {
+  const el = $('tgCountdown');
+  if (!el) return;
+  if (!expiresAt) {
+    el.textContent = 'Tap New code to get one. It lasts ten minutes.';
+    return;
+  }
+  const left = new Date(expiresAt) - Date.now();
+  if (left <= 0) {
+    if (linkTick) { clearInterval(linkTick); linkTick = null; }
+    const code = $('linkCodeSettings');
+    if (code) code.textContent = '------';
+    el.textContent = 'That code has expired. Tap New code for another.';
+    return;
+  }
+  const m = Math.floor(left / 60000);
+  const sec = Math.floor((left % 60000) / 1000);
+  el.textContent = 'Expires in ' + m + ':' + String(sec).padStart(2, '0');
 }

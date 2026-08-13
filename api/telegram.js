@@ -17,6 +17,7 @@ import { timingSafeEqual } from 'node:crypto';
 import { json, methodGuard, readJson, fail } from './_lib/http.js';
 import { db, ensureSchema, configured as dbConfigured, uniqueViolation } from './_lib/db.js';
 import { cashOutcome } from '../src/js/settlement.js';
+import { BOT, looksLikeCode, normaliseCode } from './_lib/bot-strings.js';
 
 /* The free tier, counted here as well as in /api/bets, the bot is a second
    door into the same ledger, and a limit enforced at only one door is not a
@@ -67,10 +68,7 @@ export default async function handler(req, res) {
     }
     /* Everything else: say what the bot actually wants, rather than going
        quiet and leaving the person wondering if it is broken. */
-    await send(token, chatId,
-      'Send me a *photo or screenshot of a bet slip* and I will read it.\n\n' +
-      'Forward it the moment you place the bet, not after it settles, that is the ' +
-      'whole point of Slippery.\n\n/help for what else I can do.');
+    await send(token, chatId, BOT.nudge);
     return json(res, 200, { ok: true });
   } catch (err) {
     /* Answer 200 anyway: a non-200 makes Telegram redeliver this update
@@ -101,33 +99,20 @@ async function handleCommand(token, chatId, text, from) {
          and copy it by hand. */
       const payload = (text.split(/\s+/)[1] || '').trim();
       if (payload) { await handleLink(token, chatId, '/link ' + payload, from); return; }
-      await send(token, chatId,
-        'Welcome to Slippery.\n\n' +
-        'Forward me a bet slip the moment you *place* it. I read the stake, odds ' +
-        'and selection off the image, watch the game, and settle it into your ' +
-        'profit and loss.\n\n' +
-        'Capturing at placement is the point: it is what stops a tracker quietly ' +
-        'becoming a highlight reel of your winners.\n\n' +
-        'To link this chat to your account, open Settings on the site and enter ' +
-        'the code shown there, or send /link followed by your code.\n\n' +
-        'Send a slip whenever you are ready.');
+      await send(token, chatId, BOT.welcome);
       break;
     }
     case '/help':
-      await send(token, chatId,
-        '*What I do*\n' +
-        'Send a slip photo and I read it, then ask you to confirm.\n\n' +
-        '*Commands*\n' +
-        '/start, what this bot is\n' +
-        '/link CODE, connect this chat to your account\n' +
-        '/today, today\'s profit and loss\n' +
-        '/pending, bets still running\n' +
-        '/stop, pause every message from me\n\n' +
-        'I never guess at a number I cannot read. If a slip is blurred I will ' +
-        'ask for a clearer photo rather than invent a stake.');
+      await send(token, chatId, BOT.help);
       break;
     case '/link':
       await handleLink(token, chatId, text, from);
+      break;
+    case '/whoami':
+      await handleWhoami(token, chatId, from);
+      break;
+    case '/unlink':
+      await handleUnlink(token, chatId, from);
       break;
     case '/today':
       await withAccount(token, chatId, from, async user => {
@@ -136,8 +121,8 @@ async function handleCommand(token, chatId, text, from) {
           FROM bets WHERE user_id = ${user.id} AND settled_at::date = now()::date`;
         const net = Number(rows[0].net || 0);
         await send(token, chatId, rows[0].n > 0
-          ? 'Today: *' + money(net) + '* across ' + rows[0].n + ' settled bets.'
-          : 'Nothing settled today yet.');
+          ? BOT.today(money(net), rows[0].n)
+          : BOT.todayNone);
       });
       break;
     case '/pending':
@@ -145,89 +130,182 @@ async function handleCommand(token, chatId, text, from) {
         const rows = await db()`
           SELECT selection, stake_pence, odds FROM bets
           WHERE user_id = ${user.id} AND status = 'pending' ORDER BY placed_at DESC LIMIT 20`;
-        if (!rows.length) { await send(token, chatId, 'Nothing running right now.'); return; }
+        if (!rows.length) { await send(token, chatId, BOT.pendingNone); return; }
         const risk = rows.reduce((a, b) => a + b.stake_pence, 0);
         await send(token, chatId,
-          '*' + rows.length + ' running*, ' + money(risk, false) + ' at risk\n\n' +
-          rows.map(r => '· ' + esc(r.selection || 'Bet') + ', ' +
-            money(r.stake_pence, false) + ' at ' + Number(r.odds).toFixed(2)).join('\n'));
+          BOT.pendingHead(rows.length, money(risk, false)) +
+          rows.map(r => BOT.pendingRow(esc(r.selection || 'Bet'),
+            money(r.stake_pence, false), Number(r.odds).toFixed(2))).join('\n'));
       });
       break;
     case '/stop':
-      await send(token, chatId,
-        'Messages paused. Send /start when you want them back.\n\n' +
-        'If you want a real break from betting itself, Settings has a break ' +
-        'control that locks the app for as long as you choose, and GamCare is ' +
-        'on 0808 8020 133.');
+      await send(token, chatId, BOT.stop);
       break;
     default:
-      await send(token, chatId, 'I do not know that one. /help lists what I can do.');
+      await send(token, chatId, BOT.unknownCommand);
   }
 }
 
+/* ============================================================
+   LINKING A CHAT TO AN ACCOUNT
+   ============================================================
+   Three rules, and the middle one is the reason this was rewritten.
+
+   1. A code is six characters from an alphabet with no O against 0 and no
+      I or L against 1, and it expires after ten minutes. Somebody is
+      reading it off one screen and typing it into another, on a phone,
+      usually while the game they just bet on is starting.
+
+   2. ONE CHAT, ONE ACCOUNT, AND IT REFUSES RATHER THAN MOVING. The old
+      version caught the unique-index violation, cleared the existing link
+      and retried, so a correct code silently moved somebody's chat onto a
+      different ledger. Nothing anywhere said it had happened. It now says
+      what the chat is linked to and asks for /unlink first.
+
+   3. Nothing is deleted by unlinking. The bets stay on the account.
+   ============================================================ */
 async function handleLink(token, chatId, text, from) {
-  const code = (text.split(/\s+/)[1] || '').trim().toUpperCase();
-  if (!code) { await send(token, chatId, 'Send /link followed by the code from Settings.'); return; }
-  if (!dbConfigured()) {
-    await send(token, chatId, 'Account linking is not available on this deployment yet.');
+  const raw = (text.split(/\s+/)[1] || '').trim();
+  if (!raw) { await send(token, chatId, BOT.linkNoCode); return; }
+  if (!dbConfigured()) { await send(token, chatId, BOT.linkNoDb); return; }
+
+  const code = normaliseCode(raw);
+  /* Checked before touching the database, so a typo costs no query and
+     gets a message that names the actual problem. */
+  if (!looksLikeCode(code)) { await send(token, chatId, BOT.linkBadShape(esc(raw))); return; }
+
+  await ensureSchema();
+  const sql = db();
+  const telegramId = from && from.id;
+  if (!telegramId) return;
+
+  /* Where this chat already stands. Checked first, because refusing to
+     move a linked chat is the point and a refusal must not depend on
+     whether the code happened to be valid. */
+  const existing = await sql`
+    SELECT id, display_name FROM users
+    WHERE telegram_id = ${telegramId} AND deleted_at IS NULL`;
+
+  const claimed = await sql`
+    SELECT id, display_name FROM users
+    WHERE link_code = ${code} AND deleted_at IS NULL
+      AND (link_code_expires_at IS NULL OR link_code_expires_at > now())`;
+
+  if (!claimed.length) {
+    /* Tell an expired code apart from a wrong one. "That did not work" for
+       a code somebody read correctly thirty seconds too late sends them
+       looking for a mistake they did not make. */
+    const stale = await sql`
+      SELECT 1 FROM users
+      WHERE link_code = ${code} AND deleted_at IS NULL
+        AND link_code_expires_at IS NOT NULL AND link_code_expires_at <= now()`;
+    await send(token, chatId, stale.length ? BOT.linkExpired : BOT.linkNoMatch);
     return;
   }
-  await ensureSchema();
-  /* One Telegram account links to one Slippery account. The partial unique
-     index on telegram_id enforces that, so relinking to a different account
-     has to clear the old row first rather than hitting a constraint and
-     telling the user their correct code did not work. */
-  let rows;
-  try {
-    rows = await db()`
-      UPDATE users SET telegram_id = ${from && from.id}
-      WHERE link_code = ${code} AND deleted_at IS NULL
-      RETURNING display_name`;
-  } catch (err) {
-    if (!uniqueViolation(err)) throw err;
-    await db()`UPDATE users SET telegram_id = NULL WHERE telegram_id = ${from && from.id}`;
-    rows = await db()`
-      UPDATE users SET telegram_id = ${from && from.id}
-      WHERE link_code = ${code} AND deleted_at IS NULL
-      RETURNING display_name`;
+
+  if (existing.length) {
+    if (existing[0].id === claimed[0].id) {
+      await send(token, chatId, BOT.linkAlready(esc(existing[0].display_name)));
+      return;
+    }
+    await send(token, chatId, BOT.linkTakenByOther(esc(existing[0].display_name)));
+    return;
   }
-  await send(token, chatId, rows.length
-    ? 'Linked to *' + esc(rows[0].display_name) + '*. Send me a slip whenever you are ready.'
-    : 'That code did not match an account. Check Settings for the current one.');
+
+  /* The code is burned on use. A link code that still works after it has
+     been used is a link code somebody can screenshot and reuse. */
+  await sql`
+    UPDATE users
+    SET telegram_id = ${telegramId}, telegram_linked_at = now(),
+        link_code = NULL, link_code_expires_at = NULL
+    WHERE id = ${claimed[0].id}`;
+  await send(token, chatId, BOT.linked(esc(claimed[0].display_name)));
 }
 
+async function handleWhoami(token, chatId, from) {
+  if (!dbConfigured()) { await send(token, chatId, BOT.noDbForAccount); return; }
+  await ensureSchema();
+  const rows = await db()`
+    SELECT display_name, telegram_linked_at FROM users
+    WHERE telegram_id = ${from && from.id} AND deleted_at IS NULL`;
+  if (!rows.length) { await send(token, chatId, BOT.whoamiNone); return; }
+  const when = rows[0].telegram_linked_at
+    ? new Date(rows[0].telegram_linked_at).toISOString().slice(0, 10)
+    : 'an unknown date';
+  await send(token, chatId, BOT.whoami(esc(rows[0].display_name), when));
+}
+
+async function handleUnlink(token, chatId, from) {
+  if (!dbConfigured()) { await send(token, chatId, BOT.noDbForAccount); return; }
+  await ensureSchema();
+  /* RETURNING, so the reply is what actually happened rather than what was
+     attempted. Four controls in this codebase once confirmed actions they
+     never performed; this one reports the row it cleared. */
+  const rows = await db()`
+    UPDATE users SET telegram_id = NULL, telegram_linked_at = NULL
+    WHERE telegram_id = ${from && from.id} AND deleted_at IS NULL
+    RETURNING display_name`;
+  await send(token, chatId, rows.length
+    ? BOT.unlinked(esc(rows[0].display_name))
+    : BOT.unlinkNone);
+}
+
+/* An unlinked chat gets ONE line, and the instructions once.
+ *
+ * The bot used to read a slip for an unlinked chat, print every field back
+ * with a Confirm button, and log nothing. That is the worst outcome
+ * available: it looks like it worked. Nothing is read now until the chat
+ * is linked, and the how-to is attached only the first time, because
+ * repeating it on every message is how a helpful line becomes noise. */
 async function withAccount(token, chatId, from, fn) {
-  if (!dbConfigured()) {
-    await send(token, chatId, 'That needs an account, and this deployment has no database yet.');
-    return;
-  }
+  if (!dbConfigured()) { await send(token, chatId, BOT.noDbForAccount); return; }
   await ensureSchema();
   const rows = await db()`
     SELECT id, display_name FROM users
     WHERE telegram_id = ${from && from.id} AND deleted_at IS NULL`;
-  if (!rows.length) {
-    await send(token, chatId, 'This chat is not linked yet. Send /link followed by the code from Settings.');
-    return;
-  }
+  if (!rows.length) { await refuseUnlinked(token, chatId); return; }
   await fn(rows[0]);
 }
 
+const toldHow = new Set();
+async function refuseUnlinked(token, chatId) {
+  const first = !toldHow.has(chatId);
+  toldHow.add(chatId);
+  /* A serverless instance is short lived and this Set dies with it, so at
+     worst somebody is told twice. Bounded anyway: an unbounded Set in a
+     module scope is a slow leak on a warm instance. */
+  if (toldHow.size > 500) toldHow.clear();
+  await send(token, chatId, BOT.notLinked + (first ? BOT.notLinkedHow : ''));
+}
+
 async function handleSlip(token, chatId, message, from) {
-  await send(token, chatId, 'Reading your slip…');
+  /* REFUSE BEFORE READING, NOT AFTER.
+     This used to download the image, send it to the reader, print every
+     field back and then quietly log nothing, because the chat was not
+     linked. It looked exactly like success. It also spent an Anthropic
+     call on somebody who could not have a bet saved. */
+  if (dbConfigured()) {
+    await ensureSchema();
+    const who = await db()`
+      SELECT id FROM users WHERE telegram_id = ${from && from.id} AND deleted_at IS NULL`;
+    if (!who.length) { await refuseUnlinked(token, chatId); return; }
+  }
+
+  await send(token, chatId, BOT.reading);
 
   const fileId = message.photo
     ? message.photo[message.photo.length - 1].file_id   // largest rendition
     : message.document.file_id;
 
   const file = await tg(token, 'getFile', { file_id: fileId });
-  if (!file.ok) { await send(token, chatId, 'I could not download that image. Try sending it again.'); return; }
+  if (!file.ok) { await send(token, chatId, BOT.downloadFailed); return; }
   if (file.result.file_size && file.result.file_size > MAX_PHOTO_BYTES) {
-    await send(token, chatId, 'That image is too large for me to read. Try a screenshot instead.');
+    await send(token, chatId, BOT.tooLarge);
     return;
   }
 
   const bin = await fetch('https://api.telegram.org/file/bot' + token + '/' + file.result.file_path);
-  if (!bin.ok) { await send(token, chatId, 'I could not download that image. Try sending it again.'); return; }
+  if (!bin.ok) { await send(token, chatId, BOT.downloadFailed); return; }
   const base64 = Buffer.from(await bin.arrayBuffer()).toString('base64');
 
   const origin = process.env.PUBLIC_ORIGIN || 'https://slippery-iota.vercel.app';
@@ -238,22 +316,18 @@ async function handleSlip(token, chatId, message, from) {
   });
   const payload = await read.json().catch(() => ({}));
   if (!read.ok) {
-    await send(token, chatId, 'I could not read that one: ' +
-      esc(payload.error || 'the reader is unavailable') + '. Nothing was logged.');
+    await send(token, chatId, BOT.readerFailed(esc(payload.error || 'the reader is unavailable')));
     return;
   }
 
   const f = payload.fields || {};
   if (!f.readable) {
-    await send(token, chatId,
-      '*I could not read that slip.*\n\n' +
-      'I will not guess at numbers I cannot see. Crop to the slip, avoid glare, ' +
-      'and keep the stake, odds and result in frame.');
+    await send(token, chatId, BOT.unreadable);
     return;
   }
 
   const missing = ['stake', 'odds', 'selection'].filter(k => f[k] == null);
-  const line = (label, value) => label + ': ' + (value == null ? '_not legible_' : '*' + esc(value) + '*');
+  const line = (label, value) => label + ': ' + (value == null ? BOT.notLegible : '*' + esc(value) + '*');
   const body = [
     line('Selection', f.selection),
     line('Event', f.event),
@@ -265,9 +339,9 @@ async function handleSlip(token, chatId, message, from) {
 
   /* Where the bet is in its life. Read off the slip, never inferred from
      the presence of a returns figure, every slip prints one. */
-  const stageLine = f.stage === 'settled' ? '\nAlready settled on the slip.'
-    : f.stage === 'inplay' ? '\nIn play. I will settle it at full time.'
-    : f.stage === 'prematch' ? '\nNot started. I will settle it at full time.'
+  const stageLine = f.stage === 'settled' ? BOT.stageSettled
+    : f.stage === 'inplay' ? BOT.stageInplay
+    : f.stage === 'prematch' ? BOT.stagePrematch
     : '';
 
   /* Park the reading. A Telegram callback carries 64 bytes, which is not
@@ -292,19 +366,16 @@ async function handleSlip(token, chatId, message, from) {
   }
 
   const keyboard = missing.length
-    ? [[{ text: 'Edit', callback_data: 'edit' }, { text: 'Retake', callback_data: 'retake' }]]
+    ? [[{ text: BOT.btnEdit, callback_data: 'edit' }, { text: BOT.btnRetake, callback_data: 'retake' }]]
     : draftId
-      ? [[{ text: 'Confirm', callback_data: 'ok:' + draftId }, { text: 'Discard', callback_data: 'no:' + draftId }]]
-      : [[{ text: 'Edit', callback_data: 'edit' }]];
+      ? [[{ text: BOT.btnConfirm, callback_data: 'ok:' + draftId }, { text: BOT.btnDiscard, callback_data: 'no:' + draftId }]]
+      : [[{ text: BOT.btnEdit, callback_data: 'edit' }]];
 
   await send(token, chatId,
-    (missing.length ? '*Read it, but some fields are missing.*\n\n' : '*Slip read.*\n\n') + body + stageLine +
+    (missing.length ? BOT.slipHeadPartial : BOT.slipHeadOk) + body + stageLine +
     (missing.length
-      ? '\n\nI left ' + missing.join(', ') + ' blank rather than guess. ' +
-        'Tap Edit to fill them in, or send a clearer photo.'
-      : draftId
-        ? '\n\nConfirm to log it. Nothing is saved until you do.'
-        : '\n\nLink this chat from Settings and I can log it for you.'),
+      ? BOT.slipMissing(missing.join(', '))
+      : draftId ? BOT.slipConfirmPrompt : BOT.slipNotLinked),
     { inline_keyboard: keyboard });
 }
 
@@ -319,15 +390,12 @@ async function handleCallback(token, callback) {
     if (dbConfigured()) {
       try { await db()`DELETE FROM slip_drafts WHERE id = ${data.slice(3)}`; } catch { /* already gone */ }
     }
-    await send(token, chatId, 'Discarded. Nothing was logged.');
+    await send(token, chatId, BOT.discarded);
     return;
   }
 
-  const replies = {
-    edit: 'Send the corrected value as a message, for example `stake 25` or `odds 2.10`.',
-    retake: 'Send a clearer photo whenever you are ready.'
-  };
-  await send(token, chatId, replies[data] || 'Done.');
+  const replies = { edit: BOT.editHow, retake: BOT.retakeHow };
+  await send(token, chatId, replies[data] || BOT.callbackDone);
 }
 
 /* Turn a parked reading into a real bet. The one place the bot writes to
@@ -335,7 +403,7 @@ async function handleCallback(token, callback) {
    rules have to hold, and they are the same rules /api/bets applies. */
 async function confirmDraft(token, chatId, draftId, from) {
   if (!dbConfigured()) {
-    await send(token, chatId, 'This deployment has no database yet, so I cannot log that.');
+    await send(token, chatId, BOT.logNoDb);
     return;
   }
   try {
@@ -345,14 +413,13 @@ async function confirmDraft(token, chatId, draftId, from) {
       SELECT d.id, d.fields, d.user_id, u.plan
       FROM slip_drafts d JOIN users u ON u.id = d.user_id
       WHERE d.id = ${draftId} AND u.deleted_at IS NULL`;
-    if (!rows.length) { await send(token, chatId, 'That slip has already been dealt with.'); return; }
+    if (!rows.length) { await send(token, chatId, BOT.draftGone); return; }
 
     const { fields: f, user_id: userId, plan } = rows[0];
     if ((plan || 'free') === 'free') {
       const used = await sql`SELECT count(*)::int AS n FROM bets WHERE user_id = ${userId}`;
       if (used[0].n >= FREE_SLIPS) {
-        await send(token, chatId, 'That is all ' + FREE_SLIPS +
-          ' free slips used. Upgrade in the app and send it again.');
+        await send(token, chatId, BOT.trialUsedUp(FREE_SLIPS));
         return;
       }
     }
@@ -393,12 +460,12 @@ async function confirmDraft(token, chatId, draftId, from) {
       FROM bets WHERE user_id = ${userId} AND settled_at::date = now()::date`;
 
     await send(token, chatId, outcome
-      ? 'Logged as *' + outcome.replace('cash-', 'cashed ') + '*, ' + money(profit) +
-        '.\n\nToday: *' + money(net[0].net) + '* across ' + net[0].n + ' settled bets.'
-      : 'Logged. It is on your calendar now, and I will settle it when the game finishes.');
+      ? BOT.loggedSettled(outcome.replace('cash-', 'cashed '), money(profit),
+          money(net[0].net), net[0].n)
+      : BOT.loggedPending);
   } catch (err) {
     console.error('[slippery] confirmDraft failed:', err.message);
-    await send(token, chatId, 'Something went wrong saving that. Nothing was logged, try again.');
+    await send(token, chatId, BOT.logFailed);
   }
 }
 

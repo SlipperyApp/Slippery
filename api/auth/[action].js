@@ -28,11 +28,12 @@ import logout from '../_lib/routes/logout.js';
 import me from '../_lib/routes/me.js';
 import profile from '../_lib/routes/profile.js';
 import resend from '../_lib/routes/resend.js';
+import link from '../_lib/routes/link.js';
 import reset from '../_lib/routes/reset.js';
 import signup from '../_lib/routes/signup.js';
 import verify from '../_lib/routes/verify.js';
 
-const ROUTES = { break: brk, close, forgot, login, logout, me, profile, resend, reset, signup, verify };
+const ROUTES = { break: brk, close, forgot, link, login, logout, me, profile, resend, reset, signup, verify };
 
 export default async function handler(req, res) {
   /* Vercel puts the [action] segment in req.query. Falling back to the path

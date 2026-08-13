@@ -55,7 +55,16 @@ export default async function handler(req, res) {
            the markup, so an account with no bot linked was told it had
            one. */
         telegramLinked: Boolean(user.telegram_id),
-        linkCode: user.link_code || null,
+        telegramUsername: user.telegram_username || null,
+        telegramLinkedAt: user.telegram_linked_at || null,
+        /* The code and its expiry travel together, or the countdown has
+           nothing to count and the page has to guess when it was issued.
+           A code past its expiry is reported as absent rather than as a
+           code that will not work. */
+        linkCode: user.link_code_expires_at && new Date(user.link_code_expires_at) > new Date()
+          ? (user.link_code || null) : null,
+        linkCodeExpiresAt: user.link_code_expires_at && new Date(user.link_code_expires_at) > new Date()
+          ? user.link_code_expires_at : null,
         since: user.created_at
       }
     });

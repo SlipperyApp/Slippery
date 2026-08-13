@@ -1761,11 +1761,45 @@ async function decideRequest(btn, yes, groupId, personId) {
 const BOT = 'SlipperyAppBot';
 let linkPoll = null;
 
-function openTelegram(btn) {
-  const code = (($('linkCode') || {}).textContent || '').trim();
-  if (!code || code === 'Not linked yet') {
-    toast('Your link code loads with your account. Log in first.');
-    return;
+/* Issue a code. The server generates it, because a code the browser picks
+   is a code the browser can pick to be somebody else's. */
+async function newLinkCode(btn) {
+  if (btn) { btn.disabled = true; btn.textContent = 'Getting one…'; }
+  const r = await post('/api/auth/link', { action: 'new' });
+  if (btn) { btn.disabled = false; btn.textContent = 'New code'; }
+  if (r.status === 401) { go('setup'); toast('Log in first.'); return null; }
+  if (!r.ok) { toast(r.body.error || 'Could not get a code just now.'); return null; }
+  /* Repaint from the session rather than from this reply, so Settings and
+     the setup step cannot end up showing different codes. */
+  const me = await get('/api/auth/me');
+  if (me.ok && me.body.user) R.renderAccount(me.body.user);
+  return r.body.linkCode;
+}
+
+/* UNLINK, AND MEAN IT.
+   The server answers with what it actually cleared, and this reads that
+   answer rather than assuming. Four controls in this codebase once
+   confirmed actions they never performed. */
+async function unlinkTelegram(btn) {
+  if (btn) { btn.disabled = true; btn.textContent = 'Unlinking…'; }
+  const r = await post('/api/auth/link', { action: 'unlink' });
+  if (btn) { btn.disabled = false; btn.textContent = 'Unlink'; }
+  if (!r.ok) { toast(r.body.error || 'Could not unlink just now.'); return; }
+  const me = await get('/api/auth/me');
+  if (me.ok && me.body.user) R.renderAccount(me.body.user);
+  toast(r.body.unlinked
+    ? 'Telegram unlinked. Nothing was deleted.'
+    : 'That chat was not linked.');
+}
+
+async function openTelegram(btn) {
+  let code = (($('linkCodeSettings') || $('linkCode') || {}).textContent || '').trim();
+  /* No usable code on screen means none has been issued or the last one
+     expired. Getting one is what the person wanted anyway, so do it rather
+     than telling them to press a different button first. */
+  if (!code || /^-+$/.test(code) || code === 'Not linked yet') {
+    code = await newLinkCode(null);
+    if (!code) return;
   }
   const url = 'https://t.me/' + BOT + '?start=' + encodeURIComponent(code);
   /* noopener: without it the opened tab gets a handle on this window. */
@@ -1799,7 +1833,7 @@ function pollForLink(btn) {
       clearInterval(linkPoll); linkPoll = null;
       if (btn) { btn.textContent = 'Open Telegram and link'; btn.disabled = false; }
       toast('Not linked yet. In the chat, send: /link ' +
-        (($('linkCode') || {}).textContent || '').trim());
+        (($('linkCodeSettings') || $('linkCode') || {}).textContent || '').trim());
     }
   }, 6000);
 }
@@ -2395,6 +2429,8 @@ document.addEventListener('click', e => {
     loadBrowse($('browseSearch').value.trim());
     return;
   }
+  if (c('#tgNewCode')) { newLinkCode($('tgNewCode')); return; }
+  if (c('#tgUnlink')) { unlinkTelegram($('tgUnlink')); return; }
   if ((el = c('[data-decide]'))) {
     decideRequest(el, el.getAttribute('data-decide') === 'yes',
       el.getAttribute('data-group'), el.getAttribute('data-person'));
