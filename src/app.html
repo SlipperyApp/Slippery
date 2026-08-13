@@ -73,38 +73,68 @@
         <button class="herolink" data-nav="demo">or look around a live one first</button>
       </div>
       <p class="herofree reveal">Two weeks free. 35 slips. No card.</p>
-      <div class="card previewcard flush reveal">
-        <div class="gradientline"></div>
-        <div style="padding:15px">
-          <p class="eyebrow" style="color:var(--t2)">Net this month</p>
-          <p class="bignum pos m" id="previewNet"></p>
-          <svg viewBox="0 0 300 66" preserveAspectRatio="none" style="width:100%;display:block;margin-top:10px" role="img" aria-label="Profit trending upward across the month">
-            <!-- Was a hardcoded #38BDF8 at .28 opacity over a dark card,
-                 which is why it was unreadable, and it was blue on a chart
-                 whose whole subject is profit. #86EFAC is the semantic
-                 colour for exactly this, the fill is more than twice as
-                 strong, and the line is 2.4px rather than 2. -->
-            <defs><linearGradient id="sparkFill" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0" stop-color="#86EFAC" stop-opacity=".42"/>
-              <stop offset="1" stop-color="#86EFAC" stop-opacity=".02"/></linearGradient></defs>
-            <path id="previewArea" fill="url(#sparkFill)"/>
-            <path id="previewLine" fill="none" stroke="#86EFAC" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>
-          </svg>
-          <div id="previewRows" style="margin-top:10px"></div>
+      <!-- BROWSER CHROME, holding the real thing.
+           A dashboard floating on a gradient reads as an illustration. The
+           same dashboard inside a window with traffic lights and a URL bar
+           reads as a screenshot of software that exists, which is the
+           claim being made. It is built from live markup rather than an
+           image: a screenshot ages the moment the product changes and
+           cannot be read by a screen reader.
+
+           aria-hidden, because everything in it is also stated in the copy
+           around it, and a screen reader should not have to walk a
+           decorative window frame to get there. -->
+      <div class="chrome reveal" aria-hidden="true">
+        <div class="chrome-bar">
+          <span class="chrome-dots"><i></i><i></i><i></i></span>
+          <span class="chrome-url">slippery-iota.vercel.app/dash</span>
+        </div>
+        <div class="chrome-body">
+          <div class="chrome-head">
+            <div>
+              <p class="ch-t">Dashboard</p>
+              <p class="ch-s">Your betting record, as it actually is</p>
+            </div>
+            <span class="ch-plus" aria-hidden="true">+</span>
+          </div>
+          <div class="ch-stats" id="chromeStats"></div>
+          <div class="ch-chart">
+            <div class="ch-chart-h"><span>Cumulative</span><span id="chromeRange"></span></div>
+            <svg viewBox="0 0 300 66" preserveAspectRatio="none" role="img" aria-label="Cumulative profit and loss">
+              <!-- Was a hardcoded #38BDF8 at .28 opacity over a dark card,
+                   which is why it was unreadable, and it was blue on a
+                   chart whose whole subject is profit. #86EFAC is the
+                   semantic colour for exactly this. -->
+              <defs><linearGradient id="sparkFill" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0" stop-color="#86EFAC" stop-opacity=".42"/>
+                <stop offset="1" stop-color="#86EFAC" stop-opacity=".02"/></linearGradient></defs>
+              <path id="previewArea" fill="url(#sparkFill)"/>
+              <path id="previewLine" fill="none" stroke="#86EFAC" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </div>
+          <div class="ch-pair">
+            <div class="ch-card">
+              <p class="ch-ct"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="#i-trophy"/></svg>Best band</p>
+              <div id="chromeTop"></div>
+            </div>
+            <div class="ch-card">
+              <p class="ch-ct">Recent</p>
+              <div id="previewRows"></div>
+            </div>
+          </div>
         </div>
       </div>
+      <p class="chromecap reveal">Sample figures, the same fabricated record the <button class="herolink" data-nav="demo">demo</button> runs on. Nobody made this money.</p>
     </div>
   </div>
 
-  <div class="wrap">
-    <!-- #secHow lived here and said "Capture it when you place it" with a
-         paragraph ending "logging at placement is the whole point". The
-         section below the pinned sequence now makes that argument properly,
-         with the placement / in play / after settling split behind it, so
-         this was the same claim told a screen earlier and weaker. Removing
-         it also closes the 439px dead band it opened above the sequence. -->
-
-  </div>
+  <!-- #secHow lived here and said "Capture it when you place it" with a
+       paragraph ending "logging at placement is the whole point". The
+       section below the pinned sequence makes that argument properly now,
+       with the placement / in play / after settling split behind it, so
+       this was the same claim told a screen earlier and weaker. The empty
+       .wrap that replaced it went too: an empty wrapper still carries its
+       own padding, which is dead space with a comment in it. -->
 
   <!-- ══════ the scroll-jacked sequence ══════
        The page is pinned for three viewport heights and the scroll wheel
@@ -207,13 +237,16 @@
          new section is an entry rather than a block of markup. -->
     <div id="landingSections"></div>
 
-    <!-- A quiet strip of bookmaker names. Not links to pages that do not
-         exist yet: naming the ones the reader has been tested against is
-         the useful half, and inventing twelve thin landing pages to rank
-         for is a content operation, not a product. -->
+    <!-- The bookmaker strip. This used to be names as plain text, with a
+         comment saying links to pages that do not exist would be worse
+         than no links. The pages exist now, and each one says what is
+         genuinely different about grading that bookmaker's slips rather
+         than repeating this page with a name swapped in, so the strip
+         links. -->
     <div class="booktrip reveal">
-      <span class="bookl">Slips read from</span>
+      <span class="bookl">Explore bookmaker-specific tracker pages</span>
       <span class="booknames" id="bookStrip"></span>
+      <button class="pillbtn link" data-nav="books">View all bookmaker trackers</button>
     </div>
 
     <!-- FEATURE GRID -->

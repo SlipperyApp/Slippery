@@ -18,6 +18,8 @@ import { TODAY } from './data.js';
 
 import { dowLabels, dowOffset } from './stats.js';
 import { OUTCOME_ICON, outcomeGroup, ico, ALL_BOOKS } from './data.js';
+import { BOOKPAGES } from './pages.js';
+import { DEMO, DEMO_DAYS } from './sample.js';
 
 /* ---------- the worked example ----------
    One slip followed end to end, plus the day it settled into. Internally
@@ -432,13 +434,25 @@ function renderHeroHeading() {
 }
 
 function renderPreview() {
-  /* A worked example, not the visitor's numbers, they have none yet, and
-     inventing some would be the exact dishonesty this product exists to
-     stop. The card says "Example" on it. */
-  setText('previewNet', M.signed(SAMPLE.monthNet));
-  const keys = Object.keys(SAMPLE.month).map(Number).sort((a, b) => a - b);
-  let run = 0;
-  const pts = keys.map(k => { run += SAMPLE.month[k]; return run; });
+  /* The hero window runs on the same fabricated sample as the demo page,
+     not on the visitor's numbers, because they have none yet and inventing
+     some would be the exact dishonesty this product exists to stop. The
+     caption under the window says whose numbers these are and links to
+     where they are explained. */
+  const stat = (k, v, tone) =>
+    '<div class="ch-stat"><span class="k">' + esc(k) + '</span>' +
+    '<span class="v ' + (tone || '') + '">' + v + '</span></div>';
+  setHTML('chromeStats',
+    stat('This month', M.signed(DEMO.month.profit), M.tone(DEMO.month.profit)) +
+    stat('Return', (DEMO.total.roi >= 0 ? '+' : '\u2212') +
+      Math.abs(DEMO.total.roi).toFixed(1) + '%', M.tone(DEMO.total.profit)) +
+    stat('Running', M.money0(DEMO.pendingStake)));
+  setText('chromeRange', 'Last ' + DEMO_DAYS + ' days');
+
+  /* One point per settled bet is 480 segments in a 300 unit wide box, so
+     it is sampled down to something a 66px tall sparkline can actually
+     resolve. Sampling rather than smoothing: the shape stays true. */
+  const pts = DEMO.curve.filter((_, i) => i % 8 === 0).concat(DEMO.curve.slice(-1));
   const max = Math.max(...pts, 1), min = Math.min(...pts, 0);
   const span = (max - min) || 1;
   const coords = pts.map((v, i) => {
@@ -452,13 +466,15 @@ function renderPreview() {
   $('previewLine').setAttribute('d', line);
   $('previewArea').setAttribute('d', line ? line + ' L296,66 L4,66 Z' : '');
 
-  setHTML('previewRows', SAMPLE.day.map((b, i) =>
-    '<div style="display:flex;justify-content:space-between;align-items:center;gap:9px;font-size:12.5px;padding:8px 0' +
-    (i ? ';border-top:1px solid var(--e2)' : '') + '">' +
-    '<span style="display:flex;align-items:center;gap:8px;min-width:0">' +
-    '<span class="prevrow-i" data-outcome="' + outcomeGroup(b.outcome) + '">' + ico(OUTCOME_ICON[b.outcome]) + '</span>' +
-    '<span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + esc(b.event) + '</span></span>' +
-    '<span class="m ' + M.tone(b.profit) + '">' + M.signed(b.profit) + '</span></div>').join(''));
+  const bands = DEMO.byBand.slice().sort((a, b) => b.roi - a.roi);
+  setHTML('chromeTop', bands.slice(0, 3).map(b =>
+    '<div class="ch-row"><span>' + esc(b.label) + '</span>' +
+    '<b class="' + M.tone(b.profit) + '">' +
+    (b.roi >= 0 ? '+' : '\u2212') + Math.abs(b.roi).toFixed(1) + '%</b></div>').join(''));
+
+  setHTML('previewRows', DEMO.recent.slice(0, 4).map(b =>
+    '<div class="ch-row"><span>' + esc(b.event) + '</span>' +
+    '<b class="' + M.tone(b.profit) + '">' + M.signed(b.profit) + '</b></div>').join(''));
 }
 
 function renderBotChat() {
@@ -752,21 +768,6 @@ export const SECTIONS = [
   },
   {
     accent: 'a3',
-    badge: ['i-users', 'Groups'],
-    h: ['Compare with friends.', 'Show nobody your stakes.'],
-    lede: 'Groups rank in units, not pounds. A £10 bettor and a £500 bettor sit in the same table honestly, and neither learns what the other stakes.',
-    rows: [
-      ['i-users', 'Start a group, share the code', 'Private by default, or listed for anyone to find.'],
-      ['i-chart', 'Ranked in units', 'Your unit is your standard stake. Only the ratio leaves the server.', true],
-      ['i-shield', 'Turnover never leaves', 'The board divides on the server so it cannot be reversed.']
-    ],
-    ticks: ['Units, never pounds', 'Public or invite-only groups',
-            'Follow individual Slippers', 'You choose who sees your figures'],
-    demo: 'group',
-    said: 'Same table, <b>50x</b> difference in stake size, and no way to tell which is which.'
-  },
-  {
-    accent: 'a1',
     badge: ['i-camera', 'Slip reading'],
     h: ['Screenshot to ledger,', 'without the typing.'],
     lede: 'Send the slip and the stake, odds, selection, bookmaker and every leg come off the image. Anything it cannot read is left blank rather than guessed.',
@@ -781,7 +782,22 @@ export const SECTIONS = [
     said: 'Read live from a bet365 treble: combined price <b>5.86</b>, three legs each with its own odds, and the result left blank because the slip had not settled.'
   },
   {
-    accent: 'a2',
+    accent: 'a4',
+    badge: ['i-bolt', 'Import'],
+    h: ['Bring the history', 'you already have.'],
+    lede: 'Screenshots, PDFs, a CSV export, or a profit screen from another tracker. Slippery works out which it is and files the dated rows on the right days.',
+    rows: [
+      ['i-arrow-down', 'Drop anything in', 'One zone. No choosing a format first.', true],
+      ['i-bolt', 'Dated rows land on their dates', 'A P/L screen becomes a month of the calendar, not one number.'],
+      ['i-void', 'Re-running it corrects, never doubles', 'Keyed on the day, so a retry is safe.']
+    ],
+    ticks: ['Images, PDF, CSV and paste', 'Every field editable before saving',
+            'Nothing saved until you confirm', 'Imported bets excluded from the capture rate'],
+    demo: 'import',
+    said: 'Imported history is counted separately, because it has no slips behind it and pretending otherwise would break the one number that matters.'
+  },
+  {
+    accent: 'a1',
     badge: ['i-chart', 'Football'],
     h: ['Every league.', 'Matched automatically.'],
     lede: 'Bets are linked to fixtures across the leagues our sources publish, so the competition and team splits build themselves. No tagging.',
@@ -826,19 +842,19 @@ export const SECTIONS = [
     said: 'Placing and logging become the same action. That is the only reason capture at placement survives contact with a Saturday.'
   },
   {
-    accent: 'a4',
-    badge: ['i-bolt', 'Import'],
-    h: ['Bring the history', 'you already have.'],
-    lede: 'Screenshots, PDFs, a CSV export, or a profit screen from another tracker. Slippery works out which it is and files the dated rows on the right days.',
+    accent: 'a2',
+    badge: ['i-users', 'Groups'],
+    h: ['Compare with friends.', 'Show nobody your stakes.'],
+    lede: 'Groups rank in units, not pounds. A £10 bettor and a £500 bettor sit in the same table honestly, and neither learns what the other stakes.',
     rows: [
-      ['i-arrow-down', 'Drop anything in', 'One zone. No choosing a format first.', true],
-      ['i-bolt', 'Dated rows land on their dates', 'A P/L screen becomes a month of the calendar, not one number.'],
-      ['i-void', 'Re-running it corrects, never doubles', 'Keyed on the day, so a retry is safe.']
+      ['i-users', 'Start a group, share the code', 'Private by default, or listed for anyone to find.'],
+      ['i-chart', 'Ranked in units', 'Your unit is your standard stake. Only the ratio leaves the server.', true],
+      ['i-shield', 'Turnover never leaves', 'The board divides on the server so it cannot be reversed.']
     ],
-    ticks: ['Images, PDF, CSV and paste', 'Every field editable before saving',
-            'Nothing saved until you confirm', 'Imported bets excluded from the capture rate'],
-    demo: 'import',
-    said: 'Imported history is counted separately, because it has no slips behind it and pretending otherwise would break the one number that matters.'
+    ticks: ['Units, never pounds', 'Public or invite-only groups',
+            'Follow individual Slippers', 'You choose who sees your figures'],
+    demo: 'group',
+    said: 'Same table, <b>50x</b> difference in stake size, and no way to tell which is which.'
   }
 ];
 
@@ -1076,7 +1092,11 @@ const QUOTES = [];
 export function renderTail() {
   /* The bookmakers the reader has actually been run against, from the one
      list of them, so adding a book in Settings shows up here too. */
-  setHTML('bookStrip', ALL_BOOKS.slice(0, 9).map(b => esc(b)).join(' · '));
+  /* Five names, and each is a route rather than a label. The strip used to
+     print nine as plain text; the pages exist now, so a name that cannot
+     be tapped is a link the reader looks for and does not find. */
+  setHTML('bookStrip', BOOKPAGES.slice(0, 5).map(b =>
+    '<button data-bookpage="' + esc(b.id) + '">' + esc(b.name) + '</button>').join(''));
 
   setHTML('featureGrid', FEATURES.map(f =>
     '<div class="fcard reveal"><span class="ftile" aria-hidden="true">' + ico(f[0]) + '</span>' +

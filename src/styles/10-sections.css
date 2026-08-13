@@ -293,14 +293,21 @@ body.in-app .sitefoot{margin-top:20px}
 
 /* The bookmaker strip. Deliberately quiet: it is reassurance that the
    reader has seen your slip before, not a feature. */
+/* The bookmaker strip. Centred and stacked, because it is now a route
+   into ten pages rather than a footnote naming what has been tested. */
 .booktrip{
-  display:flex;flex-wrap:wrap;align-items:center;gap:8px 14px;
-  margin-top:40px;padding:15px 0;
+  display:grid;justify-items:center;text-align:center;gap:10px;
+  margin-top:40px;padding:20px 0;
   border-top:1px solid var(--e2);border-bottom:1px solid var(--e2);
   & .bookl{font-family:var(--fm);font-size:9.5px;letter-spacing:.13em;
     text-transform:uppercase;color:var(--t3)}
-  & .booknames{display:flex;flex-wrap:wrap;gap:7px 13px;
-    font-size:12.5px;color:var(--t2)}}
+  & .booknames{display:flex;flex-wrap:wrap;justify-content:center;gap:2px}
+  & .booknames button{
+    font-size:13.5px;color:var(--t2);padding:7px 11px;min-height:36px;
+    border-radius:9px;background:none;border:0;font:inherit;cursor:pointer;
+    transition:color var(--tf),background var(--tf);
+    &:hover{color:var(--t1);background:var(--hov)}
+    &:focus-visible{outline:2px solid var(--s);outline-offset:1px}}}
 
 .fgrid{display:grid;grid-template-columns:1fr;gap:10px;margin-top:18px}
 @media (min-width:560px){.fgrid{grid-template-columns:1fr 1fr}}
@@ -489,3 +496,71 @@ body.in-app .sitefoot{margin-top:20px}
   & .dl i{font-style:normal;font-size:11.5px;color:var(--t2)}
   & .dr{font-family:var(--fm);font-size:13px;font-weight:650;white-space:nowrap;
     font-variant-numeric:tabular-nums lining-nums}}
+
+/* ============================================================
+   THE HERO WINDOW
+   ============================================================
+   A dashboard floating on a gradient reads as an illustration. The same
+   dashboard inside a window with traffic lights and a URL bar reads as a
+   screenshot of software that exists, which is the claim the hero is
+   making. Built from live markup rather than an image, because a
+   screenshot ages the moment the product changes.
+
+   The figures inside are the fabricated demo record, and the caption
+   under it says so. A hero window showing invented profit without saying
+   it is invented is the dishonesty this product exists to stop. */
+.chrome{
+  margin-top:26px;border-radius:16px;overflow:hidden;
+  border:1px solid var(--e1);background:var(--card);
+  box-shadow:0 26px 70px rgba(0,0,0,.42);
+}
+.chrome-bar{
+  display:flex;align-items:center;gap:10px;padding:9px 12px;
+  background:var(--c2);border-bottom:1px solid var(--e2);
+}
+.chrome-dots{display:flex;gap:5px;flex:0 0 auto;
+  & i{width:9px;height:9px;border-radius:50%;background:var(--e0);display:block}
+  & i:nth-child(1){background:#FF5F57}
+  & i:nth-child(2){background:#FEBC2E}
+  & i:nth-child(3){background:#28C840}}
+.chrome-url{
+  flex:1 1 auto;text-align:center;font-family:var(--fm);font-size:9.5px;
+  color:var(--t3);background:var(--c1);border-radius:6px;padding:4px 8px;
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.chrome-body{padding:14px}
+.chrome-head{
+  display:flex;align-items:flex-start;justify-content:space-between;gap:10px;
+  margin-bottom:12px}
+.ch-t{margin:0;font-size:15px;font-weight:650;letter-spacing:-.01em}
+.ch-s{margin:2px 0 0;font-size:11px;color:var(--t2)}
+.ch-plus{
+  flex:0 0 auto;width:26px;height:26px;border-radius:9px;display:grid;place-items:center;
+  background:var(--s);color:#08111f;font-size:16px;font-weight:600;line-height:1}
+.ch-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:7px}
+.ch-stat{
+  padding:9px 10px;border-radius:11px;background:var(--c1);border:1px solid var(--e2);
+  & .k{display:block;font-size:9px;color:var(--t2);letter-spacing:.06em;text-transform:uppercase}
+  & .v{display:block;font-family:var(--fm);font-size:13.5px;font-weight:700;margin-top:3px;
+    font-variant-numeric:tabular-nums lining-nums}}
+.ch-chart{
+  margin-top:9px;padding:10px;border-radius:11px;
+  background:var(--c1);border:1px solid var(--e2);
+  & svg{width:100%;height:56px;display:block;margin-top:6px}}
+.ch-chart-h{
+  display:flex;justify-content:space-between;font-size:9.5px;color:var(--t2);
+  font-family:var(--fm);letter-spacing:.05em}
+.ch-pair{display:grid;grid-template-columns:1fr 1fr;gap:7px;margin-top:9px}
+.ch-card{
+  padding:10px;border-radius:11px;background:var(--c1);border:1px solid var(--e2);
+  min-width:0;
+  & .ch-ct{display:flex;align-items:center;gap:5px;margin:0 0 6px;
+    font-size:9px;letter-spacing:.09em;text-transform:uppercase;color:var(--t2)}
+  & .ch-ct svg{width:11px;height:11px;color:var(--s);fill:currentColor}}
+.ch-row{
+  display:flex;justify-content:space-between;align-items:baseline;gap:7px;
+  padding:4px 0;font-size:10.5px;color:var(--t2);min-width:0;
+  & span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  & b{font-family:var(--fm);font-size:10.5px;font-weight:650;flex:0 0 auto;
+    font-variant-numeric:tabular-nums lining-nums}}
+.chromecap{
+  margin:11px 0 0;font-size:11.5px;line-height:1.55;color:var(--t3);text-align:center}
