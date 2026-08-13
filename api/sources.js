@@ -14,6 +14,7 @@ import { configured as dbConfigured } from './_lib/db.js';
 import { probeSources } from './_lib/fixtures.js';
 import { breakerState } from './_lib/net.js';
 import * as mail from './_lib/mail.js';
+import { webhookStatus } from './_lib/telegram-setup.js';
 
 export default async function handler(req, res) {
   if (!methodGuard(req, res, ['GET'])) return;
@@ -39,6 +40,13 @@ export default async function handler(req, res) {
         ADMIN_SECRET: has('ADMIN_SECRET')
       },
       mail: mail.provider(),
+      /* Whether the bot is actually wired up, which is otherwise only
+         answerable by someone holding the token. Read only: loading this
+         page cannot change where the bot points. It carries the bot's
+         public username, the URL Telegram is posting to (our own address),
+         how many updates are queued and the last error Telegram saw. The
+         token and the webhook secret are never in it. */
+      telegram: await webhookStatus(),
       sources: await probeSources(),
       /* What the circuit breaker currently believes, in seconds remaining.
          Empty is the healthy state. If a source you expect to work is in

@@ -10,6 +10,7 @@
  */
 import { settle } from '../src/js/settlement.js';
 import { json, methodGuard, fail } from './_lib/http.js';
+import { ensureWebhook } from './_lib/telegram-setup.js';
 import { db, ensureSchema, configured as dbConfigured } from './_lib/db.js';
 import * as feed from './_lib/fixtures.js';
 
@@ -24,11 +25,30 @@ export default async function handler(req, res) {
     await ensureSchema();
     const sql = db();
 
+    /* THE BOT KEEPS ITSELF REGISTERED.
+       Pointing Telegram at this deployment is one call with the bot token
+       in the URL, and the token must never be read, pasted or logged by a
+       person, so the only human who could run it is the owner, by hand,
+       after every deploy that changes the domain. A manual step nobody
+       remembers is a bot that silently stops answering.
+
+       This is idempotent: it asks Telegram where the webhook points and
+       writes only when the answer is wrong. Awaited but never allowed to
+       throw, because settling other people's bets is the job here and a
+       broken bot must not stop it. */
+    const hook = await ensureWebhook().catch(err => ({ state: 'threw', why: String(err && err.message) }));
+    if (hook.state === 'registered') console.log('[slippery] telegram webhook registered');
+    else if (hook.state !== 'ok' && hook.state !== 'no-token') {
+      console.warn('[slippery] telegram webhook', hook.state, hook.why || '');
+    }
+
     const pending = await sql`
       SELECT id, user_id, event, selection, bookmaker, odds, stake_pence
       FROM bets WHERE status = 'pending' AND placed_at > now() - interval '14 days'
       ORDER BY placed_at ASC LIMIT 200`;
-    if (!pending.length) return json(res, 200, { checked: 0, settled: 0, asked: 0, stillPending: 0 });
+    if (!pending.length) {
+      return json(res, 200, { checked: 0, settled: 0, asked: 0, stillPending: 0, telegram: hook.state });
+    }
 
     const today = new Date();
     const from = iso(new Date(today.getTime() - 3 * 86400000));
