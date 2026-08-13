@@ -19,7 +19,8 @@ const CHROME = process.env.CHROME_BIN || '/opt/pw-browsers/chromium-1194/chrome-
 const WIDTHS = [320, 390, 430];
 const SHOT_DIR = path.join(root, 'tools', 'screens');
 
-const VIEWS = ['landing', 'setup', 'howto', 'demo', 'pricing', 'dash', 'imp', 'settings', 'help', 'terms', 'privacy'];
+const VIEWS = ['landing', 'setup', 'howto', 'demo', 'pricing', 'dash', 'imp', 'settings', 'help', 'terms', 'privacy',
+  'books', 'calc', 'faqs', 'soon', 'log', 'feedback', 'util'];
 /* Graphite first, matching data.js: it is the default. */
 const THEMES = ['graphite', 'periwinkle', 'ink', 'tide', 'chalk'];
 
@@ -456,6 +457,33 @@ async function main() {
       fail('delegation', b + ', closest() will match it for every click, ' +
         'and this branch returns, so every branch after it is dead');
     }
+
+    /* ── a delegated attribute cannot double as state ──────────
+       The same failure with a different cause. `data-book` was added to
+       the click handler to route the bookmaker pages, and the slip review
+       card already carried `card.dataset.book = ...` as the bookmaker
+       name. closest('[data-book]') therefore matched every click inside a
+       review card, the branch returned, and Confirm stopped saving the
+       bet — silently, exactly like the [data-theme] bug above.
+
+       So: an attribute used to route clicks may not also be written as
+       state anywhere in the source. One or the other, never both. */
+    const sources = await Promise.all(
+      ['main.js', 'render.js', 'content.js', 'pages.js', 'auth.js', 'data.js']
+        .map(f => readFile(path.join(root, 'src', 'js', f), 'utf8')));
+    const all = sources.join('\n');
+    const camel = s => s.replace(/-([a-z])/g, (_, c) => c.toUpperCase());
+    for (const sel of selectors) {
+      for (const m of sel.matchAll(/\[data-([\w-]+)\]/g)) {
+        const attr = m[1];
+        const written = new RegExp('dataset\\.' + camel(attr) + '\\s*=').test(all);
+        if (written) {
+          fail('delegation', '[data-' + attr + '] routes clicks and is also written as ' +
+            'dataset.' + camel(attr) + ', so the branch swallows every click inside ' +
+            'any element carrying that state');
+        }
+      }
+    }
     await page.close();
   }
 
@@ -562,7 +590,7 @@ async function main() {
     await installStub(page, { signedIn: false });
     await page.goto(base, { waitUntil: 'networkidle' });
     await page.waitForTimeout(400);
-    await page.evaluate(() => document.querySelector('[data-nav="setup"]').click());
+    await page.evaluate(() => document.getElementById('ctaStart').click());
     await page.waitForTimeout(250);
 
     const step = () => page.evaluate(() => {
@@ -642,7 +670,7 @@ async function main() {
     await installStub(page, { signedIn: false });
     await page.goto(base, { waitUntil: 'networkidle' });
     await page.waitForTimeout(400);
-    await page.evaluate(() => document.querySelector('[data-nav="setup"]').click());
+    await page.evaluate(() => document.getElementById('ctaStart').click());
     await page.waitForTimeout(250);
     await page.evaluate(() => document.querySelector('#authSeg [data-auth="in"]').click());
     await page.waitForTimeout(200);

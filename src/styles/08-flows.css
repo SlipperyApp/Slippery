@@ -58,11 +58,9 @@
   & h2{font-size:clamp(21px,5.2vw,27px)}
   & p{color:var(--t2);margin:9px auto 17px;max-width:38ch;font-size:14px}}
 
-.footer{
-  padding:26px 0 16px;border-top:1px solid var(--e2);margin-top:30px;text-align:center;
-  & nav{display:flex;flex-wrap:wrap;gap:4px 14px;justify-content:center;margin-bottom:14px}
-  & nav button{color:var(--t2);font-size:13px;padding:8px;min-height:40px;
-    transition:color var(--tf);&:hover{color:var(--t1)}}}
+/* .footer was the landing page's own link row. It is gone; .sitefoot in
+   10-sections.css is rendered outside every view and carries those links
+   plus the rest, so the app has a way out that is not the tab bar. */
 
 .anchors{display:none;gap:2px;
   & button{font-size:13px;color:var(--t2);padding:8px 11px;border-radius:9px;min-height:40px;

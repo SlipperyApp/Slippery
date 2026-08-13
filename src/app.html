@@ -25,13 +25,17 @@
   <button class="brand" data-nav="landing" aria-label="Slippery home">
     <span class="mark" aria-hidden="true"></span><span>Slipp<i>ery</i></span>
   </button>
+  <!-- Two text links and one filled pill, in that weight order. The old
+       bar pointed at three page anchors, one of which (secHow) no longer
+       exists, so a third of the navigation was already dead. Destinations
+       beat anchors here: somebody deciding whether to sign up wants the
+       price and a way back in, not a scroll shortcut. -->
   <div class="topbar-right">
-    <nav class="anchors" aria-label="Page sections">
-      <button data-anchor="secHow">How</button>
-      <button data-anchor="secGet">Features</button>
-      <button data-anchor="secFaq">FAQ</button>
+    <nav class="anchors" aria-label="Site">
+      <button data-nav="pricing">Pricing</button>
+      <button data-nav="setup" data-mode="in">Sign In</button>
     </nav>
-    <button class="btn primary small" data-nav="setup">Start free</button>
+    <button class="btn primary small" id="ctaStart" data-nav="setup">Get Started</button>
   </div>
 </header>
 
@@ -275,17 +279,10 @@
       <button class="btn primary" data-nav="setup">Start free</button>
     </div>
 
-    <div class="footer">
-      <nav aria-label="Footer">
-        <button data-nav="pricing">Pricing</button>
-        <button data-nav="howto">How it works</button>
-        <button data-nav="setup">Create account</button>
-        <button data-nav="help">Help</button>
-        <button data-nav="terms">Terms</button>
-        <button data-nav="privacy">Privacy</button>
-      </nav>
-      <p class="fineprint" style="margin:0 auto">Slippery tracks bets. It does not accept them and never handles money.</p>
-    </div>
+    <!-- The landing page used to end with its own link row. It is gone:
+         the site footer below every view carries the same links and more,
+         and two footers a screen apart was the tail of the page repeating
+         itself. -->
   </div>
 </section>
 
@@ -1341,6 +1338,127 @@
     <div id="privacyBody"></div>
   </div>
 </section>
+
+<!-- ══════════════ BOOKMAKERS ══════════════
+     One template, one page per bookmaker, generated from a table in
+     content.js rather than hand-written twelve times. What makes them
+     worth having is that each one states the thing that is actually
+     different about grading that bookmaker's slips — bet365's Asian
+     handicaps push where everyone else's lose — so the page answers a
+     question instead of repeating the landing copy with a name swapped
+     in, which is what a thin SEO page is. -->
+<section class="view" id="books" aria-label="Bookmakers">
+  <div class="wrap page-lede">
+    <div class="reveal">
+      <p class="eyebrow">Bookmakers</p>
+      <h1 style="font-size:26px;margin-top:6px">Slips we have been tested against.</h1>
+      <p class="sub" style="max-width:56ch">Every one of these has had real slips read off it. Where a bookmaker grades a market differently from the rest, the difference is written down here and in the settlement engine, not left for you to discover.</p>
+    </div>
+    <div class="bkgrid" id="bookGrid"></div>
+    <div class="bkpage" id="bookPage" hidden></div>
+  </div>
+</section>
+
+<!-- ══════════════ CALCULATORS ══════════════
+     Pure arithmetic, so it can be honest. Nothing here needs a feed, an
+     account or a price we do not have — which is exactly why these four
+     and not the ones that would need a paid odds source. -->
+<section class="view" id="calc" aria-label="Calculators">
+  <div class="wrap page-lede">
+    <div class="reveal">
+      <p class="eyebrow">Calculators</p>
+      <h1 style="font-size:26px;margin-top:6px">Four sums worth getting right.</h1>
+      <p class="sub" style="max-width:56ch">Free, no account. They run in your browser and nothing is sent anywhere.</p>
+    </div>
+    <div class="calcs" id="calcList"></div>
+  </div>
+</section>
+
+<!-- ══════════════ FAQS ══════════════ -->
+<section class="view" id="faqs" aria-label="Frequently asked questions">
+  <div class="wrap nar page-lede">
+    <div class="reveal" style="margin-bottom:14px">
+      <p class="eyebrow">Reference</p>
+      <h1 style="font-size:26px;margin-top:6px">Importing and tracking, answered properly.</h1>
+      <p class="sub">Lists where a list is the honest answer. Prose hides the cases it does not cover.</p>
+    </div>
+    <div id="faqsBody"></div>
+  </div>
+</section>
+
+<!-- ══════════════ COMING SOON ══════════════ -->
+<section class="view" id="soon" aria-label="Coming soon">
+  <div class="wrap page-lede">
+    <div class="reveal">
+      <p class="eyebrow">Roadmap</p>
+      <h1 style="font-size:26px;margin-top:6px">What is being worked on.</h1>
+      <p class="sub" style="max-width:56ch">Planned means it is designed and queued. Research means we do not yet know whether it can be done honestly, which is a different thing from not having started.</p>
+    </div>
+    <div class="soonlist" id="soonList"></div>
+    <div class="lastcta reveal" style="margin-top:22px">
+      <h2>Want something that is not here?</h2>
+      <p>The list is short on purpose. If the thing you need is missing, that is worth knowing.</p>
+      <button class="btn primary" data-nav="feedback">Send feedback</button>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════ CHANGELOG ══════════════ -->
+<section class="view" id="log" aria-label="Changelog">
+  <div class="wrap page-lede">
+    <div class="reveal">
+      <p class="eyebrow">Changelog</p>
+      <h1 style="font-size:26px;margin-top:6px">What changed, in plain language.</h1>
+      <p class="sub" style="max-width:56ch">Written as what is different for you, not as what the commit said.</p>
+    </div>
+    <div class="loglist" id="logList"></div>
+  </div>
+</section>
+
+<!-- ══════════════ FEEDBACK ══════════════ -->
+<section class="view" id="feedback" aria-label="Feedback">
+  <div class="wrap nar page-lede">
+    <div class="reveal">
+      <p class="eyebrow">Feedback</p>
+      <h1 style="font-size:26px;margin-top:6px">Tell us what is wrong with it.</h1>
+      <p class="sub">Bugs, missing bookmakers, a bet it graded wrongly. A wrong grade is the one we most want to hear about.</p>
+    </div>
+    <form class="card pad" id="feedbackForm" style="margin-top:14px">
+      <label class="fld">
+        <span>What kind of thing is it?</span>
+        <select id="fbKind">
+          <option value="grade">A bet was graded wrongly</option>
+          <option value="read">A slip was read wrongly</option>
+          <option value="bug">Something is broken</option>
+          <option value="idea">An idea or a request</option>
+          <option value="other">Something else</option>
+        </select>
+      </label>
+      <label class="fld">
+        <span>What happened?</span>
+        <textarea id="fbBody" rows="6" placeholder="What you expected, and what it did instead."></textarea>
+      </label>
+      <label class="fld">
+        <span>Email, if you want a reply <span class="opt">optional</span></span>
+        <input type="email" id="fbMail" placeholder="you@example.com" autocomplete="email">
+      </label>
+      <button class="btn primary" type="submit" style="width:100%">Send feedback</button>
+      <p class="hinttext" style="margin-top:10px">Goes to the same inbox as support. Nothing about your bets is attached unless you paste it in.</p>
+    </form>
+  </div>
+</section>
+
+<!-- ══════════════ UTILITIES ══════════════ -->
+<section class="view" id="util" aria-label="Data utilities">
+  <div class="wrap page-lede">
+    <div class="reveal">
+      <p class="eyebrow">Utilities</p>
+      <h1 style="font-size:26px;margin-top:6px">Clean up what the import could not.</h1>
+      <p class="sub" style="max-width:56ch">Run over your own ledger, one at a time, and each one shows you what it would change before it changes anything.</p>
+    </div>
+    <div class="utils" id="utilList"></div>
+  </div>
+</section>
 </main>
 
 <div class="scrim" id="scrim"></div>
@@ -1370,10 +1488,57 @@
      the reminder wherever somebody is looking at it, not only where they
      arrived. Rendered outside every view so it cannot be missed by
      navigating past it. -->
-<footer class="agebar" aria-label="Responsible gambling">
-  <span class="ageroundel" aria-hidden="true">18+</span>
-  <span>Please gamble responsibly.</span>
-  <a href="https://www.begambleaware.org" target="_blank" rel="noopener">BeGambleAware.org</a>
+<!-- ONE FOOTER, EVERY VIEW, including inside the app.
+     There used to be two: a link row that only existed on the landing page
+     and a separate 18+ strip everywhere else, so signing in lost you every
+     route out except the tab bar. This is rendered outside the views, so no
+     navigation can get past it.
+
+     Three social icons are specified. One is rendered, because one exists.
+     A row of icons linking to accounts nobody has registered is three dead
+     ends dressed as credibility. -->
+<footer class="sitefoot" aria-label="Site">
+  <div class="sitefoot-in">
+    <div class="sitefoot-brand">
+      <button class="brand" data-nav="landing" aria-label="Slippery home">
+        <span class="mark" aria-hidden="true"></span><span>Slipp<i>ery</i></span>
+      </button>
+      <p>Capture the slip when you place it.</p>
+    </div>
+
+    <nav class="sitefoot-links" aria-label="Footer">
+      <button data-anchor="secAll">Features</button>
+      <button data-nav="pricing">Pricing</button>
+      <button data-nav="books">Bookmakers</button>
+      <button data-nav="demo">Demo</button>
+      <button data-nav="calc">Calculators</button>
+      <button data-nav="faqs">FAQs</button>
+      <button data-nav="soon">Coming soon</button>
+      <button data-nav="log">Changelog</button>
+      <button data-nav="help">Support</button>
+      <button data-nav="dash">Dashboard</button>
+    </nav>
+
+    <div class="sitefoot-legal">
+      <p class="sitefoot-copy">© <span id="footYear">2026</span> Slippery. Slippery tracks bets. It does not accept them and never handles money.</p>
+      <div class="sitefoot-social">
+        <a href="https://t.me/SlipperyAppBot" target="_blank" rel="noopener" aria-label="Slippery on Telegram">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><use href="#i-telegram"/></svg>
+        </a>
+      </div>
+      <nav class="sitefoot-fine" aria-label="Legal">
+        <button data-nav="terms">Terms</button>
+        <button data-nav="privacy">Privacy</button>
+        <button data-nav="feedback">Feedback</button>
+      </nav>
+    </div>
+  </div>
+
+  <div class="agebar">
+    <span class="ageroundel" aria-hidden="true">18+</span>
+    <span>Please gamble responsibly.</span>
+    <a href="https://www.begambleaware.org" target="_blank" rel="noopener">GambleAware.org</a>
+  </div>
 </footer>
 
 <nav class="tabbar" aria-label="App sections">

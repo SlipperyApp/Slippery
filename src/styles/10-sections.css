@@ -121,7 +121,66 @@
   .sect-rows{gap:9px}
 }
 
-/* The 18+ line. On every page, above the tab bar, never inside a view.
+/* ============================================================
+   THE SITE FOOTER
+   ============================================================
+   One footer for the whole document, outside every view, so no navigation
+   can get past it. There used to be two: a link row that existed only on
+   the landing page and an 18+ strip everywhere else, which meant signing
+   in removed every route out of the app except the tab bar.
+
+   Ordinary <button>s rather than <a href>s because navigation here is a
+   view swap, not a page load; they carry data-nav and the one delegated
+   handler routes them. */
+.sitefoot{border-top:1px solid var(--e2);margin-top:26px}
+.sitefoot-in{
+  max-width:940px;margin:0 auto;padding:26px 16px 4px;
+  display:grid;gap:18px;
+}
+.sitefoot-brand{
+  display:grid;gap:6px;justify-items:center;text-align:center;
+  & .brand{font-size:16px}
+  & p{margin:0;font-size:12.5px;color:var(--t2)}
+}
+.sitefoot-links{
+  display:flex;flex-wrap:wrap;justify-content:center;gap:2px 4px;
+  & button{
+    background:none;border:0;color:var(--t2);font:inherit;font-size:12.5px;
+    padding:8px 10px;min-height:34px;border-radius:8px;cursor:pointer;
+    &:hover{color:var(--t1);background:var(--hov)}
+    &:focus-visible{outline:2px solid var(--s);outline-offset:1px}}
+}
+.sitefoot-legal{
+  display:grid;gap:11px;justify-items:center;text-align:center;
+  padding-top:16px;border-top:1px solid var(--e2);
+}
+.sitefoot-copy{margin:0;font-size:11.5px;color:var(--t3);line-height:1.6;max-width:52ch}
+.sitefoot-social{
+  display:flex;gap:8px;
+  & a{
+    display:inline-grid;place-items:center;width:34px;height:34px;border-radius:50%;
+    border:1px solid var(--e1);color:var(--t2);
+    &:hover{color:var(--t1);border-color:var(--e0);background:var(--hov)}
+    &:focus-visible{outline:2px solid var(--s);outline-offset:2px}}
+  & svg{width:15px;height:15px;fill:currentColor}
+}
+.sitefoot-fine{
+  display:flex;gap:2px;flex-wrap:wrap;justify-content:center;
+  & button{
+    background:none;border:0;color:var(--t3);font:inherit;font-size:11.5px;
+    padding:7px 9px;min-height:32px;border-radius:8px;cursor:pointer;
+    text-decoration:underline;text-underline-offset:3px;
+    &:hover{color:var(--t1)}
+    &:focus-visible{outline:2px solid var(--s);outline-offset:1px}}
+}
+@media (min-width:720px){
+  .sitefoot-brand{justify-items:start;text-align:left}
+  .sitefoot-legal{
+    grid-template-columns:1fr auto auto;align-items:center;
+    justify-items:start;text-align:left;gap:16px}
+}
+
+/* The 18+ line. On every page, at the very bottom, never inside a view.
    Small, permanent, and not dismissible: the point of it is that it is
    always there. It sits in normal flow at the end of the document so it
    scrolls with content rather than covering it, and the tab bar's own
@@ -142,6 +201,9 @@
 /* In the app the tab bar is fixed to the bottom, so the line needs to clear
    it rather than hide behind it. */
 body.in-app .agebar{margin-bottom:66px}
+/* The tab bar covers the bottom of the app, so the footer's own bottom
+   padding is not enough on its own. */
+body.in-app .sitefoot{margin-top:20px}
 
 /* ============================================================
    THE DIVERGENCE

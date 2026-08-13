@@ -10,13 +10,15 @@ import { settle, settleCashOut, ledgerOutcome } from './settlement.js';
 import { stats, dayMap, monthTotal, targetFor, weekRange, invalidateDays } from './stats.js';
 import * as R from './render.js';
 import * as C from './content.js';
+import * as P from './pages.js';
+import { sportOf } from './sports.js';
 import { initMotion, syncThemeColor } from './motion.js';
 import { extractSlip, readText, get, post, patch, del } from './api.js';
 import { parseBetsCsv } from './csv.js';
 import * as Auth from './auth.js';
 
 const MS = R.MS;
-const APP_VIEWS = ['dash', 'imp', 'settings', 'prof'];
+const APP_VIEWS = ['dash', 'imp', 'settings', 'prof', 'util'];
 
 
 /* ---------------- the live ledger ----------------
@@ -1871,6 +1873,47 @@ async function removePlEntry(id) {
   toast('Figure removed');
 }
 
+/* ---------------- data utilities ----------------
+   Each one reports what it would change and changes nothing. A tool that
+   rewrites a betting ledger without showing its working first is a tool
+   that quietly loses somebody's record, and there is no undo for that.
+
+   These run over LEDGER in the browser because they are read-only. The
+   moment one of them applies a change it has to move to the server, where
+   settlement already lives, or there would be two writers. */
+function runUtility(id) {
+  const out = $('util-' + id);
+  if (!out) return;
+  const all = LEDGER.concat(PENDING);
+  if (!all.length) {
+    out.innerHTML = '<p class="hinttext">Nothing to look at yet. Log a bet or import a history first.</p>';
+    return;
+  }
+  let found = [];
+  if (id === 'split') {
+    /* One row holding several selections. A slash or a plus between two
+       named selections is the shape a spreadsheet export uses for a
+       multiple that was flattened into one cell. */
+    found = all.filter(b => /\s(?:\/|\+|&)\s/.test(String(b.selection || '')) && !(b.legs && b.legs.length > 1))
+      .map(b => b.selection + ' — ' + String(b.selection).split(/\s(?:\/|\+|&)\s/).length + ' selections in one row');
+  } else if (id === 'sport') {
+    found = all.filter(b => b.sport && sportOf({ event: b.event, selection: b.selection, market: b.market }) !== b.sport)
+      .map(b => (b.event || b.selection) + ' — filed as ' + b.sport + ', reads as ' +
+        sportOf({ event: b.event, selection: b.selection, market: b.market }));
+  } else if (id === 'link') {
+    found = all.filter(b => !b.competition && b.event).map(b => b.event + ' — no competition attached');
+  }
+  if (!found.length) {
+    out.innerHTML = '<p class="hinttext">Nothing found. Every bet in your ledger already looks right for this one.</p>';
+    return;
+  }
+  out.innerHTML = '<p class="utilfound"><b>' + found.length + '</b> ' +
+    (found.length === 1 ? 'bet' : 'bets') + ' this would change</p><ul class="utilul">' +
+    found.slice(0, 12).map(f => '<li>' + esc(f) + '</li>').join('') +
+    (found.length > 12 ? '<li>and ' + (found.length - 12) + ' more</li>' : '') + '</ul>' +
+    '<p class="hinttext">Applying these is not built yet. The list above is what it would touch, so you can fix them by hand in the ledger meanwhile.</p>';
+}
+
 /* ---------------- events ---------------- */
 document.addEventListener('click', e => {
   const t = e.target;
@@ -1883,7 +1926,22 @@ document.addEventListener('click', e => {
     if (target) setTimeout(() => target.scrollIntoView({ behavior: RM ? 'auto' : 'smooth', block: 'start' }), S.view === 'landing' ? 0 : 60);
     return;
   }
-  if ((el = c('[data-nav]'))) { go(el.getAttribute('data-nav')); return; }
+  /* One bookmaker page at a time, inside the one view. Ten views for ten
+     bookmakers would be ten more ids to keep unique and ten more entries
+     in every check that walks the views; the content is a table, so the
+     route is a parameter. */
+  if ((el = c('[data-bookpage]'))) { P.showBook(el.getAttribute('data-bookpage')); return; }
+  if ((el = c('[data-utilrun]'))) { runUtility(el.getAttribute('data-utilrun')); return; }
+
+  if ((el = c('[data-nav]'))) {
+    /* "Sign In" and "Get Started" are the same view. The mode attribute
+       says which half of it to open, so the header's two controls do not
+       both land a returning user on the signup form. */
+    const mode = el.getAttribute('data-mode');
+    go(el.getAttribute('data-nav'));
+    if (mode === 'in') Auth.setMode('in');
+    return;
+  }
   if ((el = c('#subnav button'))) { showPane(el.getAttribute('data-pane')); return; }
 
   if ((el = c('[data-period]'))) { setPeriod(el.getAttribute('data-period')); return; }
@@ -2437,6 +2495,7 @@ async function init() {
      pointing at the wrong one. */
   setHTML('wizbar', new Array($$('.step').length).fill('<i></i>').join(''));
   C.renderStatic();
+  P.renderPages();
   R.renderMisc();
   R.renderPrivacy();
   R.renderTargets();
