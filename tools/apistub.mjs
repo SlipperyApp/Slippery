@@ -253,16 +253,32 @@ export async function installStub(page, opts = {}) {
     { id: 'p1', name: 'Acca Merchants', members: 34, joined: false, full: false },
     { id: 'p2', name: 'Bankroll Club', members: 12, joined: true, full: false },
     { id: 'p3', name: 'Chalk Only', members: 200, joined: false, full: true },
-    { id: 'p4', name: 'Sunday League Syndicate', members: 7, joined: false, full: false }
+    { id: 'p4', name: 'Sunday League Syndicate', members: 7, joined: false, full: false,
+      visibility: 'private' },
+    /* Somebody who has already asked. The row must say Asked rather than
+       offering the button again. */
+    { id: 'p5', name: 'Quiet Stakes', members: 4, joined: false, full: false,
+      visibility: 'private', asked: true }
+  ];
+  const REQUESTS = [
+    { groupId: 'g1', groupName: 'Sunday League', userId: 'u9', person: 'DariusOdds',
+      at: '2026-08-12T10:00:00Z' }
   ];
   await page.route('**/api/groups*', route => {
     const method = route.request().method();
     const url = new URL(route.request().url());
     if (method === 'GET' && url.searchParams.has('browse')) {
       const q = (url.searchParams.get('q') || '').toLowerCase();
-      const rows = q ? DIRECTORY.filter(g => g.name.toLowerCase().includes(q)) : DIRECTORY;
+      const sort = url.searchParams.get('sort') || 'popular';
+      let rows = q ? DIRECTORY.filter(g => g.name.toLowerCase().includes(q)) : DIRECTORY.slice();
+      if (sort === 'name') rows.sort((a, b) => a.name.localeCompare(b.name));
+      else if (sort === 'popular') rows.sort((a, b) => b.members - a.members);
       return route.fulfill({ status: 200, contentType: 'application/json',
-        body: JSON.stringify({ groups: rows, limit: 100 }) });
+        body: JSON.stringify({ groups: rows, sort, limit: 100 }) });
+    }
+    if (method === 'GET' && url.searchParams.has('requests')) {
+      return route.fulfill({ status: 200, contentType: 'application/json',
+        body: JSON.stringify({ requests: REQUESTS }) });
     }
     if (method === 'GET') {
       return route.fulfill({ status: 200, contentType: 'application/json',
@@ -277,9 +293,15 @@ export async function installStub(page, opts = {}) {
       return route.fulfill({ status: 201, contentType: 'application/json',
         body: JSON.stringify({ joined: true, group: { id: 'g2', name: 'Joined Group' } }) });
     }
+    if (sent.decide) {
+      return route.fulfill({ status: 200, contentType: 'application/json',
+        body: JSON.stringify(sent.accept ? { accepted: true } : { declined: true }) });
+    }
+    /* 202 and `asked`, not 201 and `joined`. Every way into a group goes
+       through the owner now. */
     if (sent.join) {
-      return route.fulfill({ status: 201, contentType: 'application/json',
-        body: JSON.stringify({ joined: true, group: { id: sent.join, name: 'Acca Merchants' } }) });
+      return route.fulfill({ status: 202, contentType: 'application/json',
+        body: JSON.stringify({ asked: true, group: { id: sent.join, name: 'Acca Merchants' } }) });
     }
     /* A taken name is the interesting create response, since the whole
        point of platform-wide uniqueness is that this path is reachable. */

@@ -59,17 +59,26 @@ export default async function handler(req, res) {
       /* One endpoint, because Vercel Hobby allows twelve functions in total
          and a browse screen is not worth one of them. */
       const url = new URL(req.url, 'http://x');
-      if (url.searchParams.has('browse')) return browse(res, user, url.searchParams.get('q') || '');
+      if (url.searchParams.has('browse')) {
+        return browse(res, user, url.searchParams.get('q') || '',
+          url.searchParams.get('sort') || 'popular');
+      }
+      if (url.searchParams.has('requests')) return requests(res, user);
       return list(res, user);
     }
 
     const body = await readJson(req, 8 * 1024);
     if (req.method === 'DELETE') return leave(res, user, body);
+    /* The owner answering a request. Checked before the join paths so a
+       body carrying both cannot slip through as a join. */
+    if (body && body.decide) return decide(res, user, body);
     if (body && body.code) return joinGroup(res, user, body);
-    /* Joining a public group from the browse list needs no code: it is
-       public, that is what public means. Private groups are never in the
-       list, so an id alone can only ever open a public door. */
-    if (body && body.join) return joinPublic(res, user, body);
+    /* ASKING IS NOT JOINING. Every group is in the directory now, private
+       ones included, and every way in goes through the owner. A directory
+       that hides private groups makes them undiscoverable; one that lists
+       them without a gate makes "private" meaningless. Listing the door
+       and locking it does both jobs. */
+    if (body && body.join) return requestJoin(res, user, body);
     return create(res, user, body);
   } catch (err) {
     return fail(res, err, 'Your groups could not be reached.');
@@ -177,57 +186,189 @@ const initials = name => String(name || '?').replace(/[^A-Za-z0-9]/g, '').slice(
 
 /* ---------------- browse ----------------
  *
- * Public groups, alphabetically, with how many people are in each and
- * whether you are already one of them.
+ * EVERY group, alphabetically or by size or by age, with how many people
+ * are in each and where you stand with it.
  *
- * What deliberately does NOT leave here: join codes, member names, and any
- * figure at all. A directory is a list of doors, not a window. Someone who
- * has not joined has no business seeing who is inside or how they are
- * doing, and a join code in a public listing would make "private group,
- * public code" a contradiction the moment a group flipped visibility.
+ * This used to list public groups only, and hid private ones entirely on
+ * the reasoning that a locked row still tells you the group exists. That
+ * reasoning was wrong for this product: a group nobody can find is a group
+ * nobody joins, and the owner had no way to invite anyone except by
+ * passing a code around outside the app. Listing the door and locking it
+ * is the version that does both jobs, and the lock is real, because every
+ * way in now goes through the owner.
  *
- * Private groups are absent entirely rather than shown locked. A locked row
- * still tells you the group exists and what it is called, and the person
- * who ticked "private" was not agreeing to that.
+ * What still does NOT leave here: join codes, member names, and any figure
+ * at all. A directory is a list of doors, not a window. Someone who has
+ * not joined has no business seeing who is inside or how they are doing.
  */
 const BROWSE_LIMIT = 100;
+const SORTS = ['popular', 'new', 'name'];
 
-async function browse(res, user, query) {
+async function browse(res, user, query, sort) {
   const sql = db();
   /* Folded the same way the unique index folds, so a search matches the
      thing that decides. */
   const q = String(query || '').trim().toLowerCase().slice(0, 40);
-  const rows = q
+  const order = SORTS.includes(sort) ? sort : 'popular';
+
+  /* Three orderings, written out rather than interpolated. A sort key that
+     reaches the SQL as a string is an injection waiting to happen, and the
+     tagged template cannot parameterise an ORDER BY clause. */
+  const rows = order === 'name'
     ? await sql`
-        SELECT g.id, g.name, g.created_at,
+        SELECT g.id, g.name, g.visibility, g.created_at,
                (SELECT count(*)::int FROM group_members m WHERE m.group_id = g.id) AS members,
                EXISTS (SELECT 1 FROM group_members m
-                       WHERE m.group_id = g.id AND m.user_id = ${user.id}) AS joined
+                       WHERE m.group_id = g.id AND m.user_id = ${user.id}) AS joined,
+               EXISTS (SELECT 1 FROM group_requests r
+                       WHERE r.group_id = g.id AND r.user_id = ${user.id}) AS asked
         FROM groups g
-        WHERE g.visibility = 'public' AND g.name_lower LIKE ${'%' + q + '%'}
+        WHERE ${q ? sql`g.name_lower LIKE ${'%' + q + '%'}` : sql`true`}
         ORDER BY g.name_lower
         LIMIT ${BROWSE_LIMIT}`
-    : await sql`
-        SELECT g.id, g.name, g.created_at,
-               (SELECT count(*)::int FROM group_members m WHERE m.group_id = g.id) AS members,
-               EXISTS (SELECT 1 FROM group_members m
-                       WHERE m.group_id = g.id AND m.user_id = ${user.id}) AS joined
-        FROM groups g
-        WHERE g.visibility = 'public'
-        ORDER BY g.name_lower
-        LIMIT ${BROWSE_LIMIT}`;
+    : order === 'new'
+      ? await sql`
+          SELECT g.id, g.name, g.visibility, g.created_at,
+                 (SELECT count(*)::int FROM group_members m WHERE m.group_id = g.id) AS members,
+                 EXISTS (SELECT 1 FROM group_members m
+                         WHERE m.group_id = g.id AND m.user_id = ${user.id}) AS joined,
+                 EXISTS (SELECT 1 FROM group_requests r
+                         WHERE r.group_id = g.id AND r.user_id = ${user.id}) AS asked
+          FROM groups g
+          WHERE ${q ? sql`g.name_lower LIKE ${'%' + q + '%'}` : sql`true`}
+          ORDER BY g.created_at DESC
+          LIMIT ${BROWSE_LIMIT}`
+      : await sql`
+          SELECT g.id, g.name, g.visibility, g.created_at,
+                 (SELECT count(*)::int FROM group_members m WHERE m.group_id = g.id) AS members,
+                 EXISTS (SELECT 1 FROM group_members m
+                         WHERE m.group_id = g.id AND m.user_id = ${user.id}) AS joined,
+                 EXISTS (SELECT 1 FROM group_requests r
+                         WHERE r.group_id = g.id AND r.user_id = ${user.id}) AS asked
+          FROM groups g
+          WHERE ${q ? sql`g.name_lower LIKE ${'%' + q + '%'}` : sql`true`}
+          ORDER BY members DESC, g.name_lower
+          LIMIT ${BROWSE_LIMIT}`;
 
   return json(res, 200, {
     groups: rows.map(g => ({
       id: g.id,
       name: g.name,
+      visibility: g.visibility,
       members: g.members,
       joined: g.joined,
+      asked: g.asked,
       since: g.created_at,
       full: g.members >= MAX_MEMBERS
     })),
+    sort: order,
     limit: BROWSE_LIMIT
   });
+}
+
+/* ---------------- requests ----------------
+ *
+ * What the owner sees: who has asked to get into the groups they own. A
+ * display name and when they asked, and nothing else. Somebody standing
+ * outside the door does not get their record read out to decide on.
+ */
+async function requests(res, user) {
+  const sql = db();
+  const rows = await sql`
+    SELECT r.group_id, r.user_id, r.requested_at, g.name AS group_name, u.name AS person
+    FROM group_requests r
+    JOIN groups g ON g.id = r.group_id
+    JOIN users u ON u.id = r.user_id
+    WHERE g.owner_id = ${user.id} AND u.deleted_at IS NULL
+    ORDER BY r.requested_at
+    LIMIT 200`;
+  return json(res, 200, {
+    requests: rows.map(r => ({
+      groupId: r.group_id, groupName: r.group_name,
+      userId: r.user_id, person: r.person, at: r.requested_at
+    }))
+  });
+}
+
+/* Ask to join. Never joins.
+ *
+ * The old joinPublic inserted a membership straight away for a public
+ * group. Both paths ask now, so there is one rule to explain and one place
+ * a person can get in: the owner said yes. */
+async function requestJoin(res, user, body) {
+  const sql = db();
+  const id = String((body && body.join) || '');
+  if (!/^[0-9a-f-]{36}$/i.test(id)) return json(res, 400, { error: 'That is not a group.' });
+
+  if (!(await limit('group-join:' + user.id, 20, 3600)).allowed) {
+    return json(res, 429, { error: 'Too many attempts. Try again later.' });
+  }
+
+  let found;
+  try {
+    found = await sql`SELECT id, name, owner_id FROM groups WHERE id = ${id}`;
+  } catch {
+    /* A malformed uuid is a 404, not a 500: Postgres raises on a bad uuid
+       rather than returning no rows. */
+    return json(res, 404, { error: 'That group is not there any more.' });
+  }
+  if (!found.length) return json(res, 404, { error: 'That group is not there any more.' });
+  const g = found[0];
+
+  const already = await sql`
+    SELECT 1 FROM group_members WHERE group_id = ${g.id} AND user_id = ${user.id}`;
+  if (already.length) return json(res, 409, { error: 'You are already in ' + g.name + '.' });
+
+  const size = await sql`SELECT count(*)::int AS n FROM group_members WHERE group_id = ${g.id}`;
+  if (size[0].n >= MAX_MEMBERS) {
+    return json(res, 409, { error: g.name + ' is full at ' + MAX_MEMBERS + '.' });
+  }
+  const held = await sql`SELECT count(*)::int AS n FROM group_members WHERE user_id = ${user.id}`;
+  if (held[0].n >= MAX_GROUPS_PER_USER) {
+    return json(res, 409, { error: 'You are in ' + MAX_GROUPS_PER_USER + ' groups already.' });
+  }
+
+  try {
+    await sql`INSERT INTO group_requests (group_id, user_id) VALUES (${g.id}, ${user.id})`;
+  } catch (err) {
+    /* The primary key refusing a second insert IS the "already asked"
+       check, so a duplicate is a normal answer rather than an error. */
+    if (!uniqueViolation(err)) throw err;
+  }
+  return json(res, 202, { asked: true, group: { id: g.id, name: g.name } });
+}
+
+/* The owner answering. Accept puts them in; decline removes the request
+   and says nothing more, because a declined request that keeps reappearing
+   is a way to pester somebody. */
+async function decide(res, user, body) {
+  const sql = db();
+  const groupId = String((body && body.decide) || '');
+  const userId = String((body && body.person) || '');
+  const yes = body.accept === true;
+  if (!/^[0-9a-f-]{36}$/i.test(groupId) || !/^[0-9a-f-]{36}$/i.test(userId)) {
+    return json(res, 400, { error: 'That request is not one we can answer.' });
+  }
+
+  const owned = await sql`
+    SELECT id, name FROM groups WHERE id = ${groupId} AND owner_id = ${user.id}`;
+  if (!owned.length) return json(res, 403, { error: 'Only the person who made a group can let people into it.' });
+
+  const asked = await sql`
+    DELETE FROM group_requests WHERE group_id = ${groupId} AND user_id = ${userId} RETURNING user_id`;
+  if (!asked.length) return json(res, 404, { error: 'That request is not open any more.' });
+  if (!yes) return json(res, 200, { declined: true });
+
+  const size = await sql`SELECT count(*)::int AS n FROM group_members WHERE group_id = ${groupId}`;
+  if (size[0].n >= MAX_MEMBERS) {
+    return json(res, 409, { error: owned[0].name + ' is full at ' + MAX_MEMBERS + '.' });
+  }
+  try {
+    await sql`INSERT INTO group_members (group_id, user_id) VALUES (${groupId}, ${userId})`;
+  } catch (err) {
+    if (!uniqueViolation(err)) throw err;
+  }
+  return json(res, 200, { accepted: true, group: { id: groupId, name: owned[0].name } });
 }
 
 /* ---------------- create ---------------- */
@@ -323,52 +464,9 @@ async function joinGroup(res, user, body) {
   return json(res, 201, { joined: true, group: { id: g.id, name: g.name, visibility: g.visibility } });
 }
 
-/* ---------------- join a public group from the directory ----------------
- *
- * No code. The group said public, and a public group that still demands a
- * code is a private group with extra steps.
- *
- * The visibility check is in the WHERE clause rather than read and then
- * tested, so a private group's id is not a way in even if somebody learns
- * one. It is the same query shape as the code path: find the door, then try
- * the insert and let the primary key refuse a second membership.
- */
-async function joinPublic(res, user, body) {
-  const id = String(body.join || '').trim();
-  if (!id) return json(res, 400, { error: 'Which group?' });
-  if (!(await limit('group-join:' + user.id, 20, 3600)).allowed) {
-    return json(res, 429, { error: 'Too many attempts. Try again later.' });
-  }
-
-  const sql = db();
-  let found;
-  try {
-    found = await sql`SELECT id, name, visibility FROM groups
-                      WHERE id = ${id} AND visibility = 'public'`;
-  } catch {
-    /* A malformed uuid is a 404, not a 500: it is somebody sending a bad
-       id, and Postgres raises rather than returning no rows. */
-    return json(res, 404, { error: 'That group is not open to join.' });
-  }
-  if (!found.length) return json(res, 404, { error: 'That group is not open to join.' });
-  const g = found[0];
-
-  const size = await sql`SELECT count(*)::int AS n FROM group_members WHERE group_id = ${g.id}`;
-  if (size[0].n >= MAX_MEMBERS) return json(res, 409, { error: 'That group is full.' });
-
-  const held = await sql`SELECT count(*)::int AS n FROM group_members WHERE user_id = ${user.id}`;
-  if (held[0].n >= MAX_GROUPS_PER_USER) {
-    return json(res, 409, { error: 'You are in ' + MAX_GROUPS_PER_USER + ' groups already.' });
-  }
-
-  try {
-    await sql`INSERT INTO group_members (group_id, user_id) VALUES (${g.id}, ${user.id})`;
-  } catch (err) {
-    if (!uniqueViolation(err)) throw err;
-    return json(res, 200, { joined: false, group: { id: g.id, name: g.name }, note: 'You are already in that group.' });
-  }
-  return json(res, 201, { joined: true, group: { id: g.id, name: g.name, visibility: g.visibility } });
-}
+/* joinPublic lived here and put somebody straight into a public group.
+   Both ways in ask now, so there is one rule to explain and one way a
+   person gets in: the owner said yes. See requestJoin and decide above. */
 
 /* ---------------- leave ---------------- */
 async function leave(res, user, body) {

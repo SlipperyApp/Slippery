@@ -708,27 +708,60 @@ export function renderBrowse(groups, query) {
   }
   if (!groups.length) {
     el.innerHTML = '<div class="emptystate"><div class="t">' +
-      (query ? 'Nothing matching ' + esc(query) : 'No public groups yet') + '</div>' +
+      (query ? 'Nothing matching ' + esc(query) : 'No groups yet') + '</div>' +
       '<p>' + (query
         ? 'Try a shorter search, or start a group with that name yourself.'
-        : 'Public groups appear here as people create them. Start one and it will be the first.') +
+        : 'Groups appear here as people create them. Start one and it will be the first.') +
       '</p></div>';
     return;
   }
+  /* EVERY group is listed now, private ones included, and the row says
+     which it is. The lock is not the listing, it is the door: nobody gets
+     into any group without the person who made it saying yes, so showing
+     a private group's name costs nothing and hiding it made the group
+     undiscoverable. */
   el.innerHTML = groups.map(g =>
     '<div class="browserow">' +
     '<span class="glyph" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">' +
     '<circle cx="9" cy="8" r="3.2"/><path d="M2.5 21v-1a5 5 0 0 1 5-5h3a5 5 0 0 1 5 5v1"/>' +
     '<path d="M16 3.6a3.2 3.2 0 0 1 0 6.4"/></svg></span>' +
+    /* The private marker goes on the second line, not beside the name.
+       .bname truncates with an ellipsis, so a badge inside it is the first
+       thing to disappear on a long group name, which is exactly the row
+       where knowing it is private matters. */
     '<span class="body"><span class="bname">' + esc(g.name) + '</span>' +
-    '<span class="bsub">' + g.members + ' member' + (g.members === 1 ? '' : 's') + '</span></span>' +
+    '<span class="bsub">' + g.members + ' member' + (g.members === 1 ? '' : 's') +
+      (g.visibility === 'private' ? '<span class="bpriv">Private</span>' : '') + '</span></span>' +
     (g.joined
       ? '<span class="bin">Joined</span>'
-      : g.full
-        ? '<span class="bin">Full</span>'
-        : '<button class="btn ghost small" data-browse-join="' + esc(g.id) + '" ' +
-          'data-name="' + esc(g.name) + '">Join</button>') +
+      : g.asked
+        ? '<span class="bin">Asked</span>'
+        : g.full
+          ? '<span class="bin">Full</span>'
+          : '<button class="btn ghost small" data-browse-join="' + esc(g.id) + '" ' +
+            'data-name="' + esc(g.name) + '">Ask to join</button>') +
     '</div>').join('');
+}
+
+/* The owner's inbox. Renders nothing at all when there is nothing waiting,
+   rather than an empty panel that has to be scrolled past forever. */
+export function renderRequests(list) {
+  const el = $('reqList');
+  const wrap = $('reqWrap');
+  if (!el || !wrap) return;
+  if (!list || !list.length) { wrap.hidden = true; el.innerHTML = ''; return; }
+  wrap.hidden = false;
+  setText('reqCount', String(list.length));
+  el.innerHTML = list.map(r =>
+    '<div class="reqrow">' +
+    '<span class="body"><span class="bname">' + esc(r.person) + '</span>' +
+    '<span class="bsub">wants into ' + esc(r.groupName) + '</span></span>' +
+    '<span class="reqbtns">' +
+    '<button class="btn ghost small" data-decide="no" data-group="' + esc(r.groupId) +
+      '" data-person="' + esc(r.userId) + '">No</button>' +
+    '<button class="btn primary small" data-decide="yes" data-group="' + esc(r.groupId) +
+      '" data-person="' + esc(r.userId) + '">Let in</button>' +
+    '</span></div>').join('');
 }
 
 /* ---------------- profile ---------------- */

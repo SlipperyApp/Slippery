@@ -1374,10 +1374,16 @@ async function leaveGroup(id) {
 let browseSeq = 0;
 let browseTimer = null;
 
+/* Popularity first. A directory sorted alphabetically puts whichever group
+   somebody named "Aardvarks" at the top forever, and the useful question
+   on a browse screen is which groups people are actually in. */
+let browseSort = 'popular';
+
 async function loadBrowse(query) {
   const seq = ++browseSeq;
   R.renderBrowse(null);
-  const r = await get('/api/groups?browse=1' + (query ? '&q=' + encodeURIComponent(query) : ''));
+  const r = await get('/api/groups?browse=1&sort=' + browseSort +
+    (query ? '&q=' + encodeURIComponent(query) : ''));
   if (seq !== browseSeq) return;          // a newer search has already answered
   if (r.status === 401) { R.renderBrowse([], query); return; }
   if (!r.ok) {
@@ -1707,19 +1713,39 @@ async function setPrivacy(value) {
     : value === 'friends' ? 'visible to friends only' : 'public'));
 }
 
+/* ASKING, NOT JOINING. Every group needs the owner to say yes now, so the
+   button reports that it has asked rather than claiming a membership the
+   person does not have yet. */
 async function joinPublicGroup(btn, id, name) {
   btn.disabled = true;
   const was = btn.textContent;
-  btn.textContent = 'Joining…';
+  btn.textContent = 'Asking…';
   const r = await post('/api/groups', { join: id });
   btn.disabled = false;
   btn.textContent = was;
-  if (!r.ok) { toast(r.body.error || 'Could not join that group.'); return; }
-  toast(r.body.joined ? 'Joined ' + name : (r.body.note || 'Already a member'));
+  if (!r.ok) { toast(r.body.error || 'Could not ask to join that group.'); return; }
+  toast('Asked to join ' + name + '. Whoever made it decides.');
   await loadGroups();
-  /* Repaint the directory so the row says Joined rather than offering the
+  /* Repaint the directory so the row says Asked rather than offering the
      button again. */
   await loadBrowse($('browseSearch').value.trim());
+}
+
+/* ---------------- requests the owner has to answer ---------------- */
+async function loadRequests() {
+  const r = await get('/api/groups?requests=1');
+  if (!r.ok) { R.renderRequests([]); return; }
+  R.renderRequests(r.body.requests || []);
+}
+
+async function decideRequest(btn, yes, groupId, personId) {
+  btn.disabled = true;
+  const r = await post('/api/groups', { decide: groupId, person: personId, accept: yes });
+  btn.disabled = false;
+  if (!r.ok) { toast(r.body.error || 'Could not answer that.'); return; }
+  toast(yes ? 'Let them in' : 'Declined');
+  await loadRequests();
+  if (yes) await loadGroups();
 }
 
 /* ---------------- Telegram ----------------
@@ -2132,7 +2158,14 @@ document.addEventListener('click', e => {
     /* The directory is fetched when it is opened, not on every dashboard
        load. It is a list of every public group on the platform and most
        sessions never look at it. */
-    if (S.socialView === 'socialBrowse') loadBrowse($('browseSearch').value.trim());
+    if (S.socialView === 'socialBrowse') {
+      loadBrowse($('browseSearch').value.trim());
+      loadRequests();
+      /* The sliding pill is drawn from measured button widths, so it has
+         to be painted once the segment is actually on screen. Painted only
+         on click, it sat at the wrong width until the first tap. */
+      paintSeg($('browseSortSeg'));
+    }
     return;
   }
   if ((el = c('[data-follow]'))) { toggleFollow(el.getAttribute('data-follow')); return; }
@@ -2354,6 +2387,19 @@ document.addEventListener('click', e => {
   }
   if ((el = c('#groupSave'))) { createGroup(el); return; }
   if ((el = c('#groupJoinGo'))) { joinGroup(el); return; }
+  if ((el = c('[data-browsesort]'))) {
+    browseSort = el.getAttribute('data-browsesort');
+    $$('[data-browsesort]').forEach(b =>
+      b.setAttribute('aria-pressed', String(b === el)));
+    paintSeg($('browseSortSeg'));
+    loadBrowse($('browseSearch').value.trim());
+    return;
+  }
+  if ((el = c('[data-decide]'))) {
+    decideRequest(el, el.getAttribute('data-decide') === 'yes',
+      el.getAttribute('data-group'), el.getAttribute('data-person'));
+    return;
+  }
   if ((el = c('[data-browse-join]'))) {
     joinPublicGroup(el, el.getAttribute('data-browse-join'), el.getAttribute('data-name') || 'the group');
     return;

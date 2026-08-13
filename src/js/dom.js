@@ -50,7 +50,15 @@ export function collapse(el, msg) {
 export function paintSeg(container) {
   if (!container) return;
   let thumb = container.querySelector(':scope > .thumb');
-  const active = container.querySelector('button.on, button[aria-selected="true"]');
+  /* Three ways a segment marks its selection, because three different
+     controls in this app legitimately use different ones: a tab strip is
+     aria-selected, a toggle group is aria-pressed, and the older segments
+     carry a class. Missing aria-pressed here left the browse sort thumb at
+     its CSS default of 100px sitting at the far left, overlapping the
+     button next to it, because paintSeg found no active button and
+     returned before setting a transform. */
+  const active = container.querySelector(
+    'button.on, button[aria-selected="true"], button[aria-pressed="true"]');
   if (!thumb) {
     thumb = document.createElement('span');
     thumb.className = 'thumb';

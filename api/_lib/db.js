@@ -275,6 +275,29 @@ export async function ensureSchema() {
     )`;
   await sql`CREATE INDEX IF NOT EXISTS group_members_user_idx ON group_members (user_id)`;
 
+  /* REQUESTS TO JOIN.
+   *
+   * Every group is now listed in the directory, private ones included, and
+   * nobody gets in without the owner letting them. Those two changes are
+   * one decision: a directory that hides private groups makes them
+   * undiscoverable, and a directory that lists them without a gate makes
+   * "private" meaningless. Listing the door and locking it is the version
+   * that does both jobs.
+   *
+   * The composite primary key is the "already asked" check, the same way
+   * group_members is the "already a member" check: asking twice is an
+   * insert the database refuses rather than a SELECT two simultaneous
+   * requests can both pass. */
+  await sql`
+    CREATE TABLE IF NOT EXISTS group_requests (
+      group_id     uuid NOT NULL REFERENCES groups(id) ON DELETE CASCADE,
+      user_id      uuid NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      requested_at timestamptz NOT NULL DEFAULT now(),
+      PRIMARY KEY (group_id, user_id)
+    )`;
+  await sql`CREATE INDEX IF NOT EXISTS group_requests_group_idx ON group_requests (group_id)`;
+  await sql`CREATE INDEX IF NOT EXISTS group_requests_user_idx ON group_requests (user_id)`;
+
   /* Profit and loss entered as a period total rather than as bets.
    *
    * These are NOT bets and must never be counted as any. Somebody bringing

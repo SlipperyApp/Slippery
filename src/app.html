@@ -960,14 +960,31 @@
 
       <!-- The directory. Public groups only, alphabetically, and nothing
            about them beyond a name and a head count: a directory is a list
-           of doors, not a window. Private groups are absent rather than
-           shown locked, because a locked row still says the group exists
-           and what it is called. -->
+           of doors, not a window.
+
+           EVERY group is listed, private ones included. Hiding private
+           groups made them undiscoverable and left their owners passing a
+           code around outside the app; listing them without a gate would
+           make "private" meaningless. The gate is the door rather than the
+           listing: nobody gets into any group, public or private, without
+           the person who made it saying yes. -->
       <div id="socialBrowse" hidden>
+        <!-- Waiting on the owner. Renders nothing at all when nothing is
+             waiting, rather than an empty panel to scroll past forever. -->
+        <div class="card pad" id="reqWrap" hidden style="margin-bottom:11px">
+          <div class="cardhead"><span class="title">Waiting on you</span>
+            <span class="meta"><span id="reqCount">0</span> asking</span></div>
+          <div id="reqList"></div>
+        </div>
         <div class="searchbox">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>
-          <label class="sr" for="browseSearch">Search public groups</label>
+          <label class="sr" for="browseSearch">Search groups</label>
           <input class="field" id="browseSearch" type="search" placeholder="Find a group by name…" autocomplete="off">
+        </div>
+        <div class="seg tight" id="browseSortSeg" role="group" aria-label="Sort groups">
+          <button data-browsesort="popular" aria-pressed="true">Popular</button>
+          <button data-browsesort="new" aria-pressed="false">Newest</button>
+          <button data-browsesort="name" aria-pressed="false">A to Z</button>
         </div>
         <div id="browseList" aria-live="polite"></div>
       </div>

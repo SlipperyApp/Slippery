@@ -1014,8 +1014,9 @@ async function main() {
       fail('social', 'opening the group menu did not reveal the code and Leave');
     await page.screenshot({ path: path.join(SHOT_DIR, 'social-menu.png') });
 
-    /* The directory. Alphabetical, no codes, and a Join on anything not
-       already joined or full. */
+    /* The directory. Sorted by size by default, no codes, private groups
+       listed like any other, and an ask on anything not already joined,
+       asked for or full. */
     await page.evaluate(() => {
       const d = document.querySelector('.gmenu');
       if (d) d.removeAttribute('open');
@@ -1033,10 +1034,22 @@ async function main() {
     });
     if (!dir.n) fail('social', 'the group directory rendered no rows');
     else {
-      const sorted = [...dir.names].sort((a, b) => a.toLowerCase().localeCompare(b.toLowerCase()));
-      if (dir.names.join('|') !== sorted.join('|'))
-        fail('social', 'the directory is not alphabetical: ' + dir.names.join(', '));
-      if (!dir.joins) fail('social', 'no row in the directory offers a way to join');
+      /* EVERY group is listed, private ones included. Hiding them made
+         them undiscoverable and left owners passing a code around outside
+         the app. The lock is the door, not the listing: nothing gets a
+         person in without the owner saying yes. */
+      if (!/Sunday League Syndicate/.test(dir.html))
+        fail('social', 'a private group is missing from the directory');
+      if (!/bpriv/.test(dir.html))
+        fail('social', 'a private group is listed without saying it is private');
+      /* Somebody who has already asked must see that, not the button
+         again, or they will ask five times and wonder why nothing
+         happened. */
+      if (!/Asked/.test(dir.html))
+        fail('social', 'a group already asked for still offers the button');
+      if (!dir.joins) fail('social', 'no row in the directory offers a way to ask');
+      if (!/Ask to join/.test(dir.html))
+        fail('social', 'the directory still offers to join directly rather than to ask');
       /* Six upper-case characters with no vowel-free giveaway is what a
          join code looks like; the stub uses QT9WFB. Nothing of that shape
          belongs in a public listing. */
