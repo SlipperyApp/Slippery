@@ -129,7 +129,16 @@ export async function sessionUser(req) {
   const rows = await sql`
     SELECT u.id, u.email, u.display_name, u.email_verified, u.unit_pence,
            u.plan, u.plan_until, u.promo_code, u.verified, u.trial_ends_at,
-           u.privacy, u.count_mode, u.break_until, u.telegram_id, u.link_code, u.created_at
+           u.privacy, u.count_mode, u.break_until, u.telegram_id, u.link_code,
+           /* Added with the columns they belong to. The link code was
+              issued and stored correctly and then never reached the page,
+              because the session query still selected the columns that
+              existed when it was written. Found by asking production for a
+              code and watching /api/auth/me not have it. */
+           u.link_code_expires_at, u.link_code_used_at,
+           u.telegram_linked_at, u.telegram_username,
+           u.card_added, u.charge_due_at, u.charge_paid_at, u.cancel_at,
+           u.created_at
     FROM auth_sessions s JOIN users u ON u.id = s.user_id
     WHERE s.token_hash = ${sha256(token)} AND s.expires_at > now() AND u.deleted_at IS NULL`;
   return rows[0] || null;
