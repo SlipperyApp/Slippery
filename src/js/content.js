@@ -93,7 +93,15 @@ const HOME_FAQ = [
   ['Who can see my numbers?', 'Whoever you choose: every Slipper, only those you follow back, or none. Group members always see the units of everyone in that group.'],
   ['What is a unit?', 'Your standard stake. Units let groups rank people without anyone seeing how much money is involved.'],
   ['What does it cost?', 'Two weeks free with up to 35 slips in that window, then £3.49 a month or £29.99 a year.'],
-  ['When is it on the App Store?', 'Coming soon. It runs in your browser today and installs to your home screen from the share sheet, so it behaves like an app already, and the Telegram bot works now. The App Store version follows.']
+  ['When is it on the App Store?', 'Not yet. It runs in your browser today and installs to your home screen from the share sheet, so it behaves like an app already, and the Telegram bot works now.'],
+  ['What happens when the free trial ends?', 'Logging stops and everything you have already logged stays exactly where it is. Nothing is deleted and nothing is held hostage. Subscribe whenever you want it back.'],
+  ['Can I bring history over from a spreadsheet?', 'Yes. Drop a CSV, an Excel export, a PDF statement or a screenshot of a profit screen into the import zone and it works out which it is. Dated rows land on their dates.'],
+  ['Does imported history count as my bets?', 'Separately, and you choose. Settings has a toggle between the tracker count, which is only what Slippery has seen, and the lifetime count, which adds what you brought across. Imported figures are excluded from the pre-match split, because they have no slips behind them.'],
+  ['What sports does it settle?', 'Football and tennis settle themselves. Racing does not: no feed we trust publishes finishing positions we can prove, so racing bets are handed back for you to settle rather than guessed at.'],
+  ['Can I take a break?', 'Yes, and it is enforced on the server. Pick a length in Settings and logging stops until it is over. It can be extended but never shortened, because the point is that the decision is made by the version of you that is calm.'],
+  ['What if the reader gets a slip wrong?', 'Every field is editable before you confirm, and nothing saves until you do. Selections can be added or removed. If a leg is missing because the screenshot cropped it, add it by hand.'],
+  ['Can I get my data out?', 'CSV or JSON, from Settings, whenever you like. Deleting the account removes the bets, the stored slip images, your groups and the account itself.'],
+  ['Is my betting record private?', 'By default only people you follow back can see your figures, and you can set it to public or to nobody. Group members always see units rather than stakes, so nobody learns what you bet.']
 ];
 
 const HELP_FAQ = [
@@ -208,6 +216,7 @@ const PRIVACY = [
 export function renderStatic() {
   renderSections();
   renderTail();
+  renderDemo();
   setHTML('homeFaq', HOME_FAQ.map(f =>
     '<details class="card faq"><summary>' + esc(f[0]) + '</summary><p>' + esc(f[1]) + '</p></details>').join(''));
   setHTML('helpFaq', HELP_FAQ.map(f =>
@@ -881,6 +890,51 @@ const PROOF = [
    a hundred landing pages checks. Put real ones in and the section
    appears; leave it and nothing renders. */
 const QUOTES = [];
+
+/* The demo. Read only, and built from SAMPLE so every figure reconciles
+   against the rows above it. Deliberately not the dashboard with fake
+   data poured into it: nothing here can be edited and no control claims
+   to save, because a stranger clicking Confirm on a bet that goes nowhere
+   is worse than not showing them anything. */
+export function renderDemo() {
+  const el = $('demoBody');
+  if (!el) return;
+  const a = SAMPLE.analysis;
+  const all = SAMPLE.day.concat([SAMPLE.slip]);
+  const kpi = (k, v, tone) =>
+    '<div class="dkpi"><span class="k">' + esc(k) + '</span>' +
+    '<span class="v ' + (tone || '') + '">' + v + '</span></div>';
+
+  el.innerHTML =
+    '<div class="dkpis">' +
+      kpi('Net', M.signed(SAMPLE.dayNet), M.tone(SAMPLE.dayNet)) +
+      kpi('Bets', String(all.length)) +
+      kpi('Win rate', a.winRate + '%') +
+      kpi('ROI', a.roi.toFixed(1) + '%', M.tone(a.roi)) +
+    '</div>' +
+    '<div class="card pad" style="margin-top:10px">' +
+      '<div class="cardhead"><span class="title">The bets behind it</span>' +
+      '<span class="meta">' + all.length + ' settled</span></div>' +
+      all.map(b => '<div class="demobar"><span class="bl">' +
+        '<b style="color:var(--t1)">' + esc(b.event) + '</b><br>' +
+        esc(b.selection) + ' · ' + b.odds.toFixed(2) + ' · ' + M.money(b.stake) +
+        '</span><span class="bv ' + M.tone(b.profit) + '">' +
+        M.signed(b.profit) + '</span></div>').join('') +
+      '<p class="sect-said">Four of six lost. The month is still <b class="' +
+        M.tone(SAMPLE.dayNet) + '">' + M.signed(SAMPLE.dayNet) +
+        '</b>, which is the sort of thing you only find out by logging all of them.</p>' +
+    '</div>' +
+    '<div class="card pad" style="margin-top:10px">' +
+      '<div class="cardhead"><span class="title">Where it came from</span>' +
+      '<span class="meta">by bookmaker</span></div>' +
+      a.byBook.map(([book, p]) => '<div class="demobar ' + (p >= 0 ? 'up' : 'down') +
+        '"><span class="bl">' + esc(book) + '</span><span class="bv ' + M.tone(p) + '">' +
+        M.signed(p) + '</span><span class="bt"><i style="--f:' +
+        Math.min(1, Math.abs(p) / 30000).toFixed(2) + '"></i></span></div>').join('') +
+      '<p class="sect-said">One book is carrying the month. That is the split people ' +
+      'are most often wrong about before they measure it.</p>' +
+    '</div>';
+}
 
 export function renderTail() {
   /* The bookmakers the reader has actually been run against, from the one

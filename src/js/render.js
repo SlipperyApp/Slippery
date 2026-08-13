@@ -244,8 +244,14 @@ export function renderHeadline() {
       capEl.hidden = false;
       $('captureFill').style.setProperty('--f', (CAPTURE.rate / 100).toFixed(3));
       capEl.classList.toggle('strong', CAPTURE.rate >= 80);
+      /* The whole split, not one number. "90% pre-match" alone invites the
+         question the other two thirds answer, and the three together are
+         the thing no other tracker can print. */
+      const pc = n => Math.round(n / CAPTURE.known * 100);
       setHTML('captureText',
-        '<b>' + CAPTURE.rate + '%</b> logged before kick-off' +
+        'Logged <b>' + pc(CAPTURE.prematch) + '%</b> at placement, ' +
+        '<b>' + pc(CAPTURE.inplay) + '%</b> in play, ' +
+        '<b>' + pc(CAPTURE.settled) + '%</b> after settling' +
         (CAPTURE.known < 5 ? ' <span class="capfew">(' + CAPTURE.known + ' so far)</span>' : ''));
       capEl.setAttribute('aria-label',
         CAPTURE.prematch + ' of ' + CAPTURE.known +

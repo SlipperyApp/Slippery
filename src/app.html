@@ -52,30 +52,39 @@
 <section class="view on" id="landing" aria-label="Home">
   <div class="hero page-lede">
     <div class="wrap">
-      <p class="eyebrow reveal">Bet slip tracker</p>
+      <!-- An eyebrow PILL, not small caps. It has to locate the product in
+           one glance: who it is for and what it is. Small caps read as a
+           section label; a filled pill reads as a statement. -->
+      <span class="eyepill reveal">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><use href="#i-bolt"/></svg>
+        Bet tracking for UK and Irish bettors
+      </span>
       <h1 id="heroHeading"></h1>
-      <p class="sell reveal">Send a slip when you place it. Slippery reads it, tracks it, and settles it into your profit and loss.</p>
+      <p class="sell reveal">Log the slip as you place it. Slippery reads it, settles it, and shows what your record actually says instead of what you remember.</p>
+      <!-- One heavy, one light. Two competing buttons make neither the
+           obvious next step, and the second one here is a lower-commitment
+           way in for somebody not ready to hand over an email. -->
       <div class="herocta reveal">
         <button class="btn primary" data-nav="setup">Start free</button>
+        <button class="herolink" data-nav="demo">or look around a live one first</button>
       </div>
-      <div class="badges reveal">
-        <span class="badge-pill">
-          <svg viewBox="0 0 24 24" aria-hidden="true"><use href="#i-apple"/></svg>
-          <span><small>Coming soon to the</small><b>App Store</b></span>
-        </span>
-        <span class="badge-pill"><b>2 weeks free</b></span>
-      </div>
+      <p class="herofree reveal">Two weeks free. 35 slips. No card.</p>
       <div class="card previewcard flush reveal">
         <div class="gradientline"></div>
         <div style="padding:15px">
           <p class="eyebrow" style="color:var(--t2)">Net this month</p>
           <p class="bignum pos m" id="previewNet"></p>
           <svg viewBox="0 0 300 66" preserveAspectRatio="none" style="width:100%;display:block;margin-top:10px" role="img" aria-label="Profit trending upward across the month">
+            <!-- Was a hardcoded #38BDF8 at .28 opacity over a dark card,
+                 which is why it was unreadable, and it was blue on a chart
+                 whose whole subject is profit. #86EFAC is the semantic
+                 colour for exactly this, the fill is more than twice as
+                 strong, and the line is 2.4px rather than 2. -->
             <defs><linearGradient id="sparkFill" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0" stop-color="#38BDF8" stop-opacity=".28"/>
-              <stop offset="1" stop-color="#38BDF8" stop-opacity="0"/></linearGradient></defs>
+              <stop offset="0" stop-color="#86EFAC" stop-opacity=".42"/>
+              <stop offset="1" stop-color="#86EFAC" stop-opacity=".02"/></linearGradient></defs>
             <path id="previewArea" fill="url(#sparkFill)"/>
-            <path id="previewLine" fill="none" stroke="#8B9DE0" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            <path id="previewLine" fill="none" stroke="#86EFAC" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>
           </svg>
           <div id="previewRows" style="margin-top:10px"></div>
         </div>
@@ -84,11 +93,13 @@
   </div>
 
   <div class="wrap">
-    <div class="section snap-point" id="secHow">
-      <p class="eyebrow reveal">How it works</p>
-      <h2 class="reveal">Capture it when you place it.</h2>
-      <p class="lede reveal">Forward a slip to the bot the moment you place the bet. Slippery reads the stake, odds and selection off the image, watches the game, and settles it for you. Logging at placement is the whole point: it is what stops a tracker quietly becoming a highlight reel.</p>
-    </div>
+    <!-- #secHow lived here and said "Capture it when you place it" with a
+         paragraph ending "logging at placement is the whole point". The
+         section below the pinned sequence now makes that argument properly,
+         with the placement / in play / after settling split behind it, so
+         this was the same claim told a screen earlier and weaker. Removing
+         it also closes the 439px dead band it opened above the sequence. -->
+
   </div>
 
   <!-- ══════ the scroll-jacked sequence ══════
@@ -573,6 +584,31 @@
     <div class="btnrow" style="margin-top:22px">
       <button class="btn primary" data-nav="setup">Start free</button>
       <button class="btn ghost" data-nav="pricing">See pricing</button>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════ DEMO ══════════════
+     A stranger could not see the product at all: every app screen is
+     behind the session gate, correctly, because those screens show a real
+     person's money. This is the other half of that decision. It is a
+     worked example, labelled as one on screen and in the markup, read
+     only, and built from the same SAMPLE the marketing pages use. It is
+     NOT the dashboard with fake data in it: nothing here can be edited,
+     and no control pretends to save. -->
+<section class="view" id="demo" aria-label="Live example">
+  <div class="wrap nar page-lede">
+    <div class="demobar-top">
+      <span class="demotag">Worked example</span>
+      <button class="btn primary small" data-nav="setup">Start free</button>
+    </div>
+    <h1 style="font-size:26px;margin-top:14px">One month, followed all the way.</h1>
+    <p class="lede">Every figure below is derived from the same set of bets, so the arithmetic reconciles if you check it. It is one example, not an average and not anybody's real account.</p>
+    <div id="demoBody"></div>
+    <div class="lastcta" style="margin-top:26px">
+      <h2>Your version of this is two weeks free.</h2>
+      <p>35 slips, no card. The numbers will be yours.</p>
+      <button class="btn primary" data-nav="setup">Start free</button>
     </div>
   </div>
 </section>

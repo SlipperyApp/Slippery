@@ -19,7 +19,7 @@ const CHROME = process.env.CHROME_BIN || '/opt/pw-browsers/chromium-1194/chrome-
 const WIDTHS = [320, 390, 430];
 const SHOT_DIR = path.join(root, 'tools', 'screens');
 
-const VIEWS = ['landing', 'setup', 'howto', 'pricing', 'dash', 'imp', 'settings', 'help', 'terms', 'privacy'];
+const VIEWS = ['landing', 'setup', 'howto', 'demo', 'pricing', 'dash', 'imp', 'settings', 'help', 'terms', 'privacy'];
 /* Graphite first, matching data.js: it is the default. */
 const THEMES = ['graphite', 'periwinkle', 'ink', 'tide', 'chalk'];
 

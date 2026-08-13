@@ -297,3 +297,46 @@ body.in-app .agebar{margin-bottom:66px}
   & h2{font-family:var(--fd);font-size:clamp(22px,6vw,30px);line-height:1.12;
     letter-spacing:-.025em}
   & p{font-size:13.5px;color:var(--t2);margin:10px auto 17px;max-width:42ch;line-height:1.6}}
+
+/* The hero eyebrow. A filled pill rather than small caps: small caps read
+   as a section label, and this one has a job, which is to say who the
+   product is for before anybody reads the headline. */
+.eyepill{
+  display:inline-flex;align-items:center;gap:7px;
+  padding:7px 14px 7px 10px;border-radius:999px;
+  background:rgba(var(--orb2),.13);border:1px solid rgba(var(--orb2),.32);
+  font-size:12px;font-weight:550;color:var(--s);
+  & svg{width:14px;height:14px;flex:0 0 auto}}
+
+/* One heavy, one light. A second filled button makes neither the obvious
+   next step, so the alternative is a text link with a rule under it. */
+.herolink{
+  font-size:13.5px;color:var(--t2);padding:8px 2px;min-height:40px;
+  text-decoration:underline;text-underline-offset:3px;
+  text-decoration-color:rgba(var(--ink),.28);
+  transition:color var(--tf),text-decoration-color var(--tf);
+  &:hover{color:var(--t1);text-decoration-color:currentColor}}
+
+/* The trial terms, on their own line. They used to sit in a chip beside
+   the App Store badge as though the two were the same kind of fact: one
+   is what you get today, the other is a thing that does not exist yet. */
+.herofree{
+  margin-top:13px;font-size:12px;color:var(--t3);
+  font-variant-numeric:tabular-nums lining-nums}
+
+/* The demo screen. Labelled at the top and again at the bottom, because
+   somebody who lands here from a link needs to know within one second
+   that these are not their numbers. */
+.demobar-top{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.demotag{
+  display:inline-flex;align-items:center;padding:5px 11px;border-radius:999px;
+  background:rgba(var(--orb1),.16);border:1px solid rgba(var(--orb1),.36);
+  font-family:var(--fm);font-size:10px;letter-spacing:.1em;text-transform:uppercase;
+  color:var(--s)}
+.dkpis{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin-top:16px}
+@media (min-width:520px){.dkpis{grid-template-columns:repeat(4,1fr)}}
+.dkpi{
+  padding:13px;border-radius:14px;border:1px solid var(--e1);background:var(--c1);
+  & .k{display:block;font-size:10.5px;color:var(--t2)}
+  & .v{display:block;font-family:var(--fm);font-weight:700;font-size:17px;margin-top:4px;
+    letter-spacing:-.02em;font-variant-numeric:tabular-nums lining-nums}}

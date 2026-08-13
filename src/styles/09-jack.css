@@ -42,7 +42,13 @@
    scrolling and a normal flick carries you the whole way. Below about
    160svh the beats stop having a moment and start flashing past, which is
    the failure in the other direction. */
-.jack-track{height:180svh;pointer-events:none}
+/* 150svh, down from 180. The travel is `track - 100svh`, so the pinned
+   stretch is 50svh rather than 80: a beat you pass through rather
+   than a sequence you sit through. Three tellings of the same story were
+   stacked here (this, the section below it, and a "Capture it when you
+   place it" block that has now gone), and this is the one that was
+   costing a screen and a half of scroll to say it. */
+.jack-track{height:150svh;pointer-events:none}
 /* THE GEOMETRY IS NOT FREE.
    The stage is sticky and one viewport tall, so the distance the sequence
    actually has is `track - 100svh`, and motion.js maps progress across
@@ -50,14 +56,17 @@
    three snap points have to sit at 0, half and all of that distance, or the
    page snaps to a position where two scenes are half faded.
 
-   With a 180svh track the distance is 80svh, so the first two steps are
-   40svh each and the last is the 100svh tail that carries the pin to its
-   end: 40 + 40 + 100 = 180. Three equal steps only works when the track is
+   With a 150svh track the distance is 50svh, so the first two steps are
+   25svh each and the last is the 100svh tail that carries the pin to its
+   end: 25 + 25 + 100 = 150. 120svh was tried and the audit caught it:
+   20svh of travel is 168px on a phone, and three cross-fading beats
+   cannot resolve inside that, so beats two and three measured 0.88
+   present at their own snap points. 50svh is the floor that works. Three equal steps only works when the track is
    300svh, which is what it used to be, and shortening it without moving
    these apart is what left beat two measured at 0.875 present. Change the
    track height and these two numbers change with it, or the page snaps to
    a position where two scenes are half faded. */
-.jack-step{height:40svh;scroll-snap-align:start}
+.jack-step{height:25svh;scroll-snap-align:start}
 .jack-step[data-step="2"]{height:100svh}
 
 .jack-stage{
@@ -73,8 +82,12 @@
      floated in the middle of a screen with 340px of empty sky above it and
      230px below. The two rows are their own size now and the pair sits in
      the middle of the stage together. */
-  display:grid;grid-template-rows:auto auto;gap:22px;align-content:center;
-  height:100%;padding-top:64px;padding-bottom:26px;
+  /* Was align-content:center with 64px of top padding, which parked the
+     caption near the top of a 100svh stage and the scene near the bottom
+     with a screen of nothing between them. The pair now sits together in
+     the middle of the frame. */
+  display:grid;grid-template-rows:auto auto;gap:18px;align-content:center;
+  height:100%;padding-top:60px;padding-bottom:22px;
   position:relative;
 }
 
@@ -84,7 +97,7 @@
    tallest of them rather than as tall as the stage. */
 .jack-scenes>.jk-scene{min-height:0}
 .jk-scene{
-  grid-area:1/1;width:100%;max-width:330px;
+  grid-area:1/1;width:100%;max-width:380px;
   will-change:transform,opacity;
   transform:translate3d(0,var(--y,0),0) scale(var(--k,1));
   opacity:var(--o,0);
@@ -180,7 +193,7 @@
 
 /* ---------- the caption ---------- */
 .jack-copy{
-  align-self:end;min-height:186px;
+  align-self:start;min-height:0;
   /* The text swaps at the beat boundary; this is the cross-fade that
      keeps the swap from reading as a flicker. */
   & .jack-step-n{
