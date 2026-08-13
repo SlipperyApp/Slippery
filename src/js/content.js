@@ -163,54 +163,204 @@ export const PLANS = [
 
 export const planById = id => PLANS.find(p => p.id === id) || PLANS[0];
 
+/* ============================================================
+   THE LEGAL PAGES
+   ============================================================
+   Seventeen numbered sections each, matching the structure of a policy
+   written for a product at this stage. The structure is the point: a
+   two-paragraph privacy policy for a product that stores photographs of
+   people's betting accounts is not a policy, it is a gesture.
+
+   Every processor named here is one this deployment actually uses. The
+   temptation with a template is to inherit its processor list, which
+   would have us naming Supabase, Resend and OpenRouter, none of which we
+   run. Naming a processor you do not use is a false statement about where
+   somebody's data goes.
+
+   The wording still needs a solicitor. What it should not need is a
+   second pass to find out what the system does, which is why retention
+   periods and lawful bases are written against the code rather than left
+   as blanks.
+   ============================================================ */
 const TERMS = [
-  ['h2', 'What Slippery is'],
-  ['p', 'Slippery is a record keeping and analytics tool for bets you have placed elsewhere. It is not a bookmaker. It does not accept bets, hold funds, pay winnings, or offer betting advice, tips or predictions. Nothing in the product is a recommendation to place a bet.'],
-  ['h2', 'Age and eligibility'],
-  ['p', 'You must be 18 or over to use Slippery. We ask you to confirm this at signup, and we may suspend an account where we have reason to believe the holder is under 18.'],
-  ['h2', 'Your account'],
-  ['p', 'You are responsible for keeping your password and your Telegram link code confidential. Display names are permanent so that a betting record always belongs to the same person.'],
-  ['h2', 'Accuracy of readings and settlement'],
-  ['p', 'Slippery reads slips automatically and settles standard markets against a third party results feed. It is designed to refuse rather than guess: anything it cannot grade with confidence is handed back to you to settle. Even so, readings and gradings may be wrong, and you remain responsible for checking your own records. Slippery is not liable for decisions taken on the basis of a figure it displayed.'],
-  ['h2', 'Payment'],
-  ['p', 'Paid plans renew automatically until cancelled. You can cancel at any time and keep access until the end of the paid period. UK and EU consumers keep their statutory cancellation rights.'],
-  ['h2', 'Acceptable use'],
-  ['p', 'Do not upload slips that are not yours, attempt to extract other users\' figures, or use Slippery to run a tipping service that presents its output as verified when it is not.'],
-  ['h2', 'Ending your account'],
-  ['p', 'You can delete your account at any time from Settings. Deletion removes your bets and any stored slip images.'],
-  ['h2', 'Liability'],
-  ['p', 'Nothing here limits liability for death, personal injury or fraud. Otherwise, and to the extent the law allows, Slippery is provided as is and we are not liable for gambling losses, missed bets, or indirect loss.'],
-  ['h2', 'Getting in touch'],
-  ['p', 'Questions about these terms go to the address published on the contact page.']
+  ['h2', '1. Who we are and what this covers'],
+  ['p', 'Slippery is a bet recording and analytics tool operated from the United Kingdom. These terms cover the website, the installable web app and the Telegram bot @SlipperyAppBot. By creating an account you agree to them.'],
+
+  ['h2', '2. What Slippery is not'],
+  ['p', 'Slippery is not a bookmaker, a betting exchange, a broker or a tipping service. It does not accept bets, hold funds, pay winnings, take a share of a stake or offer advice on what to bet. It holds no Gambling Commission licence because it carries out no licensable activity. Nothing shown in the product is a recommendation to place a bet.'],
+
+  ['h2', '3. Age'],
+  ['p', 'You must be 18 or over. You confirm this when you create an account. Where we have reason to believe an account holder is under 18 we will suspend the account and delete the data on it.'],
+
+  ['h2', '4. Your account'],
+  ['ul', [
+    'You are responsible for your password and for the link code that connects the Telegram bot to your account.',
+    'Display names are permanent, so that a betting record always belongs to the same person and nobody can take a name someone else built a history under.',
+    'One account per person. Accounts may not be shared or transferred.'
+  ]],
+
+  ['h2', '5. The free trial'],
+  ['p', 'The trial runs for 14 days or 35 slips, whichever runs out first. When it ends, logging new bets stops and everything already logged stays exactly where it is. Nothing is deleted and nothing is held back from export.'],
+
+  ['h2', '6. Paid plans, renewal and cancellation'],
+  ['ul', [
+    'Paid plans renew automatically until cancelled.',
+    'Cancelling stops the next renewal and keeps access until the end of the period already paid for.',
+    'UK and EU consumers keep their statutory 14 day cancellation right. Starting to use a paid plan within that period does not remove it, but we may charge for what has been used.',
+    'Prices may change with at least 30 days notice by email, and a change never applies to a period already paid for.'
+  ]],
+  ['p', 'Card payments are not yet switched on. The payment screen in the product is a placeholder and takes no card details.'],
+
+  ['h2', '7. Automatic reading of slips'],
+  ['p', 'Slippery reads images of bet slips automatically. It is built to leave a field blank rather than guess at it, and every field is editable before you confirm. A reading may still be wrong. Checking a bet against the slip it came from remains yours to do.'],
+
+  ['h2', '8. Automatic settlement'],
+  ['p', 'Standard football and tennis markets settle themselves against public results sources. The rule the engine follows is that a wrong grade is worse than no grade, so anything it cannot prove is handed back to you rather than settled. Settlement is on the 90 minute score; extra time and penalties never count. Horse racing is never settled automatically.'],
+  ['p', 'Results sources are third parties we do not control and do not pay. They can be wrong, late or unreachable. A figure Slippery displays is a record of what you told it plus what a public source reported, and it is not a statement of what your bookmaker owes you.'],
+
+  ['h2', '9. Your content'],
+  ['p', 'You keep ownership of the slips you upload and the records you create. You give us permission to store and process them only so far as is needed to run the service for you. We do not use your slips or your betting records to train any model.'],
+
+  ['h2', '10. Acceptable use'],
+  ['ul', [
+    'Do not upload slips that are not yours.',
+    'Do not attempt to read another user\'s figures, or to work around a privacy setting or a group\'s unit display.',
+    'Do not present Slippery output as a verified or audited record when it is not.',
+    'Do not use automated tools to scrape the service or to place load on it beyond ordinary use.',
+    'Do not use Slippery to run a paid tipping service without saying plainly that the figures are self reported.'
+  ]],
+
+  ['h2', '11. Groups and rankings'],
+  ['p', 'Groups rank members in units rather than in money, so nobody learns anyone else\'s stake size. Joining a group means the other members can see your unit figures for that group. Leaving a group stops that immediately. A group is not a competition with a prize and there is nothing to win in it.'],
+
+  ['h2', '12. Taking a break'],
+  ['p', 'You can stop your own account logging bets for a fixed period. A break is enforced on the server, and it can be extended but never shortened, including by us. That is deliberate: the decision belongs to the version of you that made it.'],
+
+  ['h2', '13. Availability'],
+  ['p', 'We aim to keep the service running and give no uptime guarantee. Maintenance, a failure at a hosting provider or a results source going dark can all interrupt it. Nothing here obliges us to keep any particular feature, results source or integration running.'],
+
+  ['h2', '14. Suspension and ending your account'],
+  ['p', 'You can delete your account at any time from Settings. Deletion removes your bets, your stored slip images, your group memberships and the account itself. We may suspend or close an account that breaks these terms, and where we do we will say why unless the law prevents it.'],
+
+  ['h2', '15. Liability'],
+  ['p', 'Nothing here limits liability for death or personal injury caused by negligence, for fraud, or for anything else that cannot lawfully be limited. Subject to that, and to the extent the law allows, the service is provided as it is, and we are not liable for gambling losses, for bets placed or not placed, for a bookmaker settling differently from Slippery, or for indirect or consequential loss. Where liability cannot be excluded it is limited to the amount you have paid us in the previous 12 months.'],
+
+  ['h2', '16. Changes to these terms'],
+  ['p', 'We will give at least 30 days notice by email of a change that materially affects you. Continuing to use the service after a change takes effect means you accept it. If you do not, you can cancel and export everything first.'],
+
+  ['h2', '17. Law and getting in touch'],
+  ['p', 'These terms are governed by the law of England and Wales, and the courts of England and Wales have exclusive jurisdiction. Consumers keep the protection of the mandatory law where they live. Questions go to the support address on the help page.']
 ];
 
 const PRIVACY = [
-  ['h2', 'Who is responsible'],
-  ['p', 'Slippery is the data controller for the personal data described here. UK ICO registration is required before public launch and is outstanding.'],
-  ['h2', 'What we hold'],
+  ['h2', '1. Who is responsible for your data'],
+  ['p', 'Slippery is the data controller for the personal data described here, under the UK GDPR and the Data Protection Act 2018. Registration with the Information Commissioner\'s Office is required before public launch and is outstanding.'],
+
+  ['h2', '2. What we collect'],
   ['ul', [
-    'Account details: your email address, a hashed password, your display name, and when you signed up.',
-    'Your betting records: stake, odds, selection, bookmaker, result and profit for each bet.',
-    'Slip images you send us, whether uploaded on the site or forwarded to the Telegram bot.',
-    'Your Telegram user id, if you link the bot.',
-    'Basic technical data needed to serve the site securely.'
+    'Account: email address, a hashed password, display name, the date you signed up and whether the email is verified.',
+    'Betting records: stake, odds, selection, market, bookmaker, competition, result, profit or loss, the date placed and the capture stage.',
+    'Slip images: photographs, screenshots and PDFs of bet slips and profit screens that you upload or forward.',
+    'Telegram: your Telegram user id and chat id, only if you link the bot.',
+    'Preferences: theme, unit size, currency, privacy setting, counting mode and any break you have set.',
+    'Social: the groups you belong to, the Slippers you follow, and who follows you.',
+    'Technical: IP address and user agent, held transiently for rate limiting and for keeping the service secure.'
   ]],
-  ['h2', 'Slip images, specifically'],
-  ['p', 'A slip image is the most sensitive thing we hold, because it can show your account, your stake and sometimes your name. Images are sent to an automated reading service to extract the fields, and are then stored so you can check a reading later. They are deleted automatically 90 days after upload, and immediately if you delete the bet or your account. You can purge every stored image at once from Settings.'],
-  ['h2', 'What we never do'],
-  ['p', 'We do not sell your data. We do not share your betting figures with bookmakers, advertisers or credit reference agencies. Other users see only what your privacy setting allows, and group members see units rather than stake sizes.'],
-  ['h2', 'Where it is processed'],
-  ['p', 'Data is stored in the UK or EEA. The automated reading service processes images outside the UK under an appropriate transfer safeguard.'],
-  ['h2', 'How long we keep it'],
+  ['p', 'We do not collect your bookmaker login details, your card details, your date of birth, your location or a device identifier.'],
+
+  ['h2', '3. Slip images, specifically'],
+  ['p', 'A slip image is the most sensitive thing we hold. It can show your bookmaker account, your stake, a reference number and sometimes your name. It is sent to an automated reading service to extract the fields, then stored so a bet can be checked against the image it came from. It is never shown to another user and never used to train anything. Settings has a one tap purge that deletes every stored image and keeps the bets.'],
+
+  ['h2', '4. Why we process it, and our lawful basis'],
   ['ul', [
-    'Slip images: 90 days.',
-    'Betting records and account details: until you delete your account.',
-    'Backups: purged within 30 days of deletion.'
+    'Running your account and showing you your records: performance of our contract with you.',
+    'Reading slips and settling bets: performance of our contract with you.',
+    'Sending a verification code, a password reset and service notices: performance of our contract with you.',
+    'Keeping the service secure, rate limiting and preventing abuse: our legitimate interests in a working, unabused service.',
+    'Groups, following and rankings: performance of our contract, and only for the groups you join.',
+    'Keeping records of payments and cancellations, once payments are live: our legal obligation.'
   ]],
-  ['h2', 'Your rights'],
-  ['p', 'You can access, correct, export or delete your data. Export and delete are both self-service in Settings. You can also object to processing or complain to the Information Commissioner\'s Office.'],
-  ['h2', 'Cookies'],
-  ['p', 'Slippery sets one cookie, which keeps you signed in. There is no advertising or analytics tracking, and no third party scripts. Fonts are served from our own domain rather than a font network.']
+  ['p', 'We do not process your data for advertising and we do not profile you.'],
+
+  ['h2', '5. Is a betting record special category data'],
+  ['p', 'We treat it as sensitive whether or not the law classes it so. It reveals financial behaviour and it can reveal a gambling problem. That is why nothing is public by default, why groups show units rather than money, and why the images have their own purge control.'],
+
+  ['h2', '6. Who processes it for us'],
+  ['ul', [
+    'Neon, Inc. (US and EU) hosts the Postgres database. It holds everything in section 2 except the images sent for reading. neon.tech/privacy-policy',
+    'Vercel Inc. (US) hosts the site and the serverless functions. It sees requests in transit, including IP addresses, and holds no betting data at rest. vercel.com/legal/privacy-policy',
+    'Anthropic PBC (US) reads slip images and returns the extracted fields. It receives the image and nothing else, no account identifier and no email address. Data sent through the API is not used to train models. anthropic.com/legal/privacy',
+    'Google LLC (US) delivers outbound email over Gmail SMTP. It sees the recipient address and the message, which contains a verification or reset code and nothing about your bets. policies.google.com/privacy',
+    'Telegram FZ-LLC (UAE) delivers bot messages, only if you link the bot. It sees the messages you send the bot, including any slip image you forward to it. telegram.org/privacy'
+  ]],
+  ['p', 'Results sources are read, not sent to. FlashScore, football-data.co.uk, ESPN, SofaScore and football-data.org receive a request for a fixture list and receive nothing about you.'],
+
+  ['h2', '7. International transfers'],
+  ['p', 'Neon, Vercel, Anthropic and Google are United States companies and Telegram is registered in the United Arab Emirates. Transfers rely on the UK International Data Transfer Addendum to the EU Standard Contractual Clauses, or on a UK adequacy decision where one applies. The database region is chosen in the EEA.'],
+
+  ['h2', '8. How long we keep it'],
+  ['ul', [
+    'Slip images: 90 days from upload, then deleted automatically. Sooner if you delete the bet, purge the images or close the account.',
+    'Betting records: until you delete the bet or close the account.',
+    'Account details: until you close the account.',
+    'Verification and reset codes: 10 minutes, then they stop working and are removed.',
+    'Sessions: 30 days, or until you log out.',
+    'Rate limiting records: 24 hours.',
+    'Payment and cancellation records, once payments are live: 6 years, because tax law requires it.',
+    'Backups: overwritten within 30 days of a deletion.'
+  ]],
+
+  ['h2', '9. What we never do'],
+  ['p', 'We do not sell your data. We do not share your betting figures with bookmakers, advertisers, credit reference agencies, insurers or employers. We run no advertising network, no analytics product and no third party script on the page.'],
+
+  ['h2', '10. What other users can see'],
+  ['ul', [
+    'Private, the default: nobody sees your figures.',
+    'Followers: only Slippers you follow back.',
+    'Public: any signed in Slipper who finds you.',
+    'Group members always see your unit figures for that group, whatever your setting. They never see your stake size.'
+  ]],
+
+  ['h2', '11. Security'],
+  ['ul', [
+    'Passwords are hashed with scrypt and are never stored or logged in a readable form.',
+    'The session cookie is httpOnly, Secure and SameSite, so no script on the page can read it.',
+    'Every query is scoped to your account by the database rather than by the browser.',
+    'Slip images sit in the database beside the bet, not in a public bucket with a guessable URL.',
+    'Secrets are held as environment variables and are never written to a file, a log or a message.'
+  ]],
+
+  ['h2', '12. Cookies and similar technologies'],
+  ['table', [
+    ['Technology', 'Purpose', 'Type'],
+    ['Session cookie', 'Keeps you signed in between visits', 'Strictly necessary'],
+    ['Theme preference', 'Remembers the colour scheme you chose', 'Strictly necessary'],
+    ['Service worker cache', 'Serves the app offline and on a slow connection', 'Strictly necessary']
+  ]],
+  ['p', 'All three are strictly necessary, so no consent banner is required. There is no advertising, analytics or tracking cookie of any kind. Fonts are served from our own domain rather than a font network, so no third party sees your visit.'],
+
+  ['h2', '13. Automated decision making'],
+  ['p', 'Reading a slip and grading a bet are automated. Neither produces a legal or similarly significant effect: a grade changes a number on your own dashboard and can be corrected by you at any time. Nothing about your account, your access or your price is decided automatically.'],
+
+  ['h2', '14. Your rights'],
+  ['ul', [
+    'Access a copy of your data. Export to CSV or JSON is self service in Settings.',
+    'Correct anything wrong. Every field on a bet is editable.',
+    'Delete your data. Account deletion is self service and removes bets, images, groups and the account.',
+    'Restrict or object to processing based on legitimate interests.',
+    'Portability, in a machine readable format, which the JSON export is.',
+    'Withdraw consent where processing relies on it, which today is only the Telegram link.'
+  ]],
+  ['p', 'We answer within one month. There is no charge unless a request is manifestly unfounded or excessive.'],
+
+  ['h2', '15. Complaints'],
+  ['p', 'If we have not got something right, tell us first. You can also complain to the Information Commissioner\'s Office at ico.org.uk, or to the supervisory authority where you live.'],
+
+  ['h2', '16. Children'],
+  ['p', 'The service is not for anyone under 18. We do not knowingly collect data from under 18s, and where we learn that we have, we delete it.'],
+
+  ['h2', '17. Changes to this policy'],
+  ['p', 'Material changes are notified by email at least 30 days before they take effect. The date at the top of this page is when it last changed.']
 ];
 
 export function renderStatic() {
@@ -238,10 +388,34 @@ export function renderStatic() {
     (p.id === 'free' ? 'data-nav="setup"' : 'data-pay="' + p.id + '"') + '>' +
     (p.id === 'free' ? 'Start free' : 'Choose ' + esc(p.name.toLowerCase())) + '</button></div>').join(''));
 
-  const legal = rows => rows.map(([tag, body]) =>
-    tag === 'ul'
-      ? '<ul>' + body.map(li => '<li>' + esc(li) + '</li>').join('') + '</ul>'
-      : '<' + tag + '>' + esc(body) + '</' + tag + '>').join('');
+  /* Three row shapes, because a policy needs three. A cookies table
+     written as a paragraph is a cookies table nobody can check, and the
+     reference pack is right that it should be a table with Technology,
+     Purpose and Type as columns. It scrolls inside its own container: a
+     three column table at 320px would otherwise push the page sideways,
+     which is the overflow bug this codebase already learned once. */
+  const legal = rows => rows.map(([tag, body]) => {
+    /* A processor's privacy policy has to be reachable, not just named:
+       "every third-party processor named with its purpose, the data
+       shared, and a link to its privacy policy". A bare domain printed as
+       text is a citation, not a link. Anything that looks like a bare
+       host and path at the end of a bullet becomes one, after escaping. */
+    const link = s => esc(s).replace(
+      /\b((?:[a-z0-9-]+\.)+[a-z]{2,}(?:\/[\w./-]*)?)$/,
+      '<a href="https://$1" target="_blank" rel="noopener">$1</a>');
+    if (tag === 'ul') return '<ul>' + body.map(li => '<li>' + link(li) + '</li>').join('') + '</ul>';
+    if (tag === 'table') {
+      const [head, ...rest] = body;
+      /* tabindex="0" on the scroll container, or a keyboard user cannot
+         reach the columns that are off screen at 320px. axe calls this
+         scrollable-region-focusable and it is right to. */
+      return '<div class="legaltable" tabindex="0" role="group" aria-label="Cookies and similar technologies"><table><thead><tr>' +
+        head.map(h => '<th>' + esc(h) + '</th>').join('') + '</tr></thead><tbody>' +
+        rest.map(r => '<tr>' + r.map(c => '<td>' + esc(c) + '</td>').join('') + '</tr>').join('') +
+        '</tbody></table></div>';
+    }
+    return '<' + tag + '>' + esc(body) + '</' + tag + '>';
+  }).join('');
   setHTML('termsBody', legal(TERMS));
   setHTML('privacyBody', legal(PRIVACY));
 
