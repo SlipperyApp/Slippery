@@ -1,0 +1,608 @@
+# Slippery — handover
+
+You are picking up a product that is deployed, working, and roughly 60%
+finished against its brief. This document is everything you need to
+continue without the conversation that produced it.
+
+Read `CLAUDE.md` first — it is the owner's founding brief, saved verbatim,
+and it outranks this document wherever the two disagree. Then read
+`STRINGS.md`, which is every user-facing word in the product, generated
+from source.
+
+**Deliberately not in here: how anything looks.** The owner is redoing the
+visual design from scratch. Layout, colour, spacing and component
+appearance are yours to decide. What is written down is structure,
+behaviour, copy, and the constraints that have already cost money to
+learn.
+
+---
+
+## 0. Secrets — read this before you touch anything
+
+Every credential below lives in **Vercel environment variables** for the
+project. Read them there. They are not in this repo and must never be.
+
+```
+ANTHROPIC_API_KEY        reading slips
+TELEGRAM_BOT_TOKEN       the bot, @SlipperyAppBot
+TELEGRAM_WEBHOOK_SECRET  proves an update really came from Telegram
+CRON_SECRET              authorises the 20-minute results sweep
+ADMIN_SECRET             authorises the destructive reset endpoint
+GMAIL_USER               outbound mail
+GMAIL_APP_PASSWORD       outbound mail
+MAIL_FROM                the From address
+DATABASE_URL             Neon Postgres, set by the Neon integration
+RESEND_API_KEY           created, deliberately unused
+FOOTBALL_DATA_TOKEN      never created, results are scraped instead
+```
+
+**The repository is PUBLIC.** GitHub's secret scanner auto-revokes anything
+committed, which will take the product down. `process.env` only. Never
+write a key, a token, a webhook secret, a link code, a session cookie or a
+password into a file, a commit, a log line, a test fixture, a chat message
+or an error response. `GET /api/sources` is the pattern to copy: it reports
+every variable as a boolean, never a value.
+
+If you are told a secret in conversation, do not repeat it back and do not
+put it in a file. Ask for it to be set in Vercel instead.
+
+---
+
+## 1. Skills installed in this repo
+
+`.claude/skills/` holds 23 skills. Twelve are tracked in `skills-lock.json`
+with their sources:
+
+**From `emilkowalski/skills`** — UI polish and motion judgement, which is
+the house style this product was built to:
+
+| Skill | Use it for |
+|---|---|
+| `animate` | Building an animation from scratch: whether it should animate at all, which properties, which curve, how it interrupts |
+| `animation-vocabulary` | Naming a motion effect you can only describe |
+| `apple-design` | Gesture-driven UI, spring physics, interruptible transitions, typography, reduced-motion |
+| `emil-design-eng` | The philosophy behind UI polish and the invisible details |
+| `find-animation-opportunities` | Finding places that should animate and rejecting places that should not |
+| `improve-animations` | Auditing a codebase's motion and producing a prioritised plan |
+| `review-animations` | Critiquing motion in a diff |
+| `pick-ui-library` | Choosing a component library |
+| `prototype` | Fast throwaway builds |
+| `ask-sonner` | The Sonner toast library |
+
+**From `vercel-labs/agent-skills`**: `web-design-guidelines` — reviewing UI
+code against the Web Interface Guidelines.
+
+**From `anthropics/skills`**: `webapp-testing` — driving a local web app
+with Playwright, screenshots and console logs.
+
+Eleven more are present without lock entries: `accessibility-audit`,
+`banner-design`, `brand`, `design`, `design-system`, `frontend-design`,
+`shadcn-ui`, `slides`, `ui-styling`, `ui-ux-polish`, `ui-ux-pro-max`.
+
+Given that the visual design is being redone, `frontend-design`,
+`ui-ux-pro-max`, `apple-design`, `animate` and `accessibility-audit` are
+the ones that will earn their keep. `webapp-testing` matters because of the
+testing constraint in section 6.
+
+---
+
+## 2. betr.pro — the benchmark, and exactly how it is written
+
+The owner supplied a 70-page reference pack (betr.pro's landing page,
+pricing, sign up, verify, changelog, dashboard, import) and said: **match
+its structure and wording closely, keep our own visual identity.** They
+have the author's permission to reproduce structure and wording.
+
+You will not have the pack. Here is what matters about it, which is the
+writing rather than the styling.
+
+### 2.1 The repeating section pattern
+
+betr.pro's landing page is one component repeated eight times with a
+different accent colour. Every section has exactly these six parts in this
+order:
+
+1. **A pill badge** — an icon plus two or three words. `Powered by AI`,
+   `Effortless Import`, `Football Analytics`, `Horse Racing Analytics`,
+   `Telegram Bot`, `PRO Feature`.
+2. **A two-line headline.** Line one is plain, line two is in the section's
+   accent colour, and **line two carries the claim while line one is only
+   the setup**. `Screenshot to data / in seconds.` — `Switch in seconds, /
+   not hours.` — `Every league. Every team. / Automatic insights.` — `From
+   race cards to / closing line value.` — `Send a bet on Telegram. / It's
+   tracked instantly.` — `Built for tipsters. / Share your edge.`
+3. **One paragraph, two sentences maximum.** Never three.
+4. **Three or four full-width stacked rows**, each an icon tile, a bold
+   title of two to four words, and a grey subtitle of one short sentence.
+   **Exactly one row is highlighted.** Examples of the pairing:
+   `Upload screenshots` / *Drop one or multiple bet slip images*;
+   `AI analyzes` / *Our vision AI extracts all bet details*;
+   `Smart autocomplete` / *Find any fixture instantly as you type*;
+   `Automatic linking` / *Bets matched to fixtures with fuzzy matching*;
+   `Competition P&L` / *See which leagues are most profitable*.
+5. **Four checkmark items in a 2×2 grid**, each two to four words:
+   `Any bookie supported`, `Batch processing`, `Under 10 seconds`,
+   `Works with any tracker`, `Preserves all data`, `Duplicate detection`,
+   `GB & Ireland coverage`, `Automatic SP backfill`, `Turf vs AW breakdown`.
+6. **A live component demo showing real UI, never a screenshot**, and every
+   demo ends with a footer line stating the conclusion, e.g.
+   `Best: Good (+8.1%) · Avoid: Heavy (-12.3%)`.
+
+**A chart without a conclusion is decoration.** That line is the owner's
+and it is the single most important rule in the whole benchmark. Every
+piece of evidence on the page ends with a sentence saying what it means.
+
+### 2.2 Their word choice, precisely
+
+- **Verb-first row titles**: `Export from old tracker`, `Drag to betr.pro`,
+  `Instant import`, `Analytics ready`, `Race linking`, `CLV analysis`,
+  `Course performance`, `Going analysis`.
+- **Sub-lines are declarative fragments, not sentences with subjects**:
+  *Download your betting history as CSV or Excel*, *Bets matched to
+  official race results*, *Compare your odds to starting prices*.
+- **Second person throughout**: "your betting data", "you make money",
+  "which quietly bleed your bankroll dry".
+- **The hero sub names specific things and ends on what costs you money**:
+  *Track every bet, prove your edge with closing line value, and see
+  exactly which tipsters, courses, and markets make you money — and which
+  quietly bleed your bankroll dry.*
+- **CTA pairing is one heavy, one light**: a solid pill button with a
+  circular arrow in it, beside a plain underlined text link
+  `or see a live demo first`. Never two competing buttons.
+- **Eyebrow pill locates the product in one glance**:
+  `Bet tracker built for UK & Irish bettors`.
+- **Aggregates, never a user count**, in social proof: `£11.7M+ Stakes
+  Tracked`, `154.1K+ Bets Analyzed`. Three inline ticks beside them:
+  `Cancel anytime`, `Telegram bot included`, `Import from any tracker`.
+- **Testimonials are unpolished and anonymous.** No names, no photos, no
+  job titles. Real quotes only. Theirs read like messages, e.g. *"Mate -
+  your new tracker has been a godsend. It's mental how long I've followed
+  loads of groups and staked so much £ blind…"*
+- **The changelog is written as what changed for the user, not as commit
+  messages**, with `New` / `Improved` / `Fixed` tags and version numbers.
+  E.g. *"Races with a non-runner now settle automatically when no Rule 4
+  deduction can apply — an ante-post price, or a bet you logged after every
+  withdrawal. Anything less certain still waits for you to settle it by
+  hand."*
+- **Their best trust mechanic, copy the pattern exactly**: on the import
+  page, *"We're actively improving extraction accuracy. If a bet is
+  extracted incorrectly, tap the flag icon to report it — this helps us
+  improve and you'll get a credit back for the trouble."* A flag that
+  refunds the credit.
+- **Onboarding is six steps**, `Step N of 6`, dot progress, Back / Skip /
+  Next, and step five sells with four claims of a headline plus one line:
+  *Import 50 bets in 30 seconds / AI-powered screenshot extraction. No
+  manual entry.* — *See your true performance / Analytics that reveal which
+  strategies actually work.* — *Save 2+ hours every week / Automated
+  tracking replaces tedious spreadsheets.* — *Your data, your insights /
+  Private by default. Share only what you choose.*
+
+### 2.3 What we deliberately do NOT copy
+
+- **`99.99% accuracy`.** Unmeasured. Claim what can be proved or say nothing.
+- **Their palette.** Ours is our own.
+- **Their PRO tier's features** — public bankroll pages, priority support,
+  multi-bankroll — because we are not building them (section 5).
+- **Their pricing.** They are £14.99 and £29.99 monthly. We are far below
+  and stay there.
+
+### 2.4 The landing page order the owner specified
+
+Hero, video, AI extraction, bookmaker links, import, football, horse
+racing, telegram, tipster tier, feature grid, social proof, testimonials,
+FAQ (11+ accordions), app store, final CTA.
+
+**Our order departs from it twice, on purpose.** Capture-at-placement opens
+the page, in the slot the benchmark gives to a video, because it is the one
+thing nobody can copy and leading with a feature tour argues on their
+ground. Settlement follows it, because "it refuses rather than guesses"
+only matters once you have accepted that the record should be complete.
+
+---
+
+## 3. What the product is
+
+Slippery is a bet slip tracker. You forward a screenshot of a bet slip to
+a Telegram bot **at the moment you place the bet**. It reads the stake,
+odds, selection, legs and bookmaker off the image, tracks the bet live,
+settles it against results feeds, and shows the real profit and loss on a
+calendar. Groups rank friends in **units, not pounds**, so a £10 bettor and
+a £500 bettor sit in the same table honestly and neither learns what the
+other stakes.
+
+For people who already bet and want to know what their record actually
+says rather than what they remember. Not a bookmaker. Takes no bets. Never
+handles money. Holds no Gambling Commission licence because it performs no
+licensable activity.
+
+- Live: `https://slippery-iota.vercel.app` (stable, the webhook points here)
+- Repo: `SlipperyApp/Slippery` — **PUBLIC**
+- Bot: `@SlipperyAppBot`
+- Deploy: Vercel, automatic on push to `main`, no manual step
+
+### The four locked decisions
+
+Do not change these without asking the owner. Each cost real money or real
+trust to learn.
+
+1. **Capture at placement.** Logging at settlement is what turns a tracker
+   into a highlight reel of somebody's winners. Everything else follows
+   from this.
+2. **The settlement rules** (section 4.3). A wrong grade is worse than no
+   grade.
+3. **The iOS constraints** (section 6.2). Every one came from a device
+   failure.
+4. **`#86EFAC` profit, `#FCA5A5` loss**, semantic and never
+   theme-dependent. No theme accent may sit near either, which is why
+   there is no green or red theme.
+
+### Decisions that reversed earlier ones
+
+- **The free tier is 2 weeks OR 35 slips, whichever runs out first** —
+  superseding "Free 20 slips" in `CLAUDE.md`. Both halves matter and they
+  fail differently, so `trialState()` in `api/_lib/promo.js` reports
+  *which* one ran out. `TRIAL_DAYS` and `TRIAL_SLIPS` there are the only
+  place the numbers live.
+- **Scroll jacking is in**, on the owner's instruction, superseding the
+  "already tried, rejected" line in the brief. What was rejected was
+  *mandatory* snap.
+- **Imports are dated figures, never games** (section 4.4).
+
+### Pricing
+
+£3.49/month or £29.99/year, one paid tier. The recommendation on file is to
+keep exactly one: every feature is core to the single idea, so a second
+tier would need an invented restriction, and an artificial gate on a £3.49
+product costs more trust than it earns.
+
+---
+
+## 4. Architecture
+
+### 4.1 Layout
+
+```
+src/                source of truth — edit here, never edit public/
+  app.html          all views as <section class="view">
+  icons.svg         icon sprite, inlined once at the top of <body>
+  styles/           CSS, one file per concern, native nesting
+  js/               ES modules, bundled to one IIFE at build time
+api/                Vercel serverless functions (Node)
+  bets.js           the ledger: list, log, bulk import, settle by hand, delete
+  settle.js         the refresh button: look up this user's running bets
+  results.js        the cron sweep, every 20 minutes, same job for everyone
+  extract.js        slip image or PDF -> structured fields, refuses to guess
+  telegram.js       the bot webhook
+  groups.js         groups, browse, join requests
+  people.js         the Slipper directory and following
+  promo.js          promo code redemption
+  sources.js        diagnostics: what this deployment can reach
+  auth/[action].js  ONE function routing 12 auth actions
+  admin/reset.js    destructive reset
+  _lib/             shared server code
+    routes/         the 12 auth actions
+    settling.js     the one grader entry point
+    bot-strings.js  EVERY word the bot says
+    telegram-setup.js  webhook self-registration
+    promo.js        trial, promo codes, subscription state
+    espn.js sofascore.js footballdata.js flashscore.js footballdatauk.js
+tests/              node:test — 360 tests, `npm test`
+tools/
+  audit.mjs         real-browser audit: axe, overflow, screenshots
+  strings.mjs       generates STRINGS.md, --check fails the build on drift
+  gaps.mjs          finds dead scroll by walking text nodes
+  apistub.mjs       fakes the backend for the audit
+build.mjs           inlines src/ into public/index.html
+public/             BUILD OUTPUT — generated, never hand-edit
+```
+
+### 4.2 Commands
+
+```
+npm run build     src/ -> public/index.html   (Vercel runs this)
+npm test          360 tests
+npm run verify    build + test + browser audit + STRINGS.md drift check
+npm run strings   regenerate STRINGS.md
+```
+
+### 4.3 The settlement engine — LOCKED
+
+`src/js/settlement.js` is pure: no DOM, no globals, no side effects. It is
+the only module the server shares with the browser. Every change needs a
+test.
+
+**Rule: a wrong grade is worse than no grade. Uncertain → `{status:'ask'}`.**
+
+- 90 minutes only. Extra time and penalties never count. No 90-minute score
+  in the feed → ask.
+- Whole lines PUSH. Over 2.0 on 1–1 is void, not a loss.
+- Quarter lines SPLIT the stake. Over 2.25 on 1–1 is half lost.
+- Handicaps by bookmaker, from a lookup table, never hardcoded.
+  **bet365 = Asian**, whole line pushes. **All others = European**, the
+  handicap draw is its own outcome, so −1 behaves like −1.5 and that
+  scoreline LOSES.
+- Postponed or cancelled = void. Abandoned = ask, because bookmakers differ.
+- Always ask: player props, anytime scorer, cards, corners, bet builders,
+  same-game multis, "rest of match", "next goal".
+- Accumulators: all legs must grade or the whole bet defers. Void legs drop
+  and the odds recalculate.
+- Cash out is undetectable from a feed. Always a user action.
+- Six outcomes: `won`, `lost`, `cash-profit`, `cash-loss`, `cash-flat`,
+  `void`. Void = stake returned, £0 profit, neutral colour, never green.
+
+**Racing is never settled automatically.** Place terms, each-way fractions
+and Rule 4 deductions are set per race by the bookmaker and are in no feed
+we can reach. Racing bets are logged, tracked and counted, and handed back
+for manual settlement.
+
+**Settlement writes happen on the server only.** The browser asks and
+re-reads. It never grades a bet itself, or there would be two graders.
+
+### 4.4 Money and imports
+
+- **Integer pence internally, everywhere.** Format only at the edge.
+- **An import is a dated figure, never a game.** A CSV used to POST every
+  row as a bet; those bets could not settle, could not be checked against a
+  slip, and polluted every per-market breakdown with unverifiable rows.
+  Rows are now summed by date into `pl_entries` and carry their turnover
+  and count. Re-importing the same file corrects rather than doubles,
+  because the write upserts on `(user_id, on_date, period)`.
+- **The overlap rule**: a coarser P/L row is dropped when finer rows fall
+  inside it, so a March total and four days in March cannot both count.
+- Imported figures move profit and turnover and **never touch the win
+  rate**, because a figure with no bets behind it is neither a win nor a
+  loss.
+- Imported history is **excluded from the capture-rate split**.
+
+### 4.5 Results feeds
+
+Scraped, never an API. `api/_lib/fixtures.js` tries **flashscore →
+football-data-uk → espn → sofascore → football-data**. All of them block by
+IP reputation and every host answers differently, so
+**`GET /api/sources` reports what the running deployment can actually
+reach — check it before believing a local probe.** As of the last check
+ESPN and SofaScore both return 403 from Vercel; FlashScore and
+football-data.co.uk work.
+
+There is a shared fetch with a deadline and a circuit breaker in
+`api/_lib/net.js`. A blocked host (403/429/401/451) opens the breaker for
+five minutes; a slow host does not.
+
+### 4.6 Hard platform constraints
+
+- **Vercel Hobby allows 12 serverless functions.** Currently **11**. Over
+  the limit the build **fails silently** and the old deployment keeps
+  serving. This is why `api/auth/[action].js` is one function routing 12
+  actions. Add a route to an existing router, not a new file.
+- **Vercel's file tracer only follows literal import specifiers.**
+  `await import(someVariable)` compiles and then fails in production with
+  `Cannot find module`. Import statically and hold modules in a table.
+- **Anthropic structured outputs cap union-typed parameters at 16.** Twenty-
+  nine of them once made every extraction fail with a 400 that was being
+  swallowed, so the slip reader had never worked in production. Sentinel
+  values are used instead of nulls; `tests/slip-paths.test.mjs` counts them.
+
+---
+
+## 5. What is built, and what is not
+
+### Working and deployed
+
+- Signup, email verification by six-digit code, login, password reset,
+  account deletion. Verified live end to end.
+- Telegram webhook, self-registering, secret-enforced, duplicate-safe.
+- Account linking, full path matrix (section 5.1).
+- Slip extraction, confirm-to-log, drafts with 24-hour expiry.
+- Dashboard: calendar, ledger, analysis, social, groups, profiles.
+- Groups: every group listed, owner approves joins, browse sorted by
+  popularity / newest / alphabetical.
+- Imports: CSV, Excel, PDF, screenshots, paste — all to dated figures.
+- Public demo on 486 generated sample bets, no account needed.
+- Bookmaker pages, four calculators, reference FAQ, roadmap, changelog,
+  feedback, utilities.
+- Terms and Privacy, 17 sections each, every real processor named.
+- Take-a-break, server-enforced, extendable but never shortenable.
+- Subscription rules with 15 tests. **No payment processor is connected**;
+  the rules exist and the charge does not.
+
+### 5.1 The linking matrix — all eleven paths, each with its own reply
+
+| Path | Behaviour |
+|---|---|
+| `/start`, unlinked | Full welcome with the how-to |
+| `/start`, linked | Names the account, no instructions repeated |
+| `/start CODE` (deep link) | Routed to `/link CODE`, same handler, same answers |
+| `/link` bare | Asks for the code |
+| `/link` valid | Links, stamps `link_code_used_at` |
+| `/link` no such code | "did not match" |
+| `/link` expired | Distinct message naming ten minutes |
+| `/link` already used | Distinct message |
+| `/link` chat on another account | **Refuses**, names it, says `/unlink` first |
+| `/link` chat on this account | Says so, no-op |
+| `/link` account on another chat | **Refuses.** Replacing would let anyone holding a code silently take over where an account's slips arrive |
+
+`/unlink`, `/whoami`, `/help`, `/today`, `/pending`, `/stop` and unknown
+commands all have their own replies.
+
+**Link codes**: six characters from `23456789ABCDEFGHJKMNPQRSTVWXYZ` — no
+O against 0, no I or L against 1, no U. Generated server-side with
+`randomInt`. Ten minutes. Stamped used, not blanked, so "already used" is
+distinguishable from "never existed". A confusable character is **refused,
+not stripped** — stripping the O from `AB2C3O` leaves five characters and
+fails for a reason nobody could work out.
+
+### Not built, and why — do not build these without asking
+
+| | Why |
+|---|---|
+| Video section on the landing page | No video exists. A play button that does nothing is a fake |
+| Google sign-in | Needs OAuth credentials, owner-only |
+| Discord | Second bot token, second webhook, owner-only |
+| Multi-currency | Needs an FX source and settled-rate storage; faking it corrupts P/L |
+| CLV, starting prices, automatic Rule 4 | Need a closing price for every market. No free source publishes it. The *calculators* are built |
+| Automatic racing settlement | Needs provable finishing positions. Free sources disagree often enough to be dangerous |
+| Public tipster pages, password-shared bankrolls | A public leaderboard of gambling returns needs the Gambling Commission position answered **before** it is built |
+| Blog | A content operation, not a product. Left out of the footer rather than linking to an empty page |
+| Testimonials | The section renders and `QUOTES = []`. Real quotes only |
+| Payment capture | Needs a processor account in the business name. Owner-only |
+
+### Still owed against the brief
+
+Six-step onboarding, the import page rebuilt to the reference (tabs,
+credits panel, staged progress, the flag-refunds-a-credit mechanic), daily
+analytics with compare-days, the grouped app navigation with a global
+period filter, and per-bookmaker SEO pages beyond the template.
+
+---
+
+## 6. Rules that will bite you
+
+### 6.1 Testing
+
+**jsdom has no layout engine.** `offsetWidth` is 0 and CSS never applies. A
+previous build passed every jsdom test while scrolling sideways on mobile
+with 79 backdrop-filter elements causing scroll stutter. **Render in a real
+browser and LOOK at the screenshot.** `npm run verify` does this.
+
+**Verify against production, not locally.** Scrapers behave differently
+from a Vercel IP. The last handover-relevant bug was found this way: a link
+code was issued and stored correctly and `/api/auth/me` did not return it,
+because the session query still selected the column list from before the
+feature existed.
+
+**Prove a test can fail.** When you write a test for a control that must
+not lie, break the thing deliberately, watch the test go red, then restore
+it. Four controls in this codebase once confirmed actions they never
+performed.
+
+### 6.2 iOS Safari is primary — LOCKED
+
+- **No `localStorage` or `sessionStorage`.**
+- All inputs, selects and textareas **≥16px** or iOS zooms on focus and
+  never zooms back.
+- **`100svh`, never `100dvh`.** `dvh` recalculates when the toolbar shows
+  or hides and a sticky layout visibly breathes.
+- **At most ~3 `backdrop-filter` elements** or scrolling stutters.
+- **No `content-visibility`** — Safari 18 will not paint SVG text inside it.
+- Ship `-webkit-` **and** standard `backdrop-filter` and `mask-image`.
+- `viewport-fit=cover` plus `env(safe-area-inset-bottom)` on fixed bottom
+  navigation.
+
+### 6.3 Motion and backgrounds
+
+The app should feel alive: animated drifting backgrounds behind content
+across the whole site, layered gradients, slow parallax, subtle grain.
+Non-negotiable with it:
+
+- **`transform` and `opacity` only.** Never animate width, height, top or
+  left.
+- Decorative layers inside `overflow:hidden`. Uncontained blobs previously
+  caused 47px of horizontal scroll on mobile.
+- Honour `prefers-reduced-motion`.
+- Must not eat the backdrop-filter budget.
+- **A live `filter: blur()` is banned in the background layer.** It is
+  re-evaluated every scroll frame whether or not anything animates:
+  measured 49.9ms p95 with it, 16.8ms without. Bake the gaussian into the
+  SVG with `feGaussianBlur` and use it as a `background-image`.
+
+### 6.4 Class names and selectors
+
+- **Class names are namespaced and `npm run build` fails on a duplicate
+  top-level class definition.** This is deliberate: two production bugs
+  came from collisions. A sparkline using `.bar` inherited the sticky
+  header's `backdrop-filter` and `position:sticky` and pushed 69px of
+  overflow; a text line using `.sel` rendered as a dropdown.
+- **A delegated selector must not be able to match `<html>` or `<body>`.**
+  `[data-theme]` matched every click because the theme lives on
+  `<html data-theme>`, and since that branch returned it made every branch
+  after it dead code — import, signup, the unit row and both dropzones
+  silently stopped working. `tools/audit.mjs` reads the handler's selectors
+  out of the source and fails if any reaches the root.
+- **An attribute that routes clicks may not also be written as state.**
+  `data-book` was added to route bookmaker pages while the slip review card
+  already set `card.dataset.book`, so `closest()` swallowed every click
+  inside a review card and Confirm silently stopped saving bets. The audit
+  now fails on this.
+
+### 6.5 Other standing rules
+
+- **Never hand-edit `public/index.html`.** It is generated.
+- **No emoji as an interface element.** They rasterise from the system font,
+  cannot take `#86EFAC` or `#FCA5A5`, and differ per platform. Add a
+  `<symbol>` to `src/icons.svg` and use `ico(id)`.
+- **No em dashes in anything anyone reads.** The audit walks the rendered
+  text of every view and fails on one. `settlement.js` and `csv.js` still
+  *match* em dashes on the way in, because other people's slips contain
+  them.
+- **Tabular figures on every money value** or digits jitter and columns
+  misalign.
+- **Avoid Inter, Geist, Space Grotesk and Plus Jakarta** — they read as
+  AI-generated.
+- **Mobile first: 320 / 390 / 430px.**
+- **There is no demo data in the app.** `src/js/data.js` starts empty and is
+  filled by `hydrate()` from `GET /api/bets`. The marketing pages run on
+  one labelled worked example in `content.js` and on `src/js/sample.js`;
+  neither may ever reach the app.
+
+### 6.6 Bot copy rules
+
+Every word the bot says is in `api/_lib/bot-strings.js`. No copy inline in
+handlers. Enforced by `tests/bot-strings.test.mjs`:
+
+- **280 characters maximum**, with two documented exemptions (`welcome`,
+  `help`) allowed 600. The test names them so a third cannot be added
+  quietly.
+- No emoji. No exclamation marks.
+- Balanced markdown — an odd number of asterisks makes Telegram refuse the
+  whole message with a 400 that surfaces as the bot going silent.
+- Every refusal must say what to do next.
+- Say what happened, then what to do next. Never claim something was saved
+  unless it was.
+
+---
+
+## 7. The definition of done
+
+Every one of these, every time:
+
+- No horizontal overflow at 320, 390 and 430px
+- axe-core reports 0 violations
+- Contrast passes in every theme
+- Settlement tests pass
+- No console errors
+- No duplicate IDs
+- Keyboard operable
+- Scroll stays smooth with the background motion running
+- **You screenshotted at 390×844 and looked at it**
+
+`npm run verify` covers all but the last, which is yours.
+
+---
+
+## 8. Flag, do not decide
+
+These are the owner's alone:
+
+- The Gambling Commission position on the leaderboard and on any public
+  sharing of returns
+- ICO registration — required before public launch, still outstanding
+- The 18+ gate
+- Terms and privacy, including slip image retention — both drafted, both
+  need a solicitor before launch
+- Responsible gambling: the red/green grid and rankings are engagement
+  mechanics. **Nothing may nudge toward more volume.** "Take a break" is
+  built
+- A payment processor account in the business name
+- Anything that changes what the product is
+
+---
+
+## 9. How to work
+
+Fully autonomous. Commit and push each milestone; git history is the
+rollback. Stop only for things only the owner can do: a credential, an
+account, a payment, or a decision that changes what the product is.
+
+Write commit messages that explain the reasoning, not the diff. The git log
+in this repo is a design document and it is the fastest way to understand
+why something is the way it is.
