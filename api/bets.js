@@ -19,7 +19,7 @@ import { db, ensureSchema, configured } from './_lib/db.js';
 import { sessionUser } from './_lib/auth.js';
 import { cashOutcome, ledgerOutcome, payoutFor } from '../src/js/settlement.js';
 import { limit } from './_lib/rate.js';
-import { unlimited, trialState, TRIAL_SLIPS } from './_lib/promo.js';
+import { unlimited, trialState, TRIAL_SLIPS, billingState } from './_lib/promo.js';
 import { onBreak } from './_lib/routes/break.js';
 
 /* The free trial: two weeks or 35 slips, whichever goes first. Counted on
@@ -56,6 +56,23 @@ export default async function handler(req, res) {
        open on purpose: somebody on a break should still be able to look at
        what they already have, and locking them out of their own history
        would make the break something to avoid taking. */
+    /* LOCKED FOR NON-PAYMENT. Reading is always allowed: the record is the
+       user's and withholding it over a failed card would be holding
+       somebody's own history to ransom. Writing stops until it is paid. */
+    if (req.method !== 'GET') {
+      const bill = billingState({
+        plan: user.plan, planUntil: user.plan_until, cardAdded: user.card_added,
+        chargeDueAt: user.charge_due_at, chargePaidAt: user.charge_paid_at
+      });
+      if (bill.locked) {
+        return json(res, 423, {
+          error: 'This account is locked because a payment did not go through. ' +
+            'Everything you have logged is still here and nothing has been deleted.',
+          locked: true, billing: bill
+        });
+      }
+    }
+
     if (req.method !== 'GET' && onBreak(user)) {
       return json(res, 423, {
         error: 'You are on a break until ' +

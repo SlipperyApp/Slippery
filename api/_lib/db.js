@@ -298,6 +298,25 @@ export async function ensureSchema() {
   await sql`CREATE INDEX IF NOT EXISTS group_requests_group_idx ON group_requests (group_id)`;
   await sql`CREATE INDEX IF NOT EXISTS group_requests_user_idx ON group_requests (user_id)`;
 
+  /* BILLING STATE. No processor is connected, so none of this is a card.
+     card_added is a boolean standing in for "the processor says this
+     account has a usable payment method"; a card number is never seen by
+     this code and never will be, which is the entire reason to use a
+     processor. The dates are what the rules run on:
+
+       charge_due_at   when a charge was requested
+       charge_paid_at  when one was actually settled
+       cancel_at       when a cancellation takes effect, if asked for
+
+     An account locks two days after a due charge goes unpaid. Locking
+     stops new logging and deletes nothing, ever. A tracker that deletes
+     somebody's betting record over a failed card is a tracker nobody
+     should hand a record to. */
+  await sql`ALTER TABLE users ADD COLUMN IF NOT EXISTS card_added boolean NOT NULL DEFAULT false`;
+  await sql`ALTER TABLE users ADD COLUMN IF NOT EXISTS charge_due_at timestamptz`;
+  await sql`ALTER TABLE users ADD COLUMN IF NOT EXISTS charge_paid_at timestamptz`;
+  await sql`ALTER TABLE users ADD COLUMN IF NOT EXISTS cancel_at timestamptz`;
+
   /* Profit and loss entered as a period total rather than as bets.
    *
    * These are NOT bets and must never be counted as any. Somebody bringing

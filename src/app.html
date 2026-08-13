@@ -712,6 +712,20 @@
       <p class="hinttext">Taking cards needs a payment processor account in the business name, which only the owner can open. Until it exists these fields do nothing and no page here will ask for a card. Paid plans are granted by promo code, and the trial runs its full two weeks.</p>
     </div>
 
+    <!-- THE BILLING RULES, WRITTEN DOWN.
+         These are enforced in api/_lib/promo.js and tested, so they are
+         the actual behaviour rather than a description of an intention.
+         What is not built is the charge itself, which needs the processor
+         account above. -->
+    <div class="card pad" style="margin-top:10px">
+      <div class="cardhead"><span class="title">How the billing works</span></div>
+      <ul class="bklist">
+        <li><b>A paid plan needs a payment method.</b> Choosing one without a usable card leaves the account on the free trial rather than pretending to be subscribed. A promo code that grants free months is the exception, because nothing is charged until those months run out.</li>
+        <li><b>Cancel free until the first charge.</b> A monthly plan can be cancelled with nothing to pay right up to the moment of the first charge. After that it runs to the end of the period already paid for.</li>
+        <li><b>Two days, then the account locks.</b> If a monthly charge does not go through, logging stops 48 hours later. Reading never stops, and nothing is ever deleted for non-payment: everything already logged stays exactly where it is, and paying unlocks it.</li>
+      </ul>
+    </div>
+
     <p class="fineprint" style="margin-top:14px">Prices in GBP. Slippery never handles stakes or winnings.</p>
   </div>
 </section>

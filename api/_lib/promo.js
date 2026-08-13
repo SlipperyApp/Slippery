@@ -118,3 +118,107 @@ export function trialState(user, now = new Date()) {
     active: !expired && slipsLeft > 0
   };
 }
+
+/* ============================================================
+   SUBSCRIPTION STATE
+   ============================================================
+   NO PAYMENT PROCESSOR IS CONNECTED. Nothing here takes a card number,
+   attempts a charge, or stores anything a processor would. What it does is
+   hold the rules the owner asked for, as pure functions with tests, so
+   that when a processor account exists the only new code is the call that
+   asks it for money.
+
+   Where the placeholder is: `cardAdded` is a boolean the payment screen
+   sets, standing in for "the processor told us this account has a usable
+   payment method". A real card is never seen by this code and never will
+   be. That is the whole reason to use a processor.
+
+   The three rules:
+
+   1. NO CARD, NO SUBSCRIPTION. Choosing a paid plan without a usable
+      payment method leaves the account on the free trial rather than
+      pretending to be paid. An account that believes it is subscribed and
+      has never been charged is the worst of both.
+
+   2. TWO DAYS, THEN LOCKED. When a monthly charge is requested and not
+      paid, the account has 48 hours. After that it locks: logging stops,
+      everything already logged stays exactly where it is, and paying
+      unlocks it. Nothing is deleted, ever, for non-payment. A tracker that
+      deletes somebody's record over a failed card is a tracker nobody
+      should trust with a record.
+
+   3. CANCEL UNTIL THE FIRST CHARGE. A monthly plan can be cancelled with
+      no charge at all right up to the moment of the first one. After that
+      it cancels at the end of the period already paid for, which is the
+      ordinary consumer position and the one the Terms state.
+   ============================================================ */
+
+export const GRACE_MS = 2 * 86400000;
+
+/**
+ * Where an account stands with paying.
+ *
+ * @param {object} user  cardAdded, plan, planUntil, chargeDueAt, chargePaidAt, cancelAt
+ * @param {Date}   now
+ */
+export function billingState(user, now = new Date()) {
+  const u = user || {};
+  const plan = u.plan || 'free';
+  const card = Boolean(u.cardAdded);
+  const due = u.chargeDueAt ? new Date(u.chargeDueAt) : null;
+  const paid = u.chargePaidAt ? new Date(u.chargePaidAt) : null;
+  const until = u.planUntil ? new Date(u.planUntil) : null;
+
+  /* A lifetime grant never owes anything. */
+  if (plan === 'lifetime') {
+    return { plan, card, locked: false, owes: false, canCancelFree: false,
+      graceEndsAt: null, reason: 'lifetime' };
+  }
+
+  /* Nothing is owed until a charge has actually been requested, and a
+     charge already paid clears it however late it was. */
+  const owes = Boolean(due && due <= now && !(paid && paid >= due));
+  const graceEndsAt = due ? new Date(due.getTime() + GRACE_MS) : null;
+  const locked = Boolean(owes && graceEndsAt && graceEndsAt <= now);
+
+  /* Free until the first charge lands. The first charge is the one with no
+     payment recorded before it, so this is true for exactly the window the
+     Terms describe and false forever after. */
+  const canCancelFree = plan !== 'free' && !paid;
+
+  return {
+    plan, card, owes, locked,
+    graceEndsAt: graceEndsAt ? graceEndsAt.toISOString() : null,
+    dueAt: due ? due.toISOString() : null,
+    until: until ? until.toISOString() : null,
+    canCancelFree,
+    reason: locked ? 'unpaid' : owes ? 'due' : 'ok'
+  };
+}
+
+/**
+ * Can this account start a paid plan right now?
+ *
+ * A promo that covers months up front is the one case where a paid plan
+ * legitimately starts without a card: nothing is charged until the free
+ * months run out, and asking for a card before then is asking for a
+ * commitment the person has not been given a reason to make yet.
+ */
+export function canSubscribe(user, promo) {
+  if (promo && (promo.plan === 'lifetime' || promo.months > 0)) return { ok: true, why: 'promo' };
+  if (user && user.cardAdded) return { ok: true, why: 'card' };
+  return { ok: false, why: 'card', error: 'Add a payment method to start a paid plan.' };
+}
+
+/**
+ * When the first real charge falls due after a promo.
+ *
+ * The whole point of the two free months is that the charge starts after
+ * them rather than now, so the due date is the end of the granted period
+ * and not the day the code was typed.
+ */
+export function firstChargeAt(promo, from = new Date()) {
+  if (!promo) return new Date(from);
+  if (promo.plan === 'lifetime') return null;
+  return planUntil(promo, from) || new Date(from);
+}
