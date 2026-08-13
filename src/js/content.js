@@ -366,7 +366,6 @@ const PRIVACY = [
 export function renderStatic() {
   renderSections();
   renderTail();
-  renderDemo();
   setHTML('homeFaq', HOME_FAQ.map(f =>
     '<details class="card faq"><summary>' + esc(f[0]) + '</summary><p>' + esc(f[1]) + '</p></details>').join(''));
   setHTML('helpFaq', HELP_FAQ.map(f =>
@@ -1070,45 +1069,9 @@ const QUOTES = [];
    data poured into it: nothing here can be edited and no control claims
    to save, because a stranger clicking Confirm on a bet that goes nowhere
    is worse than not showing them anything. */
-export function renderDemo() {
-  const el = $('demoBody');
-  if (!el) return;
-  const a = SAMPLE.analysis;
-  const all = SAMPLE.day.concat([SAMPLE.slip]);
-  const kpi = (k, v, tone) =>
-    '<div class="dkpi"><span class="k">' + esc(k) + '</span>' +
-    '<span class="v ' + (tone || '') + '">' + v + '</span></div>';
-
-  el.innerHTML =
-    '<div class="dkpis">' +
-      kpi('Net', M.signed(SAMPLE.dayNet), M.tone(SAMPLE.dayNet)) +
-      kpi('Bets', String(all.length)) +
-      kpi('Win rate', a.winRate + '%') +
-      kpi('ROI', a.roi.toFixed(1) + '%', M.tone(a.roi)) +
-    '</div>' +
-    '<div class="card pad" style="margin-top:10px">' +
-      '<div class="cardhead"><span class="title">The bets behind it</span>' +
-      '<span class="meta">' + all.length + ' settled</span></div>' +
-      all.map(b => '<div class="demobar"><span class="bl">' +
-        '<b style="color:var(--t1)">' + esc(b.event) + '</b><br>' +
-        esc(b.selection) + ' · ' + b.odds.toFixed(2) + ' · ' + M.money(b.stake) +
-        '</span><span class="bv ' + M.tone(b.profit) + '">' +
-        M.signed(b.profit) + '</span></div>').join('') +
-      '<p class="sect-said">Four of six lost. The month is still <b class="' +
-        M.tone(SAMPLE.dayNet) + '">' + M.signed(SAMPLE.dayNet) +
-        '</b>, which is the sort of thing you only find out by logging all of them.</p>' +
-    '</div>' +
-    '<div class="card pad" style="margin-top:10px">' +
-      '<div class="cardhead"><span class="title">Where it came from</span>' +
-      '<span class="meta">by bookmaker</span></div>' +
-      a.byBook.map(([book, p]) => '<div class="demobar ' + (p >= 0 ? 'up' : 'down') +
-        '"><span class="bl">' + esc(book) + '</span><span class="bv ' + M.tone(p) + '">' +
-        M.signed(p) + '</span><span class="bt"><i style="--f:' +
-        Math.min(1, Math.abs(p) / 30000).toFixed(2) + '"></i></span></div>').join('') +
-      '<p class="sect-said">One book is carrying the month. That is the split people ' +
-      'are most often wrong about before they measure it.</p>' +
-    '</div>';
-}
+/* renderDemo lived here. The demo is now its own module: it runs on 486
+   generated bets rather than the six in SAMPLE, and a page with its own
+   period state and a tappable day strip is behaviour, not content. */
 
 export function renderTail() {
   /* The bookmakers the reader has actually been run against, from the one

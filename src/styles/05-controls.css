@@ -15,9 +15,15 @@
 .lede{color:var(--t2);font-size:15px;line-height:1.65;margin-top:11px;max-width:56ch}
 .fineprint{font-size:11.5px;color:var(--t3);line-height:1.65;max-width:52ch}
 
-.cardhead{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:11px;
-  & .title{font-weight:600;font-size:14.5px;letter-spacing:-.01em}
-  & .meta{font-family:var(--fm);font-size:10.5px;color:var(--t2)}
+/* Title left, meta right, and the meta wraps UNDER the title rather than
+   squeezing it. A long meta ("performance grouped by the odds taken") used
+   to take two lines beside a title that then took two of its own, so a one
+   line heading became four lines of ragged text at 390px. */
+.cardhead{display:flex;align-items:baseline;justify-content:space-between;gap:4px 10px;
+  flex-wrap:wrap;margin-bottom:11px;
+  & .title{font-weight:600;font-size:14.5px;letter-spacing:-.01em;flex:1 1 auto}
+  & .meta{font-family:var(--fm);font-size:10.5px;color:var(--t2);flex:0 1 auto;
+    text-align:right}
   & button.meta{color:var(--s);padding:5px;min-height:34px}}
 
 /* buttons */

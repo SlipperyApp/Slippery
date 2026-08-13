@@ -12,6 +12,7 @@ import * as R from './render.js';
 import * as C from './content.js';
 import * as P from './pages.js';
 import { sportOf } from './sports.js';
+import * as D from './demo.js';
 import { initMotion, syncThemeColor } from './motion.js';
 import { extractSlip, readText, get, post, patch, del } from './api.js';
 import { parseBetsCsv } from './csv.js';
@@ -1932,6 +1933,8 @@ document.addEventListener('click', e => {
      route is a parameter. */
   if ((el = c('[data-bookpage]'))) { P.showBook(el.getAttribute('data-bookpage')); return; }
   if ((el = c('[data-utilrun]'))) { runUtility(el.getAttribute('data-utilrun')); return; }
+  if ((el = c('[data-demoperiod]'))) { D.demoPeriod(el.getAttribute('data-demoperiod')); return; }
+  if ((el = c('[data-demoday]'))) { D.demoDay(el.getAttribute('data-demoday')); return; }
 
   if ((el = c('[data-nav]'))) {
     /* "Sign In" and "Get Started" are the same view. The mode attribute
@@ -2496,6 +2499,7 @@ async function init() {
   setHTML('wizbar', new Array($$('.step').length).fill('<i></i>').join(''));
   C.renderStatic();
   P.renderPages();
+  D.renderDemoPage();
   R.renderMisc();
   R.renderPrivacy();
   R.renderTargets();

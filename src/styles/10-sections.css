@@ -395,10 +395,97 @@ body.in-app .sitefoot{margin-top:20px}
   background:rgba(var(--orb1),.16);border:1px solid rgba(var(--orb1),.36);
   font-family:var(--fm);font-size:10px;letter-spacing:.1em;text-transform:uppercase;
   color:var(--s)}
-.dkpis{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin-top:16px}
-@media (min-width:520px){.dkpis{grid-template-columns:repeat(4,1fr)}}
-.dkpi{
+/* The disclaimer, in the same weight as the lede rather than as fine
+   print. A note saying "nobody made this money" is not a footnote to the
+   chart above it, it is a condition of showing the chart at all. */
+.demodisc{
+  margin:12px 0 0;padding:12px 14px;border-radius:12px;
+  border:1px solid var(--e2);background:var(--c1);
+  font-size:12.5px;line-height:1.6;color:var(--t2);max-width:62ch}
+
+.dperiods{display:flex;flex-wrap:wrap;gap:6px;margin-top:18px}
+.dperiod{
+  padding:8px 13px;border-radius:999px;min-height:38px;
+  border:1px solid var(--e2);background:var(--c1);color:var(--t2);
+  font:inherit;font-size:12.5px;cursor:pointer;
+  transition:color var(--tf),border-color var(--tf),background var(--tf);
+  &:hover{color:var(--t1);border-color:var(--e1)}
+  &:focus-visible{outline:2px solid var(--s);outline-offset:2px}
+  &.on{color:var(--t1);border-color:color-mix(in srgb,var(--s) 46%,transparent);
+    background:rgba(var(--orb1),.14)}}
+
+.dsecth{
+  font-family:var(--fd);font-size:clamp(19px,5vw,24px);letter-spacing:-.02em;
+  margin:26px 0 11px}
+
+.dtiles{display:grid;grid-template-columns:repeat(2,1fr);gap:8px}
+@media (min-width:640px){.dtiles{grid-template-columns:repeat(3,1fr)}}
+.dtile{
   padding:13px;border-radius:14px;border:1px solid var(--e1);background:var(--c1);
-  & .k{display:block;font-size:10.5px;color:var(--t2)}
-  & .v{display:block;font-family:var(--fm);font-weight:700;font-size:17px;margin-top:4px;
-    letter-spacing:-.02em;font-variant-numeric:tabular-nums lining-nums}}
+  & .dk{display:block;font-size:10.5px;color:var(--t2)}
+  & .dv{display:block;font-family:var(--fm);font-weight:700;font-size:19px;margin-top:4px;
+    letter-spacing:-.02em;font-variant-numeric:tabular-nums lining-nums}
+  & .ds{display:block;font-size:10.5px;color:var(--t3);margin-top:3px}}
+
+.dcurve{width:100%;height:98px;display:block;margin:4px 0 2px}
+.dzero{stroke:var(--e1);stroke-width:1;stroke-dasharray:3 4}
+
+.dgrid{display:grid;gap:12px}
+/* min-width:0 on the children, or overflow-x:auto inside them does
+   nothing. A grid item defaults to min-width:auto, which means it grows to
+   fit its content instead of letting the content scroll, and a 400px table
+   inside one pushed the card to 448px in a 320px viewport. The scroll
+   container was correct; the item around it was not allowed to shrink. */
+.dgrid > *{min-width:0}
+/* A breakdown table has five columns and 320px has room for about three,
+   so it scrolls inside its own box. The page never scrolls sideways. */
+.dtable{
+  overflow-x:auto;-webkit-overflow-scrolling:touch;margin-top:4px;min-width:0;max-width:100%;
+  & table{width:100%;border-collapse:collapse;min-width:400px}
+  & th{
+    text-align:right;font-size:10px;letter-spacing:.08em;text-transform:uppercase;
+    color:var(--t2);font-weight:600;padding:8px 9px;border-bottom:1px solid var(--e2);
+    white-space:nowrap;
+    &:first-child{text-align:left}}
+  & td{
+    text-align:right;font-size:12.5px;color:var(--t2);padding:9px;
+    border-bottom:1px solid var(--e2);white-space:nowrap;
+    font-variant-numeric:tabular-nums lining-nums;
+    &:first-child{text-align:left;color:var(--t1);white-space:normal}}
+  & tr:last-child td{border-bottom:0}}
+
+.dres{
+  font-size:10.5px;padding:2px 7px;border-radius:6px;border:1px solid var(--e1);
+  color:var(--t2);
+  &.won,&.cash-profit{color:var(--pos);border-color:color-mix(in srgb,var(--pos) 38%,transparent)}
+  &.lost,&.cash-loss{color:var(--neg);border-color:color-mix(in srgb,var(--neg) 38%,transparent)}}
+
+.dstrip{
+  display:flex;gap:7px;overflow-x:auto;-webkit-overflow-scrolling:touch;
+  padding:2px 0 8px;scroll-snap-type:x proximity}
+.dchip{
+  flex:0 0 auto;scroll-snap-align:start;
+  display:grid;gap:2px;padding:9px 12px;min-height:52px;border-radius:12px;
+  border:1px solid var(--e2);background:var(--c1);cursor:pointer;text-align:left;
+  transition:border-color var(--tf),background var(--tf);
+  &:hover{border-color:var(--e1);background:var(--c2)}
+  &:focus-visible{outline:2px solid var(--s);outline-offset:2px}
+  &.on{border-color:color-mix(in srgb,var(--s) 50%,transparent);background:rgba(var(--orb1),.14)}
+  & .dcd{font-size:10.5px;color:var(--t2);white-space:nowrap}
+  & .dcn{font-family:var(--fm);font-size:12.5px;font-weight:650;
+    font-variant-numeric:tabular-nums lining-nums}}
+
+.dday{margin-top:11px;padding-top:11px;border-top:1px solid var(--e2)}
+.ddayh{
+  display:flex;justify-content:space-between;align-items:baseline;gap:10px;
+  margin:0 0 8px;font-size:13px;color:var(--t2);
+  & b{font-family:var(--fm);font-size:15px;font-variant-numeric:tabular-nums}}
+.drow2{
+  display:flex;justify-content:space-between;align-items:baseline;gap:10px;
+  padding:8px 0;border-bottom:1px solid var(--e2);
+  &:last-child{border-bottom:0}
+  & .dl{display:grid;gap:2px;min-width:0}
+  & .dl b{font-size:13px;color:var(--t1);font-weight:600}
+  & .dl i{font-style:normal;font-size:11.5px;color:var(--t2)}
+  & .dr{font-family:var(--fm);font-size:13px;font-weight:650;white-space:nowrap;
+    font-variant-numeric:tabular-nums lining-nums}}
