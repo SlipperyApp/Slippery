@@ -20,19 +20,11 @@ import { json, methodGuard, readJson, fail } from './_lib/http.js';
 import { db, ensureSchema, configured, uniqueViolation, violatedIndex } from './_lib/db.js';
 import { sessionUser } from './_lib/auth.js';
 import { limit } from './_lib/rate.js';
-import { randomBytes } from 'node:crypto';
+/* The limits and the code alphabet live in _lib/ because the promo endpoint
+   needs the same ones: ULTRAS puts its redeemers into a group. */
+import { MAX_GROUPS_PER_USER, MAX_MEMBERS, VISIBILITIES, groupCode } from './_lib/groups-core.js';
 
-const MAX_GROUPS_PER_USER = 20;
-const MAX_MEMBERS = 200;
-const VISIBILITIES = ['public', 'private'];
-
-/* No I, O, 0 or 1: these get read aloud and typed back wrong. */
-export function groupCode() {
-  const alphabet = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
-  let out = '';
-  for (const byte of randomBytes(6)) out += alphabet[byte % alphabet.length];
-  return out;
-}
+export { groupCode };
 
 export function nameProblem(v) {
   v = String(v || '').trim();
@@ -275,7 +267,7 @@ async function browse(res, user, query, sort) {
 async function requests(res, user) {
   const sql = db();
   const rows = await sql`
-    SELECT r.group_id, r.user_id, r.requested_at, g.name AS group_name, u.name AS person
+    SELECT r.group_id, r.user_id, r.requested_at, g.name AS group_name, u.display_name AS person
     FROM group_requests r
     JOIN groups g ON g.id = r.group_id
     JOIN users u ON u.id = r.user_id

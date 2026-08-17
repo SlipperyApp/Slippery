@@ -9,6 +9,23 @@ import { db, ensureSchema, configured, uniqueViolation } from './_lib/db.js';
 import { sessionUser } from './_lib/auth.js';
 import { guard } from './_lib/rate.js';
 import { lookup, planUntil } from './_lib/promo.js';
+import { ensurePromoGroup } from './_lib/groups-core.js';
+
+/* Turn what ensurePromoGroup did into something to show and something to
+   say. The sentence is appended to the code's own note, so it always reads
+   as the second half of one message rather than a separate announcement.
+   A group that could not be joined says so plainly: claiming a place that
+   was not given is the exact failure this codebase keeps correcting. */
+export function groupResult(joined) {
+  if (!joined) return { group: null, note: '' };
+  const g = { id: joined.group.id, name: joined.group.name, created: joined.created };
+  if (joined.created) return { group: g, note: ' You started ' + joined.group.name + '.' };
+  if (joined.joined) return { group: g, note: ' You are in ' + joined.group.name + ' now.' };
+  if (joined.why === 'already') return { group: g, note: ' You were already in ' + joined.group.name + '.' };
+  if (joined.why === 'group-full') return { group: null, note: ' ' + joined.group.name + ' is full, so we could not add you.' };
+  if (joined.why === 'user-full') return { group: null, note: ' You are in 20 groups already, so we could not add you to ' + joined.group.name + '.' };
+  return { group: null, note: '' };
+}
 
 export default async function handler(req, res) {
   if (!methodGuard(req, res, ['POST'])) return;
@@ -49,10 +66,24 @@ export default async function handler(req, res) {
       await sql`UPDATE users SET verified = true WHERE id = ${user.id}`;
     }
 
+    /* Some codes carry a group. This runs after the redemption row is
+       already committed and must never undo it: the plan and the tick are
+       what was redeemed, and a group that is full or unreachable is not a
+       reason to refuse them. Anything unexpected is swallowed here for the
+       same reason, and the response simply carries no group. */
+    let joined = null;
+    try {
+      joined = await ensurePromoGroup(sql, user, promo);
+    } catch {
+      joined = null;
+    }
+    const groupPart = groupResult(joined);
+
     if (user.plan === 'lifetime') {
       return json(res, 200, {
         ok: true, plan: 'lifetime', planUntil: null, verified: Boolean(promo.verify) || Boolean(user.verified),
-        label: promo.label, note: 'This account is already free for life.'
+        label: promo.label, note: 'This account is already free for life.' + groupPart.note,
+        group: groupPart.group
       });
     }
 
@@ -65,7 +96,8 @@ export default async function handler(req, res) {
       planUntil: until ? until.toISOString() : null,
       verified: Boolean(promo.verify) || Boolean(user.verified),
       label: promo.label,
-      note: promo.note
+      note: promo.note + groupPart.note,
+      group: groupPart.group
     });
   } catch (err) {
     return fail(res, err, 'That code could not be redeemed right now.');

@@ -22,6 +22,8 @@ import { timingSafeEqual } from 'node:crypto';
 import { json, methodGuard, readJson, clientIp, fail } from '../_lib/http.js';
 import { db, ensureSchema, configured } from '../_lib/db.js';
 import { guard } from '../_lib/rate.js';
+import { hashPassword, emailProblem, passwordProblem, nameProblem } from '../_lib/auth.js';
+import { TRIAL_DAYS } from '../_lib/promo.js';
 
 /* Compare without leaking length or position through timing. Buffers of
    different lengths cannot go into timingSafeEqual at all, so that case is
@@ -35,7 +37,56 @@ function secretMatches(given) {
   return timingSafeEqual(a, b);
 }
 
-const SCOPES = ['accounts', 'bets', 'sessions', 'everything'];
+const SCOPES = ['accounts', 'bets', 'sessions', 'everything', 'seed'];
+
+/* SEEDING A TEST ACCOUNT.
+ *
+ * Ordinary signup cannot produce a usable test account: verification sends a
+ * six digit code to a real inbox, and an address nobody reads leaves the
+ * account stranded. So this creates one already verified.
+ *
+ * It sits behind ADMIN_SECRET like everything else here, and it is the same
+ * shape a real signup produces: a real password hash, a real trial window,
+ * the free plan. Nothing about the account is special afterwards, which is
+ * the point. A test account that takes a different code path proves nothing
+ * about the path everybody else is on.
+ *
+ * THIS IS A KNOWN CREDENTIAL ON A PUBLIC DEPLOYMENT. It is for beta testing
+ * and it must be deleted before launch. */
+async function seed(res, body) {
+  const email = String((body && body.email) || 'Tester1@Tester.com').trim();
+  const password = String((body && body.password) || 'Tester1@Tester');
+  const name = String((body && body.name) || 'Tester1').trim();
+
+  /* Validated with the same functions signup uses, so a seeded account can
+     never be one the real rules would have refused. */
+  const problem = emailProblem(email) || passwordProblem(password) || nameProblem(name);
+  if (problem) return json(res, 400, { error: problem });
+
+  const sql = db();
+  const emailLower = email.toLowerCase();
+  const nameLower = name.toLowerCase();
+
+  /* Replace rather than fail. Re-running this after a wipe is the normal
+     case, and a hard DELETE is what frees the partial unique indexes. */
+  await sql`DELETE FROM users WHERE email_lower = ${emailLower} OR name_lower = ${nameLower}`;
+
+  const hash = await hashPassword(password);
+  const trialEnds = new Date(Date.now() + TRIAL_DAYS * 24 * 60 * 60 * 1000);
+
+  const rows = await sql`
+    INSERT INTO users (email, email_lower, display_name, name_lower, password_hash,
+                       email_verified, age_confirmed, plan, trial_ends_at)
+    VALUES (${email}, ${emailLower}, ${name}, ${nameLower}, ${hash},
+            true, true, 'free', ${trialEnds})
+    RETURNING id, display_name, email, created_at`;
+
+  return json(res, 201, {
+    ok: true, scope: 'seed',
+    user: { id: rows[0].id, name: rows[0].display_name, email: rows[0].email },
+    note: 'Verified and ready to log in. Delete this account before launch.'
+  });
+}
 
 /* EVERY TABLE, in an order that never leans on cascade behaviour.
  *
@@ -124,6 +175,8 @@ export default async function handler(req, res) {
         scopes: SCOPES
       });
     }
+
+    if (scope === 'seed') return await seed(res, body);
 
     const sql = db();
 

@@ -24,7 +24,14 @@ export const CODES = {
      owner already knows are real, which is exactly what the tick claims.
      `verify` is a grant, not a permanent property, so it can be taken back
      from an account later without touching the redemption record. */
-  ULTRAS: { plan: 'monthly', months: 2, verify: true, label: 'First 2 months free, verified',
+  /* `group` puts every redeemer into one shared group. The first person to
+     redeem creates it and owns it; everyone after joins outright rather
+     than raising a request, because the code is the authorisation and
+     asking the owner to approve someone they already handed a code to is
+     the same question twice. Joining is a courtesy on top of the plan, so
+     it never fails the redemption. See ensurePromoGroup in groups-core.js. */
+  ULTRAS: { plan: 'monthly', months: 2, verify: true, group: 'Ultras', groupVisibility: 'public',
+    label: 'First 2 months free, verified',
     note: 'Two months free, then £3.49 a month, and your account is verified.' },
   /* Gifting. Kept as their own codes rather than a quantity field so a
      gifted month cannot be turned into twelve by editing a form value. */
