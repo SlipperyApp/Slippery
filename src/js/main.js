@@ -236,11 +236,31 @@ function go(id, fromHistory) {
   S.view = id;
   document.body.classList.toggle('in-app', APP_VIEWS.includes(id));
   document.documentElement.classList.toggle('snap', id === 'landing' && !RM);
-  $$('.tabbar button').forEach(b => {
+  /* The tab bar's indicator is one element that travels, so the only thing
+     the view switch has to say is which column it belongs over. Everything
+     else, the distance, the spring and the stretch, is in 04-shell.css.
+     .slide is held for the length of the journey: it adds the scaleX that
+     makes the pill elongate as it sets off and relax as it lands. */
+  const bar = document.querySelector('.tabbar');
+  const tabs = $$('.tabbar button');
+  tabs.forEach((b, i) => {
     const t = b.getAttribute('data-nav');
-    if (t === id) b.setAttribute('aria-current', 'page');
-    else b.removeAttribute('aria-current');
+    if (t === id) {
+      b.setAttribute('aria-current', 'page');
+      if (bar) {
+        const from = bar.style.getPropertyValue('--i');
+        bar.style.setProperty('--i', String(i));
+        /* Only stretch when it actually moves. Re-selecting the tab you
+           are already on should not wobble. */
+        if (from !== String(i) && !RM) {
+          bar.classList.add('slide');
+          clearTimeout(bar._slide);
+          bar._slide = setTimeout(() => bar.classList.remove('slide'), 190);
+        }
+      }
+    } else b.removeAttribute('aria-current');
   });
+  if (bar) bar.style.setProperty('--n', String(tabs.length || 3));
   if (!fromHistory) {
     /* WebKit throws SecurityError from pushState whenever the page has an
        opaque origin, a file:// URL, a sandboxed iframe, and the

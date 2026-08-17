@@ -158,9 +158,14 @@ export function renderCalendar() {
                  ');border-color:rgba(' + rgb + ',' + (0.26 + r * 0.3).toFixed(3) + ')';
       }
       const name = MS.format(new Date(TODAY.year, m, 1));
+      /* Every month opens, empty or not, exactly as every day already
+         does. A month with nothing in it was `disabled`, so the one thing
+         you would go to an empty month to do, add a figure to it, was the
+         one thing the calendar would not let you start. Past and future
+         both: a figure can be entered for either. */
       html += '<button class="cell ' + (v ? 'hasbets' : m > TODAY.month ? 'future' : 'nobets') +
         (m === TODAY.month ? ' today' : '') + '" style="' + style + '"' +
-        (v ? ' data-month="' + m + '"' : ' disabled') +
+        ' data-month="' + m + '"' +
         ' aria-label="' + name + ', ' + (v ? M.signed(v) : 'no bets') + '">' +
         (v ? '<span class="amt ' + M.tone(v) + '" aria-hidden="true">' +
           M.compact(v) + '</span>' : '') +
@@ -373,22 +378,32 @@ export function renderGoal() {
   setText('goalPct', Math.round(total / target * 100) + '%');
   $('goalFill').style.transform = 'scaleX(' + ratio + ')';
 
+  /* NO PACE, AND A SHORTFALL IS NEVER RED.
+   *
+   * This used to place a marker for where you "should" be by today and
+   * label anything behind it "Behind pace" in loss red. On a gambling
+   * tracker that is an instruction to bet more to catch up, which is the
+   * one thing the brief says nothing here may do. The marker is gone and
+   * the sentence states what happened rather than what it implies you owe.
+   *
+   * Beating a target is still green, because that is a fact about money
+   * you made. Falling short is muted, not red: red is reserved for money
+   * actually lost, and colouring an unmet goal the same as a loss tells
+   * somebody they lost when they did not. */
   const pace = $('goalPace');
-  const track = pace.parentElement;
-  pace.style.display = state === 'future' ? 'none' : '';
-  pace.style.transform = 'translateX(' + (elapsed * track.clientWidth) + 'px)';
+  if (pace) pace.style.display = 'none';
   setText('goalEarned', M.money0s(total) + ' earned');
 
   const n = $('goalPace2');
   let cls = 'mut';
   if (state === 'future') n.textContent = 'Not started';
-  else if (state === 'past') {
-    if (total >= target) { n.textContent = 'Beat target by ' + M.money0(total - target); cls = 'pos'; }
-    else { n.textContent = 'Missed by ' + M.money0(target - total); cls = 'neg'; }
-  } else if (ratio >= 1) { n.textContent = 'Target beaten'; cls = 'pos'; }
-  else if (Math.abs(ratio - elapsed) < 0.04) n.textContent = 'On pace';
-  else if (ratio > elapsed) { n.textContent = 'Ahead of pace'; cls = 'pos'; }
-  else { n.textContent = 'Behind pace'; cls = 'neg'; }
+  else if (total >= target) {
+    n.textContent = 'Target beaten by ' + M.money0(total - target); cls = 'pos';
+  } else if (state === 'past') {
+    n.textContent = M.money0(target - total) + ' under';
+  } else {
+    n.textContent = M.money0(target - total) + ' to go';
+  }
   n.className = cls;
   $('goalPct').className = 'pctval ' + (state === 'future' ? 'mut' : cls);
 }

@@ -15,23 +15,65 @@
   transition:box-shadow var(--tb) var(--ez),border-color var(--tb);
   &.scrolled{box-shadow:0 8px 26px rgba(0,0,0,.34);border-bottom-color:var(--e1)}}
 
+/* LIQUID NAVIGATION.
+ *
+ * One glass surface with a single indicator that travels between
+ * destinations instead of three tiles that each light up and go out. The
+ * old version cross-faded a background on whichever button was current,
+ * which reads as two separate events, not one thing moving.
+ *
+ * It costs one backdrop-filter, the third and last in the budget: iPhone
+ * starts stuttering past about three and .topbar owns the other. The
+ * indicator itself carries none.
+ *
+ * The travel is transform only. --i is the active index, written by
+ * main.js, and the indicator is exactly one column wide, so translating it
+ * by --i * 100% of its own width lands it on the right tab at any screen
+ * size with no measurement and no resize listener.
+ *
+ * The liquid part is the stretch. .slide is held for the length of the
+ * journey and adds scaleX, so the pill elongates as it sets off and
+ * relaxes as it arrives, which is what makes it read as one body of
+ * liquid rather than a rectangle sliding. A spring curve does the rest.
+ * No SVG gooey filter: a live filter is banned in this codebase for
+ * measured reasons and is not worth spending here. */
 .tabbar{
+  --i:0;
+  --n:3;
   position:fixed;inset:auto 0 0 0;z-index:40;
-  display:none;justify-content:space-around;
+  display:none;
   padding:6px 8px calc(6px + env(safe-area-inset-bottom));
   background:color-mix(in srgb,var(--bg) 84%,transparent);
   border-top:1px solid var(--e1);
   -webkit-backdrop-filter:blur(20px) saturate(150%);
-  backdrop-filter:blur(20px) saturate(150%)}
-body.in-app .tabbar{display:flex}
+  backdrop-filter:blur(20px) saturate(150%);
+
+  &::after{
+    content:'';position:absolute;z-index:0;pointer-events:none;
+    left:8px;top:6px;bottom:calc(6px + env(safe-area-inset-bottom));
+    width:calc((100% - 16px) / var(--n));
+    border-radius:var(--r-pill);
+    background:rgba(var(--orb2),.15);
+    box-shadow:inset 0 0 0 1px rgba(var(--orb2),.18);
+    transform:translate3d(calc(var(--i) * 100%),0,0);
+    transition:transform var(--d-sheet) var(--ease-spring)}
+  &.slide::after{
+    transform:translate3d(calc(var(--i) * 100%),0,0) scaleX(1.14)}
+}
+body.in-app .tabbar{display:grid;grid-template-columns:repeat(var(--n),1fr)}
 .tabbar button{
+  position:relative;z-index:1;
   display:flex;flex-direction:column;align-items:center;gap:3px;
-  color:var(--t3);font-size:10.5px;font-weight:550;
-  padding:7px 18px;border-radius:12px;min-height:48px;
-  transition:color var(--tb),background var(--tb);
-  & svg{width:21px;height:21px;transition:transform var(--tb) var(--eg)}
-  &[aria-current]{color:var(--s);background:rgba(var(--orb2),.12);
+  color:var(--t3);font-size:10.5px;font-weight:var(--fw-medium);
+  padding:7px 6px;border-radius:var(--r-pill);min-height:48px;
+  transition:color var(--d-pop) var(--ease-out),transform var(--d-press) var(--ease-out);
+  & svg{width:21px;height:21px;transition:transform var(--d-pop) var(--ease-spring)}
+  &[aria-current]{color:var(--s);
     & svg{transform:translateY(-2px)}}}
+/* The indicator is the movement. Under reduced motion it still marks the
+   right tab, it simply arrives there rather than travelling. */
+@media (prefers-reduced-motion:reduce){
+  .tabbar::after,.tabbar.slide::after{transition:none;transform:translate3d(calc(var(--i) * 100%),0,0)}}
 
 .brand{
   display:flex;align-items:center;gap:9px;
