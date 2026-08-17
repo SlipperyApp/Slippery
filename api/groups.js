@@ -203,6 +203,19 @@ async function browse(res, user, query, sort) {
   const q = String(query || '').trim().toLowerCase().slice(0, 40);
   const order = SORTS.includes(sort) ? sort : 'popular';
 
+  /* THE WHERE CLAUSE IS ONE PARAMETER, NEVER A COMPOSED FRAGMENT.
+     This used to read `WHERE ${q ? sql`...` : sql`true`}`, nesting one
+     tagged template inside another. postgres.js composes fragments that
+     way; the Neon HTTP driver does not, and instead sent the fragment
+     object along as a bound parameter. Every browse request 500ed, in all
+     three orderings, so the directory had never once loaded in production.
+     An empty search becomes the pattern '%', which matches every row, so
+     there is one query shape rather than two.
+
+     The wildcards in what somebody typed are escaped: unescaped, a search
+     for "100%" would quietly match every group on the platform. */
+  const like = '%' + q.replace(/[\\%_]/g, ch => '\\' + ch) + '%';
+
   /* Three orderings, written out rather than interpolated. A sort key that
      reaches the SQL as a string is an injection waiting to happen, and the
      tagged template cannot parameterise an ORDER BY clause. */
@@ -215,7 +228,7 @@ async function browse(res, user, query, sort) {
                EXISTS (SELECT 1 FROM group_requests r
                        WHERE r.group_id = g.id AND r.user_id = ${user.id}) AS asked
         FROM groups g
-        WHERE ${q ? sql`g.name_lower LIKE ${'%' + q + '%'}` : sql`true`}
+        WHERE COALESCE(g.name_lower, lower(g.name)) LIKE ${like} ESCAPE '\\'
         ORDER BY g.name_lower
         LIMIT ${BROWSE_LIMIT}`
     : order === 'new'
@@ -227,7 +240,7 @@ async function browse(res, user, query, sort) {
                  EXISTS (SELECT 1 FROM group_requests r
                          WHERE r.group_id = g.id AND r.user_id = ${user.id}) AS asked
           FROM groups g
-          WHERE ${q ? sql`g.name_lower LIKE ${'%' + q + '%'}` : sql`true`}
+          WHERE COALESCE(g.name_lower, lower(g.name)) LIKE ${like} ESCAPE '\\'
           ORDER BY g.created_at DESC
           LIMIT ${BROWSE_LIMIT}`
       : await sql`
@@ -238,7 +251,7 @@ async function browse(res, user, query, sort) {
                  EXISTS (SELECT 1 FROM group_requests r
                          WHERE r.group_id = g.id AND r.user_id = ${user.id}) AS asked
           FROM groups g
-          WHERE ${q ? sql`g.name_lower LIKE ${'%' + q + '%'}` : sql`true`}
+          WHERE COALESCE(g.name_lower, lower(g.name)) LIKE ${like} ESCAPE '\\'
           ORDER BY members DESC, g.name_lower
           LIMIT ${BROWSE_LIMIT}`;
 
