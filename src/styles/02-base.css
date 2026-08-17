@@ -31,14 +31,41 @@ button{cursor:pointer;background:none;border:none;color:inherit}
 /* iOS zooms any focused field under 16px and never zooms back out.
    Nothing typed into ever goes below this. */
 :where(input,select,textarea){font-size:16px}
-select option{background:#141b2c;color:var(--t1)}
+/* A native option list cannot be translucent, so it needs a solid
+   colour rather than --card. This was #141b2c, which is periwinkle's
+   panel: correct on one theme and a blue rectangle on the other five. */
+select option{background:var(--bg);color:var(--t1)}
 
 :focus-visible{outline:2px solid var(--s);outline-offset:2px;border-radius:8px}
 :where(button,a,[role=button]):focus:not(:focus-visible){outline:none}
 
-h1,h2,h3,h4{font-family:var(--fu);font-weight:750;letter-spacing:-.033em;
-  text-wrap:balance;line-height:1.08}
+/* PRESS FEEDBACK, EVERYWHERE.
+   A control that does not move when pressed does not feel like it
+   heard you. This is the single cheapest thing that separates an
+   interface that feels built from one that feels rendered, and it
+   belongs on the element rather than on each component that
+   remembers to ask for it. transform only, so it composites. */
+button,[role=button],summary{transition:transform var(--d-press) var(--ease-out)}
+button:active,[role=button]:active,summary:active{transform:scale(.97)}
+/* Anything that fills its row has no visible edge to shrink from, so
+   scaling it just blurs the text for 140ms. Components with their own
+   reason to opt out say so with this attribute, rather than this file
+   reaching into class names it does not own. */
+button.full:active,[data-nopress]:active{transform:none}
+
+h1,h2,h3,h4{font-family:var(--fu);font-weight:var(--fw-bold);
+  letter-spacing:var(--tr-tight);text-wrap:balance;line-height:var(--lh-tight)}
+h1{font-size:var(--fs-3xl)}
+h2{font-size:var(--fs-2xl)}
+h3{font-size:var(--fs-xl)}
+h4{font-size:var(--fs-lg);letter-spacing:var(--tr-snug)}
 p{text-wrap:pretty}
+
+/* A label that is small caps is a label. Used for section eyebrows
+   and column headers, where sentence case at 11px reads as an
+   afterthought rather than a heading. */
+.cap{font-size:var(--fs-2xs);font-weight:var(--fw-semi);
+  letter-spacing:var(--tr-caps);text-transform:uppercase;color:var(--t3)}
 
 /* the marketing pages speak in the serif, the app speaks in the grotesque */
 .page-lede h1,.page-lede h2,.hero h1{

@@ -19,23 +19,29 @@ export const BOOKS = {
 export const ALL_BOOKS = Object.values(BOOKS).flat();
 export const TIPSTERS = ['Self', 'HB', 'Zhang', 'James'];
 
-/* Graphite first, and first means default: it is what :root carries in
-   01-tokens.css, so an account with no theme set gets it without the client
-   having to write an attribute. Periwinkle is second.
+/* Periwinkle first, and first means default: it is what :root carries in
+   01-tokens.css and what build.mjs writes on <html>, so an account with no
+   theme set gets it on first paint without the client writing anything.
+   Graphite is second and is the recommendation.
 
    The two hexes on each row are the swatch, and they are the theme's real
    --p and --s rather than an approximation, so the picker cannot show a
    colour the theme does not use. */
+/* [id, label, --p, --s, what it is, recommended]
+   The fifth field is what tells them apart in a sentence, because six
+   names and twelve swatches do not. The sixth marks the one being
+   pointed at, which the picker rings rather than preselects. */
 export const THEMES = [
-  ['graphite',   'Graphite',   '#7C8DA6', '#B4C4DA'],
-  ['periwinkle', 'Periwinkle', '#5D76CB', '#7DD3FC'],
-  ['ink',        'Ink',        '#7C79A0', '#B3AAD8'],
-  ['tide',       'Tide',       '#3E93B5', '#8FD4EC'],
-  ['chalk',      'Chalk',      '#A8998A', '#EADFC9']
+  ['periwinkle', 'Periwinkle', '#6D86DB', '#8FD0FB', 'Indigo on deep navy. The default.'],
+  ['graphite',   'Graphite',   '#8A99AE', '#C3CDDB', 'No colour but the figures. Easiest to read.', true],
+  ['ink',        'Ink',        '#8B84C4', '#C3B9EC', 'Near black, violet cast. The darkest.'],
+  ['tide',       'Tide',       '#43AFD0', '#7FE0F5', 'Marine teal. The coolest.'],
+  ['plum',       'Plum',       '#B573C7', '#E9AEE0', 'Deep aubergine. The richest.'],
+  ['chalk',      'Chalk',      '#BFAB94', '#EFE2CB', 'Warm sepia. The only warm one.']
 ];
-/* The colour behind the browser chrome. */
-export const THEME_BG = { graphite: '#12161D', periwinkle: '#0F172A', ink: '#09090C',
-  tide: '#0A1A22', chalk: '#1B1813' };
+/* The colour behind the browser chrome. Each is the theme's real --bg. */
+export const THEME_BG = { periwinkle: '#0A0F1E', graphite: '#121417', ink: '#050508',
+  tide: '#03151E', plum: '#140A1B', chalk: '#171309' };
 
 export const OUTCOME_LABEL = {
   'won': 'Won', 'lost': 'Lost', 'void': 'Void',

@@ -107,7 +107,7 @@ const HEAD = ({ css, js, html, sprite }) => `<!DOCTYPE html>
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<meta name="theme-color" content="#0B1020">
+<meta name="theme-color" content="#0A0F1E">
 <meta name="description" content="Slippery reads your bet slips and tracks your real profit and loss. Capture a bet when you place it, not when it wins.">
 <meta name="color-scheme" content="dark">
 <meta name="apple-mobile-web-app-capable" content="yes">

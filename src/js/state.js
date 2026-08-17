@@ -25,9 +25,10 @@ export const S = {
   currency: 'GBP',
   oddsFormat: 'Decimal',
   profitFormat: 'Currency',
-  /* Graphite. It is what :root carries, so this and the stylesheet agree
-     without the client writing an attribute on first paint. */
-  theme: 'graphite',
+  /* Periwinkle. It is what :root carries and what build.mjs writes on
+     <html>, so this, the stylesheet and the first paint all agree without
+     the client writing an attribute. */
+  theme: 'periwinkle',
   showTipster: true,
   /* Which bet count to show.
      'tracker' counts only what has been logged HERE, so a new account

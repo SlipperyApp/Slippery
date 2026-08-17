@@ -22,7 +22,7 @@ const SHOT_DIR = path.join(root, 'tools', 'screens');
 const VIEWS = ['landing', 'setup', 'howto', 'demo', 'pricing', 'dash', 'imp', 'settings', 'help', 'terms', 'privacy',
   'books', 'calc', 'faqs', 'soon', 'log', 'feedback', 'util'];
 /* Graphite first, matching data.js: it is the default. */
-const THEMES = ['graphite', 'periwinkle', 'ink', 'tide', 'chalk'];
+const THEMES = ['periwinkle', 'graphite', 'ink', 'tide', 'plum', 'chalk'];
 
 const MIME = { '.html': 'text/html', '.js': 'text/javascript', '.css': 'text/css',
   '.woff2': 'font/woff2', '.png': 'image/png', '.svg': 'image/svg+xml',

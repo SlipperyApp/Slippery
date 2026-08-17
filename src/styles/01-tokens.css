@@ -1,100 +1,264 @@
 /* ============================================================
    TOKENS
-   Themes only ever change hue. Profit green and loss red are
-   semantic and identical in every theme, locked by the brief.
-   No theme accent may sit near either, which is why there is no
-   green or red theme.
+   ============================================================
+   Three layers, in this order, and nothing skips a layer:
+
+     1. SEMANTIC CONSTANTS   profit, loss, warning. Identical in
+        every theme, locked by the brief. The numbers are the only
+        saturated thing on the page.
+     2. THEME                hue, background, surfaces, text. Six
+        of them, swapped as a set.
+     3. SYSTEM               type scale, rhythm, radii, elevation,
+        motion. Theme independent, because a button does not change
+        shape when the colour changes.
+
+   WHY EVERY THEME IS DECLARED TWICE.
+   A theme normally lives on <html data-theme>. The theme picker
+   needs to show a real preview of each theme while standing in a
+   different one, and a preview cannot re-root the document. So
+   every block also answers to [data-t=X], setting the same custom
+   properties on one element instead. Custom properties inherit, so
+   the nearest declaring ancestor wins and a preview becomes an
+   island of another theme.
+
+   [data-t] IS PRESENTATION AND MUST NEVER ROUTE A CLICK.
+   data-book was added to route bookmaker pages while the slip
+   review card already wrote card.dataset.book, and closest() then
+   swallowed every click inside a review card, so Confirm silently
+   stopped saving bets. State and dispatch do not share an
+   attribute here again.
    ============================================================ */
+
 :root{
-  /* semantic, never theme-dependent */
+  /* ---- 1. SEMANTIC. Never theme-dependent. Locked by the brief.
+     No theme accent may sit near either, which is why there is no
+     green theme and no red theme, and why the amber below is only
+     ever an attention colour and never a primary. ---- */
   --pos:#86EFAC;
   --neg:#FCA5A5;
   --warn:#F59E0B;
+}
 
-  /* theme: graphite, the default.
-     Neutral by design: the numbers are the only saturated thing on the
-     page, and profit green next to a blue accent is a harder read than
-     profit green next to nothing. */
-  --p:#7C8DA6;          /* primary */
-  --s:#B4C4DA;          /* secondary / link */
-  --a:#FBBF24;          /* attention */
-  --bg:#101419;
-  --glow:#1E2530;
-  --orb1:124,141,166;
-  --orb2:180,196,218;
-  --orb3:150,160,175;
+/* ============================================================
+   2. THEMES
+   ============================================================
+   Separated on three axes at once, not just hue. Five themes that
+   were all cool, all mid-dark and all one gesture apart read as
+   the same theme with a filter over it. These differ in hue, in
+   background lightness and in chroma, so a switch is legible at a
+   glance.
 
-  /* text */
-  --t1:#F1F5F9;
-  --t2:#98A6BC;
-  --t3:#8B99B0;
+     periwinkle  indigo, deep navy, medium chroma      DEFAULT
+     graphite    true neutral, near zero chroma        RECOMMENDED
+     ink         near black, violet cast, the darkest
+     tide        marine teal, the coolest, high chroma
+     plum        aubergine, the magenta end
+     chalk       warm sepia, the only warm theme
 
-  /* THE OVERLAY INK.
-     Every hover tint, hairline, track and scrollbar in this stylesheet used
-     to be a hardcoded rgba(255,255,255,x). That is correct on five dark
-     themes and wrong on the sixth: a white veil on a light page is a
-     lighter patch on something already light, so cards, hover states and
-     progress tracks all vanished. One token, flipped once per theme, and
-     every overlay follows. */
+   Every theme supplies the same contract:
+     --p     primary. A LIGHT value, because it is a filled surface
+             and --on-p is the dark text that sits on it. Light
+             pill, dark label, which clears AA comfortably where
+             white on a mid tone does not.
+     --on-p  the only text colour allowed on --p
+     --s     secondary, links, focus ring
+     --a     attention. Never near profit green or loss red
+     --bg    page
+     --glow  the top wash behind the hero
+     --orb1/2/3   background field colours as R,G,B triplets,
+             because they are used at several alphas
+     --card  panel fill
+     --ink   overlay ink as an R,G,B triplet. Every hover tint,
+             hairline, track and scrollbar derives from it
+     --t1/2/3     text, descending emphasis
+   ============================================================ */
+
+:root,
+html[data-theme=periwinkle],
+[data-t=periwinkle]{
+  --p:#6D86DB;   --on-p:#080C18;
+  --s:#8FD0FB;   --a:#F5A524;
+  --bg:#0A0F1E;  --glow:#18233C;
+  --orb1:99,124,214; --orb2:70,190,250; --orb3:132,150,220;
+  --card:rgba(19,27,47,.68);
   --ink:255,255,255;
+  --t1:#F2F5FA; --t2:#9FADC4; --t3:#8493AC;
+}
 
-  /* surfaces */
-  --c1:rgba(255,255,255,.045);
-  --c2:rgba(255,255,255,.075);
-  --e1:rgba(255,255,255,.10);
-  --e2:rgba(255,255,255,.055);
-  --card:rgba(28,34,44,.68);
-  --card-hi:rgba(255,255,255,.055);
+/* Graphite. The recommendation, and the reason is legibility: with
+   almost no chroma in the shell, profit green and loss red are the
+   only colours on screen, so a column of figures reads faster here
+   than anywhere else. */
+html[data-theme=graphite],
+[data-t=graphite]{
+  --p:#8A99AE;   --on-p:#0E1116;
+  --s:#C3CDDB;   --a:#FBBF24;
+  --bg:#121417;  --glow:#22262C;
+  --orb1:138,153,174; --orb2:195,205,219; --orb3:120,128,140;
+  --card:rgba(30,33,38,.70);
+  --ink:255,255,255;
+  --t1:#F1F3F6; --t2:#A2AAB6; --t3:#8A929E;
+}
 
-  /* type */
+html[data-theme=ink],
+[data-t=ink]{
+  --p:#8B84C4;   --on-p:#06060A;
+  --s:#C3B9EC;   --a:#7DD3FC;
+  --bg:#050508;  --glow:#131320;
+  --orb1:139,132,196; --orb2:195,185,236; --orb3:110,104,160;
+  --card:rgba(17,17,26,.74);
+  --ink:255,255,255;
+  --t1:#F3F1FA; --t2:#A29CBE; --t3:#8B85A6;
+}
+
+html[data-theme=tide],
+[data-t=tide]{
+  --p:#43AFD0;   --on-p:#02121A;
+  --s:#7FE0F5;   --a:#FBBF24;
+  --bg:#03151E;  --glow:#0C3040;
+  --orb1:67,175,208; --orb2:127,224,245; --orb3:64,190,190;
+  --card:rgba(10,40,54,.70);
+  --ink:255,255,255;
+  --t1:#EDF8FC; --t2:#9DBDCB; --t3:#87A6B4;
+}
+
+/* Plum. Added because the set had no magenta end at all, and purple
+   is the one strong hue safely distant from both profit green and
+   loss red. */
+html[data-theme=plum],
+[data-t=plum]{
+  --p:#B573C7;   --on-p:#100716;
+  --s:#E9AEE0;   --a:#FBBF24;
+  --bg:#140A1B;  --glow:#2A1436;
+  --orb1:181,115,199; --orb2:233,174,224; --orb3:140,90,170;
+  --card:rgba(38,20,48,.70);
+  --ink:255,255,255;
+  --t1:#F8F0FA; --t2:#BCA6C4; --t3:#A38EAB;
+}
+
+/* Chalk. Warm dark sepia, and deliberately still dark.
+   A light version was built twice and reverted twice: profit green
+   as text on near white measures about 1.4:1, and the only fixes
+   are a second pair of semantic colours or a theme dependent green.
+   Both break a locked rule. */
+html[data-theme=chalk],
+[data-t=chalk]{
+  --p:#BFAB94;   --on-p:#14100A;
+  --s:#EFE2CB;   --a:#7DD3FC;
+  --bg:#171309;  --glow:#2E281A;
+  --orb1:191,171,148; --orb2:239,226,203; --orb3:160,145,120;
+  --card:rgba(44,38,26,.72);
+  --ink:255,255,255;
+  --t1:#F7F1E4; --t2:#C2B6A1; --t3:#A89D85;
+}
+
+/* ============================================================
+   3. SYSTEM
+   ============================================================ */
+
+:root{
+  /* ---- Surfaces, all derived from --ink ----
+     These were once hardcoded rgba(255,255,255,x), which is right
+     on a dark theme and wrong the moment one is not. Deriving them
+     means a theme flips one triplet and every hover tint, hairline
+     and track follows. */
+  --c1:rgba(var(--ink),.045);
+  --c2:rgba(var(--ink),.075);
+  --e1:rgba(var(--ink),.10);
+  --e2:rgba(var(--ink),.055);
+  --card-hi:rgba(var(--ink),.055);
+  --hair:rgba(var(--ink),.09);
+  --track:rgba(var(--ink),.07);
+
+  /* ---- Type ----
+     Fraunces for display, Schibsted Grotesk for interface, Spline
+     Sans Mono for every figure. Inter, Geist, Space Grotesk and
+     Plus Jakarta are avoided deliberately: they read as the default
+     choice rather than a choice. */
   --fd:'Fraunces',Georgia,'Times New Roman',serif;
   --fu:'Schibsted Grotesk',system-ui,-apple-system,sans-serif;
   --fm:'Spline Sans Mono',ui-monospace,Menlo,monospace;
 
-  /* rhythm, everything is a multiple of 4 */
-  --r:16px;
+  /* A real scale, not four heading sizes. The three largest are
+     fluid, because a 50px hero on a 320px phone is not a hero, it
+     is a wrapping accident. */
+  --fs-2xs:11px;
+  --fs-xs:12px;
+  --fs-sm:14px;
+  --fs-md:16px;
+  --fs-lg:18px;
+  --fs-xl:21px;
+  --fs-2xl:clamp(23px,1.4rem + 1.4vw,28px);
+  --fs-3xl:clamp(27px,1.5rem + 2.6vw,36px);
+  --fs-4xl:clamp(32px,1.6rem + 4.4vw,50px);
+
+  --fw-regular:400;
+  --fw-medium:500;
+  --fw-semi:600;
+  --fw-bold:700;
+  --fw-black:800;
+
+  /* Tracking tightens as size grows, which is how type is actually
+     set. One letter-spacing for every size is the tell of a scale
+     that was never drawn. */
+  --tr-tight:-.033em;
+  --tr-snug:-.018em;
+  --tr-none:0;
+  --tr-wide:.02em;
+  --tr-caps:.08em;
+
+  --lh-tight:1.08;
+  --lh-snug:1.25;
+  --lh-body:1.5;
+  --lh-loose:1.65;
+
+  /* ---- Rhythm. Everything is a multiple of 4. ---- */
+  --sp-1:4px;   --sp-2:8px;   --sp-3:12px;  --sp-4:16px;
+  --sp-5:20px;  --sp-6:24px;  --sp-8:32px;  --sp-10:40px;
+  --sp-12:48px; --sp-16:64px; --sp-20:80px;
+
+  /* ---- Radii ---- */
+  --r-xs:6px;
   --r-sm:10px;
+  --r:16px;
   --r-lg:22px;
+  --r-xl:28px;
+  --r-pill:999px;
 
-  /* motion */
-  --tf:140ms;
-  --tb:240ms;
-  --ts:420ms;
-  --ez:cubic-bezier(.22,.61,.36,1);
-  --ex:cubic-bezier(.16,1,.3,1);
-  --eg:cubic-bezier(.34,1.4,.64,1);
-}
+  /* ---- Elevation. Restrained: on a dark page a heavy shadow reads
+     as dirt rather than height. ---- */
+  --el-1:0 1px 2px rgba(0,0,0,.28);
+  --el-2:0 4px 16px rgba(0,0,0,.34);
+  --el-3:0 18px 48px rgba(0,0,0,.44);
 
-/* Graphite is :root, so it needs no block of its own. The attribute is
-   still written to <html> because the theme picker, the meta theme-color
-   and the audit all read it. */
-html[data-theme=periwinkle]{
-  --p:#5D76CB;--s:#7DD3FC;--a:#F59E0B;
-  --bg:#0B1020;--glow:#182238;
-  --orb1:93,118,203;--orb2:56,189,248;--orb3:143,199,192;
-  --card:rgba(19,27,45,.66);
-}
-html[data-theme=ink]{
-  --p:#7C79A0;--s:#B3AAD8;--a:#7DD3FC;
-  --bg:#08080C;--glow:#16161F;
-  --orb1:124,121,160;--orb2:179,170,216;--orb3:106,102,140;
-  --card:rgba(21,21,29,.70);
-}
-html[data-theme=tide]{
-  --p:#3E93B5;--s:#8FD4EC;--a:#FBBF24;
-  --bg:#061620;--glow:#123039;
-  --orb1:62,147,181;--orb2:143,212,236;--orb3:80,170,170;
-  --card:rgba(17,41,52,.68);
-}
-/* Chalk. Warm dark beige, as it was.
-   A light version of this theme was built and reverted: profit green as
-   text on near-white measures about 1.4:1, and the two tokens that made it
-   readable were a second pair of semantic colours, which is one pair too
-   many for a rule that says the colours never change. */
-html[data-theme=chalk]{
-  --p:#A8998A;--s:#EADFC9;--a:#7DD3FC;
-  --bg:#17140F;--glow:#2C2820;
-  --orb1:168,153,138;--orb2:234,223,201;--orb3:150,140,120;
-  --card:rgba(41,37,29,.70);
-  --t2:#B4A996;--t3:#9E9382;
+  /* ---- Motion ----
+     Durations are named for what they belong to, so nobody has to
+     decide again whether a dropdown is 200ms or 400ms. Under 300ms
+     for anything in the interface: a 180ms select feels more
+     responsive than a 400ms one, and the difference is not subtle.
+     Marketing may run longer. */
+  --d-press:140ms;
+  --d-tip:160ms;
+  --d-pop:200ms;
+  --d-sheet:280ms;
+  --d-slow:420ms;
+
+  /* The built in CSS easings are too weak to read as intentional.
+     ease-in is absent on purpose: it starts slow, delaying the exact
+     moment the eye is watching, and makes an interface feel sluggish
+     at any duration. */
+  --ease-out:cubic-bezier(.23,1,.32,1);
+  --ease-in-out:cubic-bezier(.77,0,.175,1);
+  --ease-drawer:cubic-bezier(.32,.72,0,1);
+  --ease-spring:cubic-bezier(.34,1.4,.64,1);
+
+  /* Older names, still referenced across the other stylesheets.
+     Kept as aliases so the rebuild can proceed one file at a time
+     rather than needing a single atomic rename. */
+  --tf:var(--d-press);
+  --tb:var(--d-pop);
+  --ts:var(--d-slow);
+  --ez:var(--ease-out);
+  --ex:var(--ease-drawer);
+  --eg:var(--ease-spring);
 }
