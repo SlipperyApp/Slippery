@@ -52,7 +52,6 @@
      graphite    true neutral, near zero chroma        RECOMMENDED
      ink         near black, violet cast, the darkest
      tide        marine teal, the coolest, high chroma
-     plum        aubergine, the magenta end
      chalk       warm sepia, the only warm theme
 
    Every theme supplies the same contract:
@@ -120,20 +119,6 @@ html[data-theme=tide],
   --card:rgba(10,40,54,.70);
   --ink:255,255,255;
   --t1:#EDF8FC; --t2:#9DBDCB; --t3:#87A6B4;
-}
-
-/* Plum. Added because the set had no magenta end at all, and purple
-   is the one strong hue safely distant from both profit green and
-   loss red. */
-html[data-theme=plum],
-[data-t=plum]{
-  --p:#B573C7;   --on-p:#100716;
-  --s:#E9AEE0;   --a:#FBBF24;
-  --bg:#140A1B;  --glow:#2A1436;
-  --orb1:181,115,199; --orb2:233,174,224; --orb3:140,90,170;
-  --card:rgba(38,20,48,.70);
-  --ink:255,255,255;
-  --t1:#F8F0FA; --t2:#BCA6C4; --t3:#A38EAB;
 }
 
 /* Chalk. Warm dark sepia, and deliberately still dark.

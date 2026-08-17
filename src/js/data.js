@@ -36,12 +36,11 @@ export const THEMES = [
   ['graphite',   'Graphite',   '#8A99AE', '#C3CDDB', 'No colour but the figures. Easiest to read.', true],
   ['ink',        'Ink',        '#8B84C4', '#C3B9EC', 'Near black, violet cast. The darkest.'],
   ['tide',       'Tide',       '#43AFD0', '#7FE0F5', 'Marine teal. The coolest.'],
-  ['plum',       'Plum',       '#B573C7', '#E9AEE0', 'Deep aubergine. The richest.'],
   ['chalk',      'Chalk',      '#BFAB94', '#EFE2CB', 'Warm sepia. The only warm one.']
 ];
 /* The colour behind the browser chrome. Each is the theme's real --bg. */
 export const THEME_BG = { periwinkle: '#0A0F1E', graphite: '#121417', ink: '#050508',
-  tide: '#03151E', plum: '#140A1B', chalk: '#171309' };
+  tide: '#03151E', chalk: '#171309' };
 
 export const OUTCOME_LABEL = {
   'won': 'Won', 'lost': 'Lost', 'void': 'Void',

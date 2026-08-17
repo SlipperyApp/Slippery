@@ -942,13 +942,27 @@ export function renderMisc() {
     '<div class="items">' + BOOKS[g].map(b => '<span class="item">' + esc(b) + '</span>').join('') +
     '</div></div>').join(''));
 
+  /* Each option is a small live dashboard in its own theme rather than a
+     coloured tile, because "what hue is it" was never the question. The
+     card carries data-t, which is what makes every colour inside it that
+     theme's real token instead of a hardcoded approximation.
+
+     data-theme routes the click and data-t paints. They are deliberately
+     two attributes: one of them is also on <html>, and an attribute that
+     both dispatches and stores state is how Confirm once stopped saving
+     bets. */
   const swatches = THEMES.map(t =>
-    '<button data-theme="' + t[0] + '" aria-pressed="' + (S.theme === t[0]) + '"' +
-    /* background-image, not the background shorthand: the shorthand resets
-       background-size, and the zoom that makes the cell read as one colour
-       instead of a two-tone tile lives in background-size. */
-    ' style="background-image:linear-gradient(140deg,' + t[2] + ',' + t[3] + ')" aria-label="' + t[1] + ' theme">' +
-    '<span class="swname">' + t[1] + '</span></button>').join('');
+    '<button class="thm' + (t[5] ? ' is-rec' : '') + '" data-theme="' + t[0] + '" data-t="' + t[0] + '"' +
+    ' aria-pressed="' + (S.theme === t[0]) + '">' +
+      '<span class="pv" aria-hidden="true">' +
+        '<span class="pv-top"><i class="pv-cap"></i><span class="pv-fig">+' + M.money0(4820) + '</span></span>' +
+        '<span class="pv-row"><i class="pv-bar"></i><span class="pv-loss">−' + M.money0(1240) + '</span></span>' +
+        '<span class="pv-nav"><i></i><i></i><i></i></span>' +
+      '</span>' +
+      '<span class="thm-h">' + esc(t[1]) +
+        (t[5] ? '<span class="rec">Recommended</span>' : '') + '</span>' +
+      '<span class="thm-d">' + esc(t[4]) + '</span>' +
+    '</button>').join('');
   setHTML('swatchesSettings', swatches);
   setHTML('swatchesSetup', swatches);
 

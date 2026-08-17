@@ -262,24 +262,71 @@
    ring is gone with it: an invisible border still takes up space and left a
    faint seam. Selection is an outline, which sits outside the box and so
    moves nothing when it appears. */
-.swatches{
-  display:grid;grid-template-columns:repeat(5,1fr);column-gap:10px;row-gap:26px;
-  margin-top:12px;padding-bottom:22px;
-  & button{width:100%;aspect-ratio:1;border-radius:14px;border:0;outline:0;
-    background-size:260% 260%;background-position:50% 50%;
-    position:relative;padding:0;
-    transition:transform var(--tb) var(--eg),outline-color var(--tb),box-shadow var(--tb);
+/* THE THEME PICKER SHOWS THE THEME.
+ *
+ * This was five coloured tiles. A tile answers "what hue is it", which is
+ * not the question anybody is asking. The question is what the dashboard
+ * will look like, so each option now renders a small one: a panel, a
+ * profit figure, a loss figure and the navigation bar, built from that
+ * theme's real tokens.
+ *
+ * Each card carries data-t, so the whole card, background, text, panel and
+ * both semantic colours, is genuinely that theme rather than an
+ * impression of it. Nothing here is a hardcoded hex. A theme whose tokens
+ * change updates its own preview.
+ *
+ * data-t sets colour and never routes a click. The click is routed by
+ * button[data-theme], element-qualified, because the theme also lives on
+ * <html data-theme> and a bare attribute selector matches the root, which
+ * once made every branch after it dead code. */
+.themepick{
+  display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-top:12px;
+
+  & .thm{
+    /* Opaque, and its own theme's page colour: a translucent panel here
+       would blend into whichever theme the reader is currently in and
+       every preview would look the same. */
+    background:var(--bg);color:var(--t1);
+    border:1px solid var(--hair);border-radius:var(--r);
+    padding:10px;text-align:left;display:flex;flex-direction:column;gap:9px;
     outline:2px solid transparent;outline-offset:2px;
-    &[aria-pressed=true]{outline-color:var(--t1);box-shadow:0 6px 18px rgba(0,0,0,.4)}
-    & .swname{position:absolute;bottom:-18px;left:-4px;right:-4px;text-align:center;
-      font-size:9.5px;color:var(--t2)}
-    &[aria-pressed=true] .swname{color:var(--t1)}}}
-/* Lift on hover only where hover is real. On a touch screen the :hover
-   state latches after a tap and does not clear until you tap elsewhere, so
-   the swatch you just chose stays raised out of line with the rest of the
-   row. */
+    transition:outline-color var(--d-pop) var(--ease-out),
+               transform var(--d-press) var(--ease-out);
+    &[aria-pressed=true]{outline-color:var(--s)}
+    /* The recommendation is a border, the selection is an outline. Two
+       different properties, so a recommended theme that is also the
+       chosen one shows both instead of one hiding the other. */
+    &.is-rec{border-color:var(--a)}
+  }
+
+  /* the miniature dashboard */
+  & .pv{
+    display:flex;flex-direction:column;gap:5px;
+    padding:7px;border-radius:var(--r-sm);
+    background:var(--card);border:1px solid var(--hair)}
+  & .pv-top{display:flex;align-items:baseline;justify-content:space-between;gap:6px}
+  & .pv-cap{height:4px;width:26px;border-radius:2px;background:var(--track)}
+  & .pv-fig{font-family:var(--fm);font-size:12px;font-weight:var(--fw-semi);
+    font-variant-numeric:tabular-nums lining-nums;letter-spacing:-.02em;color:var(--pos)}
+  & .pv-row{display:flex;align-items:center;gap:5px}
+  & .pv-bar{height:4px;border-radius:2px;background:var(--e1);flex:1}
+  & .pv-loss{font-family:var(--fm);font-size:9px;
+    font-variant-numeric:tabular-nums lining-nums;color:var(--neg)}
+  & .pv-nav{display:flex;gap:3px;margin-top:1px;
+    & i{height:5px;flex:1;border-radius:3px;background:var(--e2)}
+    & i:first-child{background:var(--p)}}
+
+  & .thm-h{display:flex;align-items:center;gap:6px;flex-wrap:wrap;
+    font-size:var(--fs-sm);font-weight:var(--fw-semi);letter-spacing:var(--tr-snug)}
+  & .rec{font-size:9px;font-weight:var(--fw-bold);letter-spacing:var(--tr-caps);
+    text-transform:uppercase;color:var(--a)}
+  & .thm-d{font-size:var(--fs-2xs);color:var(--t2);line-height:1.35}
+}
+/* Lift on hover only where hover is real. On a touch screen :hover latches
+   after a tap and does not clear until you tap elsewhere, so the option you
+   just chose stays raised out of line with the rest. */
 @media (hover:hover) and (pointer:fine){
-  .swatches button:hover{transform:translateY(-3px)}}
+  .themepick .thm:hover{transform:translateY(-2px)}}
 
 /* theme intro overlay */
 .themeintro{
