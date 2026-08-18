@@ -95,7 +95,7 @@ const bookCard = b =>
 function bookPage(b) {
   return '<button class="pillbtn" data-bookpage="">All bookmakers</button>' +
     '<h2 class="bkh">Tracking ' + esc(b.name) + ' bets</h2>' +
-    '<p class="bklede">Forward a ' + esc(b.name) + ' slip to the bot when you place it. The stake, odds, selection and every leg come off the image, and the bet settles on the 90 minute score once it is in.</p>' +
+    '<p class="bklede">Forward a ' + esc(b.name) + ' slip to the bot, before kick off or after. The stake, odds, selection and every leg come off the image, and the bet settles on the 90 minute score once it is in.</p>' +
     '<div class="card pad bkedge"><p class="bkedgeh">What is different about ' + esc(b.name) + '</p><p>' + esc(b.edge) + '</p></div>' +
     '<div class="bkcols">' +
     '<div class="card pad"><p class="bkcolh">Slip formats read</p><ul class="bklist">' +

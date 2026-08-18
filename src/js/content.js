@@ -831,7 +831,7 @@ export const SECTIONS = [
     accent: 'a3',
     badge: ['i-telegram', 'Telegram'],
     h: ['Send it on Telegram.', 'It is tracked.'],
-    lede: 'The bot is the front door, not an add-on. Forward the slip as you place it and it is read, confirmed and logged without opening anything.',
+    lede: 'The bot is the front door, not an add-on. Forward a slip whenever you have it and it is read, confirmed and logged without opening anything.',
     rows: [
       ['i-telegram', 'Forward, do not switch apps', 'The slip is already in Telegram. Share it.', true],
       ['i-bolt', 'It replies with what it read', 'Check it in the chat and confirm with one tap.'],
@@ -1061,7 +1061,7 @@ const FEATURES = [
   ['i-users', 'Groups in units',
    'Compare with friends without anyone seeing a stake size.'],
   ['i-telegram', 'Telegram first',
-   'Forward a slip as you place it. The bot is the front door, not an add-on.'],
+   'Forward a slip whenever you have it. The bot is the front door, not an add-on.'],
   ['i-lock', 'Yours, and deletable',
    'Export everything as CSV or JSON. Delete the account and it is gone.']
 ];
