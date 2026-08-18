@@ -155,6 +155,7 @@ async function main() {
       const hit = sel => { const e = document.querySelector(sel); if (e) e.click(); };
       hit('#checkResults');
       hit('[data-nav="imp"]');
+      hit('[data-importjob="importHistory"]');
       hit('#plAdd');
       hit('[data-nav="settings"]');
       hit('[data-unit="5000"]');
@@ -810,6 +811,26 @@ async function main() {
     await page.waitForTimeout(500);
     await page.evaluate(() => { const e = document.querySelector('[data-nav="imp"]'); if (e) e.click(); });
     await page.waitForTimeout(200);
+    /* The view opens on the chooser now: adding a bet and bringing a
+       record across are different jobs and the screen says which is
+       which. Pick one before there is a drop zone to drop on. */
+    const chooserShown = await page.evaluate(() =>
+      !document.getElementById('importChoose').hidden &&
+      document.getElementById('importUpload').hidden);
+    if (!chooserShown) fail('import', 'the import view did not open on the chooser');
+    await page.evaluate(() => {
+      const b = document.querySelector('[data-importjob="importUpload"]');
+      if (b) b.click();
+    });
+    await page.waitForTimeout(200);
+    const chosen = await page.evaluate(() => ({
+      drop: !document.getElementById('importUpload').hidden,
+      totals: !document.getElementById('importTotals').hidden,
+      back: !document.getElementById('importBack').hidden
+    }));
+    if (!chosen.drop) fail('import', 'choosing Add a bet did not open the drop zone');
+    if (chosen.totals) fail('import', 'Add a bet should not offer typed totals');
+    if (!chosen.back) fail('import', 'there is no way back to the chooser');
 
     /* A slip the reader can fully make out. */
     await page.setInputFiles('#slipFile', {

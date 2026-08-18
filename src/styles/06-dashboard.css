@@ -53,7 +53,9 @@
    dashboard jump. Quiet by default; `.warn` when it is close; `.done` when
    it has run out and the subscribe button is the only thing left to do. */
 .trialbar{
-  margin-bottom:10px;padding:9px 12px;border-radius:12px;
+  /* One row, not a card. It says one sentence and offers one button, and
+     at 71px it was pushing the calendar off the first screen. */
+  margin-bottom:8px;padding:7px 12px;border-radius:12px;
   background:var(--c1);border:1px solid var(--e1);
   transition:background var(--tb),border-color var(--tb);
   & .trialbar-row{display:flex;align-items:center;justify-content:space-between;gap:10px}
@@ -126,7 +128,7 @@
 
 /* headline number */
 .headline{
-  padding:16px 16px 0;
+  padding:14px 16px 0;
   & .top{display:flex;justify-content:space-between;align-items:flex-start;gap:10px;flex-wrap:wrap}
   & .cap{font-family:var(--fm);font-size:9.5px;letter-spacing:.15em;
     text-transform:uppercase;color:var(--t2)}
@@ -207,7 +209,7 @@
 @media (min-width:560px){.kpis.pair{grid-template-columns:repeat(4,1fr)}}
 
 /* calendar */
-.calnav{display:flex;align-items:center;gap:8px;margin-bottom:10px;
+.calnav{display:flex;align-items:center;gap:8px;margin-bottom:8px;
   & .month{flex:1;text-align:center;font-weight:600;font-size:14px}
   & button{width:38px;height:38px;border-radius:11px;background:var(--c2);
     border:1px solid var(--e1);display:grid;place-items:center;
@@ -252,7 +254,7 @@
   &.picked{outline:2px solid var(--s);outline-offset:-2px}}
 @keyframes cellin{to{opacity:1}}
 .calgrid.year .cell{aspect-ratio:1.5;& .amt{font-size:11.5px}}
-.callegend{display:flex;gap:12px;justify-content:center;margin-top:10px;
+.callegend{display:flex;gap:12px;justify-content:center;margin-top:8px;flex-wrap:wrap;
   font-size:10.5px;color:var(--t2);flex-wrap:wrap;
   & span{display:flex;align-items:center;gap:5px}
   & i{width:8px;height:8px;border-radius:2px;flex:0 0 auto}
@@ -472,3 +474,37 @@
 }
 @keyframes spin{to{transform:rotate(360deg)}}
 @media (prefers-reduced-motion:reduce){.runcheck button[disabled] svg{animation:none}}
+
+
+/* ============================================================
+   LARGER SCREENS
+   ============================================================
+   The dashboard had exactly one media query, on the paired KPI tiles, and
+   was otherwise a 660px column at every width: on a laptop that is a
+   ribbon of cards down the middle of an empty page, and the calendar and
+   the figures it explains are two screens apart.
+
+   Two columns from 900px, in a wider container. The left column is the
+   thing you came to read — the figure, the goal and the recent bets — and
+   the right is the thing you look things up in. min-width:0 on both,
+   because a grid item defaults to min-width:auto and the demo page once
+   pushed 128px of horizontal scroll learning that.
+   ============================================================ */
+@media (min-width:900px){
+  #dash .wrap{max-width:1040px}
+  #paneOverview{
+    display:grid;grid-template-columns:minmax(0,1.05fr) minmax(0,.95fr);
+    gap:14px;align-items:start}
+  /* Full width across the top: they are about the whole account, not
+     about either column. */
+  #paneOverview > .trialbar,
+  #paneOverview > #newMonthCard,
+  #paneOverview > #moreToggle,
+  #paneOverview > #moreBlock{grid-column:1/-1}
+  #paneOverview > *{min-width:0}
+  /* Four across rather than two, now that there is room for them. */
+  #moreBlock{display:grid;grid-template-columns:1fr 1fr;gap:10px;
+    & > .kpis{grid-column:1/-1}
+    & > *{min-width:0;margin-bottom:0}}
+  #dash .subnav .inner{max-width:1040px}
+}

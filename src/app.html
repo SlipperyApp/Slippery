@@ -861,23 +861,12 @@
         </div>
       </div>
 
-      <div class="card running" id="runningCard" style="margin-bottom:10px" hidden>
-        <button class="runhead" id="runToggle" aria-expanded="false" aria-controls="runList">
-          <span class="left"><span class="dot" aria-hidden="true"></span><b id="runCount"></b></span>
-          <span class="right"><span class="m" id="runRisk"></span>
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></span>
-        </button>
-        <div id="runList" hidden></div>
-        <!-- Always visible, not buried inside the collapsed list: the
-             question "did any of these land?" is the reason to look at this
-             card at all, so the answer must not be two taps away. -->
-        <div class="runcheck">
-          <button class="btn ghost small full" id="checkResults">
-            <svg viewBox="0 0 24 24" aria-hidden="true"><use href="#i-refresh"/></svg>
-            Check results now</button>
-        </div>
-      </div>
-
+      <!-- THE CALENDAR SITS UNDER THE FIGURE IT EXPLAINS.
+           It was below the running-bets card, which put a month of days
+           three cards down: on a 390px screen the figure and the calendar
+           that breaks it down were never on the same screen. Running bets
+           are important but they are a state, not the record, so they read
+           below it. -->
       <div class="card pad" style="margin-bottom:10px">
         <div class="calnav">
           <button id="calPrev" aria-label="Previous month"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" aria-hidden="true"><path d="M15 18l-6-6 6-6"/></svg></button>
@@ -896,7 +885,23 @@
         </div>
       </div>
 
-      <div class="kpis" id="kpiRow"></div>
+
+      <div class="card running" id="runningCard" style="margin-bottom:10px" hidden>
+        <button class="runhead" id="runToggle" aria-expanded="false" aria-controls="runList">
+          <span class="left"><span class="dot" aria-hidden="true"></span><b id="runCount"></b></span>
+          <span class="right"><span class="m" id="runRisk"></span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></span>
+        </button>
+        <div id="runList" hidden></div>
+        <!-- Always visible, not buried inside the collapsed list: the
+             question "did any of these land?" is the reason to look at this
+             card at all, so the answer must not be two taps away. -->
+        <div class="runcheck">
+          <button class="btn ghost small full" id="checkResults">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><use href="#i-refresh"/></svg>
+            Check results now</button>
+        </div>
+      </div>
 
       <div class="card pad" style="margin-bottom:10px">
         <div class="cardhead"><span class="title">Recent bets</span>
@@ -909,6 +914,11 @@
       </button>
 
       <div id="moreBlock" hidden style="margin-top:12px">
+        <!-- The lifetime figures used to sit between the calendar and the
+             recent bets: four tiles answering a question nobody asks in
+             the middle of reading a month. They are secondary, so they sit
+             with the rest of the secondary figures. -->
+        <div class="kpis" id="kpiRow" style="margin-bottom:10px"></div>
         <div class="kpis pair" id="kpiPair" style="margin-bottom:10px"></div>
         <div class="card pad" style="margin-bottom:10px">
           <div class="cardhead"><span class="title">Results</span><span class="meta scoped"></span></div>
@@ -1118,22 +1128,39 @@
       <p>Slips can be read, but nothing can be saved until <code id="backendNeeds">DATABASE_URL</code>
         is set. Your ledger will be empty until then.</p>
     </div>
-    <!-- ONE import.
-         Upload and Other were two tabs asking the same question in two
-         places: a slip went in the first, a spreadsheet in the second, and
-         a screenshot from another tracker fitted neither. There is now one
-         drop zone that takes anything and works out what it got, so nobody
-         has to classify their own file before they can hand it over. -->
-    <div class="seg" id="importSeg" role="group" aria-label="Import method" style="margin-bottom:13px">
-      <button class="on" data-import="importUpload" aria-pressed="true">Add bets</button>
-      <button data-import="importTotals" aria-pressed="false">Type totals</button>
+    <!-- TWO JOBS, NAMED.
+         "Add bets" and "Type totals" were a tab strip that described the
+         mechanism rather than the intent, so the difference between the
+         thing you do every week and the thing you do once was left for
+         people to infer. They are different jobs at different moments:
+         one bet you just placed, or a record you are bringing across.
+
+         The chooser is the landing screen of this view. Both destinations
+         are still one tap away and both still take anything you drop on
+         them; what has changed is that the screen says which is which. -->
+    <div class="jobs" id="importChoose">
+      <button class="card job" data-importjob="importUpload">
+        <span class="jobglyph" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5h16v14H4z"/><path d="M8 9h8M8 13h5"/></svg></span>
+        <span class="jobt">Add a bet</span>
+        <span class="jobs-s">A slip you just placed. Photo, screenshot, PDF, or type it. Read, checked by you, and tracked from now.</span>
+        <span class="jobgo" aria-hidden="true">→</span>
+      </button>
+      <button class="card job" data-importjob="importHistory">
+        <span class="jobglyph" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 3-6.7"/><path d="M3 4v5h5M12 7v5l3 2"/></svg></span>
+        <span class="jobt">Import history</span>
+        <span class="jobs-s">Everything you already have. A spreadsheet, a statement, or a profit screen from another tracker. You see every row before it is saved.</span>
+        <span class="jobgo" aria-hidden="true">→</span>
+      </button>
     </div>
+
+    <button class="pillbtn" id="importBack" hidden style="margin-bottom:11px">← Import</button>
+
 
     <div id="importUpload">
       <button class="card dropzone" id="dropzone" type="button">
         <span class="glyph" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 16V4M7 9l5-5 5 5M4 20h16"/></svg></span>
-        <span class="t">Drop anything here, or tap to choose</span>
-        <span class="s">Slip screenshots, photos, PDFs, a CSV export, or a profit screen from another tracker. Slippery works out which it is.</span>
+        <span class="t" id="dropTitle">Drop anything here, or tap to choose</span>
+        <span class="s" id="dropSub">Slip screenshots, photos, PDFs, a CSV export, or a profit screen from another tracker. Slippery works out which it is.</span>
       </button>
       <label class="sr" for="slipFile">Choose slips, statements or a spreadsheet</label>
       <input type="file" id="slipFile" accept="image/png,image/jpeg,image/webp,application/pdf,.csv,.tsv,.txt,text/csv,text/tab-separated-values,text/plain" multiple hidden>

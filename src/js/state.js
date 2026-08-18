@@ -68,7 +68,10 @@ export const S = {
   payPlan: 'yearly',      // which plan the checkout page is showing
   ledgerView: 'ledgerBets',
   socialView: 'socialGroups',
-  importView: 'importUpload',
+  /* Which import job is open: '' is the chooser, then importUpload for a
+     single bet or importHistory for bringing a record across. They are
+     different jobs at different moments and the screen now says so. */
+  importJob: '',
   /* A day. The markup marks "A day" as the selected segment, and this
      used to say month, so the sentence under the picker announced a month
      while the control said a day. */

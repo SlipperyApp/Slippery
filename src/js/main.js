@@ -390,6 +390,9 @@ function go(id, fromHistory) {
   paintSegs(view);
   if (id === 'setup' && prev !== 'setup') wizardStep(0);
   if (id === 'dash') R.renderAll();
+  /* The import view opens on the chooser, so the two jobs are a decision
+     rather than whichever one was left open last time. */
+  if (id === 'imp' && prev !== 'imp') showImportJob('');
   announce(view.getAttribute('aria-label') || id);
 }
 
@@ -446,6 +449,41 @@ function leaveDemo() {
      page, ready to be seen again the moment anybody navigated back. */
   R.renderAll();
   go('landing');
+}
+
+/* TWO JOBS, NOT TWO TABS.
+ *
+ * "Add bets" and "Type totals" described the mechanism rather than the
+ * intent, so the difference between the thing you do every week and the
+ * thing you do once was left for people to infer. Adding a bet is a slip
+ * you just placed; importing history is a record you are bringing across.
+ * They want different words around the same drop zone, and history wants
+ * the typed-figures section that adding a bet has no use for.
+ *
+ * An empty job is the chooser itself, which is where this view now opens.
+ */
+const IMPORT_COPY = {
+  importUpload: ['Drop a slip here, or tap to choose',
+    'A screenshot, a photo of a printed slip, or a PDF. Slippery reads the stake, the price and every leg, and you check it before it is saved.'],
+  importHistory: ['Drop your history here, or tap to choose',
+    'A CSV or Excel export, a statement, or a screenshot of another tracker\'s profit screen. You see every row, and you choose which of them come across.']
+};
+
+function showImportJob(job) {
+  S.importJob = job || '';
+  const choosing = !S.importJob;
+  const el = id => $(id);
+  if (el('importChoose')) el('importChoose').hidden = !choosing;
+  if (el('importBack')) el('importBack').hidden = choosing;
+  if (el('importUpload')) el('importUpload').hidden = choosing;
+  /* Typed figures belong to bringing a record across, not to logging the
+     bet you placed five minutes ago. */
+  if (el('importTotals')) el('importTotals').hidden = S.importJob !== 'importHistory';
+
+  const copy = IMPORT_COPY[S.importJob];
+  if (copy) { setText('dropTitle', copy[0]); setText('dropSub', copy[1]); }
+  scrollTo(0, 0);
+  if (!choosing) R.renderPl();
 }
 
 function showPane(id) {
@@ -2565,10 +2603,9 @@ document.addEventListener('click', e => {
     const stamp = el.getAttribute('data-add-figure');
     closeDay();
     go('imp');
-    /* Reuse the tab button rather than duplicating what its handler does:
-       two places setting importView is how they drift apart. */
-    const tab = document.querySelector('#importSeg [data-import="importTotals"]');
-    if (tab) tab.click();
+    /* A figure typed for a day is part of bringing a record across, so
+       that is the job this opens. */
+    showImportJob('importHistory');
     const dayBtn = document.querySelector('#totalsSeg [data-totals="day"]');
     if (dayBtn) dayBtn.click();
     $('plDate').value = stamp;
@@ -2789,12 +2826,9 @@ document.addEventListener('click', e => {
     return;
   }
 
-  if ((el = c('#importSeg button'))) {
-    S.importView = el.getAttribute('data-import');
-    selectSeg($('importSeg'), el);
-    ['importUpload', 'importTotals'].forEach(x => { $(x).hidden = x !== S.importView; });
-    return;
-  }
+  if ((el = c('[data-importjob]'))) { showImportJob(el.getAttribute('data-importjob')); return; }
+  if (c('#importBack')) { showImportJob(''); return; }
+
   if ((el = c('#totalsSeg button'))) {
     selectSeg($('totalsSeg'), el);
     renderTotals(el.getAttribute('data-totals'));
@@ -2810,11 +2844,7 @@ document.addEventListener('click', e => {
   if ((el = c('[data-drop-leg]'))) { dropLeg(el); return; }
   if ((el = c('[data-import-plrows]'))) { importPlRows(el); return; }
   if ((el = c('[data-drop-plrow]'))) { dropPlRow(el); return; }
-  if (c('[data-goto-totals]')) {
-    const tab = document.querySelector('#importSeg [data-import="importTotals"]');
-    if (tab) tab.click();
-    return;
-  }
+  if (c('[data-goto-totals]')) { showImportJob('importHistory'); return; }
   if ((el = c('[data-bettype]'))) {
     const card = el.closest('.card');
     if (card) { card.dataset.betType = el.getAttribute('data-bettype'); syncSlipCard(card); }
