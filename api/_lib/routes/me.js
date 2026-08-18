@@ -69,6 +69,10 @@ export default async function handler(req, res) {
           ? (user.link_code || null) : null,
         linkCodeExpiresAt: user.link_code_expires_at && new Date(user.link_code_expires_at) > new Date()
           ? user.link_code_expires_at : null,
+        /* Whether the first-run tour has been finished. Server side because
+           iOS Safari gives this app no localStorage, so a browser flag would
+           replay the tour on every visit on the primary platform. */
+        onboarded: Boolean(user.onboarded_at),
         since: user.created_at
       }
     });

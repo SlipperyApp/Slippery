@@ -138,6 +138,7 @@ export async function sessionUser(req) {
            u.link_code_expires_at, u.link_code_used_at,
            u.telegram_linked_at, u.telegram_username,
            u.card_added, u.charge_due_at, u.charge_paid_at, u.cancel_at,
+           u.onboarded_at,
            u.created_at
     FROM auth_sessions s JOIN users u ON u.id = s.user_id
     WHERE s.token_hash = ${sha256(token)} AND s.expires_at > now() AND u.deleted_at IS NULL`;

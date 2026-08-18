@@ -32,7 +32,11 @@
   border-radius:12px;font-weight:600;font-size:15px;
   padding:12px 18px;min-height:46px;position:relative;overflow:hidden;
   transition:transform var(--tf) var(--ez),filter var(--tf),background var(--tb);
-  &:hover{filter:brightness(1.08);transform:translateY(-1px)}
+  /* Hover only where hover is real. On a touch screen :hover latches after
+     a tap and does not clear until you tap elsewhere, so the button you just
+     pressed stays lifted and brightened. */
+  @media (hover:hover) and (pointer:fine){
+    &:hover{filter:brightness(1.08);transform:translateY(-1px)}}
   &:active{transform:translateY(1px)}
   &[disabled],&[aria-disabled=true]{opacity:.5;pointer-events:none}
   &::after{content:"";position:absolute;inset:0;border-radius:inherit;pointer-events:none;

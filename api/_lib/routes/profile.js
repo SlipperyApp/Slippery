@@ -63,7 +63,15 @@ export default async function handler(req, res) {
       }
       sets.countMode = body.countMode;
     }
-    if (!Object.keys(sets).length) return json(res, 400, { error: 'Nothing to change.' });
+    /* The first-run tour, marked done. A boolean rather than a timestamp on
+       the wire: the client knows it finished, the server decides when that
+       was. Only ever set, never cleared, so a stale client cannot make
+       somebody sit through the tour twice. */
+    const finishTour = body.onboarded === true;
+
+    if (!Object.keys(sets).length && !finishTour) {
+      return json(res, 400, { error: 'Nothing to change.' });
+    }
 
     const sql = db();
     /* COALESCE rather than a built statement: the Neon driver takes tagged
@@ -74,15 +82,17 @@ export default async function handler(req, res) {
       UPDATE users
       SET unit_pence = COALESCE(${sets.unit ?? null}, unit_pence),
           privacy    = COALESCE(${sets.privacy ?? null}, privacy),
-          count_mode = COALESCE(${sets.countMode ?? null}, count_mode)
+          count_mode = COALESCE(${sets.countMode ?? null}, count_mode),
+          onboarded_at = CASE WHEN ${finishTour} THEN COALESCE(onboarded_at, now()) ELSE onboarded_at END
       WHERE id = ${user.id}
-      RETURNING unit_pence, privacy, count_mode`;
+      RETURNING unit_pence, privacy, count_mode, onboarded_at`;
 
     return json(res, 200, {
       ok: true,
       unitPence: rows[0].unit_pence,
       privacy: rows[0].privacy,
-      countMode: rows[0].count_mode
+      countMode: rows[0].count_mode,
+      onboarded: Boolean(rows[0].onboarded_at)
     });
   } catch (err) {
     return fail(res, err, 'Could not save those settings.');

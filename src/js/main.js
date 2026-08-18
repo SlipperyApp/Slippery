@@ -43,7 +43,77 @@ async function loadSession() {
   if (pendingView) { const v = pendingView; pendingView = null; go(v); }
   if (r.ok && r.body.configured === false) document.body.classList.add('no-backend');
   if (r.ok) renderFederated(r.body.providers);
+  /* Shown once the account is known and only when the server says it has
+     not been finished. Waiting for the server answer is the point: guessing
+     from the client is what would make it replay. */
+  if (r.ok && r.body.user && r.body.user.onboarded === false) openTour();
   return r.ok ? r.body.user : null;
+}
+
+/* ============================================================
+   THE FIRST RUN TOUR
+   ============================================================
+   Six steps, shown once, to a signed-in account that has not finished it.
+
+   The state is a column on the users row, never a browser flag. iOS Safari
+   gives this app no localStorage at all, so a client-side "seen it" would
+   replay the tour on every single visit on the owner's primary platform,
+   and it would not survive a second device either.
+
+   It ends on an import, and deliberately not on placing a bet. The brief
+   forbids anything that nudges toward more volume; importing history
+   somebody already has is the honest way to finish on real data rather
+   than an empty screen.
+
+   Skip is on every step. This is the default path, not a trap: somebody who
+   has already linked the bot elsewhere should not be held here.
+   ============================================================ */
+const TOUR = [
+  ['Welcome to Slippery',
+   'This takes about a minute. It shows you where things are, then helps you get your first figures in. You can skip it at any point and it will not come back.'],
+  ['Your dashboard',
+   'The big number is your real profit or loss for the period you pick. Under it, the calendar colours every day you have a record for. Tap any day, past or future, to see it or add a figure to it.'],
+  ['Log a bet whenever',
+   'Before kick off, in play, or after the result is known. All three are logged the same way. Slippery just records which, so your record cannot quietly turn into only the bets you wanted to remember.'],
+  ['It refuses rather than guesses',
+   'Standard markets settle themselves on the 90 minute score. Anything it cannot prove comes back to you to settle by hand, because a wrong grade is worse than no grade.'],
+  ['Settings',
+   'Your unit size, your theme, and who can see your figures. Private by default. There is also Take a break, which switches logging off for as long as you choose.'],
+  ['Bring your history in',
+   'Screenshots, CSV, a pasted list. Slippery reads the dates and figures off them and files each one under the right day. That is the fastest way to make the dashboard mean something.']
+];
+
+let tourAt = 0;
+
+function tourPaint() {
+  const [title, body] = TOUR[tourAt];
+  setText('tourStep', 'Step ' + (tourAt + 1) + ' of ' + TOUR.length);
+  setText('tourTitle', title);
+  setText('tourBody', body);
+  setHTML('tourDots', TOUR.map((_, i) => '<i class="' + (i <= tourAt ? 'on' : '') + '"></i>').join(''));
+  const back = $('tourBack');
+  if (back) back.disabled = tourAt === 0;
+  const next = $('tourNext');
+  if (next) next.textContent = tourAt === TOUR.length - 1 ? 'Start importing' : 'Next';
+}
+
+function openTour() {
+  const el = $('tour');
+  if (!el) return;
+  tourAt = 0;
+  tourPaint();
+  el.hidden = false;
+  trapFocus(el);
+}
+
+/* Finishing and skipping are the same write. Somebody who skipped has made
+   a decision, and asking again on the next visit would ignore it. */
+async function closeTour(goImport) {
+  const el = $('tour');
+  if (el) el.hidden = true;
+  if (ME) ME.onboarded = true;
+  post('/api/auth/profile', { onboarded: true }).catch(() => {});
+  if (goImport) go('imp');
 }
 
 /* Google and Apple buttons, drawn only for providers this deployment holds
@@ -2263,6 +2333,14 @@ document.addEventListener('click', e => {
      unit row, the import tabs, both dropzones, and Confirm on an imported
      slip. Any delegated selector here must be specific enough that it
      cannot match <html> or <body>. */
+  if (c('#tourSkip')) { closeTour(false); return; }
+  if (c('#tourBack')) { if (tourAt > 0) { tourAt--; tourPaint(); } return; }
+  if (c('#tourNext')) {
+    if (tourAt < TOUR.length - 1) { tourAt++; tourPaint(); }
+    else closeTour(true);
+    return;
+  }
+
   if ((el = c('button[data-theme]'))) {
     stopThemeIntro();
     applyTheme(el.getAttribute('data-theme'));

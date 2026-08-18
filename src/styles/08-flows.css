@@ -833,3 +833,48 @@ input[type=date]{
 }
 @media (hover:hover) and (pointer:fine){
   .fed .fedbtn:hover{background:var(--e2)}}
+
+/* THE FIRST RUN TOUR.
+ *
+ * A dialog rather than a spotlight over the live interface. A spotlight has
+ * to know where things are, which means measuring the layout on every step
+ * and being wrong on the one screen size nobody tested. Six cards that say
+ * what is where, ending on a real import, is the version that cannot break.
+ *
+ * Opaque, not a backdrop-filter: the budget is three and all three are
+ * spent on the header, the tab bar and nothing else. */
+.tour{
+  position:fixed;inset:0;z-index:70;
+  display:grid;place-items:end center;
+  padding:16px 16px calc(16px + env(safe-area-inset-bottom));
+  background:rgba(4,6,12,.66);
+  animation:tourin var(--d-pop) var(--ease-out);
+
+  & .tour-card{
+    width:100%;max-width:440px;
+    padding:20px 18px calc(16px + var(--sp-1));
+    border-radius:var(--r-xl);
+    background:color-mix(in srgb,var(--glow) 78%,var(--bg));
+    border:1px solid var(--e1);
+    box-shadow:var(--el-3);
+    /* Never from scale(0): nothing in the real world appears from
+       nothing, and it reads as a glitch rather than an arrival. */
+    animation:tourcard var(--d-sheet) var(--ease-drawer)}
+
+  & .tour-step{font-size:var(--fs-2xs);font-weight:var(--fw-semi);
+    letter-spacing:var(--tr-caps);text-transform:uppercase;color:var(--t3)}
+  & .tour-dots{display:flex;gap:5px;margin:9px 0 14px;
+    & i{height:3px;flex:1;border-radius:2px;background:var(--track);
+      transition:background var(--d-pop) var(--ease-out)}
+    & i.on{background:var(--p)}}
+  & h2{font-size:var(--fs-xl);letter-spacing:var(--tr-snug)}
+  & .tour-body{color:var(--t2);font-size:var(--fs-sm);line-height:var(--lh-loose);
+    margin-top:9px;min-height:4.4em}
+  & .tour-foot{display:flex;align-items:center;justify-content:space-between;
+    gap:10px;margin-top:18px}
+  & .tour-nav{display:flex;gap:8px}
+}
+@keyframes tourin{from{opacity:0}to{opacity:1}}
+@keyframes tourcard{from{opacity:0;transform:translateY(18px) scale(.97)}to{opacity:1;transform:none}}
+@media (prefers-reduced-motion:reduce){
+  .tour,.tour .tour-card{animation:none}}

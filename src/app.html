@@ -1570,6 +1570,30 @@
   <button class="btn ghost full" id="dayClose" style="margin-top:12px">Close</button>
 </div>
 
+<!-- FIRST RUN TOUR.
+     Shown once, to a signed-in account that has not finished it. The state
+     is a column on the users row, not a browser flag: iOS Safari gives this
+     app no localStorage, so a client-side "seen it" would replay the tour
+     on every visit on the primary platform.
+
+     Skip is on every step. The tour is the default path, not a trap, and
+     somebody who already knows the product should not be held in it. -->
+<div class="tour" id="tour" hidden role="dialog" aria-modal="true" aria-labelledby="tourTitle">
+  <div class="tour-card">
+    <p class="tour-step" id="tourStep">Step 1 of 6</p>
+    <div class="tour-dots" id="tourDots" aria-hidden="true"></div>
+    <h2 id="tourTitle"></h2>
+    <p class="tour-body" id="tourBody"></p>
+    <div class="tour-foot">
+      <button class="pillbtn link" id="tourSkip">Skip</button>
+      <div class="tour-nav">
+        <button class="btn ghost small" id="tourBack">Back</button>
+        <button class="btn primary small" id="tourNext">Next</button>
+      </div>
+    </div>
+  </div>
+</div>
+
 <div class="themeintro" id="themeIntro" hidden aria-hidden="true">
   <div class="themeintro-in">
     <span class="themeintro-chip"></span>
