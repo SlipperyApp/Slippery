@@ -1255,10 +1255,15 @@
       <h2 class="cardtitle"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg>Who can see your figures</h2>
       <p class="desc">What Slippers following you can see.</p>
       <div class="optionlist" id="privacySettings"></div>
-      <div class="fieldrow"><span class="lab">Share units only<small>Never your stake sizes</small></span>
-        <button class="switch" role="switch" aria-checked="true" aria-label="Share units only"></button></div>
-      <div class="fieldrow"><span class="lab">Let Slippers find me by name</span>
-        <button class="switch" role="switch" aria-checked="true" aria-label="Discoverable by name"></button></div>
+      <!-- Stated, not switched. Units-only is locked by the brief and a
+           stake size never leaves the server, so a toggle here would imply
+           an option that does not exist and cannot be built. The
+           "discoverable by name" switch was removed outright: it duplicated
+           the privacy list directly above it and was not true either way,
+           because the directory lists every account by name and privacy
+           governs the figures, not the listing. -->
+      <div class="fieldrow"><span class="lab">Share units only<small>Your stake sizes never leave the server</small></span>
+        <span class="always">Always</span></div>
     </div>
 
     <div class="card settingcard">
@@ -1322,13 +1327,17 @@
     <div class="card settingcard">
       <h2 class="cardtitle"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M12 2l2.4 6.9L21 11l-6.6 2.1L12 20l-2.4-6.9L3 11l6.6-2.1z"/></svg>How slips are read</h2>
       <details class="disclose">
-        <summary>Reading rules <span class="count">3</span></summary>
-        <div class="fieldrow"><span class="lab">Ask for a retake if unclear<small>Never guess at numbers</small></span>
-          <button class="switch" role="switch" aria-checked="true" aria-label="Ask for a retake if unclear"></button></div>
-        <div class="fieldrow"><span class="lab">Catch duplicate slips</span>
-          <button class="switch" role="switch" aria-checked="true" aria-label="Catch duplicate slips"></button></div>
-        <div class="fieldrow"><span class="lab">Catch the same bet worded differently<small>Away goals under 0.5 and BTTS No settle identically</small></span>
-          <button class="switch" role="switch" aria-checked="true" aria-label="Catch equivalent bets"></button></div>
+        <summary>Reading rules <span class="count">2</span></summary>
+        <!-- These were switches that flipped and saved nothing. Two of
+             them describe how the reader and the grader always work and
+             cannot be turned off, so they are stated. "Catch duplicate
+             slips" is gone: nothing implements it, and a switch for an
+             unbuilt feature is the plainest kind of lie an interface can
+             tell. -->
+        <div class="fieldrow"><span class="lab">Asks for a retake if unclear<small>It never guesses at a number</small></span>
+          <span class="always">Always</span></div>
+        <div class="fieldrow"><span class="lab">Catches the same bet worded differently<small>Away goals under 0.5 and BTTS No settle identically</small></span>
+          <span class="always">Always</span></div>
       </details>
     </div>
 

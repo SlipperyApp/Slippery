@@ -223,3 +223,17 @@
   100%{opacity:0;transform:translateY(-5px) scale(.985);max-height:0;
        margin-top:0;margin-bottom:0;padding-top:0;padding-bottom:0;border-width:0}}
 @media (prefers-reduced-motion:reduce){.collapsing{animation-duration:1ms}}
+
+/* "Always".
+ *
+ * Five settings rows were switches that flipped, saved nothing and changed
+ * nothing. Three of them describe behaviour that is locked and cannot be
+ * turned off; presenting those as a choice is the same failure as a button
+ * that says it deleted your bets and did not. They state the fact instead.
+ * The other two were removed: one duplicated the privacy list above it, the
+ * other named a feature nothing implements. */
+.always{
+  font-size:var(--fs-2xs);font-weight:var(--fw-semi);
+  letter-spacing:var(--tr-caps);text-transform:uppercase;
+  color:var(--t3);padding:5px 10px;border-radius:var(--r-pill);
+  background:var(--c1);border:1px solid var(--hair);flex:0 0 auto}
