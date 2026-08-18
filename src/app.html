@@ -43,9 +43,12 @@
   <button class="brand" data-nav="landing" aria-label="Slippery home">
     <span class="mark" aria-hidden="true"></span><span>Slipp<i>ery</i></span>
   </button>
-  <button class="pillbtn link" data-nav="settings">
+  <!-- Says which it is. This was the word "Linked", hardcoded, so an
+       account that had never opened Telegram was told at the top of every
+       screen that the bot was connected to it. -->
+  <button class="pillbtn link" data-nav="settings" id="tgChip">
     <svg viewBox="0 0 24 24" width="12" height="12" aria-hidden="true"><use href="#i-telegram"/></svg>
-    Linked
+    <span id="tgChipText">Link Telegram</span>
   </button>
 </header>
 
@@ -575,23 +578,6 @@
      Labelled as fabricated twice, once as a badge and once as a
      disclaimer. A demo record with a nice curve on it is an advert unless
      it says plainly that nobody earned these numbers. -->
-<section class="view" id="demo" aria-label="Demo">
-  <div class="wrap page-lede">
-    <div class="demobar-top">
-      <span class="demotag">Sample data, read only</span>
-      <button class="btn primary small" data-nav="setup">Start free</button>
-    </div>
-    <h1 style="font-size:26px;margin-top:14px">See it before you sign up.</h1>
-    <p class="lede">This is the Slippery dashboard running on 486 sample bets across 120 days, read only and with no account needed, the same interface you get with someone else's numbers in it.</p>
-    <p class="demodisc">The figures below are a fabricated sample, not a real bettor's record. They are here to show what the analysis looks like, not to suggest a typical result. Nobody made this money.</p>
-    <div id="demoBody"></div>
-    <div class="lastcta" style="margin-top:26px">
-      <h2>Your numbers, not these ones.</h2>
-      <p>Two weeks free, 35 slips, no card. The first thing yours will tell you is probably not what you expect.</p>
-      <button class="btn primary" data-nav="setup">Start free</button>
-    </div>
-  </div>
-</section>
 
 <!-- ══════════════ PRICING ══════════════ -->
 <section class="view" id="pricing" aria-label="Pricing">
@@ -681,6 +667,26 @@
 </section>
 
 <!-- ══════════════ DASHBOARD ══════════════ -->
+<!-- THE DEMO IS THE DASHBOARD.
+     There is no separate demo screen any more. "See it before you sign up"
+     used to mean a second implementation of the dashboard — its own tiles,
+     its own table, its own period picker — which is not what anybody gets
+     when they sign up, and it drifted from the real one exactly as you
+     would expect. The demo now loads a fabricated ledger into the real
+     store and renders it through the real renderers. This strip is the
+     only difference, and it says so in both directions: what you are
+     looking at, and that it is not real. -->
+<div class="demobar" id="demoBar" hidden>
+  <div class="demobar-in">
+    <p><b>Demo.</b> 486 fabricated bets over 120 days, in the real dashboard.
+      Nothing here is a real bettor and nothing can be saved.</p>
+    <div class="demobar-do">
+      <button class="btn primary small" data-nav="setup">Start free</button>
+      <button class="pillbtn" id="demoExit">Leave the demo</button>
+    </div>
+  </div>
+</div>
+
 <section class="view" id="dash" aria-label="Dashboard">
   <h1 class="sr">Your dashboard</h1>
   <!-- OUTSIDE .wrap, deliberately.

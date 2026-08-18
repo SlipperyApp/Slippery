@@ -4,6 +4,8 @@
  * on the long edge a slip is 200-400KB and reads exactly as well, which is
  * the difference between a 4 second wait on 4G and an instant one. */
 
+import { S } from './state.js';
+
 const MAX_EDGE = 1600;
 const JPEG_QUALITY = 0.86;
 
@@ -85,6 +87,18 @@ async function read(payload) {
    network is the only throw, and it is turned into ok:false here too so
    callers never need a try/catch to stay correct. */
 async function send(method, path, payload) {
+  /* THE DEMO CANNOT WRITE. ONE CHOKE POINT, NOT A HUNDRED GUARDS.
+     The demo runs the real dashboard on fabricated bets, loaded into the
+     real store. That is the whole point of it, and it is also the one way
+     sample data could ever reach somebody's account: a confirm, a settle,
+     a delete, anything that posts. Every request in the app goes through
+     this function, so refusing here is a guarantee rather than a promise
+     that every future call site will remember. Reads are refused too:
+     there is no session, so there is nothing to read. */
+  if (S.demo) {
+    return { ok: false, status: 0, demo: true,
+      body: { error: 'This is the demo, running on sample figures. Start free to log your own.' } };
+  }
   let res;
   try {
     res = await fetch(path, {

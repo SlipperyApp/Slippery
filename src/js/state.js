@@ -9,6 +9,10 @@ import { TODAY } from './data.js';
 
 export const S = {
   view: 'landing',
+  /* The public demo: the real dashboard, loaded with the fabricated sample
+     and unable to write. Set only by enterDemo() and only when nobody is
+     signed in. api.js refuses every request while it is true. */
+  demo: false,
   pane: 'overview',
 
   /* period selection.

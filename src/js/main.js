@@ -12,7 +12,7 @@ import * as R from './render.js';
 import * as C from './content.js';
 import * as P from './pages.js';
 import { sportOf } from './sports.js';
-import * as D from './demo.js';
+import { demoPayload } from './sample.js';
 import { initMotion, syncThemeColor } from './motion.js';
 import { extractSlip, readText, get, post, patch, del } from './api.js';
 import { parseBetsCsv } from './csv.js';
@@ -334,7 +334,7 @@ function go(id, fromHistory) {
      rendered the dashboard, and only the reply closed it again. The check
      is now unconditional, and a navigation that arrives early is parked
      and replayed once the session is known rather than allowed through. */
-  if (APP_VIEWS.includes(id) && !ME) {
+  if (APP_VIEWS.includes(id) && !ME && !S.demo) {
     if (!sessionChecked) { pendingView = id; return; }
     if (id !== 'setup') { go('setup'); toast('Create an account, or log in, to start tracking.'); }
     return;
@@ -389,6 +389,61 @@ function go(id, fromHistory) {
   if (id === 'setup' && prev !== 'setup') wizardStep(0);
   if (id === 'dash') R.renderAll();
   announce(view.getAttribute('aria-label') || id);
+}
+
+/* ---------------- the public demo ----------------
+ *
+ * Enter it and the real dashboard fills with a fabricated ledger. Leave it
+ * and the store is emptied again. There is no second implementation of any
+ * screen, which is the point: what a stranger looks at before signing up
+ * is the thing they get.
+ *
+ * TWO RULES, AND THEY ARE THE ONES THAT MATTER.
+ * The demo is only ever offered to somebody with no session, so it can
+ * never paint over a real ledger. And while it is on, api.js refuses every
+ * request, so no sample bet can reach an account even if a button is found
+ * that tries.
+ */
+function enterDemo() {
+  if (ME) {
+    /* Somebody signed in asking for the demo wants their own dashboard;
+       showing them fabricated figures in the same interface is how a
+       person ends up reading someone else's record as theirs. */
+    go('dash');
+    toast('You have your own dashboard. This is it.');
+    return;
+  }
+  S.demo = true;
+  document.body.classList.add('demo');
+  $('demoBar').hidden = false;
+  hydrate(demoPayload());
+  invalidateDays();
+  /* All time, because the first thing to say about a 486 bet sample is
+     what the whole of it did. */
+  S.period = 'a';
+  syncPeriodButtons();
+  go('dash');
+  R.renderAll();
+}
+
+function leaveDemo() {
+  if (!S.demo) return;
+  S.demo = false;
+  document.body.classList.remove('demo');
+  $('demoBar').hidden = true;
+  /* Emptied rather than left in place. A sample bet sitting in the store
+     while somebody signs up is the one way this could ever contaminate a
+     real account. */
+  hydrate({ bets: [], pl: [] });
+  invalidateDays();
+  S.period = 'm';
+  S.year = TODAY.year;
+  S.month = TODAY.month;
+  /* Repainted before leaving, not after arriving. Emptying the store
+     without redrawing left 486 fabricated bets on screen behind a landing
+     page, ready to be seen again the moment anybody navigated back. */
+  R.renderAll();
+  go('landing');
 }
 
 function showPane(id) {
@@ -2278,8 +2333,6 @@ document.addEventListener('click', e => {
      route is a parameter. */
   if ((el = c('[data-bookpage]'))) { P.showBook(el.getAttribute('data-bookpage')); return; }
   if ((el = c('[data-utilrun]'))) { runUtility(el.getAttribute('data-utilrun')); return; }
-  if ((el = c('[data-demoperiod]'))) { D.demoPeriod(el.getAttribute('data-demoperiod')); return; }
-  if ((el = c('[data-demoday]'))) { D.demoDay(el.getAttribute('data-demoday')); return; }
 
   /* The end of setup is the start of the tour, in that order. */
   if (c('.step[data-step="7"] [data-nav="dash"]') && tourPending) {
@@ -2288,6 +2341,11 @@ document.addEventListener('click', e => {
     openTour();
     return;
   }
+
+  if (c('#demoExit')) { leaveDemo(); return; }
+  /* Every route into the demo is this one attribute, so there is one place
+     that decides whether somebody gets it. */
+  if ((el = c('[data-nav="demo"]'))) { enterDemo(); return; }
 
   if ((el = c('[data-nav]'))) {
     /* "Sign In" and "Get Started" are the same view. The mode attribute
@@ -2849,7 +2907,6 @@ async function init() {
   setHTML('wizbar', new Array($$('.step').length).fill('<i></i>').join(''));
   C.renderStatic();
   P.renderPages();
-  D.renderDemoPage();
   R.renderMisc();
   R.renderPrivacy();
   R.renderTargets();

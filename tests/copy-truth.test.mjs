@@ -115,3 +115,36 @@ test('the duplicate FAQ describes what the importer actually does', async () => 
   /* And the four fields the copy names are the four the key is built from. */
   assert.match(server, /keyOf\(dayKey\(b\.placedAt\), b\.selection, b\.stakePence, b\.book\)/);
 });
+
+/* The app header used to say "Linked" as static markup, so an account that
+   had never opened Telegram was told at the top of every screen that the
+   bot was connected to it. */
+test('the Telegram chip in the header is set from the session', async () => {
+  const html = await readFile(new URL('../src/app.html', import.meta.url), 'utf8');
+  const render = await readFile(new URL('../src/js/render.js', import.meta.url), 'utf8');
+  const chip = html.slice(html.indexOf('id="tgChip"'), html.indexOf('id="tgChip"') + 240);
+  assert.doesNotMatch(chip.replace(/id="tgChipText"/, ''), />\s*Linked\s*</);
+  assert.match(render, /setText\('tgChipText', linked \? 'Linked' : 'Link Telegram'\)/);
+});
+
+/* The demo claims 486 bets over 120 days. It has to load exactly that, or
+   the sentence beside the figures is a different set to the figures. */
+test('the demo loads the window it claims', async () => {
+  const { demoPayload, DEMO_WINDOW, DEMO_BETS } = await import('../src/js/sample.js');
+  const html = await readFile(new URL('../src/app.html', import.meta.url), 'utf8');
+  const claim = html.match(/(\d+) fabricated bets over (\d+) days/);
+  assert.ok(claim, 'the demo bar should say what it is showing');
+  assert.equal(demoPayload().bets.length, Number(claim[1]));
+  assert.equal(DEMO_WINDOW.length, Number(claim[1]));
+  /* And the two year set is still there behind it, for the tutorial. */
+  assert.ok(DEMO_BETS.length > DEMO_WINDOW.length * 1.5);
+  assert.ok(demoPayload({ full: true }).bets.length === DEMO_BETS.length);
+});
+
+/* One implementation of the dashboard, not two. */
+test('the demo has no design system of its own', async () => {
+  const css = await readFile(new URL('../src/styles/10-sections.css', import.meta.url), 'utf8');
+  for (const dead of ['.dtile', '.dtiles', '.dtable', '.dperiod', '.dcurve', '.dchip', '.dstrip']) {
+    assert.doesNotMatch(css, new RegExp('\\' + dead + '\\{'), dead + ' is a second dashboard');
+  }
+});

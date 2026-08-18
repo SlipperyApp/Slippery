@@ -19,7 +19,7 @@ const CHROME = process.env.CHROME_BIN || '/opt/pw-browsers/chromium-1194/chrome-
 const WIDTHS = [320, 390, 430];
 const SHOT_DIR = path.join(root, 'tools', 'screens');
 
-const VIEWS = ['landing', 'setup', 'howto', 'demo', 'pricing', 'dash', 'imp', 'settings', 'help', 'terms', 'privacy',
+const VIEWS = ['landing', 'setup', 'howto', 'pricing', 'dash', 'imp', 'settings', 'help', 'terms', 'privacy',
   'books', 'faqs', 'log', 'feedback', 'util'];
 /* Graphite first, matching data.js: it is the default. */
 const THEMES = ['periwinkle', 'graphite', 'ink', 'tide', 'slate', 'bronze'];
@@ -120,6 +120,58 @@ async function main() {
       await page.waitForTimeout(80);
     }
     if (errors.length) errors.forEach(e => fail('console', e));
+    await page.close();
+  }
+
+  /* ── the public demo ─────────────────────────────────────────
+     It is the real dashboard with a fabricated ledger in it, so the things
+     worth checking are that it loads for somebody with no session, that it
+     says what it is, and above all that it cannot write. A demo that could
+     POST would put sample bets in a real account. */
+  {
+    const page = await browser.newPage({ viewport: { width: 390, height: 844 } });
+    await installStub(page, { signedIn: false });
+    const posts = [];
+    page.on('request', r => { if (r.method() !== 'GET' && /\/api\//.test(r.url())) posts.push(r.url()); });
+    await page.goto(base, { waitUntil: 'networkidle' });
+    await page.waitForTimeout(500);
+    await page.evaluate(() => document.querySelector('[data-nav="demo"]').click());
+    await page.waitForTimeout(700);
+
+    const state = await page.evaluate(() => ({
+      view: (document.querySelector('.view.on') || {}).id,
+      barred: document.getElementById('demoBar').hidden,
+      bets: (document.getElementById('statBets') || {}).textContent,
+      rows: document.querySelectorAll('#recentBets .betrow').length
+    }));
+    if (state.view !== 'dash') fail('demo', 'the demo should be the dashboard, landed on ' + state.view);
+    if (state.barred) fail('demo', 'the demo bar must say that the figures are fabricated');
+    if (!state.bets || state.bets === '0') fail('demo', 'the demo dashboard is empty');
+    if (!state.rows) fail('demo', 'the demo shows no bets');
+
+    /* Try to write. Every one of these must be refused before it leaves
+       the browser. */
+    await page.evaluate(() => {
+      const hit = sel => { const e = document.querySelector(sel); if (e) e.click(); };
+      hit('#checkResults');
+      hit('[data-nav="imp"]');
+      hit('#plAdd');
+      hit('[data-nav="settings"]');
+      hit('[data-unit="5000"]');
+    });
+    await page.waitForTimeout(900);
+    if (posts.length) fail('demo', 'the demo wrote to the API: ' + posts.join(', '));
+
+    await page.evaluate(() => document.getElementById('demoExit').click());
+    await page.waitForTimeout(500);
+    const after = await page.evaluate(() => ({
+      view: (document.querySelector('.view.on') || {}).id,
+      barred: document.getElementById('demoBar').hidden,
+      rows: document.querySelectorAll('#recentBets .betrow').length
+    }));
+    if (after.view !== 'landing') fail('demo', 'leaving the demo should return to the landing page');
+    if (!after.barred) fail('demo', 'the demo bar is still showing after leaving');
+    if (after.rows) fail('demo', 'sample bets survived leaving the demo');
     await page.close();
   }
 

@@ -1284,6 +1284,9 @@ let linkTick = null;
 
 export function renderTelegram(user) {
   const linked = Boolean(user && user.telegramLinked);
+  /* The chip in the app header, which used to say "Linked" whatever the
+     truth was. */
+  setText('tgChipText', linked ? 'Linked' : 'Link Telegram');
   const on = $('tgLinked'), off = $('tgUnlinked');
   if (on) on.hidden = !linked;
   if (off) off.hidden = linked;

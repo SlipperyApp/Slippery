@@ -93,8 +93,23 @@ const BANDS = [
    against itself. */
 const SPORT_ADJ = { football: 0.005, tennis: 0.058, horses: -0.135 };
 
+/* ONE GENERATOR, TWO WINDOWS.
+ *
+ * The demo presents and claims the most recent 120 days and 486 bets,
+ * which is the figure quoted on the page. The dataset itself runs back two
+ * years, because the tutorial walks somebody through a Yearly period and a
+ * year-on-year comparison, and a 120 day set cannot show either. Both
+ * claims are true of the same seeded data: DEMO_DAYS is what the demo
+ * says, HISTORY_DAYS is what exists behind it.
+ *
+ * Density is deliberately not uniform. The recent window is the active
+ * record somebody would recognise; the older two years are thinner,
+ * because that is what a record looks like when you have been importing it
+ * rather than living in it. */
 const DAYS = 120;
 const COUNT = 486;
+const HISTORY_DAYS = 730;
+const HISTORY_COUNT = 540;
 
 function build() {
   const r = rng(20260813);
@@ -112,7 +127,7 @@ function build() {
       '-' + String(d.getDate()).padStart(2, '0');
   };
 
-  for (let i = 0; i < COUNT; i++) {
+  for (let i = 0; i < COUNT + HISTORY_COUNT; i++) {
     /* Weighted band choice. */
     let x = r(), band = BANDS[0];
     for (const b of BANDS) { if (x < b.weight) { band = b; break; } x -= b.weight; }
@@ -159,7 +174,11 @@ function build() {
     const mult = r() < 0.72 ? 1 : r() < 0.9 ? 2 : r() < 0.97 ? 0.5 : 4;
     const stake = Math.round(unit * mult / 100) * 100;
 
-    const dayBack = Math.floor(r() * DAYS);
+    /* The first COUNT bets land in the demo window; the rest spread back
+       over the two years behind it. */
+    const dayBack = i < COUNT
+      ? Math.floor(r() * DAYS)
+      : DAYS + Math.floor(r() * (HISTORY_DAYS - DAYS));
     const date = dateAt(dayBack);
 
     bets.push({ id: 'd' + i, date, dayBack, event, selection, market, competition, sport,
@@ -252,8 +271,13 @@ function build() {
 export const DEMO_BETS = build();
 export const DEMO_DAYS = DAYS;
 
-/* ---------- derived figures, all from DEMO_BETS ---------- */
-const settled = DEMO_BETS.filter(b => b.result !== 'pending');
+/* ---------- derived figures ----------
+   Scoped to the demo window, because the page says 486 bets over 120 days
+   and every figure beside that sentence has to be the same 486 bets. The
+   two years behind them are still there, reachable by the Yearly period
+   once the set is loaded into the dashboard. */
+export const DEMO_WINDOW = DEMO_BETS.filter(b => b.dayBack < DAYS);
+const settled = DEMO_WINDOW.filter(b => b.result !== 'pending');
 const counted = settled.filter(b => b.result !== 'void' && b.result !== 'push');
 
 const sum = (arr, f) => arr.reduce((a, b) => a + f(b), 0);
@@ -286,8 +310,8 @@ export const DEMO = {
   today: bucket(settled.filter(b => b.dayBack === 0)),
   week: bucket(inLastDays(7)),
   month: bucket(inLastDays(30)),
-  pendingStake: sum(DEMO_BETS.filter(b => b.result === 'pending'), b => b.stake),
-  pendingCount: DEMO_BETS.filter(b => b.result === 'pending').length,
+  pendingStake: sum(DEMO_WINDOW.filter(b => b.result === 'pending'), b => b.stake),
+  pendingCount: DEMO_WINDOW.filter(b => b.result === 'pending').length,
   avgOdds: counted.length ? sum(counted, b => b.odds) / counted.length : 0,
 
   /* The cumulative curve, oldest first, one point per bet. */
@@ -320,12 +344,12 @@ export const DEMO = {
       .sort((a, b) => b.profit - a.profit);
   })(),
 
-  recent: DEMO_BETS.filter(b => b.result !== 'pending').slice(0, 12),
+  recent: settled.slice(0, 12),
 
   /* Days, for the tappable calendar strip. */
   days: (() => {
     const m = new Map();
-    for (const b of DEMO_BETS) {
+    for (const b of DEMO_WINDOW) {
       if (!m.has(b.date)) m.set(b.date, { date: b.date, dayBack: b.dayBack, bets: [], net: 0 });
       const d = m.get(b.date);
       d.bets.push(b);
@@ -345,3 +369,56 @@ export const DEMO_DRAWDOWN = (() => {
   });
   return { depth: worst, at, of: DEMO.curve.length };
 })();
+
+/* ---------- the demo, as the API would have sent it ----------
+ *
+ * The demo used to be a second dashboard: its own tiles, its own table,
+ * its own period picker, its own everything, built in demo.js against
+ * these figures directly. Two implementations of one screen means the
+ * thing a stranger looks at before signing up is not the thing they get,
+ * and it drifted exactly as you would expect.
+ *
+ * So the demo loads the sample through the same hydrate() the real ledger
+ * uses and renders through the same renderers. This turns the fabricated
+ * bets into the shape GET /api/bets returns, and nothing else about it is
+ * special.
+ *
+ * `trial: null` because there is no account, and `capture` is stated
+ * rather than invented: every sample bet carries a stage, so the split is
+ * real arithmetic over fabricated bets rather than a number typed in.
+ */
+const API_OUTCOME = {
+  won: 'won', lost: 'lost', void: 'void', push: 'push',
+  'cash-profit': 'cash-profit', 'cash-loss': 'cash-loss', 'cash-flat': 'cash-flat'
+};
+
+/**
+ * @param {{full?:boolean}} [opts] `full` returns the whole two year set,
+ *   which the tutorial needs to walk somebody through a Yearly period.
+ *   The demo takes the default, the 120 day window, because 486 bets over
+ *   120 days is what the page says and the figures beside that sentence
+ *   have to be the same 486 bets.
+ */
+export function demoPayload(opts) {
+  const source = opts && opts.full ? DEMO_BETS : DEMO_WINDOW;
+  const bets = source.map(b => ({
+    id: b.id,
+    event: b.event,
+    selection: b.selection,
+    market: b.market,
+    bookmaker: b.book,
+    book: b.book,
+    odds: b.odds,
+    stake: b.stake,
+    profit: b.result === 'pending' ? null : b.profit,
+    outcome: b.result === 'pending' ? null : (API_OUTCOME[b.result] || null),
+    status: b.result === 'pending' ? 'pending' : 'settled',
+    source: 'demo',
+    competition: b.competition,
+    sport: b.sport,
+    /* Midday, so a timezone cannot move a bet to the day before and make
+       the calendar disagree with the ledger. */
+    placedAt: b.date + 'T12:00:00.000Z'
+  }));
+  return { bets, pl: [], trial: null, capture: null };
+}

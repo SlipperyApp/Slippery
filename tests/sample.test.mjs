@@ -13,12 +13,16 @@
  */
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { DEMO, DEMO_BETS, DEMO_DAYS, DEMO_DRAWDOWN } from '../src/js/sample.js';
+import { DEMO, DEMO_BETS, DEMO_WINDOW, DEMO_DAYS, DEMO_DRAWDOWN, demoPayload } from '../src/js/sample.js';
 
-const settled = DEMO_BETS.filter(b => b.result !== 'pending');
+/* Everything the demo PAGE claims is about the 120 day window. The two
+   years behind it exist for the tutorial, which needs a Yearly period and
+   a year-on-year comparison to walk somebody through, and they are checked
+   separately at the bottom. */
+const settled = DEMO_WINDOW.filter(b => b.result !== 'pending');
 
 test('the record is the size the page says it is', () => {
-  assert.equal(DEMO_BETS.length, 486);
+  assert.equal(DEMO_WINDOW.length, 486);
   assert.equal(DEMO_DAYS, 120);
   assert.ok(DEMO.days.length > 100, 'bets should be spread across most of the window');
 });
@@ -107,4 +111,34 @@ test('the shape says something true rather than something flattering', () => {
 test('the win rate looks worse than the return, which is the point', () => {
   assert.ok(DEMO.total.winRate < 50,
     'most bets lose even in a profitable record, and the page says so');
+});
+
+/* ONE GENERATOR, TWO WINDOWS.
+   The demo claims 486 bets over 120 days. The tutorial needs a Yearly
+   period and a year-on-year comparison, which 120 days cannot show. Both
+   come out of the same seeded set, so the two claims cannot drift apart. */
+test('two years sit behind the window the demo shows', () => {
+  assert.ok(DEMO_BETS.length > DEMO_WINDOW.length,
+    'there should be history behind the demo window');
+  const back = Math.max(...DEMO_BETS.map(b => b.dayBack));
+  assert.ok(back > 700, 'the set should reach back about two years, reached ' + back);
+  /* And the window really is the most recent part of it. */
+  for (const b of DEMO_WINDOW) assert.ok(b.dayBack < DEMO_DAYS);
+});
+
+test('the demo loads the window, the tutorial can ask for the rest', () => {
+  assert.equal(demoPayload().bets.length, DEMO_WINDOW.length);
+  assert.equal(demoPayload({ full: true }).bets.length, DEMO_BETS.length);
+});
+
+test('the payload is shaped the way the API answers', () => {
+  const one = demoPayload().bets[0];
+  for (const k of ['id', 'event', 'selection', 'market', 'odds', 'stake', 'status', 'placedAt']) {
+    assert.ok(k in one, 'a bet from the API has ' + k);
+  }
+  assert.equal(demoPayload().trial, null, 'there is no account, so there is no trial');
+  assert.deepEqual(demoPayload().pl, [], 'and nothing imported');
+  /* Midday UTC, so no timezone can move a bet to the day before and make
+     the calendar disagree with the ledger. */
+  for (const b of demoPayload().bets) assert.match(b.placedAt, /T12:00:00/);
 });

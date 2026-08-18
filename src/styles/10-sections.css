@@ -236,100 +236,24 @@
     display:inline-grid;place-items:center;width:22px;height:22px;border-radius:50%;
     border:1.5px solid var(--t3);font-family:var(--fm);font-size:8.5px;font-weight:600;
     flex:0 0 auto}}
-.dchip{
-  flex:0 0 auto;scroll-snap-align:start;
-  display:grid;gap:2px;padding:9px 12px;min-height:52px;border-radius:12px;
-  border:1px solid var(--e2);background:var(--c1);cursor:pointer;text-align:left;
-  transition:border-color var(--tf),background var(--tf);
-  &:hover{border-color:var(--e1);background:var(--c2)}
-  &:focus-visible{outline:2px solid var(--s);outline-offset:2px}
-  &.on{border-color:color-mix(in srgb,var(--s) 50%,transparent);background:rgba(var(--orb1),.14)}
-  & .dcd{font-size:10.5px;color:var(--t2);white-space:nowrap}
-  & .dcn{font-family:var(--fm);font-size:12.5px;font-weight:650;
-    font-variant-numeric:tabular-nums lining-nums}}
-.dcurve{width:100%;height:98px;display:block;margin:4px 0 2px}
-.dday{margin-top:11px;padding-top:11px;border-top:1px solid var(--e2)}
-.ddayh{
-  display:flex;justify-content:space-between;align-items:baseline;gap:10px;
-  margin:0 0 8px;font-size:13px;color:var(--t2);
-  & b{font-family:var(--fm);font-size:15px;font-variant-numeric:tabular-nums}}
+/* THE DEMO BAR.
+   All that is left of the demo's own design system. There used to be a
+   second dashboard here — .dtile, .dtable, .dstrip, .dperiod, .dcurve, a
+   whole shadow set re-implementing tiles, tables and a period picker for
+   one page — and the page it built was not the page anybody got when they
+   signed up. The demo runs the real dashboard now; this strip is the only
+   thing about it that is different, and it exists to say so. */
 .demobar{
-  display:grid;grid-template-columns:1fr auto;gap:3px 10px;align-items:baseline;
-  padding:7px 0;
-  & .bl{font-size:12px;color:var(--t2)}
-  & .bv{font-family:var(--fm);font-size:12px;font-weight:600;
-    font-variant-numeric:tabular-nums lining-nums}
-  & .bt{grid-column:1/-1;height:4px;border-radius:3px;background:var(--e2);overflow:hidden}
-  /* A neutral bar still needs a fill, or a real value renders as an empty
-     track and reads as zero. Only the tone changes with up and down. */
-  & .bt i{display:block;height:100%;border-radius:3px;background:var(--t3);
-    transform-origin:left center;transform:scaleX(var(--f,0));
-    transition:transform 780ms var(--ez)}
-  &.up .bt i{background:var(--pos)}
-  &.down .bt i{background:var(--neg)}}
-.demobar-top{display:flex;align-items:center;justify-content:space-between;gap:10px}
-.demodisc{
-  margin:12px 0 0;padding:12px 14px;border-radius:12px;
-  border:1px solid var(--e2);background:var(--c1);
-  font-size:12.5px;line-height:1.6;color:var(--t2);max-width:62ch}
-.demotag{
-  display:inline-flex;align-items:center;padding:5px 11px;border-radius:999px;
-  background:rgba(var(--orb1),.16);border:1px solid rgba(var(--orb1),.36);
-  font-family:var(--fm);font-size:10px;letter-spacing:.1em;text-transform:uppercase;
-  color:var(--s)}
-.dgrid{display:grid;gap:12px}
-.dperiod{
-  padding:8px 13px;border-radius:999px;min-height:38px;
-  border:1px solid var(--e2);background:var(--c1);color:var(--t2);
-  font:inherit;font-size:12.5px;cursor:pointer;
-  transition:color var(--tf),border-color var(--tf),background var(--tf);
-  &:hover{color:var(--t1);border-color:var(--e1)}
-  &:focus-visible{outline:2px solid var(--s);outline-offset:2px}
-  &.on{color:var(--t1);border-color:color-mix(in srgb,var(--s) 46%,transparent);
-    background:rgba(var(--orb1),.14)}}
-.dperiods{display:flex;flex-wrap:wrap;gap:6px;margin-top:18px}
-.dres{
-  font-size:10.5px;padding:2px 7px;border-radius:6px;border:1px solid var(--e1);
-  color:var(--t2);
-  &.won,&.cash-profit{color:var(--pos);border-color:color-mix(in srgb,var(--pos) 38%,transparent)}
-  &.lost,&.cash-loss{color:var(--neg);border-color:color-mix(in srgb,var(--neg) 38%,transparent)}}
-.drow2{
-  display:flex;justify-content:space-between;align-items:baseline;gap:10px;
-  padding:8px 0;border-bottom:1px solid var(--e2);
-  &:last-child{border-bottom:0}
-  & .dl{display:grid;gap:2px;min-width:0}
-  & .dl b{font-size:13px;color:var(--t1);font-weight:600}
-  & .dl i{font-style:normal;font-size:11.5px;color:var(--t2)}
-  & .dr{font-family:var(--fm);font-size:13px;font-weight:650;white-space:nowrap;
-    font-variant-numeric:tabular-nums lining-nums}}
-.dsecth{
-  font-family:var(--fd);font-size:clamp(19px,5vw,24px);letter-spacing:-.02em;
-  margin:26px 0 11px}
-.dstrip{
-  display:flex;gap:7px;overflow-x:auto;-webkit-overflow-scrolling:touch;
-  padding:2px 0 8px;scroll-snap-type:x proximity}
-.dtable{
-  overflow-x:auto;-webkit-overflow-scrolling:touch;margin-top:4px;min-width:0;max-width:100%;
-  & table{width:100%;border-collapse:collapse;min-width:400px}
-  & th{
-    text-align:right;font-size:10px;letter-spacing:.08em;text-transform:uppercase;
-    color:var(--t2);font-weight:600;padding:8px 9px;border-bottom:1px solid var(--e2);
-    white-space:nowrap;
-    &:first-child{text-align:left}}
-  & td{
-    text-align:right;font-size:12.5px;color:var(--t2);padding:9px;
-    border-bottom:1px solid var(--e2);white-space:nowrap;
-    font-variant-numeric:tabular-nums lining-nums;
-    &:first-child{text-align:left;color:var(--t1);white-space:normal}}
-  & tr:last-child td{border-bottom:0}}
-.dtile{
-  padding:13px;border-radius:14px;border:1px solid var(--e1);background:var(--c1);
-  & .dk{display:block;font-size:10.5px;color:var(--t2)}
-  & .dv{display:block;font-family:var(--fm);font-weight:700;font-size:19px;margin-top:4px;
-    letter-spacing:-.02em;font-variant-numeric:tabular-nums lining-nums}
-  & .ds{display:block;font-size:10.5px;color:var(--t3);margin-top:3px}}
-.dtiles{display:grid;grid-template-columns:repeat(2,1fr);gap:8px}
-.dzero{stroke:var(--e1);stroke-width:1;stroke-dasharray:3 4}
+  position:sticky;top:0;z-index:60;
+  border-bottom:1px solid var(--e1);
+  background:color-mix(in srgb,var(--bg) 94%,transparent);
+  & .demobar-in{
+    display:flex;align-items:center;gap:12px;flex-wrap:wrap;
+    max-width:660px;margin:0 auto;padding:10px 16px}
+  & p{margin:0;flex:1;min-width:190px;font-size:12px;line-height:1.5;color:var(--t2);
+    & b{color:var(--t1)}}
+  & .demobar-do{display:flex;align-items:center;gap:8px;flex:0 0 auto}}
+
 .ch-t{margin:0;font-size:15px;font-weight:650;letter-spacing:-.01em}
 .ch-s{margin:2px 0 0;font-size:11px;color:var(--t2)}
 .ch-plus{
@@ -392,12 +316,11 @@
 
 /* Three rules the cut took by accident, each needed off the landing page.
 
-   .dgrid > * is the one that bit: a grid item defaults to min-width:auto,
-   so the demo page's card could not shrink below the 400px min-width of
-   the table inside it and pushed 128px of horizontal scroll at 320px. The
-   table's own overflow-x:auto cannot help while its container refuses to
-   be narrower than its content. */
-.dgrid > *{min-width:0}
+   The demo page's card was the one that bit: a grid item defaults to
+   min-width:auto, so it could not shrink below the 400px min-width of the
+   table inside it and pushed 128px of horizontal scroll at 320px. That
+   grid is gone with the demo's shadow dashboard, but the rule it taught is
+   why every grid in this file sets min-width:0 on its items. */
 body.in-app .agebar{margin-bottom:66px}
 body.in-app .sitefoot{margin-top:20px}
 
