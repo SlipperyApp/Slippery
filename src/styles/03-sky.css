@@ -84,9 +84,10 @@
  *
  * The ribbons used to be two data-URI SVGs with #5D76CB, #38BDF8 and
  * #8B5CF6 baked into their gradients, which meant every theme got
- * periwinkle ribbons. Nobody noticed on the four dark themes because they
- * are all cool; on Chalk it put a mauve haze across warm paper, and it
- * quietly contradicted the brief's "colour that shifts per theme".
+ * periwinkle ribbons. Nobody noticed on the cool themes because
+ * they are all cool; on the warm one it put a mauve haze across a warm
+ * shell, and it quietly contradicted the brief's "colour that shifts per
+ * theme".
  *
  * A custom property cannot reach inside a data: URI, so the fix splits the
  * asset in two: the SVG is now a SHAPE ONLY, black on transparent, used as

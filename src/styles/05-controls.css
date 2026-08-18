@@ -97,8 +97,9 @@
        which is light, so near-black sits on it correctly. The tight thumb
        is a 55% tint of --orb1 over the card, which blends to something
        dark: near-black on it measured 2.43:1, well under the 4.5 an 11.5px
-       label needs, and axe caught it. --t1 is light on the dark themes and
-       dark on Chalk, so one value is right on both sides of the tint. */
+       label needs, and axe caught it. --t1 is each theme's own high
+       emphasis text, so it is right against that theme's tint whatever
+       the shell is. */
     &[aria-pressed=true],&.on{color:var(--t1)}
     &[aria-disabled=true]{opacity:.34}}
   & .thumb{top:2px;bottom:2px;border-radius:999px;

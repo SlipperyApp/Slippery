@@ -277,7 +277,7 @@ export async function installStub(page, opts = {}) {
   const DIRECTORY = [
     { id: 'p1', name: 'Acca Merchants', members: 34, joined: false, full: false },
     { id: 'p2', name: 'Bankroll Club', members: 12, joined: true, full: false },
-    { id: 'p3', name: 'Chalk Only', members: 200, joined: false, full: true },
+    { id: 'p3', name: 'Closed Shop', members: 200, joined: false, full: true },
     { id: 'p4', name: 'Sunday League Syndicate', members: 7, joined: false, full: false,
       visibility: 'private' },
     /* Somebody who has already asked. The row must say Asked rather than

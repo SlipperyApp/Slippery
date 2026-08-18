@@ -146,8 +146,11 @@ const MANIFEST = {
   scope: '/',
   display: 'standalone',
   orientation: 'portrait',
-  background_color: '#0B1020',
-  theme_color: '#0B1020',
+  /* The real Periwinkle --bg. These said #0B1020 while the meta tag in
+     HEAD said #0A0F1E, so the splash screen and the browser chrome were
+     two slightly different colours either side of a launch. */
+  background_color: '#0A0F1E',
+  theme_color: '#0A0F1E',
   categories: ['finance', 'utilities'],
   icons: [
     { src: '/icon.svg', sizes: 'any', type: 'image/svg+xml', purpose: 'any' },

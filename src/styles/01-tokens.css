@@ -42,7 +42,7 @@
 /* ============================================================
    2. THEMES
    ============================================================
-   Separated on three axes at once, not just hue. Five themes that
+   Separated on three axes at once, not just hue. Themes that
    were all cool, all mid-dark and all one gesture apart read as
    the same theme with a filter over it. These differ in hue, in
    background lightness and in chroma, so a switch is legible at a
@@ -52,7 +52,8 @@
      graphite    true neutral, near zero chroma        RECOMMENDED
      ink         near black, violet cast, the darkest
      tide        marine teal, the coolest, high chroma
-     chalk       warm sepia, the only warm theme
+     slate       cool steel blue-grey, the lightest shell
+     bronze      warm charcoal, the only warm theme
 
    Every theme supplies the same contract:
      --p     primary. A LIGHT value, because it is a filled surface
@@ -121,20 +122,36 @@ html[data-theme=tide],
   --t1:#EDF8FC; --t2:#9DBDCB; --t3:#87A6B4;
 }
 
-/* Chalk. Warm dark sepia, and deliberately still dark.
-   A light version was built twice and reverted twice: profit green
-   as text on near white measures about 1.4:1, and the only fixes
-   are a second pair of semantic colours or a theme dependent green.
-   Both break a locked rule. */
-html[data-theme=chalk],
-[data-t=chalk]{
-  --p:#BFAB94;   --on-p:#14100A;
-  --s:#EFE2CB;   --a:#7DD3FC;
-  --bg:#171309;  --glow:#2E281A;
-  --orb1:191,171,148; --orb2:239,226,203; --orb3:160,145,120;
-  --card:rgba(44,38,26,.72);
+/* Slate. The lightest shell in the set, and the reason to pick it is
+   that not every room is dark. A steel blue-grey at very low chroma:
+   businesslike rather than styled, and far enough from Graphite that
+   they do not read as one theme, because the hue is cool blue rather
+   than neutral and the background is three steps lighter. */
+html[data-theme=slate],
+[data-t=slate]{
+  --p:#7C8CA3;   --on-p:#0D1116;
+  --s:#B4C4D8;   --a:#F5A524;
+  --bg:#1A1F26;  --glow:#2A323D;
+  --orb1:124,140,163; --orb2:180,196,216; --orb3:104,120,142;
+  --card:rgba(37,44,54,.72);
   --ink:255,255,255;
-  --t1:#F7F1E4; --t2:#C2B6A1; --t3:#A89D85;
+  --t1:#F4F6F9; --t2:#AEB8C6; --t3:#95A0B0;
+}
+
+/* Bronze. The warm one, and the only warm one, but a warm CHARCOAL
+   rather than the sepia that used to sit here: the shell is close to
+   neutral and the warmth is carried by the accent, so figures still
+   read as figures. The attention colour is deliberately cool, because
+   a warm attention colour on a warm shell disappears. */
+html[data-theme=bronze],
+[data-t=bronze]{
+  --p:#A98F63;   --on-p:#100D08;
+  --s:#D9C6A2;   --a:#7DD3FC;
+  --bg:#141210;  --glow:#272219;
+  --orb1:169,143,99; --orb2:217,198,162; --orb3:140,118,84;
+  --card:rgba(35,31,26,.72);
+  --ink:255,255,255;
+  --t1:#F6F2EA; --t2:#B6ADA0; --t3:#9C9488;
 }
 
 /* ============================================================
