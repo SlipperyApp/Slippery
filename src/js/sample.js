@@ -314,13 +314,6 @@ export const DEMO = {
   pendingCount: DEMO_WINDOW.filter(b => b.result === 'pending').length,
   avgOdds: counted.length ? sum(counted, b => b.odds) / counted.length : 0,
 
-  /* The cumulative curve, oldest first, one point per bet. */
-  curve: (() => {
-    const ordered = settled.slice().sort((a, b) => b.dayBack - a.dayBack);
-    let run = 0;
-    return ordered.map(b => (run += b.profit));
-  })(),
-
   byBand: BANDS.map(band => {
     const list = settled.filter(b => b.odds >= band.lo && b.odds <= band.hi);
     return Object.assign({ label: band.label }, bucket(list));
@@ -359,16 +352,6 @@ export const DEMO = {
   })()
 };
 
-/* The worst run in the record, so the caption under the curve can point at
-   something real rather than gesture at "the dip around the middle". */
-export const DEMO_DRAWDOWN = (() => {
-  let peak = 0, worst = 0, at = 0;
-  DEMO.curve.forEach((v, i) => {
-    if (v > peak) peak = v;
-    if (peak - v > worst) { worst = peak - v; at = i; }
-  });
-  return { depth: worst, at, of: DEMO.curve.length };
-})();
 
 /* ---------- the demo, as the API would have sent it ----------
  *

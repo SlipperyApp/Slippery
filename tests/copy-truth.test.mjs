@@ -189,3 +189,19 @@ test('the bot preview uses the product palette, not its own', async () => {
   assert.deepEqual(hexes, [], 'hardcoded colours in the bot preview: ' + hexes.join(', '));
   assert.doesNotMatch(body, /style="/, 'inline styles are a component nobody else can reuse');
 });
+
+/* NEVER PREVIEW A CHART THE PRODUCT DOES NOT HAVE.
+   The hero showed a cumulative curve. There is no cumulative curve
+   anywhere in Slippery: not on the dashboard, not in the ledger, not in
+   the analysis. A landing page that previews one is selling something
+   that does not arrive. */
+test('nothing on the landing page draws a chart the dashboard cannot', async () => {
+  const content = await readFile(new URL('../src/js/content.js', import.meta.url), 'utf8');
+  const html = await readFile(new URL('../src/app.html', import.meta.url), 'utf8');
+  assert.doesNotMatch(content, /DEMO\.curve/, 'the cumulative curve is not a thing the product has');
+  assert.doesNotMatch(html, /id="previewLine"/);
+  /* What it shows instead is the calendar, which is what the dashboard
+     opens on. */
+  assert.match(html, /id="previewDays"/);
+  assert.match(content, /setHTML\('previewDays'/);
+});

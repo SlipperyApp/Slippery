@@ -133,13 +133,11 @@
             <p class="cap" id="chromeRange"></p>
           </div>
           <div class="shot-stats" id="chromeStats"></div>
-          <!-- Flat stroke. The area fill that used to sit under this was a
-               gradient wash, which is decoration: the shape is the
-               information. -->
-          <svg class="shot-line" viewBox="0 0 300 66" preserveAspectRatio="none" aria-hidden="true">
-            <path id="previewLine" fill="none" stroke="currentColor" stroke-width="1.5"
-                  stroke-linejoin="round" stroke-linecap="round" d=""/>
-          </svg>
+          <!-- A month of coloured days, which is what the dashboard opens
+               on. There was a cumulative curve here and the product has no
+               cumulative curve anywhere: previewing a chart that does not
+               arrive is selling something the product does not do. -->
+          <div class="shot-days" id="previewDays" aria-hidden="true"></div>
         </div>
       </figure>
     </div>
@@ -1408,6 +1406,11 @@
         <p class="fineprint" style="margin-top:11px">Gambling should not stop being fun. <a href="https://www.begambleaware.org" target="_blank" rel="noopener">BeGambleAware</a> and <a href="https://www.gamcare.org.uk" target="_blank" rel="noopener">GamCare</a> are there whenever you want them.</p>
       </div>
 
+      <!-- The utilities page was fully built and rendered and reachable
+           only by typing #util. It works on the signed-in ledger, so
+           Settings is where somebody would look for it. -->
+      <div class="fieldrow"><span class="lab">Clean up the ledger<small>Split combined selections, fix a sport, match bets to fixtures. Each one previews before it changes anything.</small></span>
+        <button class="pillbtn" data-nav="util">Open</button></div>
       <div class="fieldrow"><span class="lab">Reset all bets<small>Deletes every bet and slip image. Keeps your account.</small></span>
         <button class="pillbtn danger" id="resetBets">Reset</button></div>
       <div class="fieldrow"><span class="lab">Delete account<small>Everything goes. This cannot be undone.</small></span>
@@ -1645,7 +1648,7 @@
     </div>
 
     <nav class="sitefoot-links" aria-label="Footer">
-      <button data-anchor="secAll">Features</button>
+      <button data-nav="howto">How it works</button>
       <button data-nav="pricing">Pricing</button>
       <button data-nav="books">Bookmakers</button>
       <button data-nav="demo">Demo</button>

@@ -538,32 +538,42 @@ function renderPreview() {
   const stat = (k, v, tone) =>
     '<div class="ch-stat"><span class="k">' + esc(k) + '</span>' +
     '<span class="v ' + (tone || '') + '">' + v + '</span></div>';
+  /* All three over the same thirty days the cells below show. The return
+     used to be the 120 day figure under a caption saying thirty, which is
+     two spans of time in one row of statistics. */
+  const win = DEMO.month;
   setHTML('chromeStats',
-    stat('This month', M.signed(DEMO.month.profit), M.tone(DEMO.month.profit)) +
-    stat('Return', (DEMO.total.roi >= 0 ? '+' : '\u2212') +
-      Math.abs(DEMO.total.roi).toFixed(1) + '%', M.tone(DEMO.total.profit)) +
+    stat('Net', M.signed(win.profit), M.tone(win.profit)) +
+    stat('Return', (win.roi >= 0 ? '+' : '\u2212') +
+      Math.abs(win.roi).toFixed(1) + '%', M.tone(win.profit)) +
     stat('Running', M.money0(DEMO.pendingStake)));
-  setText('chromeRange', 'Last ' + DEMO_DAYS + ' days');
+  setText('chromeRange', 'Last 30 days');
 
   /* One point per settled bet is 480 segments in a 300 unit wide box, so
      it is sampled down to something a 66px tall sparkline can actually
      resolve. Sampling rather than smoothing: the shape stays true. */
-  const pts = DEMO.curve.filter((_, i) => i % 8 === 0).concat(DEMO.curve.slice(-1));
-  const max = Math.max(...pts, 1), min = Math.min(...pts, 0);
-  const span = (max - min) || 1;
-  const coords = pts.map((v, i) => {
-    const x = 4 + (i / Math.max(pts.length - 1, 1)) * 292;
-    const y = 60 - ((v - min) / span) * 52;
-    return x.toFixed(0) + ',' + y.toFixed(0);
-  });
-  /* Two points minimum, or the path is "M12,30" and the browser logs an
-     invalid-d error for a line that cannot be drawn. */
-  const line = coords.length > 1 ? 'M' + coords.join(' L') : '';
-  $('previewLine').setAttribute('d', line);
-  /* The gradient area fill under this line is gone with the rest of the
-     glass, and so are the best-band and recent-bet lists that used to sit
-     beneath it. On a four block page the hero states the figure; the
-     breakdown is what the demo and the dashboard are for. */
+  /* THE CALENDAR, BECAUSE THE CALENDAR IS WHAT THE DASHBOARD SHOWS.
+     There was a cumulative curve here, and there is no cumulative curve
+     anywhere in the product: not on the dashboard, not in the ledger, not
+     in the analysis. A landing page that previews a chart the product does
+     not have is selling something that does not arrive, which is the one
+     thing this page is not allowed to do.
+
+     What the dashboard actually opens on is a month of coloured days, so
+     that is what this is: the same cells, the same two semantic colours,
+     the same intensity scaled to the biggest day. Thirty of them, from the
+     same fabricated sample as everything else here. */
+  const days = DEMO.days.filter(d => d.dayBack < 30).slice().reverse();
+  const peak = days.reduce((a2, d) => Math.max(a2, Math.abs(d.net)), 0) || 1;
+  setHTML('previewDays', days.map(d => {
+    const r = Math.min(1, Math.abs(d.net) / peak);
+    const rgb = d.net > 0 ? '134,239,172' : d.net < 0 ? '252,165,165' : null;
+    const style = rgb
+      ? 'background:rgba(' + rgb + ',' + (0.12 + r * 0.3).toFixed(3) + ');' +
+        'border-color:rgba(' + rgb + ',' + (0.3 + r * 0.3).toFixed(3) + ')'
+      : '';
+    return '<span class="shot-day" style="' + style + '"></span>';
+  }).join(''));
 }
 
 /* THE BOT PREVIEW, BUILT FROM THE PRODUCT'S OWN PARTS.

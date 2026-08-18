@@ -13,7 +13,7 @@
  */
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { DEMO, DEMO_BETS, DEMO_WINDOW, DEMO_DAYS, DEMO_DRAWDOWN, demoPayload } from '../src/js/sample.js';
+import { DEMO, DEMO_BETS, DEMO_WINDOW, DEMO_DAYS, demoPayload } from '../src/js/sample.js';
 
 /* Everything the demo PAGE claims is about the 120 day window. The two
    years behind it exist for the tutorial, which needs a Yearly period and
@@ -71,10 +71,6 @@ test('every breakdown sums back to the same total', () => {
   assert.ok(Math.abs(sum(DEMO.byComp)) <= Math.abs(DEMO.total.profit) + 100000);
 });
 
-test('the cumulative curve ends on the total', () => {
-  assert.equal(DEMO.curve.length, settled.length);
-  assert.equal(DEMO.curve[DEMO.curve.length - 1], DEMO.total.profit);
-});
 
 test('void and push are excluded from the win rate', () => {
   const neutral = settled.filter(b => b.result === 'void' || b.result === 'push');
@@ -103,9 +99,16 @@ test('the shape says something true rather than something flattering', () => {
     'the record should show a small edge, measured ' + DEMO.total.roi.toFixed(1) + '%');
 
   /* And it should lose for a while, because that is the part the page is
-     about. */
-  assert.ok(DEMO_DRAWDOWN.depth > 50000,
-    'the record needs a real losing run for the curve caption to point at');
+     about. Measured over the days rather than over a cumulative curve:
+     the curve is gone, because the product has no cumulative chart and
+     the sample must not carry figures for one. */
+  let run = 0, worst = 0;
+  for (const d of DEMO.days.slice().reverse()) {
+    run = Math.min(0, run + d.net);
+    worst = Math.min(worst, run);
+  }
+  assert.ok(worst < -50000,
+    'the record needs a real losing run in it, worst was ' + worst);
 });
 
 test('the win rate looks worse than the return, which is the point', () => {
