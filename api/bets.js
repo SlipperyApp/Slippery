@@ -366,11 +366,59 @@ async function createMany(req, res, user, rows) {
   });
   if (!good.length) return json(res, 400, { error: 'No row in that file could be imported.', rejected });
 
+  /* DUPLICATES.
+   *
+   * When an import folded rows into dated figures the write upserted on
+   * (user, date, period), so re-importing the same file corrected rather
+   * than doubled. Bets append, so that safety has to be built rather than
+   * inherited: without it, importing the same export twice silently
+   * doubles somebody's entire record.
+   *
+   * Four fields have to match, all of them: the day, the selection, the
+   * stake and the bookmaker. Three matching is a coincidence, two people
+   * really do back the same selection twice in a day at different stakes.
+   * The day rather than the timestamp, because a spreadsheet rarely
+   * carries a time and re-exporting can move it.
+   *
+   * One query for the whole window instead of one per row: a 1000 row
+   * import would otherwise be 1000 round trips before it wrote anything.
+   */
+  const dayKey = v => {
+    const d = v ? new Date(v) : new Date();
+    return Number.isNaN(d.getTime()) ? '' : d.toISOString().slice(0, 10);
+  };
+  const keyOf = (day, selection, stakePence, book) =>
+    day + '|' + String(selection || '').trim().toLowerCase() +
+    '|' + Math.round(Number(stakePence)) + '|' + String(book || '').trim().toLowerCase();
+
+  const days = [...new Set(good.map(b => dayKey(b.placedAt)))].filter(Boolean);
+  const seen = new Set();
+  if (days.length) {
+    const existing = await sql`
+      SELECT to_char(placed_at, 'YYYY-MM-DD') AS day, selection, stake_pence, bookmaker
+      FROM bets
+      WHERE user_id = ${user.id}
+        AND to_char(placed_at, 'YYYY-MM-DD') = ANY(${days})`;
+    for (const row of existing) {
+      seen.add(keyOf(row.day, row.selection, row.stake_pence, row.bookmaker));
+    }
+  }
+
   /* An imported row may already be settled, that is the point of importing
      history, so outcome and profit come across with it. Anything without a
      result lands as pending and the sweep will grade it. */
   let inserted = 0;
+  const duplicates = [];
   for (const b of good) {
+    const key = keyOf(dayKey(b.placedAt), b.selection, b.stakePence, b.book);
+    /* Checked against the rows already written by THIS import too, so a
+       file containing the same bet twice is caught as well as a file
+       imported twice. */
+    if (seen.has(key)) {
+      duplicates.push({ line: b.line || null, selection: str(b.selection) });
+      continue;
+    }
+    seen.add(key);
     const settled = b.outcome && b.profitPence != null;
     await sql`
       INSERT INTO bets (user_id, event, selection, market, bookmaker, odds, stake_pence,
@@ -386,7 +434,16 @@ async function createMany(req, res, user, rows) {
               'import')`;
     inserted++;
   }
-  return json(res, 201, { imported: inserted, rejected });
+  /* Everything the summary has to show, reconciled here rather than counted
+     again in the browser: detected, imported, skipped as duplicate, and
+     rejected with the line and the reason. */
+  return json(res, 201, {
+    imported: inserted,
+    detected: rows.length,
+    duplicates: duplicates.length,
+    duplicateRows: duplicates.slice(0, 40),
+    rejected
+  });
 }
 
 /* A CSV says "cashed out" without saying whether it made money. The six

@@ -1096,7 +1096,6 @@ usually worst and hardest to find, which is why they are included.
 - "Log in to start a group."
 - "New code sent to"
 - "No bets in this month to break down"
-- "No row in that file carried a date, so there is nothing to place."
 - "Not linked yet. In the chat, send: /link"
 - "Nothing left to add"
 - "Odds shown as"

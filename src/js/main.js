@@ -1481,52 +1481,45 @@ const csvError = msg =>
   '<p class="hinttext" style="border-top-color:rgba(252,165,165,.22)">' + esc(msg) +
   ' Nothing was imported.</p></div>';
 
-/* AN IMPORT IS A DATED FIGURE, NEVER A GAME.
+/* AN IMPORT IS A LEDGER OF ITS OWN, NOT A PILE OF DATED FIGURES.
  *
- * This used to POST every parsed row as a bet, which looked richer and was
- * wrong in three ways at once. The bets could not settle, because there is
- * no slip and no fixture behind a spreadsheet row. They could not be
- * checked, because there is no image to check them against. And they
- * landed in every per-market and per-bookmaker breakdown as rows nobody
- * could verify, which is exactly the "highlight reel" problem the product
- * exists to stop, arriving through the back door.
+ * This file used to fold every parsed CSV row into a daily total and post
+ * it as profit and loss. The reasoning was sound as far as it went: a
+ * spreadsheet row has no slip behind it, cannot settle, and cannot be
+ * checked, so calling it a bet overstates what is known.
  *
- * So the rows are summed by date and saved as dated profit and loss. The
- * figures are real and they count; the fixtures behind them are not
- * claimed. That also makes a re-import safe, because the server upserts on
- * (user, date, period) rather than appending. */
-function foldToDays(rows) {
-  const byDate = new Map();
-  for (const b of rows) {
-    /* A row with no usable date cannot go on a calendar, so it is reported
-       rather than quietly dropped onto today. */
-    const iso = String(b.placedAt || b.date || '').slice(0, 10);
-    if (!/^\d{4}-\d{2}-\d{2}$/.test(iso)) continue;
-    const d = byDate.get(iso) || { date: iso, period: 'day', profitPence: 0,
-      turnoverPence: 0, bets: 0, source: 'import' };
-    /* parseBetsCsv hands back stakePence and profitPence, already whole
-       pence. A pending row has profit null, which contributes nothing to a
-       figure but still counts as a bet that was placed that day. */
-    d.profitPence += Math.round(b.profitPence || 0);
-    d.turnoverPence += Math.round(b.stakePence || 0);
-    d.bets += 1;
-    byDate.set(iso, d);
-  }
-  return [...byDate.values()].sort((a, b) => a.date.localeCompare(b.date));
-}
-
+ * It was also, in practice, the second of the two things that made import
+ * look broken. The button said "Import 200 bets" and produced 34 dated
+ * figures; the ledger stayed empty and the bet count never moved.
+ *
+ * The owner's decision is that imported history is a SEPARATE LEDGER shown
+ * alongside, and the database already draws that line: bets.source is
+ * 'upload', 'telegram' or 'import'. So the rows become real bets marked as
+ * imported, distinguishable everywhere, and already excluded from the
+ * capture rate, which is the measure the old rationale was protecting.
+ *
+ * What the upsert used to give for free, it now has to earn: appending
+ * bets is not idempotent, so re-importing the same file would double a
+ * record. Duplicate detection in api/bets.js createMany is what replaces
+ * it, and it is load-bearing rather than a nicety.
+ *
+ * pl_entries keeps its proper job: a profit-and-loss SUMMARY screenshot,
+ * where there are no individual bets to create in the first place.
+ */
 async function runCsvImport(btn) {
   if (!pendingCsv) return;
-  const days = foldToDays(pendingCsv);
-  const undated = pendingCsv.length - days.reduce((a, d) => a + d.bets, 0);
-  if (!days.length) {
-    toast('No row in that file carried a date, so there is nothing to place.');
-    return;
-  }
+  const rows = pendingCsv;
 
   btn.disabled = true;
   btn.textContent = 'Importing…';
-  const r = await post('/api/bets', { pl: days });
+  /* {bets:[...]}, the server's real bulk path.
+     This used to fold every row into dated figures and post {pl:[...]},
+     so a spreadsheet of 200 bets produced about 34 daily totals: the
+     ledger stayed empty, the bet count never moved, nothing could settle,
+     and the button that said "Import 200 bets" was telling the truth about
+     neither number. createMany, MAX_IMPORT and the per-line rejected array
+     had been written and had no caller at all. */
+  const r = await post('/api/bets', { bets: rows.map((b, i) => Object.assign({ line: i + 1 }, b)) });
   btn.disabled = false;
 
   if (r.status === 402) { showUpgrade(r.body); btn.textContent = 'Import'; return; }
@@ -1534,17 +1527,59 @@ async function runCsvImport(btn) {
   if (r.status === 503) { showBackendNotice(r.body); btn.textContent = 'Import'; return; }
   if (!r.ok) { toast(r.body.error || 'That import did not go through.'); btn.textContent = 'Import'; return; }
 
-  const bets = days.reduce((a, d) => a + d.bets, 0);
-  const net = days.reduce((a, d) => a + d.profitPence, 0);
   pendingCsv = null;
   const report = btn.closest('#setupCsvReport') ? $('setupCsvReport') : $('csvReport');
-  report.innerHTML = '<p class="hinttext">' + bets + ' rows became <b>' + days.length +
-    ' dated figures</b>, ' + M.signed(net) + ' in total. They count in your profit and loss ' +
-    'and sit on the calendar on their own dates. They are not logged as individual bets, ' +
-    'because a spreadsheet row has no slip behind it and nothing here can settle it.' +
-    (undated > 0 ? ' ' + undated + ' rows had no usable date and were left out.' : '') + '</p>';
-  toast(days.length + ' dated figures imported');
+  report.innerHTML = importSummary(r.body, rows);
+  toast((r.body.imported || 0) + ' bets imported');
   await loadLedger();
+}
+
+/* WHAT ACTUALLY HAPPENED, RECONCILED.
+ *
+ * The server has always reported partial success honestly, per line, and
+ * the client read none of it: nothing anywhere touched `rejected` or
+ * `imported`, only `saved`. So rows a user could see in their own file
+ * simply never appeared, with no explanation, which is indistinguishable
+ * from the import being broken.
+ *
+ * Every number here comes from the response rather than being counted
+ * again in the browser, so the summary cannot disagree with the ledger. */
+function importSummary(body, rows) {
+  const detected = body.detected != null ? body.detected : rows.length;
+  const imported = body.imported || 0;
+  const dupes = body.duplicates || 0;
+  const rejected = Array.isArray(body.rejected) ? body.rejected : [];
+
+  const staked = rows.reduce((a, b) => a + Math.round(b.stakePence || 0), 0);
+  const settled = rows.filter(b => b.outcome && b.profitPence != null);
+  const net = settled.reduce((a, b) => a + Math.round(b.profitPence || 0), 0);
+  const pending = imported - settled.length;
+
+  const line = (k, v, cls) =>
+    '<div class="reviewline"><span class="k">' + esc(k) + '</span>' +
+    '<span class="v m ' + (cls || '') + '">' + v + '</span></div>';
+
+  return '<div class="card pad" style="margin-top:12px">' +
+    '<div class="cardhead"><span class="title">Imported</span>' +
+      '<span class="meta">' + imported + ' of ' + detected + '</span></div>' +
+    line('Bets created', imported) +
+    (dupes ? line('Already in your ledger', dupes, 'mut') : '') +
+    (rejected.length ? line('Could not be read', rejected.length, 'neg') : '') +
+    line('Total staked', M.money(staked)) +
+    (settled.length ? line('Profit on the ' + settled.length + ' settled', M.signed(net), M.tone(net)) : '') +
+    (pending > 0 ? line('Still to settle', pending, 'mut') : '') +
+    (dupes
+      ? '<p class="hinttext">Duplicates were skipped, not deleted. A bet counts as one ' +
+        'when the day, the selection, the stake and the bookmaker all match one you ' +
+        'already have.</p>'
+      : '') +
+    (rejected.length
+      ? '<details class="disclose"><summary>' + rejected.length + ' rows skipped</summary>' +
+        rejected.slice(0, 40).map(e =>
+          '<p class="hinttext">Line ' + esc(String(e.line)) + ': ' + esc(e.why) + '</p>').join('') +
+        '</details>'
+      : '') +
+    '</div>';
 }
 
 async function leaveGroup(id) {
