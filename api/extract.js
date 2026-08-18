@@ -350,7 +350,26 @@ export default async function handler(req, res) {
         return json(res, 400, { error: 'Send an image as base64 in the "image" field.' });
       }
       const isPdf = mime === PDF_MIME;
-      const mediaType = isPdf ? PDF_MIME : (ALLOWED_MIME.includes(mime) ? mime : 'image/jpeg');
+      /* AN UNKNOWN FORMAT IS REFUSED BY NAME, NOT RELABELLED AS A JPEG.
+       *
+       * This used to fall back to 'image/jpeg' for anything it did not
+       * recognise, which meant the bytes and the declared media type
+       * disagreed. The model API then returned a 400, the catch below read
+       * that as "our schema is wrong", and the person uploading got
+       * "The slip reader is misconfigured on this deployment."
+       *
+       * The format that actually hit this was HEIC, the default iPhone
+       * camera format, on a product whose primary platform is iOS Safari.
+       * Every photo upload failed and blamed the server. Say which format
+       * it was and what to do instead. */
+      if (!isPdf && !ALLOWED_MIME.includes(mime)) {
+        return json(res, 415, {
+          error: 'That image format is not one the reader can take' +
+            (mime ? ' (' + String(mime).slice(0, 40) + ')' : '') +
+            '. Send a JPEG, PNG, WebP or PDF, or take a screenshot of the slip.'
+        });
+      }
+      const mediaType = isPdf ? PDF_MIME : mime;
       /* base64 is 4 chars per 3 bytes; check before allocating. */
       if (Math.floor(image.length * 3 / 4) > MAX_IMAGE_BYTES) {
         return json(res, 413, { error: 'That file is too large. Under 8MB, please.' });

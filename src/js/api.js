@@ -37,10 +37,27 @@ async function toBase64(file) {
   return btoa(bin);
 }
 
+/* What the reader can actually be sent. Kept in step with ALLOWED_MIME in
+   api/extract.js: the server refuses anything else by name rather than
+   relabelling it, so guessing here would only move the failure. */
+const READABLE = ['image/jpeg', 'image/png', 'image/webp', 'image/gif', 'application/pdf'];
+
 export async function extractSlip(file) {
   const small = await downscale(file);
+  const type = small.type || '';
+  /* downscale re-encodes anything it can decode as JPEG, so reaching here
+     with an unreadable type means the browser could not decode it either.
+     Say so before spending a round trip and a model call on bytes the
+     reader will refuse. HEIC is the case this exists for: iOS hands over
+     the raw file when a page asks for it, which is why the file inputs no
+     longer do, and Chrome cannot decode it at all. */
+  if (!READABLE.includes(type)) {
+    throw new Error(
+      'This browser could not read that image' + (type ? ' (' + type + ')' : '') +
+      '. Save it as a JPEG or PNG, or take a screenshot of the slip.');
+  }
   const b64 = await toBase64(small);
-  return read({ image: b64, mime: small.type || 'image/jpeg' });
+  return read({ image: b64, mime: type });
 }
 
 /* The same reader, given text instead of a picture. A list someone typed
