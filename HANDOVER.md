@@ -707,3 +707,74 @@ selection add and remove, and dated P/L extraction surfaced as a list.
   gone, but whether a profit goal belongs in a gambling tracker at all is a
   responsible-gambling question, and section 8 says those are the owner's
   alone. It has not been removed on anyone else's judgement.
+
+---
+
+# Section 11 — the correctness and design pass
+
+Two stages, on the owner's sequencing: everything under the product had to
+be right before anything visual changed.
+
+## 11.1 Stage A, correctness
+
+**The reader and the import pipeline.** Every iPhone photo upload failed
+and blamed the server: the picker advertised HEIC, iOS therefore stopped
+transcoding, `extract.js` relabelled the bytes `image/jpeg`, Anthropic
+400'd, and the catch returned a 500 saying the reader was misconfigured.
+Unknown mime types are refused by name now. `SLIP_SCHEMA` gained a `bets[]`
+array so three forwarded slips stop becoming one bet selected "Arsenal &
+Spurs & Chelsea". `runCsvImport` posts real bets to `createMany`, which had
+never had a caller, instead of folding a 200 row file into 34 dated
+aggregates and reporting that as success. Duplicate detection is server
+side on four fields, and the FAQ describes what it does rather than what it
+used to promise.
+
+**Signup.** No `users` row exists until the address is proved. Signups wait
+in `pending_signups`; `verify.js` promotes one into an account, stamps the
+trial clock at that moment and redeems the promo then. An abandoned signup
+used to hold the email and the display name for ever, burn the trial, and
+consume a promo code that is UNIQUE per user. `resend.js` and `login.js`
+both read the pending table, or the recovery paths would have gone dark.
+
+**Periods.** `S.period` is All time, Yearly, Monthly, Weekly and each one
+changes the query. There is a real `S.year`: every helper takes the year it
+means, so a bet from last March is no longer counted in this March or
+dropped by `buildDayTotals`. Weeks keep all seven days across a month
+boundary. The Tracker/Lifetime toggle is gone; it moved one integer while
+the figure beside it described a different set of bets.
+
+**Two ledgers.** Bets logged here have a slip behind them; imported figures
+are a date and an amount. Both count toward the period total, only one can
+be checked, so the ledger has a History tab showing the addition. Imported
+figures never reach the win rate, the streak, or the best and worst day,
+and there are tests that fail if they do.
+
+**One bookmaker registry**, `src/js/books.js`. It replaced five drifting
+copies. Adding a Kambi brand is one row, and that is a test rather than a
+claim.
+
+## 11.2 Stage B, design
+
+The demo **is** the dashboard: it loads a fabricated ledger through the
+same `hydrate()` and renders through the same renderers. `demo.js` and the
+`.d*` shadow design system are deleted. It is only offered to somebody with
+no session, and `api.js` refuses every request while `S.demo` is true, so
+sample data cannot reach an account. The audit drives it and fails if any
+request leaves the browser.
+
+The landing page has the Telegram block, the FAQs and the pricing back, all
+built from the product's own components. The hero previews the calendar
+rather than a cumulative curve, because the product has no cumulative
+curve. Chalk is replaced by Slate and Bronze. Calculators, the roadmap and
+two thirds of the changelog are gone. One segmented control replaced six,
+and a ResizeObserver replaced the seven manual repaints.
+
+## 11.3 Still owed
+
+- The guided tour is six steps of text. It does not yet overlay the real
+  pages, which is what the brief asks for. `demoPayload({full:true})` is
+  there for it: two years of seeded history behind the demo's 120 days.
+- The dashboard still has no by-odds, by-sport or by-competition
+  breakdowns. The plan was to build them; the data is in every bet and
+  `.barlist` already exists.
+- Section 10.3 below is unchanged and still the owner's.
