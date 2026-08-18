@@ -1,4 +1,4 @@
-/* /api/auth/* — one function, eleven actions.
+/* /api/auth/* — one function, fourteen actions.
  *
  * WHY THIS IS A ROUTER AND NOT EIGHT FILES.
  * Vercel's Hobby plan allows twelve Serverless Functions per deployment, and
@@ -32,8 +32,16 @@ import link from '../_lib/routes/link.js';
 import reset from '../_lib/routes/reset.js';
 import signup from '../_lib/routes/signup.js';
 import verify from '../_lib/routes/verify.js';
+import { start as oauthStart, callback as oauthCallback } from '../_lib/routes/oauth.js';
 
-const ROUTES = { break: brk, close, forgot, link, login, logout, me, profile, resend, reset, signup, verify };
+const ROUTES = {
+  break: brk, close, forgot, link, login, logout, me, profile, resend, reset, signup, verify,
+  /* Federated sign in. Two actions rather than one handler branching on the
+     method, because the router dispatches on the path segment and Apple
+     comes back as a POST while Google comes back as a GET. */
+  'oauth-start': oauthStart,
+  'oauth-callback': oauthCallback
+};
 
 export default async function handler(req, res) {
   /* Vercel puts the [action] segment in req.query. Falling back to the path

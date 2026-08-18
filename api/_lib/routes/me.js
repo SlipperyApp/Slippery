@@ -1,6 +1,7 @@
 /* GET /api/auth/me, who the session cookie belongs to. */
 import { json, methodGuard, fail } from '../http.js';
 import { configured, ensureSchema } from '../db.js';
+import { configuredProviders } from '../oauth.js';
 import { sessionUser } from '../auth.js';
 import { limit } from '../rate.js';
 import { settleForUser } from '../settling.js';
@@ -17,10 +18,10 @@ async function settleQuietly(req, user) {
 export default async function handler(req, res) {
   if (!methodGuard(req, res, ['GET'])) return;
   try {
-    if (!configured()) return json(res, 200, { user: null, configured: false });
+    if (!configured()) return json(res, 200, { user: null, configured: false, providers: configuredProviders() });
     await ensureSchema();
     const user = await sessionUser(req);
-    if (!user) return json(res, 200, { user: null, configured: true });
+    if (!user) return json(res, 200, { user: null, configured: true, providers: configuredProviders() });
 
     /* Settle on sign-in.
        Someone opening the app after a Saturday afternoon expects their bets
@@ -35,6 +36,9 @@ export default async function handler(req, res) {
 
     return json(res, 200, {
       configured: true,
+      /* Which federated buttons this deployment can honour. A button for a
+         provider with no credentials would be a control that lies. */
+      providers: configuredProviders(),
       user: {
         name: user.display_name,
         email: user.email,

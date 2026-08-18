@@ -42,7 +42,34 @@ async function loadSession() {
      is still null and bounces the very navigation it exists to rescue. */
   if (pendingView) { const v = pendingView; pendingView = null; go(v); }
   if (r.ok && r.body.configured === false) document.body.classList.add('no-backend');
+  if (r.ok) renderFederated(r.body.providers);
   return r.ok ? r.body.user : null;
+}
+
+/* Google and Apple buttons, drawn only for providers this deployment holds
+   credentials for. The server decides, not the client: a button that starts
+   a redirect nobody can finish is exactly the kind of control this rebuild
+   exists to remove. Neither configured means the block stays hidden rather
+   than showing something greyed out and unexplained.
+
+   These are plain links, not fetch calls. OAuth is a full page redirect and
+   the callback sets an HttpOnly cookie, so there is nothing for script to
+   carry. */
+const FED = {
+  google: 'Continue with Google',
+  apple: 'Continue with Apple'
+};
+function renderFederated(providers) {
+  const box = document.getElementById('fedButtons');
+  if (!box) return;
+  const list = Array.isArray(providers) ? providers.filter(p => FED[p]) : [];
+  box.hidden = list.length === 0;
+  if (!list.length) { box.innerHTML = ''; return; }
+  box.innerHTML = list.map(p =>
+    '<a class="fedbtn" href="/api/auth/oauth-start?provider=' + p + '">' +
+    '<svg class="ico" aria-hidden="true"><use href="#i-' + p + '"/></svg>' +
+    esc(FED[p]) + '</a>').join('') +
+    '<p class="fedor"><span>or</span></p>';
 }
 
 /** Pull the ledger. Returns false if it could not be loaded, having said so. */

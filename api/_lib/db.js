@@ -418,6 +418,48 @@ export async function ensureSchema() {
      first. */
   await sql`CREATE INDEX IF NOT EXISTS follows_followee_idx ON follows (followee_id)`;
 
+  /* Federated sign-in.
+   *
+   * oauth_identities is the join between a provider's opaque subject id and
+   * an account here. The unique index on (provider, subject) is what makes
+   * "sign in again" find the same account rather than make a second one,
+   * and it is an index rather than a SELECT because two taps on the button
+   * are two requests in flight at once.
+   *
+   * ON DELETE CASCADE, so closing an account really does take the link with
+   * it. A stale identity row would silently re-adopt a reused email.
+   */
+  await sql`
+    CREATE TABLE IF NOT EXISTS oauth_identities (
+      id         uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+      user_id    uuid NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      provider   text NOT NULL,
+      subject    text NOT NULL,
+      email      text,
+      created_at timestamptz NOT NULL DEFAULT now(),
+      UNIQUE (provider, subject)
+    )`;
+  await sql`CREATE INDEX IF NOT EXISTS oauth_identities_user_idx ON oauth_identities (user_id)`;
+
+  /* The in-flight half of an OAuth redirect: the PKCE verifier and the
+     nonce, held for the ten minutes between leaving for the provider and
+     coming back. Deleted on read, so a replayed callback finds nothing.
+     No signing secret has to be invented and kept in step with anything. */
+  await sql`
+    CREATE TABLE IF NOT EXISTS oauth_states (
+      state      text PRIMARY KEY,
+      provider   text NOT NULL,
+      verifier   text NOT NULL,
+      nonce      text NOT NULL,
+      created_at timestamptz NOT NULL DEFAULT now()
+    )`;
+
+  /* Whether the first-run tour has been completed.
+     This cannot live in the browser: iOS Safari gives this app no
+     localStorage at all, so a client-side "seen it" flag would replay the
+     tour on every visit on the owner's primary platform. */
+  await sql`ALTER TABLE users ADD COLUMN IF NOT EXISTS onboarded_at timestamptz`;
+
   _ready = true;
 }
 

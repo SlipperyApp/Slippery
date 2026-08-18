@@ -736,14 +736,14 @@ export const SECTIONS = [
   {
     accent: 'a2',
     badge: ['i-won', 'The bit that makes it true'],
-    h: ['Logged before kick-off,', 'not after the result.'],
-    lede: 'Every other tracker asks you to enter a bet once it has finished, which quietly collects the ones you wanted to remember. Slippery captures the slip when you place it.',
+    h: ['Log it whenever.', 'It remembers when.'],
+    lede: 'Send a slip before kick off, in play, or after it settled. All three are logged the same way. What changes is that Slippery records which, so a record cannot quietly turn into the bets you wanted to remember.',
     rows: [
-      ['i-telegram', 'Forward the slip as you place it', 'Screenshot, share, done. Two seconds.', true],
-      ['i-bolt', 'Read before anything is known', 'Stake, odds, selection and every leg.'],
-      ['i-shield', 'Locked to the moment it was sent', 'The capture time is recorded and cannot be edited.']
+      ['i-telegram', 'Send it whenever you like', 'Before kick off, in play or once it is done.', true],
+      ['i-bolt', 'Every field read off the slip', 'Stake, odds, selection and every leg.'],
+      ['i-shield', 'The time is recorded, not policed', 'You see the split. Nothing is refused for being late.']
     ],
-    ticks: ['Pre-match, in-play and settled are told apart',
+    ticks: ['Pre-match, in-play and settled all accepted',
             'The split is on your dashboard',
             'Imported history is excluded, not guessed',
             'One number nobody can game'],
@@ -840,7 +840,7 @@ export const SECTIONS = [
     ticks: ['Screenshots and text', 'Confirm before anything saves',
             'Works from the group chat', 'Capture time recorded'],
     demo: 'telegram',
-    said: 'Placing and logging become the same action. That is the only reason capture at placement survives contact with a Saturday.'
+    said: 'Placing and logging become one action, which is the only reason logging at placement survives contact with a Saturday.'
   },
   {
     accent: 'a2',
@@ -893,7 +893,7 @@ function divergeMarkup() {
     '<i aria-hidden="true"></i><span>' + esc(b[0]) + '</span></div>';
   return '<div class="demohead">' + ico('i-scales') + 'Same eight bets, two records</div>' +
     '<div class="diverge">' +
-      '<div class="dcol honest"><span class="dhead">Captured at placement</span>' +
+      '<div class="dcol honest"><span class="dhead">Logged at placement</span>' +
         '<span class="dtot neg" id="divA">\u00a30.00</span>' +
         '<div class="drows">' + DIVERGE.map(b => row(b, false)).join('') + '</div>' +
         '<span class="dsub">All eight. It could not know which would land.</span></div>' +

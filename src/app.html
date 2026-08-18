@@ -340,6 +340,12 @@
           <button data-auth="in" aria-pressed="false">Log in</button>
         </div>
 
+        <!-- Federated sign in. Rendered by main.js only for providers this
+             deployment holds credentials for, so there is never a button
+             here that cannot finish what it starts. Hidden entirely when
+             neither is configured, rather than shown greyed out. -->
+        <div class="fed" id="fedButtons" hidden></div>
+
         <div id="authSignup">
           <h2>Create your account</h2>
           <p class="stepnote">One minute and you are in.</p>
@@ -1595,7 +1601,7 @@
       <button class="brand" data-nav="landing" aria-label="Slippery home">
         <span class="mark" aria-hidden="true"></span><span>Slipp<i>ery</i></span>
       </button>
-      <p>Capture the slip when you place it.</p>
+      <p>Log the slip. It remembers when.</p>
     </div>
 
     <nav class="sitefoot-links" aria-label="Footer">

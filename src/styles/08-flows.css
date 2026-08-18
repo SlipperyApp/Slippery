@@ -799,3 +799,37 @@ input[type=date]{
   &[aria-pressed=true]{color:var(--s);
     &::after{content:'';position:absolute;left:8px;right:8px;top:50%;height:1.5px;
       background:currentColor;transform:rotate(-45deg);border-radius:2px}}}
+
+/* FEDERATED SIGN IN.
+ *
+ * Drawn only for providers the deployment can actually complete, so these
+ * are never decorative. Plain links rather than buttons, because OAuth is a
+ * full page redirect and there is nothing here for script to carry.
+ *
+ * The divider says "or" and sits below them: the federated route is the
+ * shortcut and the form underneath is the fallback, which is the order most
+ * people expect and the reverse of how it reads if the rule goes above. */
+.fed{
+  display:flex;flex-direction:column;gap:8px;margin-bottom:4px;
+
+  & .fedbtn{
+    display:flex;align-items:center;justify-content:center;gap:9px;
+    min-height:48px;padding:0 16px;border-radius:var(--r-pill);
+    background:var(--c2);border:1px solid var(--e1);color:var(--t1);
+    font-size:var(--fs-sm);font-weight:var(--fw-semi);
+    text-decoration:none;
+    transition:background var(--d-pop) var(--ease-out),transform var(--d-press) var(--ease-out);
+    &:active{transform:scale(.97)}
+    & .ico{width:18px;height:18px}}
+
+  /* A rule with a word in it, drawn with a border on each side rather than
+     a background stripe behind text, so it follows the theme and needs no
+     opaque patch to punch the word through. */
+  & .fedor{
+    display:flex;align-items:center;gap:10px;
+    margin:6px 0 2px;font-size:var(--fs-2xs);color:var(--t3);
+    text-transform:uppercase;letter-spacing:var(--tr-caps);
+    &::before,&::after{content:'';flex:1;height:1px;background:var(--hair)}}
+}
+@media (hover:hover) and (pointer:fine){
+  .fed .fedbtn:hover{background:var(--e2)}}
