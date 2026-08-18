@@ -295,7 +295,7 @@ const FAQS = [
     ['Required: a date, a selection, a stake, and either odds or a return', 'Optional: bookmaker, market, result, competition, notes, tipster', 'Money may carry a currency symbol or not', 'Dates may be day-first or ISO; both are read'],
     'A row missing a required column is shown to you rather than dropped silently.'],
   ['How does duplicate detection work?',
-    ['A bet is a duplicate when the date, the selection, the stake and the bookmaker all match an existing one', 'Duplicates are flagged in the review list, not deleted', 'You can keep one deliberately if it really was two identical bets'],
+    ['A bet is a duplicate when the date, the selection, the stake and the bookmaker all match one you already have', 'Duplicates are skipped rather than imported, and the import summary says how many and which', 'The same bet twice inside one file is caught as well as the same file imported twice', 'If it really was two identical bets, add the second by hand'],
     'Four fields, all four have to match. Three matching fields is a coincidence, not a duplicate.'],
   ['What results can a bet have?',
     ['Won', 'Lost', 'Void, and the stake comes back with zero profit', 'Push, where the line landed exactly on the score and the stake comes back', 'Placed, where the place half of an each way bet landed and the win half did not', 'Cashed out at a profit', 'Cashed out at a loss', 'Cashed out flat', 'Pending'],

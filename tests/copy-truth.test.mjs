@@ -101,3 +101,17 @@ test('the check would catch the sentences that actually shipped', () => {
     assert.ok(!FORBIDDEN.some(re => re.test(ok)), 'false positive on: ' + ok);
   }
 });
+
+/* The duplicate FAQ described a review list that flags duplicates and lets
+   you keep one. The server skips them instead and reports the count, so the
+   copy has to say that. */
+test('the duplicate FAQ describes what the importer actually does', async () => {
+  const pages = await readFile(new URL('../src/js/pages.js', import.meta.url), 'utf8');
+  const server = await readFile(new URL('../api/bets.js', import.meta.url), 'utf8');
+  const faq = pages.slice(pages.indexOf('How does duplicate detection work?'));
+  const entry = faq.slice(0, faq.indexOf('],\n  [')); 
+  assert.match(entry, /skipped rather than imported/);
+  assert.doesNotMatch(entry, /flagged in the review list/);
+  /* And the four fields the copy names are the four the key is built from. */
+  assert.match(server, /keyOf\(dayKey\(b\.placedAt\), b\.selection, b\.stakePence, b\.book\)/);
+});
