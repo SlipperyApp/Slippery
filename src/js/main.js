@@ -618,10 +618,34 @@ function closeDay() {
    silently won and every manual Won/Lost/Cashed/Void tap called the
    engine with the wrong arguments, dismissed the row, and did nothing. */
 function commitSettlement(id, outcome, profitPence, stakePence, reason) {
+  const bet = PENDING.find(b => b.id === id) || LEDGER.find(b => b.id === id);
   settleLocal(id, outcome, profitPence);
   invalidateDays();
   if (reason) announce(reason);
+  /* Say which day changed. Settling a bet moves one figure on a grid of
+     thirty small squares, and without this the only sign is that a number
+     somewhere is different from a moment ago. */
+  if (bet) pulseDay(bet.year, bet.month, bet.day);
   return true;
+}
+
+/* One pulse on the calendar cell for a day whose total has just moved.
+   Applied after the calendar has been repainted, because the repaint
+   replaces the element this is decorating. */
+function pulseDay(year, month, day) {
+  if (RM) return;
+  requestAnimationFrame(() => requestAnimationFrame(() => {
+    if (S.year !== year || S.month !== month) return;
+    const cell = document.querySelector('.cell[data-day="' + day + '"]');
+    if (!cell) return;
+    cell.classList.remove('justsettled');
+    /* Reading offsetWidth restarts the animation: without it a second
+       settlement on the same day does nothing, because the class was
+       already there. */
+    void cell.offsetWidth;
+    cell.classList.add('justsettled');
+    setTimeout(() => cell.classList.remove('justsettled'), 800);
+  }));
 }
 
 async function manualSettle(id, kind, cashPence) {

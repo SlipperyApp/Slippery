@@ -2,6 +2,7 @@
    None of them invent a figure. */
 import { $, $$, esc, setText, setHTML, paintSeg } from './dom.js';
 import { S } from './state.js';
+import { countTo } from './motion.js';
 import * as M from './money.js';
 import {
   LEDGER, PENDING, PEOPLE, GROUPS, TODAY, THEMES, THEME_BG, BOOKS, TIPSTERS,
@@ -297,11 +298,15 @@ export function renderHeadline() {
      a formatted string, because the only variable part is money() output
      and it must never be able to carry markup. */
   const v = $('headlineValue');
-  const money = M.signed(p.profit);
-  const cur = money.match(/^([^\d]*?)([\d].*)$/);
-  v.innerHTML = cur
-    ? '<span class="cur">' + esc(cur[1]) + '</span>' + esc(cur[2])
-    : esc(money);
+  /* Counted rather than swapped. A figure that jumps asks the reader to
+     notice a difference they did not see happen; counting makes the change
+     itself legible. countTo skips small changes, first paints and reduced
+     motion, and writes the formatter's exact string on the last frame. */
+  countTo(v, p.profit, pence => {
+    const money = M.signed(pence);
+    const cur = money.match(/^([^\d]*?)([\d].*)$/);
+    return cur ? '<span class="cur">' + esc(cur[1]) + '</span>' + esc(cur[2]) : esc(money);
+  });
   v.className = 'value m ' + M.tone(p.profit);
 
   /* The bet count honours the Settings toggle. `p.bets` for a scoped

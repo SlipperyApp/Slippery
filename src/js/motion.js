@@ -147,6 +147,49 @@ export function initMotion() {
   paint(window.scrollY || 0);
 }
 
+/* ---------------- the headline count-up ----------------
+ *
+ * The one number on the dashboard everybody looks at, and it used to
+ * change by replacing its text. A figure that jumps from one value to
+ * another asks the reader to notice a difference they did not see happen;
+ * counting makes the change itself legible, which is the only reason to
+ * animate a number at all.
+ *
+ * Three rules keep it from being decoration:
+ *   · Skipped when the change is under a pound. Counting from £94.20 to
+ *     £94.25 is a twitch, not information.
+ *   · Skipped under reduced motion, and skipped on first paint, where
+ *     there is no previous value to have changed from.
+ *   · Tabular figures already, so nothing reflows while it runs, and the
+ *     final frame writes the exact string the formatter produced rather
+ *     than a rounded reconstruction of it.
+ */
+const COUNT_MS = 420;
+const counting = new WeakMap();
+
+export function countTo(el, pence, format) {
+  if (!el) return;
+  const from = counting.get(el);
+  const text = format(pence);
+  counting.set(el, pence);
+
+  if (RM || from == null || Math.abs(pence - from) < 100) { el.innerHTML = text; return; }
+
+  const started = performance.now();
+  const span = pence - from;
+  const run = now => {
+    const t = Math.min(1, (now - started) / COUNT_MS);
+    /* The same ease-out the interface uses everywhere else, as a curve
+       rather than a keyword, because this is JavaScript and there is no
+       cubic-bezier() to hand. */
+    const eased = 1 - Math.pow(1 - t, 3);
+    if (t >= 1) { el.innerHTML = text; return; }
+    el.innerHTML = format(Math.round(from + span * eased));
+    requestAnimationFrame(run);
+  };
+  requestAnimationFrame(run);
+}
+
 /** Repaint the theme-color meta so the iOS status bar matches the theme. */
 export function syncThemeColor() {
   const meta = document.querySelector('meta[name="theme-color"]');

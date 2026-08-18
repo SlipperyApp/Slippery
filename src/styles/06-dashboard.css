@@ -80,8 +80,32 @@
     & .trialbar-track i{background:var(--a)}}
 }
 
-.pane{display:none;&.on{display:block;animation:panein 300ms var(--ex)}}
+.pane{display:none;
+  &.on{display:block;animation:panein 300ms var(--ex)}
+  /* The cards arrive in sequence rather than all at once, 40ms apart and
+     capped at eight: past that the last one lands after the thumb has
+     moved on and the stagger reads as lag rather than as order.
+
+     OPACITY ONLY. A transform on every direct child makes each one a
+     containing block, and at 320px that changed how one card's contents
+     measured and put a pixel of horizontal scroll on the dashboard. One
+     pixel is still the bug this codebase has learned twice, at 47px and
+     at 69px. The sequence reads as a sequence from the fade alone. */
+  &.on > *{animation:cardin 300ms var(--ez) backwards}
+  &.on > *:nth-child(2){animation-delay:40ms}
+  &.on > *:nth-child(3){animation-delay:80ms}
+  &.on > *:nth-child(4){animation-delay:120ms}
+  &.on > *:nth-child(5){animation-delay:160ms}
+  &.on > *:nth-child(6){animation-delay:200ms}
+  &.on > *:nth-child(7){animation-delay:240ms}
+  &.on > *:nth-child(n+8){animation-delay:280ms}}
 @keyframes panein{from{opacity:0;transform:translate3d(0,6px,0)}to{opacity:1;transform:none}}
+@keyframes cardin{from{opacity:0}to{opacity:1}}
+/* The global switch in 02-base.css collapses durations to 1ms. Named here
+   as well so the delays go with them: a 280ms delay in front of a 1ms
+   animation is a card that appears a third of a second late for nothing. */
+@media (prefers-reduced-motion:reduce){
+  .pane.on > *{animation:none!important;animation-delay:0ms!important}}
 
 /* ============================================================
    THE SLIP
@@ -222,6 +246,18 @@
     text-transform:uppercase}}
 .calgrid{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;
   &.year{grid-template-columns:repeat(3,1fr);gap:7px}}
+/* A DAY THAT HAS JUST CHANGED SAYS SO, ONCE.
+   Settling a bet moves a figure on a grid of thirty small squares, and
+   without this the only sign is that a number somewhere is different. One
+   pulse, on transform and opacity, and then it is an ordinary cell
+   again. */
+.cell.justsettled{animation:cellpulse 720ms var(--ez)}
+@keyframes cellpulse{
+  0%{transform:none}
+  30%{transform:scale(1.07)}
+  100%{transform:none}}
+@media (prefers-reduced-motion:reduce){.cell.justsettled{animation:none}}
+
 .cell{
   align-self:start;aspect-ratio:1.04;min-height:44px;border-radius:10px;
   border:1px solid transparent;position:relative;overflow:hidden;
