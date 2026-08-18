@@ -286,7 +286,7 @@ api/                Vercel serverless functions (Node)
     telegram-setup.js  webhook self-registration
     promo.js        trial, promo codes, subscription state
     espn.js sofascore.js footballdata.js flashscore.js footballdatauk.js
-tests/              node:test — 360 tests, `npm test`
+tests/              node:test — 419 tests, `npm test`
 tools/
   audit.mjs         real-browser audit: axe, overflow, screenshots
   strings.mjs       generates STRINGS.md, --check fails the build on drift
@@ -300,7 +300,7 @@ public/             BUILD OUTPUT — generated, never hand-edit
 
 ```
 npm run build     src/ -> public/index.html   (Vercel runs this)
-npm test          360 tests
+npm test          419 tests
 npm run verify    build + test + browser audit + STRINGS.md drift check
 npm run strings   regenerate STRINGS.md
 ```
@@ -606,3 +606,104 @@ account, a payment, or a decision that changes what the product is.
 Write commit messages that explain the reasoning, not the diff. The git log
 in this repo is a design document and it is the fastest way to understand
 why something is the way it is.
+
+---
+
+## 10. The rebuild, and what it changed
+
+The owner asked for the front end to be rebuilt from the ground up. What
+follows is what has landed so far. Everything below is deployed on `main`
+and verified against production, not just locally.
+
+### Bugs that were live and silent
+
+- **The group directory had never worked, once.** `browse` composed its
+  WHERE clause from nested `sql` fragments. postgres.js supports that; the
+  Neon HTTP driver this project uses does not, and bound the fragment as a
+  query parameter, so the statement was malformed and the function crashed
+  before reaching the database. Every request, all three orderings.
+  `tests/sql-composition.test.mjs` now walks every server file and fails on
+  any interpolation that opens a tagged template of its own.
+- **Join requests were unreachable.** `api/groups.js` selected `u.name`;
+  the column is `display_name`. `GET /api/groups?requests=1` was a hard
+  500, so no owner could see or approve anybody.
+- **A LIKE search for `100%` matched every group on the platform.**
+  Wildcards in user input are escaped now.
+- **Five settings switches flipped and saved nothing.** Three stated locked
+  behaviour and now say so; two named things that were untrue or unbuilt
+  and are gone.
+- **The dashboard told people they were behind pace** on a monthly profit
+  target, in loss red. On a gambling tracker that is an instruction to bet
+  more to catch up, and the brief forbids it. The pace marker and the
+  language are gone and a shortfall is no longer red.
+
+### Security
+
+- `/api/extract` **required no account** and spent money at a model
+  provider on every call, behind nothing but an IP bucket. It needs a
+  session now, with the IP limit kept as a second layer.
+- Cross-origin writes had `SameSite=Lax` and nothing else. Every
+  state-changing route now also checks `Origin` against the host.
+  `oauth-callback` is the single exemption, because Apple posts it from
+  `appleid.apple.com`; a test reads that exemption out of the router and
+  fails if it ever widens.
+
+### New
+
+- **Google and Apple sign in**, as `oauth-start` and `oauth-callback` on
+  the existing auth router, so still 11 of 12 functions. PKCE, single-use
+  state held in `oauth_states`, and full `id_token` verification against
+  the provider JWKS with no JOSE dependency. **Inert until credentials
+  exist**, and the buttons do not render without them. See section 10.1.
+- **A six-step first-run tour**, with `onboarded_at` on `users`. It cannot
+  use browser storage: iOS Safari gives this app none, so a client flag
+  would replay it every visit. Skip is on every step and writes the same
+  flag as finishing.
+- **A three-layer token system** and five themes separated on hue,
+  background lightness and chroma rather than hue alone. Periwinkle is the
+  default and is now the default by definition rather than by override.
+  Every theme is declared for `html[data-theme=X]` **and** `[data-t=X]`, so
+  the picker can render a live preview of each one. `data-t` paints and
+  never routes a click.
+- **Liquid navigation**: one glass surface with an indicator that travels
+  and stretches, still one `backdrop-filter`, p95 frame unchanged at 16.8ms.
+- **`ULTRAS` creates and fills a group.** First redeemer owns it, everyone
+  after joins outright. Never costs the plan if the group is full.
+- **`{"scope":"seed"}` on `api/admin/reset.js`** creates a verified test
+  account, because ordinary signup posts a code to an inbox nobody reads.
+
+### 10.1 Turning federated sign in on
+
+Both are owner-only and the flow stays inert until they exist.
+
+**Google.** A Google Cloud OAuth 2.0 Client ID, type Web application, with
+`https://slippery-iota.vercel.app/api/auth/oauth-callback` as an authorised
+redirect URI. Set `GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET`.
+
+**Apple.** Needs a paid Apple Developer account. Create a Services ID,
+enable Sign in with Apple, add the same redirect URI, then create a Sign in
+with Apple key and download the `.p8`. Set `APPLE_CLIENT_ID` (the Services
+ID), `APPLE_TEAM_ID`, `APPLE_KEY_ID`, and `APPLE_PRIVATE_KEY` (the whole
+`.p8` contents; escaped `\n` is accepted).
+
+Optionally set `PUBLIC_BASE_URL` if the deployment is ever served from a
+host other than the one the redirect URI is registered against.
+
+### 10.2 Still owed
+
+Phases 2, 4 and 5 of the rebuild: the component layer, the flow screens and
+the marketing pages have had the token and copy work but not the full
+visual rebuild. Also outstanding: the compact import review with per
+selection add and remove, and dated P/L extraction surfaced as a list.
+
+### 10.3 Two things for the owner
+
+- **Delete `Tester1@Tester.com` and `Tester2@Tester.com` before launch.**
+  They are real accounts with known passwords on a public deployment,
+  created deliberately for beta testing.
+- **Rotate `ADMIN_SECRET`.** It was shared into a session transcript to
+  authorise the database wipe, and it authorises destroying production.
+- **The monthly profit target is still there.** Its chasing language is
+  gone, but whether a profit goal belongs in a gambling tracker at all is a
+  responsible-gambling question, and section 8 says those are the owner's
+  alone. It has not been removed on anyone else's judgement.
