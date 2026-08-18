@@ -962,31 +962,41 @@ async function main() {
     const before = posted.length;
     await page.evaluate(() => { const b = document.getElementById('csvGo'); if (b) b.click(); });
     await page.waitForTimeout(600);
-    /* AN IMPORT IS A DATED FIGURE, NEVER A GAME.
-       This used to POST every parsed row as a bet. Those bets could not
-       settle, could not be checked against a slip, and landed in every
-       per-market breakdown as rows nobody could verify. The two fixture
-       rows are on two different dates, so they must arrive as two dated
-       profit and loss figures carrying their own turnover and count. */
-    const bulk = posted.slice(before).find(b => Array.isArray(b.pl));
-    if (posted.slice(before).some(b => Array.isArray(b.bets)))
-      fail('import', 'a CSV import POSTed bets, but an imported row has no slip behind it ' +
-        'and must arrive as a dated figure');
-    if (!bulk) fail('import', 'the CSV import button did not POST any figures');
-    else if (bulk.pl.length !== 2)
-      fail('import', 'POSTed ' + bulk.pl.length + ' dated figures, expected 2');
+    /* AN IMPORT IS A LEDGER OF ITS OWN.
+       This check used to enforce the opposite: that a CSV arrives as dated
+       figures rather than bets. That was a real decision with real reasons
+       (a spreadsheet row has no slip behind it and cannot settle), but it
+       also meant a file of 200 bets produced 34 daily totals under a button
+       saying "Import 200 bets", and the ledger stayed empty.
+
+       The owner's decision is that imported history is a separate ledger
+       shown alongside, which bets.source already expresses. So the rows
+       arrive as bets marked 'import'. The two fixture rows are two separate
+       bets, not two dated figures. */
+    const csvSent = posted.slice(before);
+    const bulk = csvSent.find(b => Array.isArray(b.bets));
+    if (csvSent.some(b => Array.isArray(b.pl)))
+      fail('import', 'a CSV of individual bets was folded into dated figures again; ' +
+        'pl_entries is for a profit-and-loss SUMMARY, where there are no bets to create');
+    if (!bulk) fail('import', 'the CSV import button did not POST any bets');
+    else if (bulk.bets.length !== 2)
+      fail('import', 'POSTed ' + bulk.bets.length + ' bets, expected 2');
     else {
-      const byDate = Object.fromEntries(bulk.pl.map(r => [r.date, r]));
-      const aug9 = byDate['2026-08-09'];
-      if (!aug9) fail('import', 'no figure landed on 2026-08-09, got ' + Object.keys(byDate).join(', '));
-      else {
-        if (aug9.period !== 'day') fail('import', 'an imported figure was not a day figure');
+      /* Every row carries its own line number, or the per-line rejected
+         report the server sends back cannot be matched to anything. */
+      if (bulk.bets.some(b => b.line == null))
+        fail('import', 'an imported row was sent without its line number');
+      const aug9 = bulk.bets.find(b => String(b.placedAt || '').startsWith('2026-08-09'));
+      if (!aug9) {
+        fail('import', 'no bet landed on 2026-08-09, got ' +
+          bulk.bets.map(b => String(b.placedAt || '?').slice(0, 10)).join(', '));
+      } else {
+        if (aug9.stakePence !== 2000)
+          fail('import', 'CSV stake became ' + aug9.stakePence + ' pence, expected 2000');
         if (aug9.profitPence !== 1700)
           fail('import', 'CSV profit became ' + aug9.profitPence + ' pence, expected 1700');
-        if (aug9.turnoverPence !== 2000)
-          fail('import', 'CSV turnover became ' + aug9.turnoverPence + ' pence, expected 2000');
-        if (aug9.bets !== 1)
-          fail('import', 'the figure claimed ' + aug9.bets + ' bets behind it, expected 1');
+        if (!aug9.selection)
+          fail('import', 'an imported bet arrived with no selection');
       }
     }
 
