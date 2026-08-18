@@ -90,6 +90,42 @@ const LEG_SCHEMA = {
   }
 };
 
+/* ONE BET. The unit a page can hold several of.
+ *
+ * The schema used to be flat: one stake, one odds, one placed_at,
+ * one bookmaker. LEG_SCHEMA had no stake, no returns, no date and no
+ * bookmaker, so when the prompt correctly told the model to put three
+ * separate bets in `selections`, three stakes collapsed into one and three
+ * dates into one. The information was destroyed at the schema level,
+ * before sanitise() ever ran, and the client then joined the three
+ * selections with " & " into a single nonsense bet while a badge said "3".
+ *
+ * A leg and a bet are different things and now have different shapes: legs
+ * live inside a bet, bets live inside the page.
+ *
+ * The enum helper emits {type:'string', enum:[...]}, which is not a union,
+ * so none of this costs anything against the sixteen union-typed parameter
+ * limit that once took the whole endpoint down. */
+const BET_SCHEMA = {
+  type: 'object',
+  additionalProperties: false,
+  required: ['selection', 'event', 'market', 'bookmaker', 'odds', 'stake',
+             'returns', 'result', 'stage', 'placed_at', 'selections'],
+  properties: {
+    selection: { type: 'string' },
+    event: { type: 'string' },
+    market: { type: 'string' },
+    bookmaker: { type: 'string' },
+    odds: { type: 'number' },
+    stake: { type: 'number' },
+    returns: { type: 'number' },
+    result: oneOf(['won', 'lost', 'void', 'cashed_out', 'open']),
+    stage: oneOf(['prematch', 'inplay', 'settled']),
+    placed_at: { type: 'string' },
+    selections: { type: 'array', items: LEG_SCHEMA }
+  }
+};
+
 /* Totals lifted off a profit-and-loss screenshot from another tracker. These
    are not bets and must never become bets: they are a summary, and the client
    sends them to the totals import instead of the ledger. */
@@ -144,7 +180,8 @@ export const SLIP_SCHEMA = {
              'selection', 'event', 'market', 'bookmaker', 'odds',
              'stake', 'returns', 'result', 'stage', 'kickoff', 'legs',
              'free_bet', 'each_way', 'price_source',
-             'selections', 'totals', 'pl_rows', 'placed_at', 'unreadable_fields', 'notes'],
+             'selections', 'bets', 'totals', 'pl_rows', 'placed_at',
+             'unreadable_fields', 'notes'],
   properties: {
     readable: { type: 'boolean' },
     /* What the file actually is. Guessing this from the shape of the other
@@ -186,6 +223,10 @@ export const SLIP_SCHEMA = {
     kickoff: { type: 'string' },
     legs: { type: 'integer' },
     selections: { type: 'array', items: LEG_SCHEMA },
+    /* EVERY bet on the page, one entry each. This is the authoritative
+       list; the flat fields above describe the first of them and are kept
+       so that nothing reading the old shape breaks. */
+    bets: { type: 'array', items: BET_SCHEMA },
     totals: TOTALS_SCHEMA,
     pl_rows: { type: 'array', items: PL_ROW_SCHEMA },
     placed_at: { type: 'string' },
@@ -219,7 +260,8 @@ and choosing one is never a failure.
 First decide doc_type:
 - "bet_slip"    one bet, single or multiple, as a bookmaker prints it.
 - "bet_list"    several separate bets listed together, such as a bet history
-                screen. Put each one in selections and set bet_count.
+                screen, or a photo holding more than one printed slip.
+                Put each one in bets. Do NOT put them in selections.
 - "pnl_summary" a totals screen from another tracker: profit, turnover, win
                 rate, a graph. Set totals.present true and fill it, and leave
                 stake, odds and selection unreadable. These are NOT bets and
@@ -246,6 +288,19 @@ Field notes:
   other and taking the wrong one turns a small loss into a large win.
 - bet_count: how many separate bets are on the image. A slip with four legs is
   ONE bet with four selections, so bet_count is 1 and legs is 4.
+- bets: EVERY bet on the page, one entry each, and this is the list that
+  counts. bet_count must equal its length.
+    A LEG AND A BET ARE NOT THE SAME THING. A treble is ONE bet with three
+    selections: bets has one entry whose selections has three. Three singles
+    printed on one page are THREE bets: bets has three entries, each with
+    its own stake, its own price and its own selections.
+    The test is the stake. Legs share a stake; separate bets each have their
+    own. If two things on the page were staked separately, they are two
+    bets, however close together they are printed.
+    Each entry carries its own stake, odds, returns, bookmaker, placed_at
+    and result, because on a history screen those genuinely differ per row.
+    The flat selection/odds/stake fields above describe the FIRST bet only.
+    Always fill bets, even for a single slip, where it has one entry.
 - result: only if the slip states it. An unsettled slip is "open". Never infer
   a result from the presence of a returns figure.
 - stage: where the bet is in its life, from what the slip shows.
@@ -510,6 +565,58 @@ export function sanitise(f) {
     return l;
   }) : [];
 
+  /* EVERY BET ON THE PAGE.
+   *
+   * The list is authoritative; the flat fields describe its first entry.
+   * Sanitised with the same rules, per bet, so a page holding one unreadable
+   * stake among five good bets loses that one figure rather than the lot.
+   *
+   * A reader that filled only the flat fields still works: one bet is
+   * synthesised from them, which is what every caller written before this
+   * existed expects to find. */
+  const cleanLegs = (legs, tag) => (Array.isArray(legs) ? legs.slice(0, 40) : []).map((leg, i) => {
+    const l = { ...leg };
+    reject(l, 'odds', okOdds, tag + 'leg ' + (i + 1) + ' odds');
+    if (l.result === UNKNOWN) l.result = null;
+    for (const key of ['selection', 'event', 'market']) {
+      if (typeof l[key] === 'string') l[key] = l[key].trim().slice(0, 200) || null;
+    }
+    return l;
+  });
+
+  out.bets = (Array.isArray(f.bets) ? f.bets.slice(0, 200) : []).map((bet, i) => {
+    const b = { ...bet };
+    const tag = 'bet ' + (i + 1) + ' ';
+    reject(b, 'odds', okOdds, tag + 'odds');
+    reject(b, 'stake', v => typeof v === 'number' && isFinite(v) && v > 0 && v < 1e7, tag + 'stake');
+    reject(b, 'returns', v => typeof v === 'number' && isFinite(v) && v >= 0 && v < 1e9, tag + 'returns');
+    reject(b, 'placed_at', v => typeof v === 'string' && !Number.isNaN(Date.parse(v)), tag + 'date');
+    for (const key of ['result', 'stage']) if (b[key] === UNKNOWN) b[key] = null;
+    for (const key of ['selection', 'event', 'market', 'bookmaker']) {
+      if (typeof b[key] === 'string') b[key] = b[key].trim().slice(0, 200) || null;
+    }
+    b.selections = cleanLegs(bet && bet.selections, tag);
+    b.legs = b.selections.length || null;
+    return b;
+  /* A bet with no selection and no stake is a blank row the model padded
+     the array with. Keeping it would put an empty card in the review list. */
+  }).filter(b => b.selection || b.stake || b.odds);
+
+  if (!out.bets.length && out.doc_type !== 'pnl_summary') {
+    out.bets = [{
+      selection: out.selection, event: out.event, market: out.market,
+      bookmaker: out.bookmaker, odds: out.odds, stake: out.stake,
+      returns: out.returns, result: out.result, stage: out.stage,
+      placed_at: out.placed_at, selections: out.selections,
+      legs: out.selections.length || out.legs || null
+    }].filter(b => b.selection || b.stake || b.odds);
+  }
+  /* bet_count is what the badge shows, so it has to be the number of bets
+     actually returned rather than what the model counted on the page. They
+     used to be allowed to disagree, and the badge said "3" beside a card
+     that wrote one bet. */
+  if (out.bets.length) out.bet_count = out.bets.length;
+
   /* totals.present is the reader saying whether the object means anything.
      Dropped either way once it has been read, so callers see the same
      {period, profit, ...} they always did, or null. */
@@ -566,6 +673,10 @@ export function sanitise(f) {
     out.stake = null; out.odds = null; out.returns = null;
     out.selection = null; out.event = null; out.result = null;
     out.selections = [];
+    /* A summary must never become bets, and now there is a second way it
+       could have: the bets array is emptied along with everything else. */
+    out.bets = [];
+    out.bet_count = null;
   } else {
     out.totals = null;
     /* Dated figures belong to a P/L screen. A bet slip that came back with
