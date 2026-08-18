@@ -13,7 +13,7 @@
  * everything it returns as {status:'ask'} is left for the user with the
  * reason recorded rather than guessed at.
  */
-import { json, methodGuard, fail, clientIp } from './_lib/http.js';
+import { json, methodGuard, fail, clientIp, blockCrossOrigin } from './_lib/http.js';
 import { ensureSchema, configured as dbConfigured } from './_lib/db.js';
 import { sessionUser } from './_lib/auth.js';
 import { limit } from './_lib/rate.js';
@@ -21,6 +21,9 @@ import { settleForUser } from './_lib/settling.js';
 
 export default async function handler(req, res) {
   if (!methodGuard(req, res, ['POST'])) return;
+  /* Second layer behind SameSite=Lax. A write arriving from another origin
+     is refused before it can spend a session it did not earn. */
+  if (blockCrossOrigin(req, res)) return;
   try {
     if (!dbConfigured()) {
       return json(res, 503, { error: 'No database is connected yet.', needs: ['DATABASE_URL'] });

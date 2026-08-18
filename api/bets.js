@@ -14,7 +14,7 @@
  * be detected from a results feed, so it arrives here through PATCH and
  * nowhere else.
  */
-import { json, methodGuard, readJson, fail, clientIp } from './_lib/http.js';
+import { json, methodGuard, readJson, fail, clientIp, blockCrossOrigin } from './_lib/http.js';
 import { db, ensureSchema, configured } from './_lib/db.js';
 import { sessionUser } from './_lib/auth.js';
 import { cashOutcome, ledgerOutcome, payoutFor } from '../src/js/settlement.js';
@@ -35,6 +35,9 @@ const capped = user => !unlimited(user.plan, user.plan_until);
 
 export default async function handler(req, res) {
   if (!methodGuard(req, res, ['GET', 'POST', 'PATCH', 'DELETE'])) return;
+  /* Second layer behind SameSite=Lax. A write arriving from another origin
+     is refused before it can spend a session it did not earn. */
+  if (blockCrossOrigin(req, res)) return;
   try {
     if (!configured()) {
       return json(res, 503, {

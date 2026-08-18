@@ -16,7 +16,7 @@
  * units, whatever their privacy setting says. Privacy governs followers, not
  * a group you chose to join.
  */
-import { json, methodGuard, readJson, fail } from './_lib/http.js';
+import { json, methodGuard, readJson, fail, blockCrossOrigin } from './_lib/http.js';
 import { db, ensureSchema, configured, uniqueViolation, violatedIndex } from './_lib/db.js';
 import { sessionUser } from './_lib/auth.js';
 import { limit } from './_lib/rate.js';
@@ -39,6 +39,9 @@ export function nameProblem(v) {
 
 export default async function handler(req, res) {
   if (!methodGuard(req, res, ['GET', 'POST', 'DELETE'])) return;
+  /* Second layer behind SameSite=Lax. A write arriving from another origin
+     is refused before it can spend a session it did not earn. */
+  if (blockCrossOrigin(req, res)) return;
   try {
     if (!configured()) {
       return json(res, 503, { error: 'No database is connected yet.', needs: ['DATABASE_URL'] });

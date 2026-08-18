@@ -22,7 +22,9 @@
  * anyone having chosen a tab first.
  */
 import Anthropic from '@anthropic-ai/sdk';
-import { json, methodGuard, readJson, clientIp, fail } from './_lib/http.js';
+import { json, methodGuard, readJson, clientIp, fail, blockCrossOrigin } from './_lib/http.js';
+import { sessionUser } from './_lib/auth.js';
+import { ensureSchema, configured as dbConfigured } from './_lib/db.js';
 import { guard } from './_lib/rate.js';
 
 const MODEL = process.env.EXTRACT_MODEL || 'claude-haiku-4-5';
@@ -314,11 +316,29 @@ profit against dates.`;
 
 export default async function handler(req, res) {
   if (!methodGuard(req, res, ['POST'])) return;
+  if (blockCrossOrigin(req, res)) return;
   try {
     if (!process.env.ANTHROPIC_API_KEY) {
       return json(res, 503, { error: 'The slip reader is not configured on this deployment.' });
     }
-    if (!(await guard(res, 'extract:' + clientIp(req), 30, 300))) return;
+
+    /* A SESSION IS REQUIRED, AND THIS USED TO BE OPEN.
+     *
+     * Every call here spends money at a model provider, and the only thing
+     * standing in front of it was an IP bucket. Thirty reads per address
+     * per five minutes is no obstacle at all to anyone with a list of
+     * addresses, and the bill arrives either way.
+     *
+     * The IP guard stays as the second layer, because one account can also
+     * be the thing hammering it. Per-account now, so one noisy session
+     * cannot exhaust the allowance for everybody sharing an exit node. */
+    if (dbConfigured()) {
+      await ensureSchema();
+      const user = await sessionUser(req);
+      if (!user) return json(res, 401, { error: 'Log in to read a slip.' });
+      if (!(await guard(res, 'extract:' + user.id, 40, 300))) return;
+    }
+    if (!(await guard(res, 'extract-ip:' + clientIp(req), 60, 300))) return;
 
     const body = await readJson(req);
     const { image, mime } = body || {};

@@ -4,7 +4,7 @@
  * browser would unlock it for anyone who read the JavaScript, and the whole
  * point of "free for life" is that it is given, not taken.
  */
-import { json, methodGuard, readJson, fail } from './_lib/http.js';
+import { json, methodGuard, readJson, fail, blockCrossOrigin } from './_lib/http.js';
 import { db, ensureSchema, configured, uniqueViolation } from './_lib/db.js';
 import { sessionUser } from './_lib/auth.js';
 import { guard } from './_lib/rate.js';
@@ -29,6 +29,9 @@ export function groupResult(joined) {
 
 export default async function handler(req, res) {
   if (!methodGuard(req, res, ['POST'])) return;
+  /* Second layer behind SameSite=Lax. A write arriving from another origin
+     is refused before it can spend a session it did not earn. */
+  if (blockCrossOrigin(req, res)) return;
   try {
     if (!configured()) return json(res, 503, { error: 'No database is connected yet.', needs: ['DATABASE_URL'] });
     await ensureSchema();

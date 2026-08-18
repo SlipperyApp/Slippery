@@ -19,7 +19,7 @@
  * That has already happened once in this codebase. Import them by name and
  * hold them in a table.
  */
-import { json } from '../_lib/http.js';
+import { json, blockCrossOrigin } from '../_lib/http.js';
 import brk from '../_lib/routes/break.js';
 import close from '../_lib/routes/close.js';
 import forgot from '../_lib/routes/forgot.js';
@@ -55,5 +55,14 @@ export default async function handler(req, res) {
   if (!Object.prototype.hasOwnProperty.call(ROUTES, action)) {
     return json(res, 404, { error: 'No such auth endpoint.' });
   }
+
+  /* Second layer behind SameSite=Lax on every write.
+     oauth-callback is exempt and has to be: Apple posts it from
+     appleid.apple.com, so it is cross-site by design. It is not a hole,
+     because it carries no authority of its own. It proves itself with a
+     single-use state row and a signed id_token, and refusing it here would
+     break the only way it can ever arrive. */
+  if (action !== 'oauth-callback' && blockCrossOrigin(req, res)) return;
+
   return ROUTES[action](req, res);
 }
