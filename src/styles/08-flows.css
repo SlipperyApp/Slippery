@@ -1,35 +1,22 @@
 /* ============================================================
    FLOWS: landing, setup, walkthrough, import, settings, legal
    ============================================================ */
-.hero{
-  text-align:center;padding:34px 0 0;position:relative;
-  & h1{font-size:clamp(36px,9.4vw,58px);margin-top:14px}
-  & .sell{color:var(--t2);font-size:16px;max-width:44ch;margin:16px auto 0;line-height:1.6}}
 .hero-word{display:inline-block;opacity:0;transform:translate3d(0,18px,0);
   &.shown{animation:heroin 620ms var(--ex) forwards}}
 @keyframes heroin{to{opacity:1;transform:none}}
 .slipword{
   display:inline-block;
-  background:linear-gradient(112deg,#8FC7C0,#8B9DE0 45%,var(--s));
-  -webkit-background-clip:text;background-clip:text;color:transparent;
+  /* Was a three stop gradient clipped to the text. A gradient word is the
+     single clearest tell of a template, and it also meant the headline's
+     accent was three colours none of which were tokens. One colour now. */
+  color:var(--s);
   &.tumble{animation:tumble 1.4s var(--eg)}}
 @keyframes tumble{
   0%{transform:none}18%{transform:translateY(12px) rotate(3.5deg)}
   42%{transform:translateY(-4px) rotate(-1.5deg)}
   66%{transform:translateY(3px) rotate(.6deg)}100%{transform:none}}
 
-.herocta{display:flex;gap:10px;justify-content:center;margin-top:24px;flex-wrap:wrap}
-.badges{display:flex;gap:9px;justify-content:center;flex-wrap:wrap;margin-top:18px}
-.badge-pill{
-  display:inline-flex;align-items:center;gap:9px;padding:9px 15px;border-radius:12px;
-  border:1px solid var(--e1);background:rgba(var(--ink),.04);
-  font-size:12.5px;
-  & svg{width:19px;height:19px;flex:0 0 auto}
-  & small{display:block;font-size:9px;color:var(--t2);letter-spacing:.03em}
-  & b{display:block;font-size:13.5px;font-weight:700;letter-spacing:-.02em;margin-top:-1px}}
 
-.previewcard{max-width:420px;margin:30px auto 0;overflow:hidden}
-.previewcard .gradientline{height:4px;background:linear-gradient(90deg,var(--p),var(--s))}
 .bignum{font-weight:750;font-size:32px;letter-spacing:-.035em;margin-top:4px;
   font-variant-numeric:tabular-nums lining-nums}
 
@@ -50,13 +37,6 @@
     & svg{color:#E9C767}}
   & h3{color:#F0D68C}}
 
-.telegramcta{
-  text-align:center;padding:26px 20px;margin-top:24px;
-  & .glyph{width:50px;height:50px;border-radius:15px;
-    background:linear-gradient(140deg,var(--p),var(--s));display:grid;place-items:center;
-    margin:0 auto 12px;& svg{width:24px;height:24px;color:var(--on-p)}}
-  & h2{font-size:clamp(21px,5.2vw,27px)}
-  & p{color:var(--t2);margin:9px auto 17px;max-width:38ch;font-size:14px}}
 
 /* .footer was the landing page's own link row. It is gone; .sitefoot in
    10-sections.css is rendered outside every view and carries those links
@@ -68,40 +48,10 @@
     &:hover{color:var(--t1);background:var(--c1)}}}
 @media (min-width:540px){.anchors{display:flex}}
 
-/* The founder credit. Real attribution, so it carries the tick. */
-.founder{
-  display:flex;flex-direction:column;align-items:center;text-align:center;gap:8px;
-  margin:32px auto 0;padding:18px;border-radius:16px;
-  border:1px solid var(--e2);background:var(--c1);max-width:240px;
-  transition:border-color var(--tb),background var(--tb);
-  &:hover{border-color:var(--e1);background:var(--c2)}
-  & .ring{width:58px;height:58px;border-radius:50%;
-    background:linear-gradient(140deg,var(--p),var(--s));display:grid;place-items:center;
-    font-family:var(--fd);font-weight:700;font-size:22px;color:var(--on-p)}
-  & .role{font-family:var(--fm);font-size:9px;letter-spacing:.15em;
-    text-transform:uppercase;color:var(--t2)}
-  & .nm{display:flex;align-items:center;justify-content:center;gap:5px;
-    font-size:14.5px;font-weight:600;letter-spacing:-.01em;
-    & svg{width:14px;height:14px;color:var(--s);flex:0 0 auto}}}
+/* The founder credit is gone. It read "Founded by Zhang et al." beside a
+   verified tick, on a public marketing page, and it was live. Placeholder
+   text wearing a trust badge is worse than no credit at all. */
 
-/* The two claims the product actually rests on.
-   Numbered rather than iconed: these are arguments, not features, and a
-   glyph beside each one would make them look like the feature cards below
-   and read as a list of things the app has. They are the reasons the
-   figures on the dashboard can be trusted at all.
-
-   No card border. On a page that is already a column of bordered cards,
-   two more boxes disappear into the pattern; a rule down the left side
-   sets them apart as a different kind of statement. */
-.claims{margin-top:16px;display:flex;flex-direction:column;gap:18px}
-.claim{
-  padding-left:16px;border-left:2px solid rgba(var(--orb2),.42);
-  & .cn{font-family:var(--fm);font-size:10.5px;letter-spacing:.14em;color:var(--s);
-    display:block;margin-bottom:6px}
-  & h3{font-size:16px;letter-spacing:-.01em;line-height:1.3}
-  & p{color:var(--t2);font-size:13.5px;margin-top:7px;line-height:1.65;max-width:52ch}}
-@media (min-width:720px){
-  .claims{flex-direction:row;gap:26px;& .claim{flex:1}}}
 
 /* pricing */
 .plan{

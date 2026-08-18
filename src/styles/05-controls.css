@@ -44,8 +44,11 @@
     opacity:0;transform:scale(.4);
     transition:opacity 460ms var(--ez),transform 460ms var(--ez)}
   &:active::after{opacity:1;transform:scale(1);transition-duration:0ms}}
-.btn.primary{background:linear-gradient(135deg,var(--p),var(--s));color:var(--on-p);
-  box-shadow:0 8px 22px rgba(var(--orb1),.32)}
+/* Solid, and no glow behind it. The gradient pill with a coloured shadow
+   is the 2021 SaaS kit, it appears on the landing page where nothing else
+   is allowed a gradient, and --p with --on-p is already a contrast checked
+   pair on every theme. */
+.btn.primary{background:var(--p);color:var(--on-p)}
 .btn.ghost{background:var(--c2);border:1px solid var(--e1)}
 .btn.attn{background:var(--a);color:#3a2600}
 /* Irreversible actions. Outlined rather than filled: a solid red button is

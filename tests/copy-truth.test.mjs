@@ -58,18 +58,21 @@ test('no copy says a bet has to be logged at placement', async () => {
     'It records which; it does not refuse any of them:\n  ' + offenders.join('\n  '));
 });
 
-test('the landing page states that all three stages are accepted', async () => {
-  const content = await readFile(new URL('src/js/content.js', root), 'utf8');
-  assert.match(content, /before kick off, in play, or after it settled/i,
-    'the first section has to say it plainly, because it is the section ' +
-    'that used to say the opposite');
+test('the hero states that all three stages are accepted', async () => {
+  /* The landing page is four blocks now, so this sentence has nowhere to
+     hide further down: if the hero does not say it, the page does not. */
+  const html = await readFile(new URL('src/app.html', root), 'utf8');
+  const hero = /<p class="lead-sub reveal">([\s\S]*?)<\/p>/.exec(html);
+  assert.ok(hero, 'expected to find the hero sub');
+  assert.match(hero[1], /before kick off, in play, or after it\s+settled/i);
 });
 
-test('the hero does not narrow the product either', async () => {
-  const html = await readFile(new URL('src/app.html', root), 'utf8');
-  const hero = /<p class="sell reveal">([^<]*)</.exec(html);
-  assert.ok(hero, 'expected to find the hero sub');
-  assert.match(hero[1], /before kick off, in play, or after/i);
+test('the tour still teaches it too', async () => {
+  /* The other place a new account is told, and the one that survives
+     somebody arriving through a direct link rather than the landing. */
+  const main = await readFile(new URL('src/js/main.js', root), 'utf8');
+  assert.match(main, /Before kick off, in play, or after the result/i);
+  assert.match(main, /All three are logged the same way/i);
 });
 
 test('the check would catch the sentences that actually shipped', () => {

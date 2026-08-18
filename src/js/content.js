@@ -87,24 +87,6 @@ SAMPLE.group = [
   { n: 'Priya',   a: 'PR', un: 1000,  v: -1_900 }
 ].sort((a, b) => b.v / b.un - a.v / a.un);
 
-const HOME_FAQ = [
-  ['Does it actually read my slip?', 'Forward a screenshot and the stake, odds, selection, bookmaker and result come off the image for you to confirm. If a number is not legible it is left blank rather than guessed.'],
-  ['Can it settle bets on its own?', 'Standard markets settle themselves once the result is in. Anything it cannot grade with certainty comes to you instead, because a wrong grade is worse than no grade.'],
-  ['What happens if a game is postponed or abandoned?', 'Postponed and cancelled games are voided and your stake comes back. Abandoned games come to you, because bookmakers settle those differently from each other.'],
-  ['Does extra time count?', 'No. Everything settles on ninety minutes. If the ninety minute score is not in the feed, the bet is handed to you rather than settled on a score that includes extra time.'],
-  ['Who can see my numbers?', 'Whoever you choose: every Slipper, only those you follow back, or none. Group members always see the units of everyone in that group.'],
-  ['What is a unit?', 'Your standard stake. Units let groups rank people without anyone seeing how much money is involved.'],
-  ['What does it cost?', 'Two weeks free with up to 35 slips in that window, then £3.49 a month or £29.99 a year.'],
-  ['When is it on the App Store?', 'Not yet. It runs in your browser today and installs to your home screen from the share sheet, so it behaves like an app already, and the Telegram bot works now.'],
-  ['What happens when the free trial ends?', 'Logging stops and everything you have already logged stays exactly where it is. Nothing is deleted and nothing is held hostage. Subscribe whenever you want it back.'],
-  ['Can I bring history over from a spreadsheet?', 'Yes. Drop a CSV, an Excel export, a PDF statement or a screenshot of a profit screen into the import zone and it works out which it is. Dated rows land on their dates.'],
-  ['Does imported history count as my bets?', 'Separately, and you choose. Settings has a toggle between the tracker count, which is only what Slippery has seen, and the lifetime count, which adds what you brought across. Imported figures are excluded from the pre-match split, because they have no slips behind them.'],
-  ['What sports does it settle?', 'Football and tennis settle themselves. Racing does not: no feed we trust publishes finishing positions we can prove, so racing bets are handed back for you to settle rather than guessed at.'],
-  ['Can I take a break?', 'Yes, and it is enforced on the server. Pick a length in Settings and logging stops until it is over. It can be extended but never shortened, because the point is that the decision is made by the version of you that is calm.'],
-  ['What if the reader gets a slip wrong?', 'Every field is editable before you confirm, and nothing saves until you do. Selections can be added or removed. If a leg is missing because the screenshot cropped it, add it by hand.'],
-  ['Can I get my data out?', 'CSV or JSON, from Settings, whenever you like. Deleting the account removes the bets, the stored slip images, your groups and the account itself.'],
-  ['Is my betting record private?', 'By default only people you follow back can see your figures, and you can set it to public or to nobody. Group members always see units rather than stakes, so nobody learns what you bet.']
-];
 
 const HELP_FAQ = [
   ['Why could a slip not be read?', 'Slippery never guesses at numbers it cannot see, so it asks for a clearer photo. Crop to the slip, avoid glare, and keep the stake, odds and result in frame.'],
@@ -366,11 +348,112 @@ const PRIVACY = [
   ['p', 'Material changes are notified by email at least 30 days before they take effect. The date at the top of this page is when it last changed.']
 ];
 
+/* ─────────── the proof, block three of the landing page ───────────
+   Kept from the eight sections that were deleted, because it was the only
+   one carrying an argument rather than a feature. It is the page's
+   centrepiece now instead of its seventh scroll. */
+const DIVERGE = [
+  ['Arsenal, 1.80', 11600, true],
+  ['Over 2.5, 2.10', 9200, true],
+  ['Bayern -1, 1.55', 7860, true],
+  ['Spurs draw, 3.40', -12000, false],
+  ['BTTS, 1.90', 12600, true],
+  ['Under 3.5, 1.70', -14500, false],
+  ['Liverpool, 1.45', -9185, false],
+  ['Acca, 6.20', -15000, false]
+];
+
+const money = p => (p < 0 ? '\u2212' : '+') + '\u00a3' +
+  (Math.abs(p) / 100).toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+
+function divergeMarkup() {
+  const row = (b, ghost) =>
+    '<div class="drow ' + (b[2] ? 'w' : 'l') + (ghost ? ' dhide' : '') + '">' +
+    '<i aria-hidden="true"></i><span>' + esc(b[0]) + '</span></div>';
+  return '<div class="demohead">' + ico('i-scales') + 'Same eight bets, two records</div>' +
+    '<div class="diverge">' +
+      '<div class="dcol honest"><span class="dhead">Logged at placement</span>' +
+        '<span class="dtot neg" id="divA">\u00a30.00</span>' +
+        '<div class="drows">' + DIVERGE.map(b => row(b, false)).join('') + '</div>' +
+        '<span class="dsub">All eight. It could not know which would land.</span></div>' +
+      '<div class="dcol reel"><span class="dhead">Filled in afterwards</span>' +
+        '<span class="dtot pos" id="divB">\u00a30.00</span>' +
+        '<div class="drows">' + DIVERGE.map(b => row(b, !b[2])).join('') + '</div>' +
+        '<span class="dsub">Only the ones worth remembering.</span></div>' +
+    '</div>';
+}
+
+/* Run it. One timeline drives both columns, so the rows land in step and
+   the gap opens on screen rather than being there when you arrive.
+ *
+ * Observed rather than started on load: a page nobody has scrolled to
+ * should not be spending frames, and restarting on re-entry is what makes
+ * it worth watching twice. */
+function playDiverge() {
+  const stage = $('divergeDemo');
+  if (!stage) return;
+  const rowsA = [...stage.querySelectorAll('.dcol.honest .drow')];
+  const rowsB = [...stage.querySelectorAll('.dcol.reel .drow')];
+  const a = $('divA'), b = $('divB');
+  let timers = [];
+
+  const paint = (el, pence) => {
+    el.textContent = money(pence);
+    el.className = 'dtot ' + (pence < 0 ? 'neg' : 'pos');
+  };
+
+  const settle = () => {
+    /* The end state, with no motion. Reduced motion gets this immediately
+       and so does anything that scrolls past mid-run: an animation frozen
+       half way through would misstate both totals. */
+    rowsA.forEach(r => r.classList.add('in'));
+    rowsB.forEach(r => r.classList.add('in'));
+    paint(a, DIVERGE.reduce((t, x) => t + x[1], 0));
+    paint(b, DIVERGE.filter(x => x[2]).reduce((t, x) => t + x[1], 0));
+  };
+
+  const stop = () => { timers.forEach(clearTimeout); timers = []; };
+
+  const run = () => {
+    stop();
+    rowsA.forEach(r => r.classList.remove('in'));
+    rowsB.forEach(r => r.classList.remove('in'));
+    paint(a, 0); paint(b, 0);
+    let ta = 0, tb = 0;
+    DIVERGE.forEach((bet, i) => {
+      timers.push(setTimeout(() => {
+        rowsA[i].classList.add('in');
+        ta += bet[1];
+        paint(a, ta);
+        /* The flattering column only ever receives a winner, which is the
+           whole mechanism: it is not lying about any single bet, it is
+           just never told about the others. */
+        if (bet[2]) { rowsB[i].classList.add('in'); tb += bet[1]; paint(b, tb); }
+      }, 340 + i * 260));
+    });
+    /* Hold on the finished state, then go again, so somebody who arrives
+       part way through still sees it from the start. */
+    timers.push(setTimeout(run, 340 + DIVERGE.length * 260 + 4200));
+  };
+
+  if (RM) { settle(); return; }
+  if (typeof IntersectionObserver !== 'function') { settle(); return; }
+  new IntersectionObserver(entries => {
+    for (const e of entries) {
+      if (e.isIntersecting) run();
+      else { stop(); settle(); }
+    }
+  }, { threshold: 0.35 }).observe(stage);
+}
+
 export function renderStatic() {
-  renderSections();
-  renderTail();
-  setHTML('homeFaq', HOME_FAQ.map(f =>
-    '<details class="card faq"><summary>' + esc(f[0]) + '</summary><p>' + esc(f[1]) + '</p></details>').join(''));
+  /* The landing page is four blocks now, so there is no section list to
+     build and no tail to fill. The one demo that survived the cut is
+     mounted straight into block three rather than being reached through a
+     table of eight sections that no longer exists. */
+  const proof = $('divergeDemo');
+  if (proof) { proof.innerHTML = divergeMarkup(); playDiverge(); }
+
   setHTML('helpFaq', HELP_FAQ.map(f =>
     '<details class="card faq"><summary>' + esc(f[0]) + '</summary><p>' + esc(f[1]) + '</p></details>').join(''));
 
@@ -465,17 +548,10 @@ function renderPreview() {
      invalid-d error for a line that cannot be drawn. */
   const line = coords.length > 1 ? 'M' + coords.join(' L') : '';
   $('previewLine').setAttribute('d', line);
-  $('previewArea').setAttribute('d', line ? line + ' L296,66 L4,66 Z' : '');
-
-  const bands = DEMO.byBand.slice().sort((a, b) => b.roi - a.roi);
-  setHTML('chromeTop', bands.slice(0, 3).map(b =>
-    '<div class="ch-row"><span>' + esc(b.label) + '</span>' +
-    '<b class="' + M.tone(b.profit) + '">' +
-    (b.roi >= 0 ? '+' : '\u2212') + Math.abs(b.roi).toFixed(1) + '%</b></div>').join(''));
-
-  setHTML('previewRows', DEMO.recent.slice(0, 4).map(b =>
-    '<div class="ch-row"><span>' + esc(b.event) + '</span>' +
-    '<b class="' + M.tone(b.profit) + '">' + M.signed(b.profit) + '</b></div>').join(''));
+  /* The gradient area fill under this line is gone with the rest of the
+     glass, and so are the best-band and recent-bet lists that used to sit
+     beneath it. On a four block page the hero states the figure; the
+     breakdown is what the demo and the dashboard are for. */
 }
 
 function renderBotChat() {
@@ -732,407 +808,3 @@ export function isPlaying() { return playing; }
  * Every section ends with `said`, one line stating what the demo means. A
  * chart without a conclusion is decoration.
  */
-export const SECTIONS = [
-  {
-    accent: 'a2',
-    badge: ['i-won', 'The bit that makes it true'],
-    h: ['Log it whenever.', 'It remembers when.'],
-    lede: 'Send a slip before kick off, in play, or after it settled. All three are logged the same way. What changes is that Slippery records which, so a record cannot quietly turn into the bets you wanted to remember.',
-    rows: [
-      ['i-telegram', 'Send it whenever you like', 'Before kick off, in play or once it is done.', true],
-      ['i-bolt', 'Every field read off the slip', 'Stake, odds, selection and every leg.'],
-      ['i-shield', 'The time is recorded, not policed', 'You see the split. Nothing is refused for being late.']
-    ],
-    ticks: ['Pre-match, in-play and settled all accepted',
-            'The split is on your dashboard',
-            'Imported history is excluded, not guessed',
-            'One number nobody can game'],
-    demo: 'capture',
-    said: 'Same bettor. Same eight bets. <b class="down">\u2212\u00a394.25</b> is the true record, <b class="up">+\u00a3412.60</b> is what memory keeps.'
-  },
-  {
-    accent: 'a1',
-    badge: ['i-shield', 'Settlement'],
-    h: ['It refuses', 'rather than guesses.'],
-    lede: 'Extra time never counts. A whole line on the exact score is a push, not a loss. Handicaps grade differently at bet365 than everywhere else.',
-    rows: [
-      ['i-won', 'Standard markets settle themselves', 'On the 90 minute score, as soon as it is in.'],
-      ['i-void', 'Anything uncertain comes back to you', 'A wrong grade is worse than no grade.', true],
-      ['i-refresh', 'Five results sources, tried in order', 'If one blocks us, the next one answers.']
-    ],
-    ticks: ['90 minutes only, never extra time',
-            'Whole lines push, quarter lines split',
-            'Per-bookmaker handicap rules',
-            'Postponed voids, abandoned asks'],
-    demo: 'settle',
-    said: 'Measured on a live feed: <b class="up">299 of 300</b> handicaps graded, <b>274 cup ties refused</b> because the 90 minute score could not be proved.'
-  },
-  {
-    accent: 'a3',
-    badge: ['i-camera', 'Slip reading'],
-    h: ['Screenshot to ledger,', 'without the typing.'],
-    lede: 'Send the slip and the stake, odds, selection, bookmaker and every leg come off the image. Anything it cannot read is left blank rather than guessed.',
-    rows: [
-      ['i-camera', 'Send anything legible', 'Screenshot, photo, PDF statement or a pasted list.', true],
-      ['i-bolt', 'Every leg, with its own price', 'A fourfold arrives as four selections, not one line.'],
-      ['i-void', 'Blanks, never guesses', 'An unreadable figure comes back empty and says which.']
-    ],
-    ticks: ['Any bookmaker', 'Multiple slips at once',
-            'Every field editable', 'Nothing saved until you confirm'],
-    demo: 'read',
-    said: 'Read live from a bet365 treble: combined price <b>5.86</b>, three legs each with its own odds, and the result left blank because the slip had not settled.'
-  },
-  {
-    accent: 'a4',
-    badge: ['i-bolt', 'Import'],
-    h: ['Bring the history', 'you already have.'],
-    lede: 'Screenshots, PDFs, a CSV export, or a profit screen from another tracker. Slippery works out which it is and files the dated rows on the right days.',
-    rows: [
-      ['i-arrow-down', 'Drop anything in', 'One zone. No choosing a format first.', true],
-      ['i-bolt', 'Dated rows land on their dates', 'A P/L screen becomes a month of the calendar, not one number.'],
-      ['i-void', 'Re-running it corrects, never doubles', 'Keyed on the day, so a retry is safe.']
-    ],
-    ticks: ['Images, PDF, CSV and paste', 'Every field editable before saving',
-            'Nothing saved until you confirm', 'Imported bets excluded from the capture rate'],
-    demo: 'import',
-    said: 'Imported history is counted separately, because it has no slips behind it and pretending otherwise would break the one number that matters.'
-  },
-  {
-    accent: 'a1',
-    badge: ['i-chart', 'Football'],
-    h: ['Every league.', 'Matched automatically.'],
-    lede: 'Bets are linked to fixtures across the leagues our sources publish, so the competition and team splits build themselves. No tagging.',
-    rows: [
-      ['i-chart', 'Matched on the name you typed', 'Fuzzy matching handles Wolves and Wolverhampton.', true],
-      ['i-scales', 'Split by competition and market', 'Which leagues pay, and which ones you should leave alone.'],
-      ['i-void', 'One candidate, or it refuses', 'An ambiguous name settles nothing rather than the wrong thing.']
-    ],
-    ticks: ['Five sources, tried in order', 'Fuzzy fixture matching',
-            'Competition and team splits', 'No manual tagging'],
-    demo: 'football',
-    said: 'From one live pull: <b>1,291 fixtures</b> across three days, <b class="up">977</b> with a provable 90 minute score.'
-  },
-  {
-    accent: 'a4',
-    badge: ['i-trophy', 'Racing and tennis'],
-    h: ['Tennis grades.', 'Racing asks you.'],
-    lede: 'Tennis settles from set scores the same way football settles from goals. Racing does not, and we say so rather than guessing at a result we cannot prove.',
-    rows: [
-      ['i-trophy', 'Tennis settles on sets', 'Match winner, set betting and total games.'],
-      ['i-ask', 'Racing comes back to you', 'No feed we trust publishes finishing positions we can prove.', true],
-      ['i-shield', 'Named, not left pending', 'A racing bet says it needs you, so it stops looking unfinished.']
-    ],
-    ticks: ['Tennis fully automatic', 'Racing flagged, never guessed',
-            'Dead heats and retirements ask', 'One tap to settle by hand'],
-    demo: 'racing',
-    said: 'We would rather ship a gap you can see than a number you cannot check. Racing is the gap.'
-  },
-  {
-    accent: 'a3',
-    badge: ['i-telegram', 'Telegram'],
-    h: ['Send it on Telegram.', 'It is tracked.'],
-    lede: 'The bot is the front door, not an add-on. Forward a slip whenever you have it and it is read, confirmed and logged without opening anything.',
-    rows: [
-      ['i-telegram', 'Forward, do not switch apps', 'The slip is already in Telegram. Share it.', true],
-      ['i-bolt', 'It replies with what it read', 'Check it in the chat and confirm with one tap.'],
-      ['i-refresh', 'The dashboard already has it', 'By the time you open the app the bet is there.']
-    ],
-    ticks: ['Screenshots and text', 'Confirm before anything saves',
-            'Works from the group chat', 'Capture time recorded'],
-    demo: 'telegram',
-    said: 'Placing and logging become one action, which is the only reason logging at placement survives contact with a Saturday.'
-  },
-  {
-    accent: 'a2',
-    badge: ['i-users', 'Groups'],
-    h: ['Compare with friends.', 'Show nobody your stakes.'],
-    lede: 'Groups rank in units, not pounds. A £10 bettor and a £500 bettor sit in the same table honestly, and neither learns what the other stakes.',
-    rows: [
-      ['i-users', 'Start a group, share the code', 'Private by default, or listed for anyone to find.'],
-      ['i-chart', 'Ranked in units', 'Your unit is your standard stake. Only the ratio leaves the server.', true],
-      ['i-shield', 'Turnover never leaves', 'The board divides on the server so it cannot be reversed.']
-    ],
-    ticks: ['Units, never pounds', 'Public or invite-only groups',
-            'Follow individual Slippers', 'You choose who sees your figures'],
-    demo: 'group',
-    said: 'Same table, <b>50x</b> difference in stake size, and no way to tell which is which.'
-  }
-];
-
-
-/* ---------- the divergence ----------
- *
- * Eight real-shaped bets, four winners and four losers, netting a loss.
- * The numbers are chosen so the honest total is NEGATIVE and the selective
- * one is strongly positive: that gap is the entire point, and a worked
- * example where both come out positive would prove nothing.
- *
- * Arithmetic checked against the running animation, not by eye: the winners
- * sum to +412.60 and the losers to -506.85, so the honest total is -94.25,
- * the same figure the dashboard uses. One number, one story, everywhere.
- * The first three are all winners on purpose, so the two columns start
- * identical and visibly come apart rather than being different from the
- * first frame. */
-const DIVERGE = [
-  ['Arsenal, 1.80', 11600, true],
-  ['Over 2.5, 2.10', 9200, true],
-  ['Bayern -1, 1.55', 7860, true],
-  ['Spurs draw, 3.40', -12000, false],
-  ['BTTS, 1.90', 12600, true],
-  ['Under 3.5, 1.70', -14500, false],
-  ['Liverpool, 1.45', -9185, false],
-  ['Acca, 6.20', -15000, false]
-];
-
-const money = p => (p < 0 ? '\u2212' : '+') + '\u00a3' +
-  (Math.abs(p) / 100).toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
-
-function divergeMarkup() {
-  const row = (b, ghost) =>
-    '<div class="drow ' + (b[2] ? 'w' : 'l') + (ghost ? ' dhide' : '') + '">' +
-    '<i aria-hidden="true"></i><span>' + esc(b[0]) + '</span></div>';
-  return '<div class="demohead">' + ico('i-scales') + 'Same eight bets, two records</div>' +
-    '<div class="diverge">' +
-      '<div class="dcol honest"><span class="dhead">Logged at placement</span>' +
-        '<span class="dtot neg" id="divA">\u00a30.00</span>' +
-        '<div class="drows">' + DIVERGE.map(b => row(b, false)).join('') + '</div>' +
-        '<span class="dsub">All eight. It could not know which would land.</span></div>' +
-      '<div class="dcol reel"><span class="dhead">Filled in afterwards</span>' +
-        '<span class="dtot pos" id="divB">\u00a30.00</span>' +
-        '<div class="drows">' + DIVERGE.map(b => row(b, !b[2])).join('') + '</div>' +
-        '<span class="dsub">Only the ones worth remembering.</span></div>' +
-    '</div>';
-}
-
-/* Run it. One timeline drives both columns, so the rows land in step and
-   the gap opens on screen rather than being there when you arrive.
- *
- * Observed rather than started on load: a page nobody has scrolled to
- * should not be spending frames, and restarting on re-entry is what makes
- * it worth watching twice. */
-function playDiverge() {
-  const stage = $('divergeDemo');
-  if (!stage) return;
-  const rowsA = [...stage.querySelectorAll('.dcol.honest .drow')];
-  const rowsB = [...stage.querySelectorAll('.dcol.reel .drow')];
-  const a = $('divA'), b = $('divB');
-  let timers = [];
-
-  const paint = (el, pence) => {
-    el.textContent = money(pence);
-    el.className = 'dtot ' + (pence < 0 ? 'neg' : 'pos');
-  };
-
-  const settle = () => {
-    /* The end state, with no motion. Reduced motion gets this immediately
-       and so does anything that scrolls past mid-run: an animation frozen
-       half way through would misstate both totals. */
-    rowsA.forEach(r => r.classList.add('in'));
-    rowsB.forEach(r => r.classList.add('in'));
-    paint(a, DIVERGE.reduce((t, x) => t + x[1], 0));
-    paint(b, DIVERGE.filter(x => x[2]).reduce((t, x) => t + x[1], 0));
-  };
-
-  const stop = () => { timers.forEach(clearTimeout); timers = []; };
-
-  const run = () => {
-    stop();
-    rowsA.forEach(r => r.classList.remove('in'));
-    rowsB.forEach(r => r.classList.remove('in'));
-    paint(a, 0); paint(b, 0);
-    let ta = 0, tb = 0;
-    DIVERGE.forEach((bet, i) => {
-      timers.push(setTimeout(() => {
-        rowsA[i].classList.add('in');
-        ta += bet[1];
-        paint(a, ta);
-        /* The flattering column only ever receives a winner, which is the
-           whole mechanism: it is not lying about any single bet, it is
-           just never told about the others. */
-        if (bet[2]) { rowsB[i].classList.add('in'); tb += bet[1]; paint(b, tb); }
-      }, 340 + i * 260));
-    });
-    /* Hold on the finished state, then go again, so somebody who arrives
-       part way through still sees it from the start. */
-    timers.push(setTimeout(run, 340 + DIVERGE.length * 260 + 4200));
-  };
-
-  if (RM) { settle(); return; }
-  if (typeof IntersectionObserver !== 'function') { settle(); return; }
-  new IntersectionObserver(entries => {
-    for (const e of entries) {
-      if (e.isIntersecting) run();
-      else { stop(); settle(); }
-    }
-  }, { threshold: 0.35 }).observe(stage);
-}
-
-/* Build every section from SECTIONS. One function, so a new section is a
-   data entry rather than a block of markup, and so the six parts cannot
-   drift apart between sections. */
-const tick = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" aria-hidden="true"><path d="M20 6L9 17l-5-5"/></svg>';
-
-function sectionRow(r) {
-  return '<div class="sect-row' + (r[3] ? ' on' : '') + '">' +
-    '<span class="rowtile" aria-hidden="true">' + ico(r[0]) + '</span>' +
-    '<span><span class="rowt">' + esc(r[1]) + '</span>' +
-    '<span class="rows">' + esc(r[2]) + '</span></span></div>';
-}
-
-/* The demos. Real markup, never a screenshot: a screenshot ages the day
-   the product changes and a screen reader cannot read one. */
-function sectionDemo(kind) {
-  if (kind === 'capture') return divergeMarkup();
-  if (kind === 'settle') {
-    const rows = [['Arsenal v Spurs', 'Over 2.5, 3-1', 'Settled', 'up'],
-                  ['Bayern v Mainz', 'Bayern -1, 2-1 at bet365', 'Void, whole line', ''],
-                  ['Morocco W v South Africa W', 'Cup tie, went to extra time', 'Asks you', 'down']];
-    return '<div class="demohead">' + ico('i-shield') + 'Three results, three answers</div>' +
-      rows.map(r => '<div class="demobar"><span class="bl"><b style="color:var(--t1)">' +
-        esc(r[0]) + '</b><br>' + esc(r[1]) + '</span><span class="bv ' + r[3] + '">' +
-        esc(r[2]) + '</span></div>').join('');
-  }
-  if (kind === 'group') {
-    const rows = [['DariusOdds', '1u = £10', '+4.20u', 'up'], ['HalfEdge', '1u = £500', '+2.05u', 'up'],
-                  ['QuietStake', '1u = £25', '-0.90u', 'down']];
-    return '<div class="demohead">' + ico('i-users') + 'Sunday League, this month</div>' +
-      rows.map((r, i) => '<div class="demobar"><span class="bl">' + (i + 1) + '. <b style="color:var(--t1)">' +
-        esc(r[0]) + '</b> · ' + esc(r[1]) + '</span><span class="bv ' + r[3] + '">' +
-        esc(r[2]) + '</span></div>').join('');
-  }
-  if (kind === 'read') {
-    /* The reading the production reader actually returned for a bet365
-       treble, not an invented one. The result is blank because the slip
-       had not settled, which is the behaviour worth showing. */
-    const legs = [['Arsenal', 'Full Time Result', '1.80'],
-                  ['Over 2.5 Goals', 'Total Goals', '2.10'],
-                  ['Bayern Munich -1', 'Asian Handicap', '1.55']];
-    return '<div class="demohead">' + ico('i-camera') + 'bet365 treble, as read</div>' +
-      legs.map(l => '<div class="demobar"><span class="bl"><b style="color:var(--t1)">' +
-        esc(l[0]) + '</b><br>' + esc(l[1]) + '</span><span class="bv">' + l[2] + '</span></div>').join('') +
-      '<div class="demobar"><span class="bl">Combined price</span><span class="bv">5.86</span></div>' +
-      '<div class="demobar"><span class="bl">Result on the slip</span>' +
-        '<span class="bv" style="color:var(--t3)">Left blank</span></div>';
-  }
-  if (kind === 'football') {
-    const rows = [['Premier League', 78, '+£412', 'up'], ['La Liga', 44, '+£186', 'up'],
-                  ['Serie A', 30, '-£94', 'down'], ['Ligue 1', 18, '-£210', 'down']];
-    const max = 78;
-    return '<div class="demohead">' + ico('i-chart') + 'Profit by competition</div>' +
-      rows.map(r => '<div class="demobar ' + r[3] + '"><span class="bl">' + esc(r[0]) +
-        ' · ' + r[1] + ' bets</span><span class="bv ' + r[3] + '">' + esc(r[2]) + '</span>' +
-        '<span class="bt"><i style="--f:' + (r[1] / max).toFixed(2) + '"></i></span></div>').join('');
-  }
-  if (kind === 'racing') {
-    const rows = [['Tennis, match winner', 'Settled', 'up'],
-                  ['Tennis, over 22.5 games', 'Settled', 'up'],
-                  ['14:30 Ascot, each way', 'Needs you', 'down'],
-                  ['15:05 York, win only', 'Needs you', 'down']];
-    return '<div class="demohead">' + ico('i-trophy') + 'What happens to each</div>' +
-      rows.map(r => '<div class="demobar"><span class="bl">' + esc(r[0]) +
-        '</span><span class="bv ' + r[2] + '">' + esc(r[1]) + '</span></div>').join('');
-  }
-  if (kind === 'telegram') {
-    return '<div class="demohead">' + ico('i-telegram') + 'In the chat, 14:32</div>' +
-      '<div class="tgline you">Slip forwarded</div>' +
-      '<div class="tgline bot"><b>Arsenal v Chelsea</b><br>BTTS Yes · 1.90 · £20<br>' +
-        '<span class="tgmeta">Pre-match. Confirm and it is logged.</span></div>' +
-      '<div class="tgline you ok">Confirmed</div>';
-  }
-  const rows = [['12 Aug', '-40.50', 'down'], ['11 Aug', '+118.00', 'up'], ['10 Aug', '+26.40', 'up']];
-  return '<div class="demohead">' + ico('i-calendar') + 'Read off a profit screen</div>' +
-    rows.map(r => '<div class="demobar"><span class="bl">' + esc(r[0]) +
-      '</span><span class="bv ' + r[2] + '">' + esc(r[1]) + '</span></div>').join('');
-}
-
-/* ---------- the tail ----------
- *
- * The blocks after the sections. Same discipline: nothing here states a
- * number we have not measured, and the testimonial slot renders nothing
- * until there are real quotes to put in it.
- */
-const FEATURES = [
-  ['i-chart', 'Calendar and analytics',
-   'Green days, red days, and profit split by bookmaker, market and tipster.'],
-  ['i-camera', 'Slip reading',
-   'Screenshots, photos, PDFs and pasted lists. Every field editable before it saves.'],
-  ['i-shield', 'Settlement that refuses',
-   'Ninety minutes only. Anything it cannot prove comes back to you.'],
-  ['i-users', 'Groups in units',
-   'Compare with friends without anyone seeing a stake size.'],
-  ['i-telegram', 'Telegram first',
-   'Forward a slip whenever you have it. The bot is the front door, not an add-on.'],
-  ['i-lock', 'Yours, and deletable',
-   'Export everything as CSV or JSON. Delete the account and it is gone.']
-];
-
-/* Aggregates, not a user count. A user count on a young product either
-   overstates or embarrasses; these are facts about what the thing does. */
-const PROOF = [
-  ['5', 'Results sources', 'tried in order until one answers'],
-  ['299/300', 'Handicaps graded', 'measured against a live feed'],
-  ['274', 'Cup ties refused', 'because 90 minutes could not be proved']
-];
-
-/* EMPTY ON PURPOSE. The benchmark's testimonials work because the quotes
-   are unpolished and unattributed. Inventing three would be the single
-   most obvious lie on the page, and the first thing a reader who has seen
-   a hundred landing pages checks. Put real ones in and the section
-   appears; leave it and nothing renders. */
-const QUOTES = [];
-
-/* The demo. Read only, and built from SAMPLE so every figure reconciles
-   against the rows above it. Deliberately not the dashboard with fake
-   data poured into it: nothing here can be edited and no control claims
-   to save, because a stranger clicking Confirm on a bet that goes nowhere
-   is worse than not showing them anything. */
-/* renderDemo lived here. The demo is now its own module: it runs on 486
-   generated bets rather than the six in SAMPLE, and a page with its own
-   period state and a tappable day strip is behaviour, not content. */
-
-export function renderTail() {
-  /* The bookmakers the reader has actually been run against, from the one
-     list of them, so adding a book in Settings shows up here too. */
-  /* Five names, and each is a route rather than a label. The strip used to
-     print nine as plain text; the pages exist now, so a name that cannot
-     be tapped is a link the reader looks for and does not find. */
-  setHTML('bookStrip', BOOKPAGES.slice(0, 5).map(b =>
-    '<button data-bookpage="' + esc(b.id) + '">' + esc(b.name) + '</button>').join(''));
-
-  setHTML('featureGrid', FEATURES.map(f =>
-    '<div class="fcard reveal"><span class="ftile" aria-hidden="true">' + ico(f[0]) + '</span>' +
-    '<h3>' + esc(f[1]) + '</h3><p>' + esc(f[2]) + '</p></div>').join(''));
-
-  setHTML('proofStats', PROOF.map(p =>
-    '<div class="pstat"><span class="pv">' + esc(p[0]) + '</span>' +
-    '<span class="pk">' + esc(p[1]) + '</span>' +
-    '<span class="pw">' + esc(p[2]) + '</span></div>').join(''));
-
-  const q = $('quoteWrap');
-  if (q) {
-    q.hidden = !QUOTES.length;
-    if (QUOTES.length) {
-      setHTML('quoteList', QUOTES.map(t =>
-        '<blockquote class="qcard"><span class="qmark" aria-hidden="true">&ldquo;</span>' +
-        esc(t) + '</blockquote>').join(''));
-    }
-  }
-}
-
-export function renderSections() {
-  const el = $('landingSections');
-  if (!el) return;
-  el.innerHTML = SECTIONS.map(s =>
-    '<section class="sect ' + s.accent + ' reveal">' +
-      '<span class="sect-badge">' + ico(s.badge[0]) + esc(s.badge[1]) + '</span>' +
-      '<h2 class="sect-h">' + esc(s.h[0]) + '<em>' + esc(s.h[1]) + '</em></h2>' +
-      '<p class="sect-lede">' + esc(s.lede) + '</p>' +
-      '<div class="sect-rows">' + s.rows.map(sectionRow).join('') + '</div>' +
-      '<div class="sect-ticks">' + s.ticks.map(t =>
-        '<span>' + tick + esc(t) + '</span>').join('') + '</div>' +
-      '<div class="sect-demo"' + (s.demo === 'capture' ? ' id="divergeDemo"' : '') + '>' +
-        sectionDemo(s.demo) +
-        '<p class="sect-said">' + s.said + '</p></div>' +
-    '</section>').join('');
-  playDiverge();
-}

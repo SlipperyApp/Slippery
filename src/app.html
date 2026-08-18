@@ -54,96 +54,89 @@
 
 <!-- ══════════════ LANDING ══════════════ -->
 <section class="view on" id="landing" aria-label="Home">
-  <div class="hero page-lede">
+
+  <!-- ══════════════════════════════════════════════════════════════
+       THE LANDING PAGE. FOUR BLOCKS.
+       ══════════════════════════════════════════════════════════════
+       It was twelve, and eight of those were one component repeated
+       with a different accent colour, followed by a six item grid
+       telling the same story again. A feature tour that long argues
+       on a competitor's ground and buries the only thing here nobody
+       else can copy.
+
+       Four blocks now: the claim, how it works, the proof, the ask.
+
+       NO GLASS ON THIS PAGE. No backdrop-filter, no translucent
+       panel, no gradient, no drop shadow. The old page was frosted
+       cards floating on gradients, which is the default answer and
+       is why it read as a template. Everything here is flat, spaced,
+       and separated by a hairline or by nothing at all.
+
+       THE FIGURES ARE THE ONLY ORNAMENT. If something on this page
+       is coloured, it is because it is money and the sign means
+       something.
+
+       What was removed, and why, so it does not come back:
+         · eight repeated feature sections  -> the bloat itself
+         · "Six things, done properly"      -> said it a second time
+         · the bookmaker strip              -> /books already exists
+         · proof stats                      -> unearned for the stage
+         · testimonials                     -> QUOTES was empty
+         · the Telegram block               -> already beat two below
+         · the FAQ                          -> #faqs already holds it
+         · app store badges                 -> neither app exists
+         · "Founded by Zhang et al." with a verified tick, which was
+           live on production: fabricated attribution wearing a trust
+           badge on a public page
+       ══════════════════════════════════════════════════════════════ -->
+
+  <!-- ─────────────── 1. THE CLAIM ─────────────── -->
+  <header class="lead">
     <div class="wrap">
-      <!-- An eyebrow PILL, not small caps. It has to locate the product in
-           one glance: who it is for and what it is. Small caps read as a
-           section label; a filled pill reads as a statement. -->
-      <span class="eyepill reveal">
-        <svg viewBox="0 0 24 24" aria-hidden="true"><use href="#i-bolt"/></svg>
-        Bet tracking for UK and Irish bettors
-      </span>
+      <p class="cap reveal">Bet tracking for UK and Irish bettors</p>
       <h1 id="heroHeading"></h1>
-      <p class="sell reveal">Send a slip before kick off, in play, or after it settled. Slippery reads it, settles it, and shows what your record actually says instead of what you remember.</p>
-      <!-- One heavy, one light. Two competing buttons make neither the
-           obvious next step, and the second one here is a lower-commitment
-           way in for somebody not ready to hand over an email. -->
-      <div class="herocta reveal">
-        <button class="btn primary" data-nav="setup">Start Tracking Free</button>
-        <button class="herolink" data-nav="demo">or see a live demo first</button>
+      <p class="lead-sub reveal">Send a slip before kick off, in play, or after it
+        settled. Slippery reads it, settles it, and shows what your record actually
+        says instead of what you remember.</p>
+      <!-- One heavy, one plain. Two competing buttons make neither the
+           obvious next step, and the quiet one is a way in for somebody
+           not ready to hand over an email. -->
+      <div class="lead-act reveal">
+        <button class="btn primary" data-nav="setup">Start tracking free</button>
+        <button class="lead-alt" data-nav="demo">or see a live demo first</button>
       </div>
-      <!-- BROWSER CHROME, holding the real thing.
-           A dashboard floating on a gradient reads as an illustration. The
-           same dashboard inside a window with traffic lights and a URL bar
-           reads as a screenshot of software that exists, which is the
-           claim being made. It is built from live markup rather than an
-           image: a screenshot ages the moment the product changes and
-           cannot be read by a screen reader.
-
-           aria-hidden, because everything in it is also stated in the copy
-           around it, and a screen reader should not have to walk a
-           decorative window frame to get there. -->
-      <div class="chrome reveal" aria-hidden="true">
-        <div class="chrome-bar">
-          <span class="chrome-dots"><i></i><i></i><i></i></span>
-          <span class="chrome-url">slippery-iota.vercel.app/dash</span>
-        </div>
-        <div class="chrome-body">
-          <div class="chrome-head">
-            <div>
-              <p class="ch-t">Dashboard</p>
-              <p class="ch-s">Your betting record, as it actually is</p>
-            </div>
-            <span class="ch-plus" aria-hidden="true">+</span>
-          </div>
-          <div class="ch-stats" id="chromeStats"></div>
-          <div class="ch-chart">
-            <div class="ch-chart-h"><span>Cumulative</span><span id="chromeRange"></span></div>
-            <svg viewBox="0 0 300 66" preserveAspectRatio="none" role="img" aria-label="Cumulative profit and loss">
-              <!-- Was a hardcoded #38BDF8 at .28 opacity over a dark card,
-                   which is why it was unreadable, and it was blue on a
-                   chart whose whole subject is profit. #86EFAC is the
-                   semantic colour for exactly this. -->
-              <defs><linearGradient id="sparkFill" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0" stop-color="#86EFAC" stop-opacity=".42"/>
-                <stop offset="1" stop-color="#86EFAC" stop-opacity=".02"/></linearGradient></defs>
-              <path id="previewArea" fill="url(#sparkFill)"/>
-              <path id="previewLine" fill="none" stroke="#86EFAC" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>
-            </svg>
-          </div>
-          <div class="ch-pair">
-            <div class="ch-card">
-              <p class="ch-ct"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="#i-trophy"/></svg>Best band</p>
-              <div id="chromeTop"></div>
-            </div>
-            <div class="ch-card">
-              <p class="ch-ct">Recent</p>
-              <div id="previewRows"></div>
-            </div>
-          </div>
-        </div>
-      </div>
-      <p class="chromecap reveal">Sample figures, the same fabricated record the <button class="herolink" data-nav="demo">demo</button> runs on. Nobody made this money.</p>
+      <p class="lead-fine reveal">Two weeks free. 35 slips. No card.</p>
     </div>
-  </div>
 
-  <!-- #secHow lived here and said "Capture it when you place it" with a
-       paragraph ending "logging at placement is the whole point". The
-       section below the pinned sequence makes that argument properly now,
-       with the placement / in play / after settling split behind it, so
-       this was the same claim told a screen earlier and weaker. The empty
-       .wrap that replaced it went too: an empty wrapper still carries its
-       own padding, which is dead space with a comment in it. -->
+    <!-- The product's own evidence, framed flat.
+         This was wrapped in fake browser chrome, traffic light dots and
+         a URL bar, which pretended the product was a website being
+         looked at rather than the thing itself. A hairline frame and a
+         label do the same job without the costume. -->
+    <div class="wrap">
+      <figure class="shot reveal">
+        <div class="shot-in">
+          <!-- Real figures from the labelled worked example, the same one
+               the demo page runs on, not invented numbers and not the
+               visitor's, since they have none yet. -->
+          <div class="shot-head">
+            <p class="cap">Your dashboard</p>
+            <p class="cap" id="chromeRange"></p>
+          </div>
+          <div class="shot-stats" id="chromeStats"></div>
+          <!-- Flat stroke. The area fill that used to sit under this was a
+               gradient wash, which is decoration: the shape is the
+               information. -->
+          <svg class="shot-line" viewBox="0 0 300 66" preserveAspectRatio="none" aria-hidden="true">
+            <path id="previewLine" fill="none" stroke="currentColor" stroke-width="1.5"
+                  stroke-linejoin="round" stroke-linecap="round" d=""/>
+          </svg>
+        </div>
+      </figure>
+    </div>
+  </header>
 
-  <!-- ══════ the scroll-jacked sequence ══════
-       The page is pinned for three viewport heights and the scroll wheel
-       drives the story instead of the scroll position. What makes this
-       version safe is that the scrollbar never lies: the track really is
-       340svh tall, the stage is `position:sticky` inside it, and scroll
-       progress maps to `--p`. Flicking hard still carries you straight
-       through, nothing is intercepted, nothing is animated on a timer,
-       and prefers-reduced-motion drops the whole thing to three stacked
-       cards. -->
+  <!-- ─────────────── 2. HOW IT WORKS ─────────────── -->
   <div class="jack" id="jack" aria-label="How a slip becomes a settled bet">
     <div class="jack-stage">
       <div class="jack-inner">
@@ -221,101 +214,46 @@
     </div>
   </div>
 
-  <div class="wrap">
-    <!-- THE SECTIONS.
-         One component, six parts, repeated with the accent varied per
-         section: badge, two-tone headline, two sentences, rows with
-         exactly one highlighted, four ticks, a live demo, and a line
-         saying what the demo means.
-
-         The order is deliberate and it is not the benchmark's. Theirs
-         opens with AI extraction because extraction is their product.
-         Ours opens with capture at placement, because that is the only
-         thing here nobody can copy, and leading with a feature tour would
-         be arguing on their ground. Built from data in content.js, so a
-         new section is an entry rather than a block of markup. -->
-    <div id="landingSections"></div>
-
-    <!-- The bookmaker strip. This used to be names as plain text, with a
-         comment saying links to pages that do not exist would be worse
-         than no links. The pages exist now, and each one says what is
-         genuinely different about grading that bookmaker's slips rather
-         than repeating this page with a name swapped in, so the strip
-         links. -->
-    <div class="booktrip reveal">
-      <span class="bookl">Explore bookmaker-specific tracker pages</span>
-      <span class="booknames" id="bookStrip"></span>
-      <button class="pillbtn link" data-nav="books">View all bookmaker trackers</button>
+  <!-- ─────────────── 3. THE PROOF ───────────────
+       Promoted. This was one of eight sections, three quarters of the
+       way down, which is the wrong place for the single strongest
+       thing on the page. It is the whole argument in one picture:
+       the same eight bets, recorded two ways. -->
+  <div class="proof snap-point">
+    <div class="wrap">
+      <p class="cap reveal">Why it has to be logged, not remembered</p>
+      <h2 class="reveal">Memory keeps the winners.</h2>
+      <p class="proof-sub reveal">Both columns below are the same eight bets by the
+        same bettor. One is what happened. The other is what gets typed in later,
+        when only the ones worth remembering come to mind.</p>
+      <div class="proof-demo reveal" id="divergeDemo"></div>
+      <p class="proof-said reveal">Neither column lies about a single bet. The one on
+        the right is simply never told about the others.</p>
     </div>
-
-    <!-- FEATURE GRID -->
-    <div class="section snap-point" id="secAll">
-      <p class="eyebrow reveal">Everything in it</p>
-      <h2 class="reveal">Six things, done properly.</h2>
-      <div class="fgrid" id="featureGrid"></div>
-    </div>
-
-    <!-- WHAT WE MEASURED. Aggregates about the product, not a user count:
-         a user count on a young product either overstates or embarrasses,
-         and these are checkable. -->
-    <div class="section snap-point">
-      <p class="eyebrow reveal">Measured, not claimed</p>
-      <h2 class="reveal">Numbers we can show the working for.</h2>
-      <div class="pstats reveal" id="proofStats"></div>
-      <p class="fineprint reveal" style="margin-top:12px">Taken from live runs against the results feeds, not from a spec sheet.</p>
-    </div>
-
-    <!-- Renders nothing until there are real quotes. -->
-    <div class="section snap-point" id="quoteWrap" hidden>
-      <p class="eyebrow reveal">Early feedback</p>
-      <h2 class="reveal">What people actually said.</h2>
-      <div class="qlist reveal" id="quoteList"></div>
-    </div>
-
-    <div class="card telegramcta reveal snap-point">
-      <div class="glyph" aria-hidden="true"><svg viewBox="0 0 24 24"><use href="#i-telegram"/></svg></div>
-      <h2>It is already in your Telegram</h2>
-      <p>Forward a slip, tap confirm, done.</p>
-      <button class="btn primary" data-nav="howto">See how it works</button>
-    </div>
-
-    <div class="section snap-point" id="secFaq">
-      <p class="eyebrow reveal">Questions</p>
-      <h2 class="reveal">The ones people ask.</h2>
-      <div class="reveal" id="homeFaq" style="margin-top:14px"></div>
-    </div>
-
-    <div class="founder reveal">
-      <span class="ring" aria-hidden="true">Z</span>
-      <span class="role">Founded by</span>
-      <span class="nm"><span translate="no">Zhang et al.</span>
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" role="img" aria-label="Verified"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="M9 12l2 2 4-4"/></svg></span>
-    </div>
-
-    <!-- App store. Honest about which is real: the iOS badge is greyed
-         too, because neither app exists yet and a live-looking badge that
-         goes nowhere is the kind of small lie that costs the rest. -->
-    <div class="stores reveal">
-      <p class="storel">Install it from your browser today. Native apps are coming.</p>
-      <div class="storerow">
-        <span class="storebadge off"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="#i-apple"/></svg><span><small>Coming soon to the</small>App Store</span></span>
-        <span class="storebadge off"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M4 3.5l11 8.5-11 8.5z"/></svg><span><small>Coming soon to</small>Google Play</span></span>
-      </div>
-      <button class="pillbtn link" data-nav="help" style="margin-top:11px">How to install it now</button>
-    </div>
-
-    <!-- FINAL CTA -->
-    <div class="lastcta reveal">
-      <h2>Find out what your record actually says.</h2>
-      <p>Two weeks free, 35 slips, no card. If it tells you something you did not want to hear, that is the product working.</p>
-      <button class="btn primary" data-nav="setup">Start free</button>
-    </div>
-
-    <!-- The landing page used to end with its own link row. It is gone:
-         the site footer below every view carries the same links and more,
-         and two footers a screen apart was the tail of the page repeating
-         itself. -->
   </div>
+
+  <!-- ─────────────── 4. THE ASK ─────────────── -->
+  <div class="close">
+    <div class="wrap">
+      <h2 class="reveal">Find out what your record actually says.</h2>
+      <p class="reveal">If it tells you something you did not want to hear, that is
+        the product working.</p>
+      <button class="btn primary reveal" data-nav="setup">Start free</button>
+
+      <!-- The way onward. Cutting the page to four blocks took the feature
+           tour, the pricing table and the FAQ off it, and they were the
+           only routes into those views from here: a visitor who wanted to
+           know how settlement works had nothing to press. Three text links
+           rather than a nav bar, because this is the end of the page and a
+           second navigation would be a fifth block pretending not to be. -->
+      <nav class="onward reveal" aria-label="More about Slippery">
+        <button data-nav="howto">How it works</button>
+        <button data-nav="pricing">Pricing</button>
+        <button data-nav="faqs">Questions</button>
+      </nav>
+    </div>
+  </div>
+
 </section>
 
 <!-- ══════════════ SETUP ══════════════ -->
