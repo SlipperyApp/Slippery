@@ -15,6 +15,7 @@ import * as P from './pages.js';
 import { sportOf } from './sports.js';
 import { demoPayload } from './sample.js';
 import * as Bot from './botsetup.js';
+import * as Tour from './tour.js';
 import { initMotion, syncThemeColor } from './motion.js';
 import { extractSlip, readText, get, post, patch, del } from './api.js';
 import { parseBetsCsv } from './csv.js';
@@ -60,73 +61,37 @@ async function loadSession() {
   return r.ok ? r.body.user : null;
 }
 
-/* ============================================================
-   THE FIRST RUN TOUR
-   ============================================================
-   Six steps, shown once, to a signed-in account that has not finished it.
-
-   The state is a column on the users row, never a browser flag. iOS Safari
-   gives this app no localStorage at all, so a client-side "seen it" would
-   replay the tour on every single visit on the owner's primary platform,
-   and it would not survive a second device either.
-
-   It ends on an import, and deliberately not on placing a bet. The brief
-   forbids anything that nudges toward more volume; importing history
-   somebody already has is the honest way to finish on real data rather
-   than an empty screen.
-
-   Skip is on every step. This is the default path, not a trap: somebody who
-   has already linked the bot elsewhere should not be held here.
-   ============================================================ */
-const TOUR = [
-  ['Welcome to Slippery',
-   'This takes about a minute. It shows you where things are, then helps you get your first figures in. You can skip it at any point and it will not come back.'],
-  ['Your dashboard',
-   'The big number is your real profit or loss for the period you pick. Under it, the calendar colours every day you have a record for. Tap any day, past or future, to see it or add a figure to it.'],
-  ['Log a bet whenever',
-   'Before kick off, in play, or after the result is known. All three are logged the same way. Slippery just records which, so your record cannot quietly turn into only the bets you wanted to remember.'],
-  ['It refuses rather than guesses',
-   'Standard markets settle themselves on the 90 minute score. Anything it cannot prove comes back to you to settle by hand, because a wrong grade is worse than no grade.'],
-  ['Settings',
-   'Your unit size, your theme, and who can see your figures. Private by default. There is also Take a break, which switches logging off for as long as you choose.'],
-  ['Bring your history in',
-   'Screenshots, CSV, a pasted list. Slippery reads the dates and figures off them and files each one under the right day. That is the fastest way to make the dashboard mean something.']
-];
-
-let tourAt = 0;
-/* Set when the tour was due but setup had not finished. Spent by the last
-   slide's Open dashboard. */
+/* ---------------- the first run tutorial ----------------
+ *
+ * The walkthrough itself lives in src/js/tour.js: six stops that navigate,
+ * open what has to be open, scroll the target into view and cut a hole in
+ * the scrim around it. What stays here is when it runs and what it means
+ * to have finished.
+ *
+ * The state is a column on the users row, never a browser flag. iOS Safari
+ * gives this app no localStorage at all, so a client-side "seen it" would
+ * replay the tutorial on every visit on the owner's primary platform, and
+ * would not survive a second device either.
+ *
+ * Skip and finish are the same write. Somebody who skipped has made a
+ * decision, and asking again on the next visit would ignore it. Settings
+ * offers it again for anybody who wants it back.
+ */
 let tourPending = false;
 
-function tourPaint() {
-  const [title, body] = TOUR[tourAt];
-  setText('tourStep', 'Step ' + (tourAt + 1) + ' of ' + TOUR.length);
-  setText('tourTitle', title);
-  setText('tourBody', body);
-  setHTML('tourDots', TOUR.map((_, i) => '<i class="' + (i <= tourAt ? 'on' : '') + '"></i>').join(''));
-  const back = $('tourBack');
-  if (back) back.disabled = tourAt === 0;
-  const next = $('tourNext');
-  if (next) next.textContent = tourAt === TOUR.length - 1 ? 'Start importing' : 'Next';
+function openTour() { Tour.startTour(0); }
+
+async function closeTour(finished) {
+  Tour.endTour(finished);
 }
 
-function openTour() {
-  const el = $('tour');
-  if (!el) return;
-  tourAt = 0;
-  tourPaint();
-  el.hidden = false;
-  trapFocus(el);
-}
-
-/* Finishing and skipping are the same write. Somebody who skipped has made
-   a decision, and asking again on the next visit would ignore it. */
-async function closeTour(goImport) {
-  const el = $('tour');
-  if (el) el.hidden = true;
+/* Called by the tour when it ends, either way. */
+async function tourFinished(finished) {
   if (ME) ME.onboarded = true;
   post('/api/auth/profile', { onboarded: true }).catch(() => {});
-  if (goImport) go('imp');
+  /* Finishing lands on the thing the last step was about. Skipping leaves
+     somebody where they were, because they asked to be left alone. */
+  if (finished) go('dash');
 }
 
 /* Google and Apple buttons, drawn only for providers this deployment holds
@@ -2756,13 +2721,10 @@ document.addEventListener('click', e => {
     return;
   }
 
-  if (c('#tourSkip')) { closeTour(false); return; }
-  if (c('#tourBack')) { if (tourAt > 0) { tourAt--; tourPaint(); } return; }
-  if (c('#tourNext')) {
-    if (tourAt < TOUR.length - 1) { tourAt++; tourPaint(); }
-    else closeTour(true);
-    return;
-  }
+  if (c('#tourSkip')) { Tour.endTour(false); return; }
+  if (c('#tourBack')) { Tour.prevStep(); return; }
+  if (c('#tourNext')) { Tour.nextStep(); return; }
+  if (c('#tourReplay')) { go('dash'); Tour.startTour(0); return; }
 
   if ((el = c('button[data-theme]'))) {
     stopThemeIntro();
@@ -3183,6 +3145,11 @@ async function init() {
   /* Auth cannot navigate on its own: go() refuses the app views until the
      session has been re-read, which is why a correct password used to bounce
      back to the signup screen. This is that re-read. */
+  /* The tutorial navigates and switches panes, which main.js owns. Passed
+     in rather than imported, so tour.js stays a walkthrough rather than
+     becoming a second copy of the router. */
+  Tour.wireTour({ go, showPane, onFinish: tourFinished });
+
   Auth.whenSignedIn(async (stayPut) => {
     const user = await loadSession();
     if (!user) return;

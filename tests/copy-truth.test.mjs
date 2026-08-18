@@ -76,10 +76,13 @@ test('the hero states that all three stages are accepted', async () => {
 
 test('the tour still teaches it too', async () => {
   /* The other place a new account is told, and the one that survives
-     somebody arriving through a direct link rather than the landing. */
-  const main = await readFile(new URL('src/js/main.js', root), 'utf8');
-  assert.match(main, /Before kick off, in play, or after the result/i);
-  assert.match(main, /All three are logged the same way/i);
+     somebody arriving through a direct link rather than the landing. The
+     walkthrough moved to src/js/tour.js; the sentence has to move with
+     it. */
+  const { TOUR } = await import('../src/js/tour.js');
+  const copy = TOUR.map(t => t.body).join(' ');
+  assert.match(copy, /Before kick off, in play or after the result/i);
+  assert.match(copy, /all three are logged the same way/i);
 });
 
 test('the check would catch the sentences that actually shipped', () => {

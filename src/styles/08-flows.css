@@ -978,36 +978,70 @@ input[type=date]{
  * spent on the header, the tab bar and nothing else. */
 .tour{
   position:fixed;inset:0;z-index:70;
-  display:grid;place-items:end center;
-  padding:16px 16px calc(16px + env(safe-area-inset-bottom));
-  background:rgba(4,6,12,.66);
+  /* No background here: the scrim is the hole's box-shadow, so the dim and
+     the cut-out are one element and cannot drift apart. */
+  pointer-events:none;
   animation:tourin var(--d-pop) var(--ease-out);
 
+  /* The hole. It travels between steps rather than disappearing and
+     reappearing, because it is one object and moving it is what makes six
+     steps feel like a route. transform for the position so the travel is
+     compositor work; width and height do change, which is layout, but on
+     one element with nothing inside it. */
+  & .tour-hole{
+    position:absolute;top:0;left:0;width:0;height:0;
+    border-radius:var(--r-lg);
+    box-shadow:0 0 0 9999px rgba(4,6,12,.72);
+    outline:1.5px solid rgba(var(--orb2),.55);
+    outline-offset:0;
+    pointer-events:none;
+    transition:transform var(--d-sheet) var(--ease-drawer),
+               width var(--d-sheet) var(--ease-drawer),
+               height var(--d-sheet) var(--ease-drawer),
+               opacity var(--d-pop) var(--ease-out)}
+
   & .tour-card{
-    width:100%;max-width:440px;
-    padding:20px 18px calc(16px + var(--sp-1));
+    position:absolute;left:16px;right:16px;
+    width:auto;max-width:440px;margin:0 auto;
+    pointer-events:auto;
+    padding:18px 18px calc(14px + var(--sp-1));
     border-radius:var(--r-xl);
-    background:color-mix(in srgb,var(--glow) 78%,var(--bg));
+    background:color-mix(in srgb,var(--glow) 88%,var(--bg));
     border:1px solid var(--e1);
     box-shadow:var(--el-3);
     /* Never from scale(0): nothing in the real world appears from
        nothing, and it reads as a glitch rather than an arrival. */
     animation:tourcard var(--d-sheet) var(--ease-drawer)}
 
+  /* Which side of the target the card sits on. It must never cover the
+     thing it is describing, so the step asks for a side and reposition()
+     overrules it when there is not room. */
+  &[data-place=below] .tour-card{bottom:calc(16px + env(safe-area-inset-bottom))}
+  &[data-place=above] .tour-card{top:calc(16px + env(safe-area-inset-top))}
+  &[data-place=center] .tour-card{top:50%;transform:translateY(-50%)}
+
   & .tour-step{font-size:var(--fs-2xs);font-weight:var(--fw-semi);
     letter-spacing:var(--tr-caps);text-transform:uppercase;color:var(--t3)}
-  & .tour-dots{display:flex;gap:5px;margin:9px 0 14px;
+  & .tour-dots{display:flex;gap:5px;margin:9px 0 13px;
     & i{height:3px;flex:1;border-radius:2px;background:var(--track);
       transition:background var(--d-pop) var(--ease-out)}
     & i.on{background:var(--p)}}
   & h2{font-size:var(--fs-xl);letter-spacing:var(--tr-snug)}
   & .tour-body{color:var(--t2);font-size:var(--fs-sm);line-height:var(--lh-loose);
-    margin-top:9px;min-height:4.4em}
+    margin-top:8px;min-height:4.4em}
   & .tour-foot{display:flex;align-items:center;justify-content:space-between;
-    gap:10px;margin-top:18px}
+    gap:10px;margin-top:16px}
   & .tour-nav{display:flex;gap:8px}
 }
+/* The page does not scroll under the tutorial: the steps do the scrolling,
+   and a reader who scrolls by hand loses the hole. */
+body.touring{overflow:hidden}
+
 @keyframes tourin{from{opacity:0}to{opacity:1}}
 @keyframes tourcard{from{opacity:0;transform:translateY(18px) scale(.97)}to{opacity:1;transform:none}}
 @media (prefers-reduced-motion:reduce){
-  .tour,.tour .tour-card{animation:none}}
+  .tour,.tour .tour-card{animation:none}
+  /* The hole jumps rather than travels. Position still changes, because
+     without it the tutorial points at the wrong thing, which is worse
+     than a jump. */
+  .tour .tour-hole{transition:opacity 1ms}}

@@ -123,6 +123,62 @@ async function main() {
     await page.close();
   }
 
+  /* ── the tutorial walks the product ───────────────────────────
+     It was six paragraphs in a centred modal that pointed at nothing. The
+     things worth checking are that each step actually arrives somewhere,
+     that the hole lands on a real element, and that the card never covers
+     the thing it is describing. */
+  {
+    const page = await browser.newPage({ viewport: { width: 390, height: 844 } });
+    await installStub(page);
+    const errs = [];
+    page.on('console', m => { if (m.type() === 'error') errs.push(m.text()); });
+    await page.goto(base, { waitUntil: 'networkidle' });
+    await page.waitForTimeout(500);
+    await page.evaluate(() => { const b = document.querySelector('[data-nav="settings"]'); if (b) b.click(); });
+    await page.waitForTimeout(200);
+    await page.evaluate(() => { const b = document.getElementById('tourReplay'); if (b) b.click(); });
+    await page.waitForTimeout(800);
+
+    const seen = [];
+    for (let i = 0; i < 6; i++) {
+      const st = await page.evaluate(() => {
+        const hole = document.getElementById('tourHole').getBoundingClientRect();
+        const card = document.getElementById('tourCard').getBoundingClientRect();
+        return {
+          step: document.getElementById('tourStep').textContent,
+          view: (document.querySelector('.view.on') || {}).id,
+          hole: { top: hole.top, bottom: hole.bottom, w: hole.width, h: hole.height },
+          card: { top: card.top, bottom: card.bottom }
+        };
+      });
+      seen.push(st);
+      if (!st.hole.w || !st.hole.h)
+        fail('tour', st.step + ' highlighted nothing');
+      /* The card must not cover the thing it is pointing at. */
+      const overlaps = st.card.top < st.hole.bottom && st.card.bottom > st.hole.top;
+      if (overlaps && st.hole.h < 700)
+        fail('tour', st.step + ' put the card over the element it describes');
+      if (i < 5) {
+        await page.evaluate(() => document.getElementById('tourNext').click());
+        await page.waitForTimeout(1000);
+      }
+    }
+    const views = [...new Set(seen.map(s => s.view))];
+    if (views.length < 3)
+      fail('tour', 'the tutorial never left ' + views.join(', ') + '; it is meant to walk the product');
+    if (!seen.some(s => s.view === 'imp'))
+      fail('tour', 'the tutorial never visits Import');
+
+    /* Finishing writes, and the tutorial closes. */
+    await page.evaluate(() => document.getElementById('tourNext').click());
+    await page.waitForTimeout(500);
+    const closed = await page.evaluate(() => document.getElementById('tour').hidden);
+    if (!closed) fail('tour', 'Finish did not close the tutorial');
+    errs.forEach(e => fail('tour', 'console error during the tutorial: ' + e));
+    await page.close();
+  }
+
   /* ── the public demo ─────────────────────────────────────────
      It is the real dashboard with a fabricated ledger in it, so the things
      worth checking are that it loads for somebody with no session, that it
