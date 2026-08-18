@@ -1077,6 +1077,7 @@ usually worst and hardest to find, which is why they are included.
 - "No bets in this month to break down"
 - "Not linked yet. In the chat, send: /link"
 - "Nothing left to add"
+- "Nothing selected to import."
 - "Odds shown as"
 - "Password changed. You are signed in."
 - "Paste something first"

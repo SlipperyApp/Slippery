@@ -1556,6 +1556,28 @@ async function handleCsv(file, reportId) {
   showCsvReport(parseBetsCsv(text), file.name, reportId);
 }
 
+/* THE IMPORT YOU CAN LOOK AT BEFORE YOU AGREE TO IT.
+ *
+ * This used to print four counts and one button. "Import 200 bets" was the
+ * whole of the review: nobody could see the dates and amounts they were
+ * committing, correct a row the parser read wrongly, or leave one out. The
+ * only choices were all of it or none of it, and a spreadsheet exported
+ * from a bookmaker is exactly the kind of file that has one bad row in it.
+ *
+ * Now every row is on screen with its date, selection, stake, price and
+ * result, each one selectable and each one editable in place. Three things
+ * make that trustworthy rather than decorative:
+ *
+ *   · Selection lives on the row object, never in the DOM, so a re-render
+ *     cannot silently lose which rows somebody unticked.
+ *   · Every edit re-runs betProblem() from src/js/betshape.js, which is
+ *     the same function the server validates with, so a row that would be
+ *     rejected says so beside the field that is wrong instead of coming
+ *     back as a line number afterwards.
+ *   · Duplicates are found against the ledger already loaded, on the four
+ *     fields the server keys on, and pre-unticked with the reason shown.
+ *     The server still checks; this stops the check being a surprise.
+ */
 function showCsvReport(parsed, label, reportId) {
   const { bets, errors, mapped } = parsed;
   const report = $(reportId || 'csvReport');
@@ -1568,42 +1590,198 @@ function showCsvReport(parsed, label, reportId) {
     return;
   }
 
-  const settled = bets.filter(b => b.outcome).length;
-  const net = bets.filter(b => b.outcome).reduce((a, b) => a + (b.profitPence || 0), 0);
-  const staked = bets.reduce((a, b) => a + b.stakePence, 0);
+  /* Already in the ledger? Same four fields the server keys on. */
+  const key = b => [dayOf(b.placedAt), String(b.selection || '').trim().toLowerCase(),
+                    Math.round(Number(b.stakePence) || 0),
+                    String(b.book || '').trim().toLowerCase()].join('|');
+  const held = new Set(LEDGER.concat(PENDING).map(b => [
+    [b.year, String(b.month + 1).padStart(2, '0'), String(b.day).padStart(2, '0')].join('-'),
+    String(b.selection || '').trim().toLowerCase(),
+    Math.round(Number(b.stake) || 0),
+    String(b.book || '').trim().toLowerCase()
+  ].join('|')));
+
+  const seen = new Set();
+  pendingCsv = bets.map(b => {
+    const k = key(b);
+    /* A file that lists the same bet twice is caught here as well, which is
+       the case the server also catches and neither should be the first to
+       mention it. */
+    const dupe = held.has(k) || seen.has(k);
+    seen.add(k);
+    return Object.assign({}, b, {
+      include: !dupe,
+      duplicate: dupe,
+      problem: betProblem(b)
+    });
+  });
 
   report.innerHTML =
-    '<div class="card pad" style="margin-top:12px">' +
+    '<div class="card pad imported" style="margin-top:12px">' +
     '<div class="cardhead"><span class="title">' + esc(label) + '</span>' +
-    '<span class="tagbit ok">' + bets.length + (bets.length === 1 ? ' bet' : ' bets') + '</span></div>' +
-    '<div class="reviewbar">' +
-      '<div class="reviewline"><span class="k">Ready to add</span><span class="v">' + bets.length + '</span></div>' +
-      (errors.length
-        ? '<div class="reviewline"><span class="k">Rows skipped</span><span class="v warn">' + errors.length + '</span></div>'
-        : '') +
-      '<div class="reviewline"><span class="k">Staked across them</span><span class="v m">' + M.money0(staked) + '</span></div>' +
-      /* Only the settled rows have a profit. Adding an open bet in at zero
-         and calling the result "profit" was the figure that could not be
-         true of anything. */
-      (settled
-        ? '<div class="reviewline"><span class="k">Profit on the ' + settled + ' already settled</span>' +
-          '<span class="v m ' + M.tone(net) + '">' + M.signed(net) + '</span></div>'
-        : '') +
-    '</div>' +
-    '<p class="hinttext">Matched columns: ' + esc(mapped.join(', ') || 'none') + '. ' +
-      (settled === bets.length ? 'All of them are already settled.'
-        : settled ? settled + ' are already settled; the rest will be graded when they finish.'
-        : 'None are settled yet, so they will be graded when the games finish.') + '</p>' +
+    '<span class="tagbit ok">' + bets.length + (bets.length === 1 ? ' row' : ' rows') + '</span></div>' +
+    '<p class="hinttext" style="border:0;padding:0;margin:0 0 10px">Matched columns: ' +
+      esc(mapped.join(', ') || 'none') + '. Untick anything you do not want, or tap a row to correct it. ' +
+      'Nothing is saved until you press the button at the bottom.</p>' +
+    '<div class="rowlist" id="csvRows"></div>' +
     (errors.length
-      ? '<details class="disclose"><summary>' + errors.length + ' rows skipped</summary>' +
+      ? '<details class="disclose"><summary>' + errors.length + ' rows the parser could not read</summary>' +
         errors.slice(0, 40).map(e => '<p class="hinttext">Line ' + e.line + ': ' + esc(e.why) + '</p>').join('') +
         '</details>'
       : '') +
+    '<div class="reviewbar" id="csvTotals"></div>' +
     '<div class="btnrow" style="margin-top:12px">' +
-      '<button class="btn primary small" id="csvGo">Import ' + bets.length + ' bets</button>' +
+      '<button class="btn primary small" id="csvGo">Import</button>' +
       '<button class="btn ghost small" id="csvCancel">Cancel</button></div></div>';
 
-  pendingCsv = bets;
+  paintCsvRows();
+}
+
+/** One imported row: what it says, whether it is coming, and how to fix it. */
+function csvRow(b, i) {
+  const money = v => (v == null ? '' : (v / 100).toFixed(2));
+  const on = b.include && !b.problem;
+  return '<div class="irow' + (b.problem ? ' bad' : '') + '" data-irow="' + i + '">' +
+    '<button class="ipick" data-ipick="' + i + '" aria-pressed="' + on + '" ' +
+      'aria-label="' + (on ? 'Do not import' : 'Import') + ' ' + esc(b.selection || 'this row') + '">' +
+      ico('i-won') + '</button>' +
+    '<button class="imid" data-iopen="' + i + '" aria-expanded="false">' +
+      '<span class="isel">' + esc(b.selection || 'No selection') + '</span>' +
+      '<span class="imeta">' + esc(dayLabel(b.placedAt)) +
+        (b.book ? ' · ' + esc(b.book) : '') +
+        (b.odds ? ' · ' + Number(b.odds).toFixed(2) : '') + '</span>' +
+      (b.duplicate ? '<span class="iflag">Already in your ledger</span>' : '') +
+      (b.problem ? '<span class="iflag bad">' + esc(b.problem) + '</span>' : '') +
+    '</button>' +
+    '<span class="iamt m">' + esc(M.money(b.stakePence || 0)) + '</span>' +
+    '<div class="iedit" hidden>' +
+      ifield(i, 'placedAt', 'Date', 'date', dayOf(b.placedAt)) +
+      ifield(i, 'selection', 'Selection', 'text', b.selection || '') +
+      ifield(i, 'stakePence', 'Stake £', 'decimal', money(b.stakePence)) +
+      ifield(i, 'odds', 'Odds', 'decimal', b.odds == null ? '' : String(b.odds)) +
+      ifield(i, 'book', 'Bookmaker', 'text', b.book || '') +
+      ifield(i, 'event', 'Event', 'text', b.event || '') +
+    '</div></div>';
+}
+
+function ifield(i, key, label, kind, value) {
+  const id = 'irow' + i + '-' + key;
+  return '<label class="icell"><span>' + esc(label) + '</span>' +
+    '<input class="field slipin' + (kind === 'decimal' ? ' m' : '') + '" id="' + id + '" ' +
+    (kind === 'date' ? 'type="date"' : kind === 'decimal' ? 'inputmode="decimal"' : '') +
+    ' data-iedit="' + i + '" data-ikey="' + key + '" value="' + esc(value) + '"></label>';
+}
+
+/* Rendered from the row objects every time, so the DOM is never the place
+   the answer is kept. */
+function paintCsvRows() {
+  const list = $('csvRows');
+  if (!list || !pendingCsv) return;
+  setHTML('csvRows', pendingCsv.map(csvRow).join(''));
+  paintCsvTotals();
+}
+
+function paintCsvTotals() {
+  const el = $('csvTotals');
+  if (!el || !pendingCsv) return;
+  const going = pendingCsv.filter(b => b.include && !b.problem);
+  const staked = going.reduce((a, b) => a + (b.stakePence || 0), 0);
+  const settled = going.filter(b => b.outcome);
+  const net = settled.reduce((a, b) => a + (b.profitPence || 0), 0);
+  const dupes = pendingCsv.filter(b => b.duplicate).length;
+  const broken = pendingCsv.filter(b => b.problem).length;
+
+  el.innerHTML =
+    '<div class="reviewline"><span class="k">Coming across</span>' +
+      '<span class="v">' + going.length + ' of ' + pendingCsv.length + '</span></div>' +
+    (dupes ? '<div class="reviewline"><span class="k">Already in your ledger</span>' +
+      '<span class="v warn">' + dupes + '</span></div>' : '') +
+    (broken ? '<div class="reviewline"><span class="k">Need fixing first</span>' +
+      '<span class="v neg">' + broken + '</span></div>' : '') +
+    '<div class="reviewline"><span class="k">Staked across them</span>' +
+      '<span class="v m">' + M.money0(staked) + '</span></div>' +
+    (settled.length
+      ? '<div class="reviewline"><span class="k">Profit on the ' + settled.length + ' already settled</span>' +
+        '<span class="v m ' + M.tone(net) + '">' + M.signed(net) + '</span></div>'
+      : '');
+
+  const go = $('csvGo');
+  if (go) {
+    go.disabled = going.length === 0;
+    go.textContent = going.length
+      ? 'Import ' + going.length + (going.length === 1 ? ' bet' : ' bets')
+      : 'Nothing selected';
+  }
+}
+
+/** Tick or untick one row. A row that cannot be saved cannot be ticked. */
+function toggleCsvRow(i) {
+  const b = pendingCsv && pendingCsv[i];
+  if (!b) return;
+  if (b.problem) { toast(b.problem); return; }
+  b.include = !b.include;
+  /* Ticking a duplicate back on is allowed and deliberate: two identical
+     bets on one day is unusual, not impossible, and the person knows. */
+  const el = document.querySelector('[data-ipick="' + i + '"]');
+  if (el) el.setAttribute('aria-pressed', String(b.include));
+  const row = document.querySelector('[data-irow="' + i + '"]');
+  if (row) row.classList.toggle('off', !b.include);
+  paintCsvTotals();
+}
+
+/** Edit one field of one row, and re-check it the way the server will. */
+function editCsvRow(i, key, raw) {
+  const b = pendingCsv && pendingCsv[i];
+  if (!b) return;
+  if (key === 'stakePence') {
+    const pence = M.parseMoney(raw);
+    b.stakePence = pence == null ? null : pence;
+  } else if (key === 'odds') {
+    const n = parseFloat(raw);
+    b.odds = Number.isFinite(n) ? n : null;
+  } else if (key === 'placedAt') {
+    b.placedAt = raw ? raw + 'T12:00:00' : null;
+  } else {
+    b[key] = raw.trim();
+  }
+  b.problem = betProblem(b);
+  /* A row that has just been fixed comes back into the import rather than
+     staying excluded for a reason that no longer applies. */
+  if (!b.problem && !b.duplicate) b.include = true;
+
+  const row = document.querySelector('[data-irow="' + i + '"]');
+  if (row) {
+    row.classList.toggle('bad', Boolean(b.problem));
+    const flags = row.querySelectorAll('.iflag');
+    flags.forEach(f => f.remove());
+    const mid = row.querySelector('.imid');
+    if (b.duplicate && mid) mid.insertAdjacentHTML('beforeend',
+      '<span class="iflag">Already in your ledger</span>');
+    if (b.problem && mid) mid.insertAdjacentHTML('beforeend',
+      '<span class="iflag bad">' + esc(b.problem) + '</span>');
+    const amt = row.querySelector('.iamt');
+    if (amt) amt.textContent = M.money(b.stakePence || 0);
+    const sel = row.querySelector('.isel');
+    if (sel) sel.textContent = b.selection || 'No selection';
+    const pick = row.querySelector('[data-ipick]');
+    if (pick) pick.setAttribute('aria-pressed', String(b.include && !b.problem));
+    row.classList.toggle('off', !b.include);
+  }
+  paintCsvTotals();
+}
+
+/* An ISO day out of whatever the parser produced, and a readable one. */
+function dayOf(iso) {
+  if (!iso) return '';
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return '';
+  return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') +
+    '-' + String(d.getDate()).padStart(2, '0');
+}
+function dayLabel(iso) {
+  const d = iso ? new Date(iso) : null;
+  if (!d || Number.isNaN(d.getTime())) return 'No date';
+  return R.DS.format(d) + ' ' + d.getFullYear();
 }
 
 let pendingCsv = null;
@@ -1640,7 +1818,10 @@ const csvError = msg =>
  */
 async function runCsvImport(btn) {
   if (!pendingCsv) return;
-  const rows = pendingCsv;
+  /* Only what is ticked, and only what would survive the server's own
+     check. The review is not a preview of a decision already taken. */
+  const rows = pendingCsv.filter(b => b.include && !b.problem);
+  if (!rows.length) { toast('Nothing selected to import.'); return; }
 
   btn.disabled = true;
   btn.textContent = 'Importing…';
@@ -2532,6 +2713,11 @@ document.addEventListener('click', e => {
     R.renderRecentBets();
     return;
   }
+  if ((el = c('[data-source]'))) {
+    S.source = el.getAttribute('data-source');
+    R.renderLedger();
+    return;
+  }
   if ((el = c('[data-filter]'))) { S.filter = el.getAttribute('data-filter'); R.renderLedger(); return; }
   if ((el = c('#ledgerSeg button'))) {
     S.ledgerView = el.getAttribute('data-ledger');
@@ -2672,6 +2858,19 @@ document.addEventListener('click', e => {
   }
   if ((el = c('[data-dismiss-card]'))) { collapse(el.closest('.card'), 'Discarded'); setTimeout(updateImportTotals, 500); return; }
   if ((el = c('[data-confirm-slip]'))) { confirmSlip(el); return; }
+  if ((el = c('[data-ipick]'))) { toggleCsvRow(+el.getAttribute('data-ipick')); return; }
+  if ((el = c('[data-iopen]'))) {
+    const row = el.closest('.irow');
+    const edit = row && row.querySelector('.iedit');
+    if (edit) {
+      const open = edit.hidden;
+      edit.hidden = !open;
+      el.setAttribute('aria-expanded', String(open));
+      row.classList.toggle('open', open);
+      if (open) { const f = edit.querySelector('input'); if (f) f.focus(); }
+    }
+    return;
+  }
   if ((el = c('#csvGo'))) { runCsvImport(el); return; }
   if ((el = c('#csvCancel'))) {
     pendingCsv = null;
@@ -2831,6 +3030,10 @@ function handleWizard(dir) {
 
 document.addEventListener('input', e => {
   const t = e.target;
+  if (t.hasAttribute && t.hasAttribute('data-iedit')) {
+    editCsvRow(+t.getAttribute('data-iedit'), t.getAttribute('data-ikey'), t.value);
+    return;
+  }
   if (Auth.handleInput(t)) return;
   if (t.id === 'betSearch') { S.query = t.value.trim().toLowerCase(); R.renderLedger(); return; }
   if (t.id === 'peopleSearch') { S.peopleQuery = t.value.trim(); findPeople(S.peopleQuery); return; }

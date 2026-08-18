@@ -575,6 +575,64 @@ input[type=date]{
   &::-webkit-scrollbar{width:3px}
   &::-webkit-scrollbar-thumb{background:rgba(var(--ink),.18);border-radius:3px}}
 
+/* THE IMPORT REVIEW.
+   A row is a card at 390px rather than a table cell, because a table of
+   six columns at that width is either scrolled sideways or unreadable, and
+   this is the screen where somebody decides what enters their record.
+
+   Three parts across: the tick, the thing itself, and the money. The edit
+   fields drop underneath when the middle is tapped. */
+.rowlist{
+  display:flex;flex-direction:column;
+  max-height:52svh;overflow-y:auto;overscroll-behavior:contain;
+  margin:0 -4px;padding:0 4px;
+  border-top:1px solid var(--e2);border-bottom:1px solid var(--e2)}
+.irow{
+  display:grid;grid-template-columns:auto 1fr auto;align-items:center;
+  gap:10px;padding:9px 2px;
+  &+.irow{border-top:1px solid var(--e2)}
+  /* Unticked reads as excluded without vanishing, because it can come
+     back and its figures still tell you what you are leaving out. */
+  &.off{opacity:.42}
+  &.bad{background:rgba(252,165,165,.06)}
+  &.open{background:rgba(var(--ink),.03)}
+  & .ipick{
+    width:26px;height:26px;border-radius:8px;flex:0 0 auto;
+    display:grid;place-items:center;
+    border:1px solid var(--e1);background:var(--c1);color:transparent;
+    /* The tap target is 44px; the box is 26px. Padding rather than size,
+       so the row stays dense and the finger does not. */
+    margin:-9px 0;padding:9px 0;box-sizing:content-box;
+    transition:background var(--tf) var(--ez),border-color var(--tf) var(--ez),
+               color var(--tf) var(--ez);
+    & svg{width:14px;height:14px}
+    &[aria-pressed=true]{
+      background:rgba(var(--orb1),.34);border-color:rgba(var(--orb1),.6);
+      color:var(--t1)}
+    &:active{transform:scale(.94)}}
+  & .imid{
+    display:grid;gap:2px;min-width:0;text-align:left;
+    padding:2px 0;min-height:40px;align-content:center}
+  & .isel{font-size:13px;color:var(--t1);
+    overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  & .imeta{font-family:var(--fm);font-size:10.5px;color:var(--t3);
+    overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  & .iflag{
+    justify-self:start;margin-top:3px;
+    font-family:var(--fm);font-size:9px;letter-spacing:.07em;text-transform:uppercase;
+    color:var(--t2);background:var(--c1);border:1px solid var(--e2);
+    border-radius:4px;padding:2px 5px;
+    &.bad{color:var(--neg);border-color:rgba(252,165,165,.4)}}
+  & .iamt{font-size:12.5px;font-weight:600;white-space:nowrap;
+    font-variant-numeric:tabular-nums lining-nums}
+  & .iedit{
+    grid-column:1/-1;display:grid;grid-template-columns:1fr 1fr;gap:8px;
+    padding:4px 0 8px}
+  & .icell{
+    display:grid;gap:3px;min-width:0;
+    & span{font-size:10.5px;color:var(--t3)}
+    &:nth-child(2){grid-column:1/-1}}}
+
 /* The dated list an import turns into. Deliberately dense: it is a
    reference you scan, not a thing you read. */
 .plrow{

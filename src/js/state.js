@@ -40,6 +40,11 @@ export const S = {
      the client writing an attribute. */
   theme: 'periwinkle',
   showTipster: true,
+  /* Which provenance the ledger is showing: all, slips, or import. A bet
+     off a slip and a row out of a spreadsheet are both real; they are not
+     the same kind of evidence, and sometimes you want to read only one. */
+  source: 'all',
+
   /* social */
   privacy: 'friends',
   group: 0,

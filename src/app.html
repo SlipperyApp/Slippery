@@ -947,6 +947,10 @@
           <label class="sr" for="betSearch">Search bets</label>
           <input class="field" id="betSearch" type="search" placeholder="Search event, market or bookmaker…" autocomplete="off">
         </div>
+        <!-- Where the bets came from, shown only when the account holds
+             both kinds. A row lifted off a slip and a row out of a
+             spreadsheet are both real and they are not the same evidence. -->
+        <div class="chiprow" id="betSources" role="group" aria-label="Filter by where the bet came from" hidden></div>
         <div class="chiprow" id="betFilters" role="group" aria-label="Filter by outcome"></div>
         <div class="card pad"><div id="ledgerList"></div></div>
       </div>
@@ -956,6 +960,7 @@
           <div class="cardhead"><span class="title">Where the figure comes from</span>
             <span class="meta scoped"></span></div>
           <div id="reconRows"></div>
+          <p class="hinttext" id="historyRule" hidden></p>
         </div>
         <div class="card pad">
           <div class="cardhead"><span class="title">Imported history</span>

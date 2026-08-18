@@ -19,9 +19,21 @@ export const DS = new Intl.DateTimeFormat('en-GB', { day: 'numeric', month: 'sho
 
 const VERIFIED = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" role="img" aria-label="Verified"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="M9 12l2 2 4-4"/></svg>';
 const TELEGRAM = '<svg viewBox="0 0 24 24" role="img" aria-label="Logged via Telegram"><use href="#i-telegram"/></svg>';
+/* A ROW SAYS WHERE IT CAME FROM.
+   A bet lifted off a forwarded slip and a line out of somebody's old
+   spreadsheet used to look identical in the ledger. They are not the same
+   claim: one was captured at placement with an image behind it, the other
+   is a figure somebody exported from another tracker. A tag, not a colour,
+   because colour here means money. */
+const IMPORTED = '<span class="prov">imported</span>';
 const LOCK = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg>';
 
 const odds = d => M.odds(d, S.oddsFormat);
+/* What to call a multiple in one word. */
+export const betTypeWord = t =>
+  t === 'bet_builder' ? 'bet builder'
+  : t === 'system' ? 'system bet'
+  : t === 'multiple' ? 'accumulator' : 'multiple';
 export const periodWord = () =>
   S.period === 'a' ? 'all time'
   : S.period === 'y' ? (S.year === TODAY.year ? 'this year' : String(S.year))
@@ -49,8 +61,20 @@ export function betRow(b, delay) {
     '<span class="icon" aria-hidden="true">' + ico(OUTCOME_ICON[b.outcome]) + '</span>' +
     '<span class="sr">' + OUTCOME_LABEL[b.outcome] + '.</span>' +
     '<div class="mid"><div class="ev"><span>' + esc(b.event) + '</span>' +
-      (b.viaTelegram ? TELEGRAM : '') + '</div>' +
-    '<div class="sub">' + esc(bits.join(' · ')) + '</div></div>' +
+      (b.viaTelegram ? TELEGRAM : '') +
+      (b.source === 'import' ? IMPORTED : '') + '</div>' +
+    '<div class="sub">' + esc(bits.join(' · ')) + '</div>' +
+    /* A multiple lists its legs rather than presenting them as one
+       unreadable joined string. Closed by default: the row is a summary. */
+    (b.legs && b.legs.length
+      ? '<details class="legs"><summary>' + b.legs.length + ' legs · ' +
+        esc(betTypeWord(b.betType)) + '</summary>' +
+        b.legs.map(l => '<span class="leg">' + esc(l.selection) +
+          (l.event ? ' <i>' + esc(l.event) + '</i>' : '') +
+          (l.odds ? ' <b>' + Number(l.odds).toFixed(2) + '</b>' : '') + '</span>').join('') +
+        '</details>'
+      : '') +
+    '</div>' +
     '<div class="right"><div class="stamp">' + esc(stamp) + '</div>' +
     '<div class="amt ' + M.tone(b.profit) + '">' + main + '</div>' +
     '<div class="alt">' + alt + '</div></div></div>';
@@ -95,14 +119,34 @@ export function renderLedger() {
   const pool = scopedBets();
   const rows = pool.filter(b => {
     const okFilter = S.filter === 'all' || outcomeGroup(b.outcome) === S.filter;
+    /* Where it came from, which is a different question to how it went.
+       'slips' is everything with an image or a forwarded message behind
+       it; 'import' is everything that arrived as a row in a file. */
+    const okSource = S.source === 'all'
+      || (S.source === 'slips' ? b.source !== 'import' : b.source === 'import');
     const okSearch = !S.query ||
       (b.event + ' ' + b.selection + ' ' + b.book + ' ' + b.market).toLowerCase().includes(S.query);
-    return okFilter && okSearch;
+    return okFilter && okSource && okSearch;
   });
   $('ledgerList').innerHTML = rows.length ? rows.slice(0, 300).map(b => betRow(b)).join('')
     : '<div class="emptystate"><div class="t">Nothing here</div><p>No bets match this filter.</p></div>';
 
   const count = r => pool.filter(b => outcomeGroup(b.outcome) === r).length;
+  /* The provenance row appears only when there is something to separate.
+     On an account with no imported history it would be two buttons that
+     always give the same answer. */
+  const imported = pool.filter(b => b.source === 'import').length;
+  const srcEl = $('betSources');
+  if (srcEl) {
+    srcEl.hidden = !imported || imported === pool.length;
+    srcEl.innerHTML = srcEl.hidden ? '' : [
+      ['all', 'All ' + pool.length],
+      ['slips', 'From slips ' + (pool.length - imported)],
+      ['import', 'Imported ' + imported]
+    ].map(x => '<button class="chip" data-source="' + x[0] + '" aria-pressed="' +
+      (S.source === x[0]) + '">' + esc(x[1]) + '</button>').join('');
+  }
+
   $('betFilters').innerHTML = [
     ['all', 'All ' + pool.length],
     ['won', ico('i-won', 'pos') + 'Won ' + count('won')],
@@ -784,6 +828,18 @@ export function renderHistory() {
         : 'Nothing imported in this period') +
     '<div class="reconrow total"><span class="rk">Net ' + esc(periodWord()) + '</span>' +
     '<span class="rv ' + M.tone(r.total) + '">' + M.signed(r.total) + '</span></div>';
+
+  /* WHAT AN IMPORTED FIGURE CANNOT DO, ON SCREEN RATHER THAN ONLY IN A
+     TEST. It moves the profit and the turnover for its period and it is in
+     none of the measures that describe how the betting went, because there
+     are no bets behind it to describe. */
+  setText('historyRule', r.importedRows.length
+    ? 'These move your profit and your turnover for the period they are dated. ' +
+      'They are not in the win rate, the streak, or the best and worst day: ' +
+      'a figure with no result cannot be a win.'
+    : '');
+  const ruleEl = $('historyRule');
+  if (ruleEl) ruleEl.hidden = !r.importedRows.length;
 
   setText('historyMeta', r.importedRows.length
     ? r.importedRows.length + (r.importedRows.length === 1 ? ' figure' : ' figures') + ', ' + periodWord()
