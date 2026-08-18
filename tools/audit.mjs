@@ -95,7 +95,7 @@ async function main() {
     await page.evaluate(() => { const e = document.querySelector('#dayClose'); if (e) e.click(); });
     await page.waitForTimeout(200);
     /* every period, both calendar modes, both other panes */
-    for (const p of ['a', 'm', 'w', 'd', 'm']) {
+    for (const p of ['a', 'y', 'm', 'w', 'm']) {
       await page.evaluate(x => {
         const b = document.querySelector('#periodSeg [data-period="' + x + '"]');
         if (b && !b.disabled) b.click();

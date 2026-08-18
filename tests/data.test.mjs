@@ -42,8 +42,8 @@ test('a fresh store is empty, and says so rather than inventing a figure', () =>
   load([]);
   assert.equal(LEDGER.length, 0);
   assert.equal(PENDING.length, 0);
-  assert.equal(monthTotal(TODAY.month), 0);
-  assert.equal(yearTotal(), 0);
+  assert.equal(monthTotal(TODAY.year, TODAY.month), 0);
+  assert.equal(yearTotal(TODAY.year), 0);
   const l = lifetime();
   assert.equal(l.profit, 0);
   assert.equal(l.bets, 0);
@@ -66,17 +66,18 @@ test('every day sums EXACTLY to the bets in it', () => {
     at(4, { profit: 9000 }), at(4, { profit: -5000 }), at(4, { profit: 1234 }),
     at(9, { profit: -2500 }), at(9, { profit: 40000 })
   ]);
-  assert.equal(DAY_TOTALS[TODAY.month][4], 9000 - 5000 + 1234);
-  assert.equal(DAY_TOTALS[TODAY.month][9], -2500 + 40000);
-  assert.equal(betsOn(TODAY.month, 4).reduce((a, b) => a + b.profit, 0), DAY_TOTALS[TODAY.month][4]);
+  assert.equal(DAY_TOTALS[TODAY.year][TODAY.month][4], 9000 - 5000 + 1234);
+  assert.equal(DAY_TOTALS[TODAY.year][TODAY.month][9], -2500 + 40000);
+  assert.equal(betsOn(TODAY.year, TODAY.month, 4).reduce((a, b) => a + b.profit, 0),
+    DAY_TOTALS[TODAY.year][TODAY.month][4]);
 });
 
 test('the month is exactly the sum of its days, and the year of its months', () => {
   load([at(2, { profit: 1111 }), at(7, { profit: -222 }), at(19, { profit: 30000 })]);
-  const days = DAY_TOTALS[TODAY.month];
+  const days = DAY_TOTALS[TODAY.year][TODAY.month];
   const fromDays = Object.values(days).reduce((a, b) => a + b, 0);
-  assert.equal(monthTotal(TODAY.month), fromDays);
-  assert.equal(yearTotal(), fromDays, 'one month of data means the year equals it');
+  assert.equal(monthTotal(TODAY.year, TODAY.month), fromDays);
+  assert.equal(yearTotal(TODAY.year), fromDays, 'one month of data means the year equals it');
 });
 
 test('all time is the ledger plus imports, and cannot drift from either', () => {
@@ -147,7 +148,7 @@ test('money stays integer pence through the whole store', () => {
     assert.equal(Number.isInteger(b.profit), true, b.profit + ' is not whole pence');
     assert.equal(Number.isInteger(b.stake), true, b.stake + ' is not whole pence');
   }
-  assert.equal(Number.isInteger(monthTotal(TODAY.month)), true);
+  assert.equal(Number.isInteger(monthTotal(TODAY.year, TODAY.month)), true);
 });
 
 test('adding a bet lands it in the right list and moves the day total', () => {
@@ -157,7 +158,7 @@ test('adding a bet lands it in the right list and moves the day total', () => {
            placedAt: new Date(TODAY.year, TODAY.month, 6, 12, 0).toISOString() });
   assert.equal(PENDING.length, 1);
   assert.equal(LEDGER.length, 0, 'an unsettled bet is not profit');
-  assert.equal(monthTotal(TODAY.month), 0, 'and must not move the calendar');
+  assert.equal(monthTotal(TODAY.year, TODAY.month), 0, 'and must not move the calendar');
 });
 
 test('settling a running bet moves it, and every view moves with it', () => {
@@ -165,15 +166,15 @@ test('settling a running bet moves it, and every view moves with it', () => {
   addBet({ id: 'n2', event: 'A v B', selection: 'Over 2.5', stake: 10000, odds: 1.9,
            profit: null, outcome: null, status: 'pending',
            placedAt: new Date(TODAY.year, TODAY.month, 8, 12, 0).toISOString() });
-  assert.equal(monthTotal(TODAY.month), 0);
+  assert.equal(monthTotal(TODAY.year, TODAY.month), 0);
 
   settleLocal('n2', 'won', 9000);
   assert.equal(PENDING.length, 0);
   assert.equal(LEDGER.length, 1);
   /* The calendar, the month and all time all move together, because they
      are the same records counted three ways. */
-  assert.equal(DAY_TOTALS[TODAY.month][8], 9000);
-  assert.equal(monthTotal(TODAY.month), 9000);
+  assert.equal(DAY_TOTALS[TODAY.year][TODAY.month][8], 9000);
+  assert.equal(monthTotal(TODAY.year, TODAY.month), 9000);
   assert.equal(lifetime().profit, 9000);
 });
 
@@ -185,16 +186,21 @@ test('a void settles to zero profit with the stake returned', () => {
   settleLocal('n3', 'void', 0);
   assert.equal(LEDGER[0].outcome, 'void');
   assert.equal(LEDGER[0].profit, 0, 'void is stake returned, so zero profit');
-  assert.equal(monthTotal(TODAY.month), 0);
+  assert.equal(monthTotal(TODAY.year, TODAY.month), 0);
 });
 
-test('bets from other years do not leak into this year', () => {
+test('bets from other years are kept apart, not thrown away', () => {
+  /* buildDayTotals used to drop every bet outside the current year, so a
+     Yearly period could never have shown one and last June's figures were
+     simply absent. They are filed under their own year now. */
   load([
     at(3, { profit: 5000 }),
     at(3, { profit: 999999, placedAt: new Date(TODAY.year - 1, 5, 3, 12, 0).toISOString() })
   ]);
   assert.equal(LEDGER.length, 2, 'both are in the ledger');
-  assert.equal(yearTotal(), 5000, 'but only this year counts on this year’s calendar');
+  assert.equal(yearTotal(TODAY.year), 5000, 'this year is only this year');
+  assert.equal(yearTotal(TODAY.year - 1), 999999, 'and last year is still there');
+  assert.equal(DAY_TOTALS[TODAY.year - 1][5][3], 999999);
 });
 
 test('TODAY is actually today', () => {

@@ -91,6 +91,10 @@ export const TARGETS = {};
    stale array reference across a reload. */
 export let LEDGER = [];
 export let PENDING = [];
+/* year -> month -> day -> profit in pence. The year level is not
+   decoration: without it a bet from last March landed on this March's
+   calendar, and every figure outside the current year was dropped on the
+   floor by buildDayTotals rather than shown under its own year. */
 export let DAY_TOTALS = {};
 
 /* Totals for the years that predate the account, brought across as
@@ -157,10 +161,11 @@ export function hydrate(payload) {
   for (const p of PL) {
     if (p.period !== 'day') continue;
     const d = new Date(p.date + 'T12:00:00');
-    if (Number.isNaN(d.getTime()) || d.getFullYear() !== TODAY.year) continue;
-    const m = d.getMonth(), day = d.getDate();
-    (DAY_TOTALS[m] || (DAY_TOTALS[m] = {}));
-    DAY_TOTALS[m][day] = (DAY_TOTALS[m][day] || 0) + p.profit;
+    if (Number.isNaN(d.getTime())) continue;
+    const y = d.getFullYear(), m = d.getMonth(), day = d.getDate();
+    const yr = (DAY_TOTALS[y] || (DAY_TOTALS[y] = {}));
+    (yr[m] || (yr[m] = {}));
+    yr[m][day] = (yr[m][day] || 0) + p.profit;
   }
   return { settled: LEDGER.length, pending: PENDING.length, pl: PL.length };
 }
@@ -219,22 +224,36 @@ function fromApi(r) {
 function buildDayTotals(bets) {
   const out = {};
   for (const b of bets) {
-    if (b.year !== TODAY.year) continue;
-    (out[b.month] || (out[b.month] = {}));
-    out[b.month][b.day] = (out[b.month][b.day] || 0) + b.profit;
+    const yr = (out[b.year] || (out[b.year] = {}));
+    (yr[b.month] || (yr[b.month] = {}));
+    yr[b.month][b.day] = (yr[b.month][b.day] || 0) + b.profit;
   }
   return out;
 }
 
-export function monthTotal(m) {
-  const d = DAY_TOTALS[m] || {};
+/* Every one of these takes the year it means. They used to assume the
+   current one, which is why a Yearly period could only ever have shown the
+   year you happened to be in. */
+export function dayTotals(year, month) {
+  return (DAY_TOTALS[year] || {})[month] || {};
+}
+export function monthTotal(year, month) {
+  const d = dayTotals(year, month);
   return Object.keys(d).reduce((a, k) => a + d[k], 0);
 }
-export function yearTotal() {
-  let t = 0; for (let m = 0; m < 12; m++) t += monthTotal(m); return t;
+export function yearTotal(year) {
+  let t = 0; for (let m = 0; m < 12; m++) t += monthTotal(year, m); return t;
 }
-export function betsOn(month, day) {
-  return LEDGER.filter(b => b.month === month && b.day === day);
+/** Which years the record touches, newest first, today's year always in. */
+export function yearsHeld() {
+  const set = new Set([TODAY.year]);
+  for (const b of LEDGER) set.add(b.year);
+  for (const b of PENDING) set.add(b.year);
+  for (const y of Object.keys(DAY_TOTALS)) set.add(Number(y));
+  return [...set].sort((a, b) => b - a);
+}
+export function betsOn(year, month, day) {
+  return LEDGER.filter(b => b.year === year && b.month === month && b.day === day);
 }
 
 /* ---------- social ----------

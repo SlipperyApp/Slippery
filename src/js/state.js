@@ -11,8 +11,14 @@ export const S = {
   view: 'landing',
   pane: 'overview',
 
-  /* period selection */
-  period: 'm',          // d | w | m | a
+  /* period selection.
+     Four are on the picker — All time, Yearly, Monthly, Weekly — and 'd'
+     is the fifth, reached by tapping a day on the calendar rather than by
+     a button. Each one changes which bets are counted, which is the whole
+     point: the old Tracker/Lifetime toggle beside them changed a single
+     integer and left every other figure describing a different set. */
+  period: 'm',          // d | w | m | y | a
+  year: TODAY.year,
   month: TODAY.month,
   focus: 8,             // day of month in view, or null
   calMode: 'm',         // m | y
@@ -30,13 +36,6 @@ export const S = {
      the client writing an attribute. */
   theme: 'periwinkle',
   showTipster: true,
-  /* Which bet count to show.
-     'tracker' counts only what has been logged HERE, so a new account
-     starts at 0 and the number means "bets Slippery has actually seen".
-     'lifetime' adds the history brought across at import, which is the
-     honest total but starts a fresh account at somebody else's figure. */
-  countMode: 'tracker',
-
   /* social */
   privacy: 'friends',
   group: 0,

@@ -7,7 +7,7 @@
  * screen it is counted here, from records.
  */
 import {
-  LEDGER, PENDING, DAY_TOTALS, PL, TODAY, monthTotal as monthTotalOf,
+  LEDGER, PENDING, PL, TODAY,
   TARGETS, outcomeGroup, betsOn
 } from './data.js';
 import { S } from './state.js';
@@ -20,11 +20,31 @@ export function dowLabels(weekStart) {
   for (let i = 0; i < 7; i++) o.push(DOW[(i + weekStart) % 7]);
   return o;
 }
-export function weekRange(month, day, weekStart) {
-  const off = dowOffset(new Date(TODAY.year, month, day), weekStart);
-  const dim = new Date(TODAY.year, month + 1, 0).getDate();
-  return { a: Math.max(1, day - off), b: Math.min(dim, day - off + 6) };
+/* A week, as the seven days it actually is.
+ *
+ * This used to clip both ends to the displayed month, so the week of the
+ * 30th was two days long and the bets either side of a month boundary were
+ * silently outside every period. The clipped numbers are still returned as
+ * `a` and `b` because the calendar paints them inside one month's grid, but
+ * `from` and `to` are the real dates and they are what the query uses. */
+export function weekRange(year, month, day, weekStart) {
+  const start = new Date(year, month, day - dowOffset(new Date(year, month, day), weekStart));
+  const end = new Date(start.getFullYear(), start.getMonth(), start.getDate() + 6);
+  const dim = new Date(year, month + 1, 0).getDate();
+  const raw = day - dowOffset(new Date(year, month, day), weekStart);
+  return {
+    from: start, to: end,
+    a: Math.max(1, raw), b: Math.min(dim, raw + 6)
+  };
 }
+/* Whole days since the epoch, so a range test is one comparison and no
+   date arithmetic happens per bet. */
+const dnum = (y, m, d) => Math.floor(Date.UTC(y, m, d) / 86400000);
+const inWeek = (b, r) => {
+  const n = dnum(b.year, b.month, b.day);
+  return n >= dnum(r.from.getFullYear(), r.from.getMonth(), r.from.getDate())
+      && n <= dnum(r.to.getFullYear(), r.to.getMonth(), r.to.getDate());
+};
 /* The target for a month: the one set for it, else the standing target the
    user chose at setup. Falls back to S.target rather than a hardcoded
    £2,500, which was a figure nobody had asked for appearing on a brand new
@@ -43,27 +63,32 @@ function dayIndex() {
   if (_dayCache) return _dayCache;
   const idx = {};
   for (const b of LEDGER) {
-    (idx[b.month] || (idx[b.month] = {}));
-    idx[b.month][b.day] = (idx[b.month][b.day] || 0) + b.profit;
+    const yr = (idx[b.year] || (idx[b.year] = {}));
+    (yr[b.month] || (yr[b.month] = {}));
+    yr[b.month][b.day] = (yr[b.month][b.day] || 0) + b.profit;
   }
   _dayCache = idx;
   return idx;
 }
-export function dayMap(month) { return dayIndex()[month] || {}; }
-export function monthTotal(month) {
-  const d = dayMap(month);
+export function dayMap(year, month) { return (dayIndex()[year] || {})[month] || {}; }
+export function monthTotal(year, month) {
+  const d = dayMap(year, month);
   return Object.keys(d).reduce((a, k) => a + d[k], 0);
+}
+export function yearTotal(year) {
+  let t = 0; for (let m = 0; m < 12; m++) t += monthTotal(year, m); return t;
 }
 
 /* Which bets fall inside the current period. */
 function scopeBets(S) {
   if (S.period === 'a') return LEDGER.slice();
-  if (S.period === 'd' && S.focus != null) return betsOn(S.month, S.focus);
+  if (S.period === 'y') return LEDGER.filter(b => b.year === S.year);
+  if (S.period === 'd' && S.focus != null) return betsOn(S.year, S.month, S.focus);
   if (S.period === 'w' && S.focus != null) {
-    const r = weekRange(S.month, S.focus, S.weekStart);
-    return LEDGER.filter(b => b.month === S.month && b.day >= r.a && b.day <= r.b);
+    const r = weekRange(S.year, S.month, S.focus, S.weekStart);
+    return LEDGER.filter(b => inWeek(b, r));
   }
-  return LEDGER.filter(b => b.month === S.month);
+  return LEDGER.filter(b => b.year === S.year && b.month === S.month);
 }
 
 /* ---------------- imported figures ----------------
@@ -130,7 +155,10 @@ export function usablePl() {
 }
 
 function plInScope(S) {
-  const scope = S.period === 'a' ? 3
+  /* 4 is all time, 3 is one year. They were the same number before, which
+     is how "all time" and "this year" came to be the same query. */
+  const scope = S.period === 'a' ? 4
+    : S.period === 'y' ? 3
     : S.period === 'd' && S.focus != null ? 0
     : S.period === 'w' && S.focus != null ? 1
     : 2;
@@ -138,34 +166,41 @@ function plInScope(S) {
   for (const p of usablePl()) {
     const w = WIDTH[p.period];
     if (w == null || w > scope) continue;
-    if (scope === 3) { out.push(p); continue; }
+    if (scope === 4) { out.push(p); continue; }
 
     const d = new Date(p.date + 'T12:00:00');
     if (Number.isNaN(d.getTime())) continue;
-    if (d.getFullYear() !== TODAY.year || d.getMonth() !== S.month) continue;
-    if (scope === 2) { out.push(p); continue; }
+    if (d.getFullYear() !== S.year) continue;
+    if (scope === 3) { out.push(p); continue; }
 
-    const day = d.getDate();
-    if (scope === 0) { if (day === S.focus) out.push(p); continue; }
-    const r = weekRange(S.month, S.focus, S.weekStart);
-    if (day >= r.a && day <= r.b) out.push(p);
+    /* A week can start in the month before the one on screen, so the week
+       branch is checked against real dates rather than against S.month. */
+    if (scope === 1) {
+      const r = weekRange(S.year, S.month, S.focus, S.weekStart);
+      if (inWeek({ year: d.getFullYear(), month: d.getMonth(), day: d.getDate() }, r)) out.push(p);
+      continue;
+    }
+    if (d.getMonth() !== S.month) continue;
+    if (scope === 2) { out.push(p); continue; }
+    if (d.getDate() === S.focus) out.push(p);
   }
   return out;
 }
 
 function label(S, MS) {
   if (S.period === 'a') return 'all time';
+  if (S.period === 'y') return S.year === TODAY.year ? 'this year' : String(S.year);
   if (S.period === 'd' && S.focus != null) {
     return new Intl.DateTimeFormat('en-GB', { day: 'numeric', month: 'short' })
-      .format(new Date(TODAY.year, S.month, S.focus));
+      .format(new Date(S.year, S.month, S.focus));
   }
   if (S.period === 'w' && S.focus != null) {
-    const r = weekRange(S.month, S.focus, S.weekStart);
+    const r = weekRange(S.year, S.month, S.focus, S.weekStart);
     return 'week to ' + new Intl.DateTimeFormat('en-GB', { day: 'numeric', month: 'short' })
-      .format(new Date(TODAY.year, S.month, r.b));
+      .format(r.to);
   }
-  return S.month === TODAY.month ? 'this month'
-    : MS.format(new Date(TODAY.year, S.month, 1)) + ' ' + TODAY.year;
+  return S.year === TODAY.year && S.month === TODAY.month ? 'this month'
+    : MS.format(new Date(S.year, S.month, 1)) + ' ' + S.year;
 }
 
 function splitBy(bets, key) {
@@ -221,7 +256,7 @@ export function stats(S, MS) {
      days with bets but no movement, which is what the calendar shows. */
   const days = new Map();
   for (const b of bets) {
-    const k = b.month + ':' + b.day;
+    const k = b.year + ':' + b.month + ':' + b.day;
     days.set(k, (days.get(k) || 0) + b.profit);
   }
   const dayVals = [...days.values()];
@@ -230,8 +265,8 @@ export function stats(S, MS) {
 
   const ordered = [...days.entries()]
     .sort((a, b) => {
-      const [am, ad] = a[0].split(':').map(Number), [bm, bd] = b[0].split(':').map(Number);
-      return am - bm || ad - bd;
+      const [ay, am, ad] = a[0].split(':').map(Number), [by, bm, bd] = b[0].split(':').map(Number);
+      return ay - by || am - bm || ad - bd;
     })
     .map(e => e[1]);
   let streak = 0, run = 0;
@@ -276,9 +311,12 @@ export function importedTotals() {
   return { profit, turnover, bets };
 }
 
+/* The count for whatever is on screen. There used to be a Tracker/Lifetime
+   toggle here that changed this integer and nothing else, so the headline
+   figure beside it still described a different set of bets. The period
+   picker changes the query instead, and this just reports it. */
 export function betCount(S, scoped) {
-  const here = scoped == null ? LEDGER.length + PENDING.length : scoped;
-  return S.countMode === 'lifetime' ? here + importedTotals().bets : here;
+  return scoped == null ? LEDGER.length + PENDING.length : scoped;
 }
 
 /** Lifetime figures, always the same numbers wherever they appear.
@@ -302,8 +340,6 @@ export function lifetime() {
   };
 }
 
-export function yearProfit() {
-  let t = 0;
-  for (let m = 0; m < 12; m++) t += monthTotalOf(m);
-  return t;
-}
+/* yearProfit() lived here as a second, subtly different way of summing a
+   year, with no callers left once the period picker gained a real Yearly
+   branch. yearTotal above is the one sum. */

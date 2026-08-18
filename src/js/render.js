@@ -9,7 +9,7 @@ import {
 } from './data.js';
 import {
   importedTotals,
-  stats, lifetime, dayMap, monthTotal, dowLabels, dowOffset, weekRange, targetFor
+  stats, lifetime, dayMap, monthTotal, yearTotal, dowLabels, dowOffset, weekRange, targetFor
 } from './stats.js';
 
 export const MS = new Intl.DateTimeFormat('en-GB', { month: 'short' });
@@ -24,7 +24,9 @@ const LOCK = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-
 const odds = d => M.odds(d, S.oddsFormat);
 export const periodWord = () =>
   S.period === 'a' ? 'all time'
-  : S.period === 'm' ? (S.month === TODAY.month ? 'this month' : MS.format(new Date(TODAY.year, S.month, 1)))
+  : S.period === 'y' ? (S.year === TODAY.year ? 'this year' : String(S.year))
+  : S.period === 'm' ? (S.year === TODAY.year && S.month === TODAY.month
+      ? 'this month' : MS.format(new Date(S.year, S.month, 1)) + ' ' + S.year)
   : S.period === 'w' ? 'this week' : 'this day';
 
 /* ---------------- bets ---------------- */
@@ -37,8 +39,10 @@ export function betRow(b, delay) {
       ? M.signed(b.profit) + ' <span class="mut">' + M.units(b.profit, S.unit) + '</span>'
       : M.signed(b.profit);
   const alt = S.profitFormat === 'Units' ? M.signed(b.profit) : M.units(b.profit, S.unit);
-  const stamp = (b.month === TODAY.month && b.day === TODAY.day)
-    ? b.time : b.day + ' ' + MS.format(new Date(TODAY.year, b.month, 1)) + ' ' + b.time;
+  const stamp = (b.year === TODAY.year && b.month === TODAY.month && b.day === TODAY.day)
+    ? b.time
+    : b.day + ' ' + MS.format(new Date(b.year, b.month, 1)) +
+      (b.year === TODAY.year ? '' : ' ' + b.year) + ' ' + b.time;
   const hay = (b.event + ' ' + bits.join(' ')).toLowerCase();
   return '<div class="betrow" data-outcome="' + grp + '" data-haystack="' + esc(hay) + '"' +
     (delay ? ' style="animation-delay:' + delay + 'ms"' : '') + '>' +
@@ -54,20 +58,36 @@ export function betRow(b, delay) {
 
 function scopedBets() {
   if (S.period === 'a') return LEDGER;
+  if (S.period === 'y') return LEDGER.filter(b => b.year === S.year);
   if (S.period === 'd' && S.focus != null)
-    return LEDGER.filter(b => b.month === S.month && b.day === S.focus);
+    return LEDGER.filter(b => b.year === S.year && b.month === S.month && b.day === S.focus);
   if (S.period === 'w' && S.focus != null) {
-    const r = weekRange(S.month, S.focus, S.weekStart);
-    return LEDGER.filter(b => b.month === S.month && b.day >= r.a && b.day <= r.b);
+    const r = weekRange(S.year, S.month, S.focus, S.weekStart);
+    const n = d => Math.floor(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()) / 86400000);
+    const a = n(r.from), z = n(r.to);
+    return LEDGER.filter(b => {
+      const k = Math.floor(Date.UTC(b.year, b.month, b.day) / 86400000);
+      return k >= a && k <= z;
+    });
   }
-  return LEDGER.filter(b => b.month === S.month);
+  return LEDGER.filter(b => b.year === S.year && b.month === S.month);
 }
 
 export function renderRecentBets() {
-  const list = LEDGER.slice(0, S.showAllBets ? 25 : S.showMore ? 7 : 4);
+  /* The period picker governs this list too. It used to slice the top of
+     the whole ledger whatever was selected, so picking a week showed bets
+     from outside it directly beneath a figure that excluded them. */
+  const scoped = scopedBets();
+  const list = scoped.slice(0, S.showAllBets ? 25 : S.showMore ? 7 : 4);
   const el = $('recentBets');
   el.innerHTML = list.length ? list.map(b => betRow(b)).join('')
-    : '<div class="emptystate"><div class="t">No bets yet</div><p>Send a slip to the bot, or add one from Import.</p></div>';
+    : LEDGER.length
+      /* Empty because of the period, not because there is nothing. Saying
+         "no bets yet" to somebody with a full ledger sends them off to
+         import history they already have. */
+      ? '<div class="emptystate"><div class="t">Nothing in ' + esc(periodWord()) + '</div>' +
+        '<p>Widen the period to see the rest of your record.</p></div>'
+      : '<div class="emptystate"><div class="t">No bets yet</div><p>Send a slip to the bot, or add one from Import.</p></div>';
   el.className = 'betlist ' + (S.showAllBets ? 'tall' : 'short');
 }
 
@@ -102,18 +122,22 @@ export function renderCalendar() {
 
   let html = '';
   if (S.calMode === 'm') {
-    const days = dayMap(S.month);
-    const dim = new Date(TODAY.year, S.month + 1, 0).getDate();
-    const first = dowOffset(new Date(TODAY.year, S.month, 1), S.weekStart);
+    const days = dayMap(S.year, S.month);
+    const dim = new Date(S.year, S.month + 1, 0).getDate();
+    const first = dowOffset(new Date(S.year, S.month, 1), S.weekStart);
     const max = Object.keys(days).reduce((a, k) => Math.max(a, Math.abs(days[k])), 0) || 1;
-    setText('calTitle', ML.format(new Date(TODAY.year, S.month, 1)));
+    /* The year is in the title whenever it is not this one, or a calendar
+       of last March is indistinguishable from this March. */
+    setText('calTitle', ML.format(new Date(S.year, S.month, 1)) +
+      (S.year === TODAY.year ? '' : ' ' + S.year));
 
     for (let i = 0; i < first; i++) html += '<div class="cell blank"></div>';
     for (let d = 1; d <= dim; d++) {
       const v = days[d];
       const has = v !== undefined;
-      const isToday = S.month === TODAY.month && d === TODAY.day;
-      const past = S.month < TODAY.month || (S.month === TODAY.month && d < TODAY.day);
+      const isToday = S.year === TODAY.year && S.month === TODAY.month && d === TODAY.day;
+      const past = S.year < TODAY.year ||
+        (S.year === TODAY.year && (S.month < TODAY.month || (S.month === TODAY.month && d < TODAY.day)));
       const cls = has ? 'hasbets' : isToday ? '' : past ? 'nobets' : 'future';
       let style = 'animation-delay:' + Math.min(d * 9, 300) + 'ms';
       if (has && v !== 0) {
@@ -134,8 +158,8 @@ export function renderCalendar() {
          way to add a figure to it. Future days too, on purpose, because a
          bet placed today on a game next week has a date in the future. */
       const label = has
-        ? DS.format(new Date(TODAY.year, S.month, d)) + ', ' + M.signed(v)
-        : DS.format(new Date(TODAY.year, S.month, d)) + ', no bets, tap to add a figure';
+        ? DS.format(new Date(S.year, S.month, d)) + ' ' + S.year + ', ' + M.signed(v)
+        : DS.format(new Date(S.year, S.month, d)) + ' ' + S.year + ', no bets, tap to add a figure';
       html += '<button class="cell ' + cls + (isToday ? ' today' : '') +
         (S.focus === d ? ' picked' : '') + '" style="' + style + '"' +
         ' data-day="' + d + '"' +
@@ -145,9 +169,9 @@ export function renderCalendar() {
         '<span class="dnum" aria-hidden="true">' + d + '</span></button>';
     }
   } else {
-    setText('calTitle', String(TODAY.year));
+    setText('calTitle', String(S.year));
     const totals = [];
-    for (let m = 0; m < 12; m++) totals.push(monthTotal(m));
+    for (let m = 0; m < 12; m++) totals.push(monthTotal(S.year, m));
     const max = totals.reduce((a, v) => Math.max(a, Math.abs(v)), 0) || 1;
     totals.forEach((v, m) => {
       let style = 'animation-delay:' + m * 28 + 'ms';
@@ -157,14 +181,15 @@ export function renderCalendar() {
         style += ';background:rgba(' + rgb + ',' + (0.1 + r * 0.24).toFixed(3) +
                  ');border-color:rgba(' + rgb + ',' + (0.26 + r * 0.3).toFixed(3) + ')';
       }
-      const name = MS.format(new Date(TODAY.year, m, 1));
+      const name = MS.format(new Date(S.year, m, 1));
       /* Every month opens, empty or not, exactly as every day already
          does. A month with nothing in it was `disabled`, so the one thing
          you would go to an empty month to do, add a figure to it, was the
          one thing the calendar would not let you start. Past and future
          both: a figure can be entered for either. */
-      html += '<button class="cell ' + (v ? 'hasbets' : m > TODAY.month ? 'future' : 'nobets') +
-        (m === TODAY.month ? ' today' : '') + '" style="' + style + '"' +
+      const ahead = S.year > TODAY.year || (S.year === TODAY.year && m > TODAY.month);
+      html += '<button class="cell ' + (v ? 'hasbets' : ahead ? 'future' : 'nobets') +
+        (S.year === TODAY.year && m === TODAY.month ? ' today' : '') + '" style="' + style + '"' +
         ' data-month="' + m + '"' +
         ' aria-label="' + name + ', ' + (v ? M.signed(v) : 'no bets') + '">' +
         (v ? '<span class="amt ' + M.tone(v) + '" aria-hidden="true">' +
@@ -191,14 +216,20 @@ export function renderHeadline() {
      cannot say. */
   const pad = n => String(n).padStart(2, '0');
   const range = (() => {
-    const y = TODAY.year;
+    const y = S.year;
+    const mon = (d, m) => pad(d) + ' ' + MS.format(new Date(y, m, 1)).toUpperCase();
     if (S.period === 'a') return LEDGER.length ? 'ALL TIME' : 'NOTHING LOGGED YET';
+    if (S.period === 'y') return '01 JAN TO 31 DEC ' + y;
     if (S.period === 'd' && S.focus != null) {
       return DS.format(new Date(y, S.month, S.focus)).toUpperCase() + ' ' + y;
     }
     if (S.period === 'w' && S.focus != null) {
-      const r = weekRange(S.month, S.focus, S.weekStart);
-      return pad(r.a) + ' TO ' + pad(r.b) + ' ' + MS.format(new Date(y, S.month, 1)).toUpperCase() + ' ' + y;
+      /* Printed from the real week, so one that crosses a month or a year
+         boundary says so instead of being clipped to the grid on screen. */
+      const r = weekRange(y, S.month, S.focus, S.weekStart);
+      const a = mon(r.from.getDate(), r.from.getMonth());
+      const b = pad(r.to.getDate()) + ' ' + MS.format(r.to).toUpperCase();
+      return a + ' TO ' + b + ' ' + r.to.getFullYear();
     }
     const dim = new Date(y, S.month + 1, 0).getDate();
     return '01 TO ' + dim + ' ' + MS.format(new Date(y, S.month, 1)).toUpperCase() + ' ' + y;
@@ -207,11 +238,13 @@ export function renderHeadline() {
     range + '  ·  ' + (p.activeDays === 1 ? '1 ACTIVE DAY' : p.activeDays + ' ACTIVE DAYS'));
 
   const label = S.period === 'a' ? 'Net all time'
-    : S.period === 'm' ? (S.month === TODAY.month ? 'Net this month'
-        : 'Net in ' + MS.format(new Date(TODAY.year, S.month, 1)))
+    : S.period === 'y' ? (S.year === TODAY.year ? 'Net this year' : 'Net in ' + S.year)
+    : S.period === 'm' ? (S.year === TODAY.year && S.month === TODAY.month ? 'Net this month'
+        : 'Net in ' + MS.format(new Date(S.year, S.month, 1)) +
+          (S.year === TODAY.year ? '' : ' ' + S.year))
     : S.period === 'w' ? 'Net this week'
     : 'Net on ' + (S.focus != null
-        ? DS.format(new Date(TODAY.year, S.month, S.focus))
+        ? DS.format(new Date(S.year, S.month, S.focus))
         : 'the selected day');
   setText('headlineLabel', label);
 
@@ -230,7 +263,7 @@ export function renderHeadline() {
   /* The bet count honours the Settings toggle. `p.bets` for a scoped
      period is what was logged here; the all-time scope adds the imported
      history, and the toggle decides whether that history counts. */
-  setText('statBets', M.plain(S.countMode === 'lifetime' ? p.bets : p.ledgerBets));
+  setText('statBets', M.plain(p.bets));
   setText('statUnits', M.units(p.profit, S.unit));
   setText('statTurnover', M.money0(p.turnover));
   setText('statWinRate', p.winRate + '%');
@@ -363,13 +396,18 @@ export function renderGoal() {
   let total, target, name, elapsed, state;
   if (S.calMode === 'y') {
     total = 0; target = 0;
-    for (let m = 0; m < 12; m++) { total += monthTotal(m); target += targetFor(m); }
-    name = 'Year target'; elapsed = TODAY.doy / 365; state = 'current';
+    for (let m = 0; m < 12; m++) { total += monthTotal(S.year, m); target += targetFor(m); }
+    name = (S.year === TODAY.year ? 'Year' : S.year) + ' target';
+    elapsed = S.year < TODAY.year ? 1 : S.year > TODAY.year ? 0 : TODAY.doy / 365;
+    state = S.year === TODAY.year ? 'current' : S.year < TODAY.year ? 'past' : 'future';
   } else {
-    total = monthTotal(S.month);
+    total = monthTotal(S.year, S.month);
     target = targetFor(S.month);
-    name = (S.month === TODAY.month ? 'This month' : MS.format(new Date(TODAY.year, S.month, 1))) + ' target';
-    state = S.month < TODAY.month ? 'past' : S.month > TODAY.month ? 'future' : 'current';
+    name = (S.year === TODAY.year && S.month === TODAY.month
+      ? 'This month'
+      : MS.format(new Date(S.year, S.month, 1)) + (S.year === TODAY.year ? '' : ' ' + S.year)) + ' target';
+    const ord = S.year * 12 + S.month, now = TODAY.year * 12 + TODAY.month;
+    state = ord < now ? 'past' : ord > now ? 'future' : 'current';
     elapsed = state === 'past' ? 1 : state === 'future' ? 0 : TODAY.day / TODAY.dim;
   }
   const ratio = Math.max(0, Math.min(1, total / target));
@@ -457,13 +495,44 @@ export function renderPending() {
 }
 
 /* ---------------- social ---------------- */
+/* What a board can answer, which is not always what the picker asks.
+ *
+ * A group response carries one all-time figure and twelve monthly ones for
+ * the current year, and nothing finer. A week used to be answered with
+ * month × 7/30 and a day with month / 30: not that person's week or day,
+ * but this month's figure divided by an average and then printed to the
+ * penny beside real ones, and used to rank people against each other.
+ *
+ * So the board resolves to the finest period it genuinely holds and says
+ * which one that is, rather than inventing the rest. */
+export function boardPeriod() {
+  if (S.period === 'a') return 'a';
+  /* The twelve months are this year's. An earlier year is not held at all,
+     so all time is the only honest answer for it. */
+  if (S.year !== TODAY.year) return 'a';
+  if (S.period === 'y') return 'y';
+  return 'm';
+}
+export function boardWord() {
+  const b = boardPeriod();
+  return b === 'a' ? 'all time'
+    : b === 'y' ? String(TODAY.year)
+    : MS.format(new Date(TODAY.year, S.month, 1));
+}
 export function personValue(p) {
+  const b = boardPeriod();
+  if (b === 'a') return p.all;
   const mo = personMonths(p);
-  if (S.period === 'a') return p.all;
-  const m = mo[S.month] || 0;
-  if (S.period === 'm') return m;
-  if (S.period === 'w') return Math.round(m * 7 / 30);
-  return Math.round(m / 30);
+  return b === 'y' ? mo.reduce((a, x) => a + x, 0) : (mo[S.month] || 0);
+}
+/* Your own figure on the same board, over the same span. Reading it from
+   stats(S) instead would rank you over a week while ranking everybody else
+   over the month. */
+function myBoardValue() {
+  const b = boardPeriod();
+  return b === 'a' ? lifetime().profit
+    : b === 'y' ? yearTotal(TODAY.year)
+    : monthTotal(TODAY.year, S.month);
 }
 const visible = p => p.pv === 'public' || (p.pv === 'friends' && p.mu);
 
@@ -563,17 +632,16 @@ export function renderPeople() {
 
 function duo(title, n, units) {
   return '<div class="duo"><div><div class="k">' + title + '</div><div class="v">' + n + '</div></div>' +
-    '<div><div class="k">Combined, ' + periodWord() + '</div><div class="v ' +
+    '<div><div class="k">Combined, ' + boardWord() + '</div><div class="v ' +
     M.tone(units) + '">' +
     ((units >= 0 ? '+' : '−') + Math.abs(units).toFixed(2) + 'u') + '</div></div></div>';
 }
 
 function groupRows(g) {
-  const me = stats(S, MS);
   return g.mem.map(n => {
     /* Your own tick is whatever the session says it is. This was hardcoded
        true, which claimed a verification nobody had granted. */
-    if (n === 'You') return { n: 'You', a: 'YO', un: S.unit, v: me.profit, verified: S.verified, me: true };
+    if (n === 'You') return { n: 'You', a: 'YO', un: S.unit, v: myBoardValue(), verified: S.verified, me: true };
     const p = PEOPLE.find(x => x.n === n);
     return p ? { n: p.n, a: p.a, un: p.un, v: personValue(p), verified: p.v } : null;
   }).filter(Boolean).sort((a, b) => b.v / b.un - a.v / a.un);
@@ -812,7 +880,7 @@ export function renderProfile(name) {
   S.profile = name;
   const ok = visible(p);
   const mo = personMonths(p);
-  const yearTotal = mo.reduce((a, b) => a + b, 0);
+  const yearSum = mo.reduce((a, b) => a + b, 0);
 
   setText('profileAvatar', p.a);
   setHTML('profileName', '<span translate="no">' + esc(p.n) + '</span>' + (p.v ? VERIFIED : ''));
@@ -847,7 +915,7 @@ export function renderProfile(name) {
       ' at ' + M.money0(p.un) + ' a unit</p>' +
     '<div class="kpis pair" style="margin:12px 0 0">' +
       kpi('This month', M.units(thisMonth, p.un), M.tone(thisMonth)) +
-      kpi('This year', M.units(yearTotal, p.un), M.tone(yearTotal)) +
+      kpi('This year', M.units(yearSum, p.un), M.tone(yearSum)) +
       kpi('ROI', M.pct(p.roi || 0), M.tone(p.roi || 0)) +
       kpi('Bets', M.plain(p.b || 0), '') +
     '</div></div>' +
@@ -1006,13 +1074,6 @@ export function renderAccount(user) {
      used to live only in the browser, so a reload silently reset them to
      the defaults in state.js while the account kept its real values. */
   if (user.privacy) S.privacy = user.privacy;
-  if (user.countMode) S.countMode = user.countMode;
-  paintSeg($('countSeg'));
-  $$('#countSeg button').forEach(b => {
-    const on = b.getAttribute('data-count') === S.countMode;
-    b.classList.toggle('on', on);
-    b.setAttribute('aria-pressed', String(on));
-  });
   renderPlan();
   renderPrivacy();
   /* TELEGRAM: ONE STATE AT A TIME.

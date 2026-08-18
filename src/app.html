@@ -750,8 +750,16 @@
           <div class="top">
             <span class="cap" id="headlineLabel">Net this month</span>
             <div class="seg tight" id="periodSeg" role="group" aria-label="Period">
-              <button data-period="d">D</button><button data-period="w">W</button>
-              <button data-period="m" class="on">M</button><button data-period="a">All</button>
+              <!-- Four periods, and each one changes the query. There was a
+                   Tracker/Lifetime toggle in Settings that moved a single
+                   integer while every other figure kept describing a
+                   different set of bets; this replaces it. A single day is
+                   the fifth period and is reached by tapping a day on the
+                   calendar, which is where somebody means one. -->
+              <button data-period="w" aria-label="Weekly">W</button>
+              <button data-period="m" class="on" aria-label="Monthly">M</button>
+              <button data-period="y" aria-label="Yearly">Y</button>
+              <button data-period="a" aria-label="All time">All</button>
             </div>
           </div>
           <p class="value pos m" id="headlineValue"></p>
@@ -851,8 +859,10 @@
       <div class="notice">
         <span>Showing <b class="scoped"></b></span>
         <div class="seg tight" id="ledgerPeriod" role="group" aria-label="Ledger period">
-          <button data-period="d">D</button><button data-period="w">W</button>
-          <button data-period="m" class="on">M</button><button data-period="a">All</button>
+          <button data-period="w" aria-label="Weekly">W</button>
+          <button data-period="m" class="on" aria-label="Monthly">M</button>
+          <button data-period="y" aria-label="Yearly">Y</button>
+          <button data-period="a" aria-label="All time">All</button>
         </div>
       </div>
       <div class="seg" id="ledgerSeg" role="group" aria-label="Ledger view" style="margin-bottom:12px">
@@ -897,8 +907,10 @@
       <div class="notice">
         <span>Showing <b class="scoped"></b></span>
         <div class="seg tight" id="socialPeriod" role="group" aria-label="Social period">
-          <button data-period="d">D</button><button data-period="w">W</button>
-          <button data-period="m" class="on">M</button><button data-period="a">All</button>
+          <button data-period="w" aria-label="Weekly">W</button>
+          <button data-period="m" class="on" aria-label="Monthly">M</button>
+          <button data-period="y" aria-label="Yearly">Y</button>
+          <button data-period="a" aria-label="All time">All</button>
         </div>
       </div>
       <div class="seg" id="socialSeg" role="group" aria-label="Social scope" style="margin-bottom:12px">
@@ -1239,16 +1251,6 @@
       <h2 class="cardtitle"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M3 3v18h18"/><path d="M7 14l4-4 3 3 5-6"/></svg>Your betting</h2>
       <div class="fieldrow"><span class="lab">Show tipster next to bets</span>
         <button class="switch" id="showTipster" role="switch" aria-checked="true" aria-label="Show tipster"></button></div>
-      <!-- Which bet count to show. Tracker starts at 0 and every bet in it
-           has a slip behind it; lifetime adds the history brought across at
-           import, which is the true total and also a figure this tracker
-           cannot show the workings for. Both are honest, so it is a choice
-           rather than a decision made for you. -->
-      <div class="fieldrow"><span class="lab">Bet count<small id="countModeNote">Only bets logged here, starting at 0</small></span>
-        <div class="seg tight" id="countSeg" role="group" aria-label="Which bet count to show">
-          <button data-count="tracker" class="on" aria-pressed="true">Tracker</button>
-          <button data-count="lifetime" aria-pressed="false">Lifetime</button>
-        </div></div>
       <details class="disclose">
         <summary>Tipsters <span class="count" id="tipsterCount"></span></summary>
         <div class="tagchips" id="tipsterChips"></div>

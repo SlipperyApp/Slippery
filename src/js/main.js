@@ -401,10 +401,10 @@ function showPane(id) {
 }
 
 /* ---------------- period ---------------- */
-function firstActiveDay(month) {
-  const days = Object.keys(dayMap(month)).map(Number).sort((a, b) => a - b);
+function firstActiveDay(year, month) {
+  const days = Object.keys(dayMap(year, month)).map(Number).sort((a, b) => a - b);
   if (!days.length) return null;
-  if (month === TODAY.month) {
+  if (year === TODAY.year && month === TODAY.month) {
     const upto = days.filter(d => d <= TODAY.day);
     return upto.length ? upto[upto.length - 1] : days[0];
   }
@@ -418,18 +418,22 @@ function firstActiveDay(month) {
    Now a focus is always established before the period is applied. */
 function setPeriod(p) {
   if (periodNeedsFocus(p) && S.focus == null) {
-    const d = firstActiveDay(S.month);
+    const d = firstActiveDay(S.year, S.month);
     if (d == null) { toast('No bets in this month to break down'); return; }
     S.focus = d;
   }
   S.period = p;
   syncPeriodButtons();
-  if (p === 'm') { S.month = TODAY.month; S.calMode = 'm'; syncCalModeButtons(); }
+  if (p === 'm') { S.year = TODAY.year; S.month = TODAY.month; S.calMode = 'm'; syncCalModeButtons(); }
+  /* Yearly shows the year it means, so the calendar switches to the twelve
+     month grid with it. Picking the period and then having to find the
+     calendar's own toggle to see the year was two controls for one idea. */
+  if (p === 'y') { S.calMode = 'y'; syncCalModeButtons(); }
   drawAll();
 }
 
 function syncPeriodButtons() {
-  const usable = { d: true, w: true, m: true, a: true };
+  const usable = { d: true, w: true, m: true, y: true, a: true };
   ['periodSeg', 'ledgerPeriod', 'socialPeriod'].forEach(id => {
     const seg = $(id);
     if (!seg) return;
@@ -440,7 +444,7 @@ function syncPeriodButtons() {
       b.setAttribute('aria-pressed', String(on));
       /* A control the keyboard can reach but not use is worse than one it
          cannot reach. Use the real disabled attribute, not pointer-events. */
-      const blocked = periodNeedsFocus(p) && S.focus == null && !firstActiveDay(S.month);
+      const blocked = periodNeedsFocus(p) && S.focus == null && !firstActiveDay(S.year, S.month);
       b.disabled = !!blocked;
       b.setAttribute('aria-disabled', String(!!blocked));
     });
@@ -487,7 +491,7 @@ function unlockScroll() {
 }
 
 function openDay(day) {
-  const days = dayMap(S.month);
+  const days = dayMap(S.year, S.month);
   /* An empty day is a real day. This used to `return` when there was no
      figure, so tapping the 3rd did nothing and there was no way to say
      "the profit for the 3rd was this". The sheet opens either way; what
@@ -495,23 +499,30 @@ function openDay(day) {
   const has = days[day] !== undefined;
   const v = has ? days[day] : 0;
   S.focus = day;
-  const list = LEDGER.filter(b => b.month === S.month && b.day === day);
-  const w = weekRange(S.month, day, S.weekStart);
+  const list = LEDGER.filter(b => b.year === S.year && b.month === S.month && b.day === day);
+  const w = weekRange(S.year, S.month, day, S.weekStart);
+  /* Summed over the real seven days, so a week that starts in the previous
+     month is not quietly reported as the three days of it that happen to
+     fall inside the grid. */
   let weekTotal = 0;
-  for (let i = w.a; i <= w.b; i++) if (days[i] !== undefined) weekTotal += days[i];
+  for (let i = 0; i < 7; i++) {
+    const d = new Date(w.from.getFullYear(), w.from.getMonth(), w.from.getDate() + i);
+    const map = dayMap(d.getFullYear(), d.getMonth());
+    if (map[d.getDate()] !== undefined) weekTotal += map[d.getDate()];
+  }
 
-  setText('dayTitle', R.DF.format(new Date(TODAY.year, S.month, day)));
+  setText('dayTitle', R.DF.format(new Date(S.year, S.month, day)));
   const net = $('dayNet');
   net.textContent = M.signed(v);
   net.className = 'n ' + M.tone(v);
   setHTML('daySub', (list.length ? list.length + (list.length === 1 ? ' bet' : ' bets')
       : has ? 'Daily total' : 'Nothing logged') +
-    ' · week to ' + R.DS.format(new Date(TODAY.year, S.month, w.b)) +
+    ' · week to ' + R.DS.format(w.to) +
     ' <b class="' + M.tone(weekTotal) + '">' + M.money0s(weekTotal) + '</b>');
 
   /* Three states, and they are genuinely different: bets to show, a figure
      with no bets behind it, or an empty day waiting for one. */
-  const stamp = TODAY.year + '-' + String(S.month + 1).padStart(2, '0') + '-' +
+  const stamp = S.year + '-' + String(S.month + 1).padStart(2, '0') + '-' +
     String(day).padStart(2, '0');
   const entered = PL.find(x => x.date === stamp && x.period === 'day');
   setHTML('dayList', list.length
@@ -534,7 +545,7 @@ function openDay(day) {
   if (first) first.focus();
   syncPeriodButtons();
   R.renderCalendar();
-  announce(R.DF.format(new Date(TODAY.year, S.month, day)) + ', ' + M.signed(v));
+  announce(R.DF.format(new Date(S.year, S.month, day)) + ', ' + M.signed(v));
 }
 function closeDay() {
   if (!$('daySheet').classList.contains('on')) return;
@@ -1928,14 +1939,6 @@ function saveUnit() {
   }, 700);
 }
 
-/* Saved, because a preference that resets on reload is not a preference.
-   Quiet on failure: it is a background write behind a value already on
-   screen, and the toggle has already moved. */
-async function saveCountMode() {
-  const r = await post('/api/auth/profile', { countMode: S.countMode });
-  if (!r.ok && r.status !== 401) console.warn('[slippery] count mode not saved:', r.body.error);
-}
-
 /* Privacy is an account setting, so it is saved. This used to change a
    label and nothing else: the app said "your figures are now private" and
    no server ever heard about it. */
@@ -2536,22 +2539,6 @@ document.addEventListener('click', e => {
     return;
   }
 
-  if ((el = c('#countSeg button'))) {
-    S.countMode = el.getAttribute('data-count');
-    $$('#countSeg button').forEach(b => {
-      const on = b === el;
-      b.classList.toggle('on', on);
-      b.setAttribute('aria-pressed', String(on));
-    });
-    paintSeg($('countSeg'));
-    setText('countModeNote', S.countMode === 'lifetime'
-      ? 'Includes ' + M.plain(importedTotals().bets) + ' bets brought across at import'
-      : 'Only bets logged here, starting at 0');
-    R.renderAll();
-    saveCountMode();
-    return;
-  }
-
   if ((el = c('#importSeg button'))) {
     S.importView = el.getAttribute('data-import');
     $$('#importSeg button').forEach(b => {
@@ -2859,18 +2846,27 @@ function renderNewMonth() {
      averaged £0" is a prompt about a history that does not exist. A new
      account has nothing to review, so there is nothing to ask about. */
   const card = $('newMonthCard');
+  /* January's previous month is December of last year. Taking (month+11)%12
+     without moving the year read December of THIS year, which is a month
+     that has not happened. */
   const prev = (TODAY.month + 11) % 12;
-  const prevActual = monthTotal(prev);
+  const prevYear = TODAY.month === 0 ? TODAY.year - 1 : TODAY.year;
+  const prevActual = monthTotal(prevYear, prev);
   const prevTarget = targetFor(prev);
+  /* Three real months back, crossing the year boundary the same way. */
+  const at = k => {
+    const t = TODAY.year * 12 + TODAY.month + k;
+    return monthTotal(Math.floor(t / 12), ((t % 12) + 12) % 12);
+  };
   let avg = 0, n = 0, history = 0;
-  for (let m = 0; m < TODAY.month; m++) if (monthTotal(m) !== 0) history++;
-  for (let m = TODAY.month - 3; m < TODAY.month; m++) if (m >= 0) { avg += monthTotal(m); n++; }
+  for (let k = -12; k < 0; k++) if (at(k) !== 0) history++;
+  for (let k = -3; k < 0; k++) { avg += at(k); n++; }
   avg = n ? Math.round(avg / n) : 0;
   if (card) card.hidden = history === 0;
   if (!history) return;
   setText('newMonthTitle', 'Happy with your ' + MS.format(new Date(TODAY.year, TODAY.month, 1)) + ' target?');
   setHTML('newMonthBody',
-    MS.format(new Date(TODAY.year, prev, 1)) + ' finished <b class="' + M.tone(prevActual) + '">' +
+    MS.format(new Date(prevYear, prev, 1)) + ' finished <b class="' + M.tone(prevActual) + '">' +
     M.money0s(prevActual) + '</b> against a <b>' + M.money0(prevTarget) +
     '</b> target. The last three months averaged <b>' + M.money0s(avg) + '</b>.');
   $('newMonthInput').value = (targetFor(TODAY.month) / 100).toFixed(0);
