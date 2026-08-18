@@ -123,6 +123,80 @@ async function main() {
     await page.close();
   }
 
+  /* ── the import you can look at before you agree to it ────────
+     The review used to be four counts and one button: all of it or none
+     of it, on a file exported from a bookmaker, which is exactly the kind
+     of file with one bad row in it. What has to be true now is that every
+     row is on screen, that unticking one excludes it, that editing one
+     changes what is sent, and that only the ticked rows leave. */
+  {
+    const page = await browser.newPage({ viewport: { width: 390, height: 844 } });
+    await installStub(page);
+    const posted = [];
+    page.on('request', r => {
+      if (r.url().includes('/api/bets') && r.method() === 'POST') {
+        try { posted.push(JSON.parse(r.postData() || '{}')); } catch { posted.push({}); }
+      }
+    });
+    await page.goto(base, { waitUntil: 'networkidle' });
+    await page.waitForTimeout(500);
+    await page.evaluate(() => document.querySelector('[data-nav="imp"]').click());
+    await page.waitForTimeout(200);
+    await page.evaluate(() => document.querySelector('[data-importjob="importHistory"]').click());
+    await page.waitForTimeout(200);
+    const totalsShown = await page.evaluate(() => !document.getElementById('importTotals').hidden);
+    if (!totalsShown) fail('import', 'Import history should offer typed totals');
+
+    const csv = 'Date,Selection,Stake,Odds,Bookmaker,Result\n' +
+      '2026-08-01,Arsenal to win,10.00,2.10,bet365,Won\n' +
+      '2026-08-02,Over 2.5 Goals,25.00,1.80,Sky Bet,Lost\n' +
+      '2026-08-03,Spurs to win,15.00,3.40,Paddy Power,\n';
+    await page.setInputFiles('#slipFile',
+      { name: 'history.csv', mimeType: 'text/csv', buffer: Buffer.from(csv) });
+    await page.waitForTimeout(900);
+
+    const rows = await page.evaluate(() => document.querySelectorAll('.irow').length);
+    if (rows !== 3) fail('import', 'a three row file rendered ' + rows + ' reviewable rows');
+    const shows = await page.evaluate(() => {
+      const r = document.querySelector('.irow');
+      return r ? { sel: r.querySelector('.isel').textContent, meta: r.querySelector('.imeta').textContent,
+                   amt: r.querySelector('.iamt').textContent } : null;
+    });
+    if (!shows || !/Arsenal/.test(shows.sel)) fail('import', 'a row does not show what it is');
+    if (!shows || !/Aug 2026/.test(shows.meta)) fail('import', 'a row does not show its date');
+    if (!shows || !/10\.00/.test(shows.amt)) fail('import', 'a row does not show its amount');
+
+    /* Untick one, and the count follows. */
+    await page.evaluate(() => document.querySelector('[data-ipick="1"]').click());
+    await page.waitForTimeout(200);
+    const label = await page.evaluate(() => document.getElementById('csvGo').textContent);
+    if (!/Import 2 bets/.test(label))
+      fail('import', 'unticking a row did not change the button: "' + label + '"');
+
+    /* Edit one, and what is sent follows. */
+    await page.evaluate(() => document.querySelector('[data-iopen="0"]').click());
+    await page.waitForTimeout(200);
+    await page.evaluate(() => {
+      const f = document.querySelector('[data-iedit="0"][data-ikey="stakePence"]');
+      f.value = '42.50';
+      f.dispatchEvent(new Event('input', { bubbles: true }));
+    });
+    await page.waitForTimeout(200);
+    await page.evaluate(() => document.getElementById('csvGo').click());
+    await page.waitForTimeout(800);
+
+    const bulk = posted.find(x => Array.isArray(x.bets));
+    if (!bulk) fail('import', 'the review posted nothing');
+    else {
+      if (bulk.bets.length !== 2)
+        fail('import', 'posted ' + bulk.bets.length + ' rows, expected the 2 that were ticked');
+      if (!bulk.bets.some(b => b.stakePence === 4250))
+        fail('import', 'the edited stake did not reach the server: ' +
+          JSON.stringify(bulk.bets.map(b => b.stakePence)));
+    }
+    await page.close();
+  }
+
   /* ── the tutorial walks the product ───────────────────────────
      It was six paragraphs in a centred modal that pointed at nothing. The
      things worth checking are that each step actually arrives somewhere,

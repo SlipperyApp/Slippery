@@ -778,3 +778,75 @@ and a ResizeObserver replaced the seven manual repaints.
   breakdowns. The plan was to build them; the data is in every bet and
   `.barlist` already exists.
 - Section 10.3 below is unchanged and still the owner's.
+
+---
+
+# Section 12 — onboarding, import and the phone
+
+One pass over the part a person actually meets, sequenced so each stage
+left the app green.
+
+## 12.1 A bet builder is not an accumulator
+
+`bet_type` was read for display and never stored; the bets table had no
+legs column, so a multiple was saved as one row whose selection was its
+legs joined by an ampersand. **That is why `settleMulti()` had never run
+once in production** — it is written, tested, carries the locked
+accumulator rules, and `api/_lib/settling.js` built the `settle()` argument
+without legs.
+
+`bets.bet_type` and `bets.legs jsonb` now exist and are written on both save
+paths. The sweep matches a fixture per leg by the leg's own event. A bet
+builder is refused before anything is parsed, per the locked rules. The
+reader was never told the distinction existed: the prompt now names it, and
+`bet_type` moved onto each bet rather than describing only the first on the
+page. When it cannot tell, the card asks, and Confirm stays disabled.
+
+`betProblem` moved to `src/js/betshape.js`, imported by both sides.
+
+## 12.2 The import you can look at
+
+Every parsed row is on screen with its date, selection, stake and price,
+tickable and editable. Selection lives on the row object, never in the DOM.
+Every edit re-runs the server's own validator. Duplicates are found against
+the loaded ledger on the four fields the server keys on and pre-unticked.
+Only ticked rows are posted.
+
+A bet now says where it came from: `source` survives `fromApi`, an imported
+row is tagged, and the Bets tab gains a provenance filter on accounts that
+hold both kinds.
+
+## 12.3 The bot, the promo codes, the tutorial
+
+`src/js/botsetup.js` is one sheet with four states, opened from setup,
+Settings and the tutorial. The code is `SLIP-XXXX`, which also repaired a
+latent break: `linkCode()` seeded every account with a format
+`looksLikeCode` rejected, with no expiry.
+
+Promo entry moved to the email screen and travels with the signup.
+`HBVALUE` joins `ULTRAS`. The admin grant needed `renews:false`, because
+every other paid code is "free months then billing" and nobody handed a
+free year has agreed to pay for a second one. **The admin code is in source
+in a public repo, on the owner's instruction.** Rotating it is an edit and
+a push.
+
+`src/js/tour.js` walks the product: six steps that navigate, open what has
+to be open, scroll the target into view and cut a hole in the scrim. The
+hole is one box-shadow, it travels between steps, and it does not swallow
+the tap it is asking for. Replayable from Settings.
+
+## 12.4 The phone
+
+The calendar sits under the figure it explains; running bets moved below
+it; the four lifetime tiles moved inside Show more. The whole of a month is
+now on the first screen with the headline. Two columns from 900px. Import
+opens on a chooser: Add a bet, or Import history.
+
+## 12.5 Still owed
+
+- The reader's per-bet `bet_type` is only as good as the model's reading;
+  there is no golden-set evaluation of it against real slips. Worth
+  building before trusting the acca auto-settlement widely.
+- The payment screen is still a labelled mockup. `billingState()` is ready
+  for a processor; nothing calls one.
+- Sections 10.3 and 11.3 are unchanged and still the owner's.
