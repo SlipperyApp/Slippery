@@ -67,7 +67,10 @@
        on a competitor's ground and buries the only thing here nobody
        else can copy.
 
-       Four blocks now: the claim, how it works, the proof, the ask.
+       Six now: the claim, how it works, the proof, the bot, the
+       questions, the price, and then the ask. Everything on it is
+       either the product's own components or the product's own
+       figures; there are no marketing-only versions of anything.
 
        NO GLASS ON THIS PAGE. No backdrop-filter, no translucent
        panel, no gradient, no drop shadow. The old page was frosted
@@ -85,8 +88,11 @@
          · the bookmaker strip              -> /books already exists
          · proof stats                      -> unearned for the stage
          · testimonials                     -> QUOTES was empty
-         · the Telegram block               -> already beat two below
-         · the FAQ                          -> #faqs already holds it
+         · the Telegram block               -> BACK, see block 4: it is
+           the half of the product nobody else has, and cutting it took
+           the only genuinely different thing off the page
+         · the FAQ                          -> BACK, see block 5, six of
+           them from the same table /faqs renders in full
          · app store badges                 -> neither app exists
          · "Founded by Zhang et al." with a verified tick, which was
            live on production: fabricated attribution wearing a trust
@@ -235,7 +241,62 @@
     </div>
   </div>
 
-  <!-- ─────────────── 4. THE ASK ─────────────── -->
+  <!-- ─────────────── 4. THE BOT ───────────────
+       The capture half of the product, and the half nobody else has. It
+       was cut from the page in the four-block rewrite along with seven
+       genuinely repetitive sections, which took the one thing that is
+       actually different with it.
+
+       The preview is behind a disclosure rather than always open: it is
+       eight messages tall and it is evidence for people who want it, not
+       the argument itself. -->
+  <div class="bot snap-point">
+    <div class="wrap">
+      <p class="cap reveal">The capture half</p>
+      <h2 class="reveal">Forward the slip. That is the whole job.</h2>
+      <p class="bot-sub reveal">Slippery is a Telegram bot and a dashboard. You send
+        the bookmaker's own receipt the moment you place a bet, and it reads the
+        stake, the price, every leg and the bookmaker off the image. Nothing is typed
+        and nothing waits until you know the result.</p>
+      <details class="card faq reveal" id="botPreview">
+        <summary>Preview the bot</summary>
+        <p class="botnote">One worked example, followed from the placed slip to the
+          settled day. The figures are the same sample used everywhere else on this
+          page and they are fabricated.</p>
+        <div class="chat" id="botChat"></div>
+      </details>
+    </div>
+  </div>
+
+  <!-- ─────────────── 5. QUESTIONS ───────────────
+       On the page, not behind a link. The questions people ask before
+       signing up are about settlement and about what happens to their
+       data, and sending them to another view to find out is asking them
+       to leave. The full reference set is still at /faqs; these are the
+       six that get asked first, from the same table. -->
+  <div class="questions">
+    <div class="wrap">
+      <p class="cap reveal">Before you ask</p>
+      <h2 class="reveal">The six that come up first.</h2>
+      <div id="landFaq"></div>
+      <button class="lead-alt reveal" data-nav="faqs">All the questions, answered properly</button>
+    </div>
+  </div>
+
+  <!-- ─────────────── 6. PRICING ───────────────
+       At the bottom, after the argument. The same three cards the pricing
+       view renders, from the same table, because a price that differs by
+       a pound between two pages is the kind of thing nobody notices until
+       somebody pays the other one. -->
+  <div class="landprice">
+    <div class="wrap">
+      <p class="cap reveal">Pricing</p>
+      <h2 class="reveal">Two weeks free, then less than a bet.</h2>
+      <div class="plans" id="landPlans"></div>
+    </div>
+  </div>
+
+  <!-- ─────────────── 7. THE ASK ─────────────── -->
   <div class="close">
     <div class="wrap">
       <h2 class="reveal">Find out what your record actually says.</h2>

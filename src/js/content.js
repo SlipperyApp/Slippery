@@ -454,10 +454,16 @@ export function renderStatic() {
   const proof = $('divergeDemo');
   if (proof) { proof.innerHTML = divergeMarkup(); playDiverge(); }
 
+  /* The same six, from the same table, on the landing page. A second copy
+     written for marketing is how a product ends up answering one question
+     two ways. */
+  setHTML('landFaq', HELP_FAQ.slice(0, 6).map(f =>
+    '<details class="card faq reveal"><summary>' + esc(f[0]) + '</summary><p>' + esc(f[1]) + '</p></details>').join(''));
+
   setHTML('helpFaq', HELP_FAQ.map(f =>
     '<details class="card faq"><summary>' + esc(f[0]) + '</summary><p>' + esc(f[1]) + '</p></details>').join(''));
 
-  setHTML('planList', PLANS.map(p =>
+  const planCard = p =>
     '<div class="card plan reveal' + (p.featured ? ' featured' : '') + '">' +
     (p.flag ? '<div class="flag">' + esc(p.flag) + '</div>' : '') +
     '<div class="nm">' + esc(p.name) + '</div><div class="desc">' + esc(p.blurb) + '</div>' +
@@ -471,7 +477,13 @@ export function renderStatic() {
        flag and its border, which is enough. */
     '</ul><button class="btn ' + (p.id === 'free' ? 'ghost' : 'primary') + ' full" ' +
     (p.id === 'free' ? 'data-nav="setup"' : 'data-pay="' + p.id + '"') + '>' +
-    (p.id === 'free' ? 'Start free' : 'Choose ' + esc(p.name.toLowerCase())) + '</button></div>').join(''));
+    (p.id === 'free' ? 'Start free' : 'Choose ' + esc(p.name.toLowerCase())) + '</button></div>';
+  /* One table, two hosts. The pricing view and the foot of the landing
+     page render the same cards, because a price that differs by a pound
+     between two pages is the sort of thing nobody notices until somebody
+     pays the other one. */
+  setHTML('planList', PLANS.map(planCard).join(''));
+  setHTML('landPlans', PLANS.map(planCard).join(''));
 
   /* Three row shapes, because a policy needs three. A cookies table
      written as a paragraph is a cookies table nobody can check, and the
@@ -554,36 +566,57 @@ function renderPreview() {
      breakdown is what the demo and the dashboard are for. */
 }
 
+/* THE BOT PREVIEW, BUILT FROM THE PRODUCT'S OWN PARTS.
+ *
+ * This was hand-built from inline styles and hardcoded hexes: #fff, #0b1220,
+ * #475569, a gradient. Six colours that belonged to no theme, on a page
+ * whose whole argument is that the figures are the only ornament — and a
+ * preview of the product drawn in colours the product does not use is a
+ * marketing version of a component, which is the thing this page is not
+ * allowed to have.
+ *
+ * Every part of it is now a component that exists elsewhere in the app: the
+ * slip is a .slipcard, the readout is .kvline rows, the day summary is a
+ * .monoblock, and the two buttons are the buttons.
+ */
 function renderBotChat() {
+  const el = $('botChat');
+  if (!el) return;
   const slip = SAMPLE.slip;
   const day8 = SAMPLE.day;
   const net = SAMPLE.dayNet;
   const staked = day8.reduce((a, b) => a + b.stake, 0) + slip.stake;
-  const pad = (s, n) => (s + '                    ').slice(0, n);
+  const pad = (s2, n) => (s2 + '                    ').slice(0, n);
+
   setHTML('botChat',
     /* What you forward is the bookmaker's PLACED receipt. Capture happens
        before the result exists, that is the locked core idea, and a
        preview showing a forwarded winner teaches the opposite habit. */
-    '<div class="bubble outgoing" style="padding:0;overflow:hidden;width:66%"><div style="background:#fff;color:#0b1220;padding:12px">' +
-    '<div style="color:#1e293b;font-weight:700;font-size:11px;letter-spacing:.08em">BET PLACED</div>' +
-    '<div style="font-weight:700;font-size:12px;margin-top:6px">' + esc(slip.selection) + '</div>' +
-    '<div style="font-size:10.5px;color:#475569;margin-top:3px">' + esc(slip.event) + '</div>' +
-    '<div style="font-size:10.5px;color:#475569">Stake £' + (slip.stake / 100).toFixed(2) +
-      ' at ' + slip.odds.toFixed(2) + '</div>' +
-    '<div style="font-size:10.5px;color:#475569">To return £' +
-      ((slip.stake + slip.profit) / 100).toFixed(2) + '</div></div></div>' +
+    '<div class="bubble outgoing photo">' +
+      '<div class="slipshot">' +
+        '<p class="cap">Bet placed</p>' +
+        '<p class="ss-sel">' + esc(slip.selection) + '</p>' +
+        '<p class="ss-ev">' + esc(slip.event) + '</p>' +
+        '<dl class="ss-nums">' +
+          '<div><dt>Stake</dt><dd class="tnum">' + M.money(slip.stake) + '</dd></div>' +
+          '<div><dt>Odds</dt><dd class="tnum">' + slip.odds.toFixed(2) + '</dd></div>' +
+          '<div><dt>Returns</dt><dd class="tnum">' + M.money(slip.stake + slip.profit) + '</dd></div>' +
+        '</dl>' +
+      '</div>' +
+    '</div>' +
 
     '<div class="bubble incoming slim">Reading your slip…</div>' +
 
     '<div class="bubble incoming">' +
-    '<div class="m" style="font-size:10.5px;color:var(--s);letter-spacing:.07em;text-transform:uppercase;margin-bottom:9px">Slip read, single</div>' +
+    '<p class="cap">Slip read, single</p>' +
     kv('Selection', esc(slip.selection)) + kv('Odds', slip.odds.toFixed(2)) +
     kv('Stake', M.money(slip.stake)) + kv('Returns', M.money(slip.stake + slip.profit)) +
     kv('Bookmaker', esc(slip.book)) +
-    kv('Status', '<span style="color:var(--a)">Tracking</span>') +
-    '<div style="display:flex;gap:8px;margin-top:11px">' +
-    '<span style="flex:1;text-align:center;font-size:12.5px;padding:9px 0;border-radius:9px;background:linear-gradient(135deg,var(--p),var(--s));color:#08111f">Confirm</span>' +
-    '<span style="flex:1;text-align:center;font-size:12.5px;padding:9px 0;border-radius:9px;background:var(--c1);border:1px solid var(--e1)">Edit</span></div></div>' +
+    kv('Status', '<span class="warn">Tracking</span>') +
+    '<div class="btnrow tight">' +
+      '<span class="btn primary small full">Confirm</span>' +
+      '<span class="btn ghost small full">Edit</span>' +
+    '</div></div>' +
 
     /* Settlement arrives later, from the results feed. Showing it as a
        separate, later message is the honest shape of the product. */

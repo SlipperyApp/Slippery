@@ -100,7 +100,40 @@
   border-top:1px solid var(--hair);
   font-size:var(--fs-sm);color:var(--t2);line-height:var(--lh-loose);max-width:52ch}
 
-/* ─────────────── 4. THE ASK ─────────────── */
+/* ─────────────── 4, 5, 6. THE BOT, THE QUESTIONS, THE PRICE ───
+   Same rhythm as the proof block above: a cap, a heading at the same
+   size, one paragraph, then the thing itself. They are separate blocks
+   rather than one long section because each answers a different
+   question, and a reader who has already decided can skip whole blocks
+   rather than whole paragraphs.
+
+   No new components. The preview is .bubble and .kvline from the
+   Telegram screen, the questions are the .faq the reference page uses,
+   and the prices are the .plan cards the pricing view renders. */
+.bot,.questions,.landprice{
+  padding:var(--sp-20) 0 0;
+  & h2{font-family:var(--fd);font-weight:600;font-size:var(--fs-3xl);
+    letter-spacing:var(--tr-snug);line-height:1.06;
+    margin-top:var(--sp-3);max-width:16ch}}
+.bot-sub{
+  margin-top:var(--sp-4);max-width:52ch;
+  font-size:var(--fs-md);line-height:var(--lh-loose);color:var(--t2)}
+#botPreview{margin-top:var(--sp-8)}
+.botnote{
+  margin:var(--sp-3) 0 0;font-size:var(--fs-xs);color:var(--t3);
+  line-height:var(--lh-loose);max-width:52ch}
+/* The preview itself. A column of messages, indented from the summary so
+   it reads as the contents of the disclosure rather than as more page. */
+.chat{
+  display:flex;flex-direction:column;gap:var(--sp-2);
+  margin-top:var(--sp-5)}
+#landFaq{
+  margin-top:var(--sp-6);display:grid;gap:var(--sp-2);
+  /* Followed by the link out to the full set, which needs air above it. */
+  &+.lead-alt{margin-top:var(--sp-5)}}
+#landPlans{margin-top:var(--sp-6)}
+
+/* ─────────────── 7. THE ASK ─────────────── */
 .close{
   /* One gap, not two. The rule marks the break; padding and margin both
      set to --sp-20 stacked into a band of dead scroll. */

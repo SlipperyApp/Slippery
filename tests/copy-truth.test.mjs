@@ -148,3 +148,44 @@ test('the demo has no design system of its own', async () => {
     assert.doesNotMatch(css, new RegExp('\\' + dead + '\\{'), dead + ' is a second dashboard');
   }
 });
+
+/* Four lines the owner asked to be kept exactly as written. They are the
+   argument the product is built on, and each has been through several
+   drafts to get there, so a rewrite is a regression rather than an edit. */
+test('the protected lines survive every rewrite of the landing page', async () => {
+  const html = await readFile(new URL('../src/app.html', import.meta.url), 'utf8');
+  const content = await readFile(new URL('../src/js/content.js', import.meta.url), 'utf8');
+  const both = html + content;
+  for (const line of [
+    'Why it has to be logged, not remembered',
+    'Memory keeps the winners.',
+    'Same eight bets, two records',
+    'Logged at placement'
+  ]) {
+    assert.ok(both.includes(line), 'the landing page must still say: ' + line);
+  }
+});
+
+/* The landing page is a preview of the product, so it may not grow its own
+   versions of the product's components. */
+test('the landing page renders the real plan cards and the real FAQ', async () => {
+  const content = await readFile(new URL('../src/js/content.js', import.meta.url), 'utf8');
+  /* One card builder, two hosts. */
+  assert.match(content, /setHTML\('planList', PLANS\.map\(planCard\)/);
+  assert.match(content, /setHTML\('landPlans', PLANS\.map\(planCard\)/);
+  /* And the landing questions come from the same table the reference page
+     renders in full, not from a second list written for marketing. */
+  assert.match(content, /setHTML\('landFaq', HELP_FAQ\.slice\(0, 6\)/);
+});
+
+/* The bot preview was drawn in six hardcoded hexes that belong to no
+   theme, on the one page whose argument is that the figures are the only
+   ornament. */
+test('the bot preview uses the product palette, not its own', async () => {
+  const content = await readFile(new URL('../src/js/content.js', import.meta.url), 'utf8');
+  const fn = content.slice(content.indexOf('function renderBotChat'));
+  const body = fn.slice(0, fn.indexOf('\n}\n'));
+  const hexes = body.match(/#[0-9a-fA-F]{3,8}\b/g) || [];
+  assert.deepEqual(hexes, [], 'hardcoded colours in the bot preview: ' + hexes.join(', '));
+  assert.doesNotMatch(body, /style="/, 'inline styles are a component nobody else can reuse');
+});

@@ -71,7 +71,11 @@
   & .note{font-size:12px;color:var(--t2);margin-top:4px}
   & ul{list-style:none;margin:14px 0;display:flex;flex-direction:column;gap:9px}
   & li{display:flex;gap:9px;font-size:13px;
-    & svg{width:15px;height:15px;color:var(--pos);flex:0 0 auto;margin-top:2px}}}
+    /* --s, not --pos. Profit green is semantic and locked: it means money
+       that was made. A tick beside "Unlimited slips" is not money, and
+       spending the colour on a feature list is what makes it stop meaning
+       anything where it does matter. */
+    & svg{width:15px;height:15px;color:var(--s);flex:0 0 auto;margin-top:2px}}}
 /* "Everything in monthly, plus:", the line that makes the ladder legible.
    Without it the three feature lists read as three unrelated sets and the
    yearly price looks like it buys less than it does. */
@@ -666,6 +670,19 @@ input[type=date]{
   font-size:12.5px;padding:3px 0;
   & span{color:var(--t2);flex:0 0 auto}
   & b{font-family:var(--fm);font-variant-numeric:tabular-nums lining-nums;text-align:right}}
+/* A forwarded screenshot is a picture, so the bubble gives it no padding
+   and lets the slip fill it. */
+.bubble.photo{padding:0;overflow:hidden;width:78%}
+.slipshot{
+  padding:var(--sp-4);background:var(--c2);
+  & .ss-sel{margin:var(--sp-2) 0 0;font-size:var(--fs-sm);font-weight:650;color:var(--t1)}
+  & .ss-ev{margin:2px 0 0;font-size:var(--fs-xs);color:var(--t2)}
+  & .ss-nums{
+    display:grid;grid-template-columns:repeat(3,1fr);gap:var(--sp-2);
+    margin:var(--sp-3) 0 0;
+    & dt{font-size:var(--fs-2xs);color:var(--t3)}
+    & dd{margin:2px 0 0;font-size:var(--fs-xs);font-weight:600;
+      font-variant-numeric:tabular-nums lining-nums}}}
 .monoblock{white-space:pre;font-family:var(--fm);font-size:11px;line-height:1.75;overflow-x:auto}
 
 /* legal + responsible gambling */
