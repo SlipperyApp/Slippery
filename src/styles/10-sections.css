@@ -74,7 +74,7 @@
   &.on{
     border-color:rgba(var(--acc-rgb),.5);background:rgba(var(--acc-rgb),.07);
     & .rowtile{background:rgba(var(--acc-rgb),.9);border-color:transparent;
-      & svg{color:#08111f}}}}
+      & svg{color:var(--on-p)}}}}
 
 .sect-ticks{
   display:grid;grid-template-columns:1fr 1fr;gap:11px 14px;margin-top:20px;
@@ -535,7 +535,7 @@ body.in-app .sitefoot{margin-top:20px}
 .ch-s{margin:2px 0 0;font-size:11px;color:var(--t2)}
 .ch-plus{
   flex:0 0 auto;width:26px;height:26px;border-radius:9px;display:grid;place-items:center;
-  background:var(--s);color:#08111f;font-size:16px;font-weight:600;line-height:1}
+  background:var(--s);color:var(--on-p);font-size:16px;font-weight:600;line-height:1}
 .ch-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:7px}
 .ch-stat{
   padding:9px 10px;border-radius:11px;background:var(--c1);border:1px solid var(--e2);

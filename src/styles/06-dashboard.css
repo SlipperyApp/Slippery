@@ -340,8 +340,54 @@
   & .v{font-family:var(--fm);font-weight:600;font-size:13px;margin-top:2px;
     font-variant-numeric:tabular-nums lining-nums}}
 
+/* THE RUNNING THREAD.
+ *
+ * The whole product is the gap between placing a bet and knowing what it
+ * did, and this is the one place that gap is literally on screen. A running
+ * bet is a line that has started and not finished, so it is drawn as one:
+ * a rail down the left of the row that does not terminate.
+ *
+ * Settled bets do not get it. They are closed, they live in the ledger, and
+ * their glyph is the full stop. Giving every row a rail would say nothing.
+ *
+ * A bet the grader could not prove switches the rail to the attention
+ * colour, because "over to you" is a different kind of unfinished from
+ * "still playing" and the two should not look alike.
+ *
+ * The travelling highlight is transform only and it is the single moving
+ * thing on the dashboard. It exists because a static dashed line reads as a
+ * disabled state rather than a live one. It stops dead under reduced
+ * motion, where the rail alone still carries the meaning. */
 .pendrow{
-  padding:12px 15px;border-top:1px solid var(--e2);
+  padding:12px 15px 12px 22px;border-top:1px solid var(--e2);
+  position:relative;
+
+  &::before{
+    content:'';position:absolute;left:9px;top:0;bottom:0;width:2px;
+    border-radius:1px;
+    background:linear-gradient(180deg,
+      rgba(var(--orb2),.10),
+      rgba(var(--orb2),.55) 22%,
+      rgba(var(--orb2),.55) 78%,
+      rgba(var(--orb2),.10))}
+
+  /* The live pulse, clipped to the rail. */
+  &::after{
+    content:'';position:absolute;left:9px;top:0;width:2px;height:34%;
+    border-radius:1px;pointer-events:none;
+    background:linear-gradient(180deg,transparent,var(--s),transparent);
+    opacity:.85;
+    animation:thread 3.4s var(--ease-in-out) infinite}
+
+  &.needsyou::before{
+    background:linear-gradient(180deg,
+      rgba(245,158,11,.12),
+      rgba(245,158,11,.6) 22%,
+      rgba(245,158,11,.6) 78%,
+      rgba(245,158,11,.12))}
+  /* Nothing is still travelling on a bet that is waiting for you. */
+  &.needsyou::after{display:none}
+
   & .top{display:flex;justify-content:space-between;align-items:baseline;gap:10px}
   & .ev{font-size:13px;font-weight:550;white-space:nowrap;overflow:hidden;
     text-overflow:ellipsis;min-width:0}
@@ -371,6 +417,12 @@
   &.needsyou{background:rgba(245,158,11,.05)}}
 .runfoot{padding:12px 15px 14px;border-top:1px solid var(--e2);
   font-size:11px;color:var(--t3);line-height:1.55}
+
+@keyframes thread{
+  0%{transform:translateY(-40%)}
+  100%{transform:translateY(340%)}}
+@media (prefers-reduced-motion:reduce){
+  .pendrow::after{animation:none;display:none}}
 
 /* the row confirms your choice before it folds away */
 .pendrow.flash{transition:background 180ms var(--ez),box-shadow 180ms var(--ez)}

@@ -44,7 +44,7 @@
     opacity:0;transform:scale(.4);
     transition:opacity 460ms var(--ez),transform 460ms var(--ez)}
   &:active::after{opacity:1;transform:scale(1);transition-duration:0ms}}
-.btn.primary{background:linear-gradient(135deg,var(--p),var(--s));color:#08111f;
+.btn.primary{background:linear-gradient(135deg,var(--p),var(--s));color:var(--on-p);
   box-shadow:0 8px 22px rgba(var(--orb1),.32)}
 .btn.ghost{background:var(--c2);border:1px solid var(--e1)}
 .btn.attn{background:var(--a);color:#3a2600}
@@ -79,7 +79,7 @@
     font-size:13px;font-weight:550;color:var(--t2);
     padding:9px 4px;border-radius:10px;min-height:42px;
     transition:color var(--tb);
-    &[aria-pressed=true],&.on{color:#08111f}}
+    &[aria-pressed=true],&.on{color:var(--on-p)}}
   & .thumb{position:absolute;top:3px;bottom:3px;left:0;width:100px;border-radius:10px;z-index:0;
     background:linear-gradient(135deg,var(--p),var(--s));
     transform-origin:left center;will-change:transform;

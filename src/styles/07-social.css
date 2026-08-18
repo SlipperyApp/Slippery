@@ -28,7 +28,7 @@
 .avatar{
   width:32px;height:32px;border-radius:50%;flex:0 0 auto;
   display:grid;place-items:center;font-weight:600;font-size:12px;
-  color:#08111f;background:linear-gradient(140deg,#8FC7C0,#8B9DE0);
+  color:var(--on-p);background:linear-gradient(140deg,#8FC7C0,#8B9DE0);
   &.large{width:54px;height:54px;font-size:18px}}
 
 .privacytag{

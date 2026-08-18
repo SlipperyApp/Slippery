@@ -54,7 +54,7 @@
   text-align:center;padding:26px 20px;margin-top:24px;
   & .glyph{width:50px;height:50px;border-radius:15px;
     background:linear-gradient(140deg,var(--p),var(--s));display:grid;place-items:center;
-    margin:0 auto 12px;& svg{width:24px;height:24px;color:#08111f}}
+    margin:0 auto 12px;& svg{width:24px;height:24px;color:var(--on-p)}}
   & h2{font-size:clamp(21px,5.2vw,27px)}
   & p{color:var(--t2);margin:9px auto 17px;max-width:38ch;font-size:14px}}
 
@@ -77,7 +77,7 @@
   &:hover{border-color:var(--e1);background:var(--c2)}
   & .ring{width:58px;height:58px;border-radius:50%;
     background:linear-gradient(140deg,var(--p),var(--s));display:grid;place-items:center;
-    font-family:var(--fd);font-weight:700;font-size:22px;color:#08111f}
+    font-family:var(--fd);font-weight:700;font-size:22px;color:var(--on-p)}
   & .role{font-family:var(--fm);font-size:9px;letter-spacing:.15em;
     text-transform:uppercase;color:var(--t2)}
   & .nm{display:flex;align-items:center;justify-content:center;gap:5px;
@@ -111,7 +111,7 @@
   &.featured{border-color:rgba(var(--orb1),.5);box-shadow:0 14px 36px rgba(var(--orb1),.2)}
   & .flag{position:absolute;top:-10px;left:19px;font-family:var(--fm);font-size:9.5px;
     letter-spacing:.1em;text-transform:uppercase;
-    background:linear-gradient(135deg,var(--p),var(--s));color:#08111f;
+    background:linear-gradient(135deg,var(--p),var(--s));color:var(--on-p);
     padding:4px 11px;border-radius:999px}
   & .nm{font-weight:700;font-size:18px;font-family:var(--fd)}
   & .desc{color:var(--t2);font-size:12.5px;margin-top:2px}
@@ -185,7 +185,7 @@
       border:1.5px solid rgba(var(--ink),.22);position:relative;
       transition:background var(--tb),border-color var(--tb);
       &::after{content:"";position:absolute;left:3.5px;top:4px;width:5px;height:2.5px;
-        border-left:1.5px solid #08111f;border-bottom:1.5px solid #08111f;
+        border-left:1.5px solid var(--on-p);border-bottom:1.5px solid var(--on-p);
         transform:rotate(-45deg) scale(0);transition:transform var(--tb) var(--eg)}}
     &.met{color:var(--pos);
       & i{background:var(--pos);border-color:var(--pos);
@@ -389,7 +389,7 @@
 .guiden{
   flex:0 0 auto;width:29px;height:29px;border-radius:9px;
   display:grid;place-items:center;margin-top:1px;
-  font-family:var(--fm);font-size:13px;font-weight:600;color:#08111f;
+  font-family:var(--fm);font-size:13px;font-weight:600;color:var(--on-p);
   background:linear-gradient(140deg,var(--p),var(--s));
 }
 /* The panel. A device frame without the phone drawing: the bezel added
