@@ -767,12 +767,24 @@ async function handleFiles(files, into) {
      Everything else about the flow is identical. */
   const wrap = $(into && into.results || 'uploadResults');
   const reportId = into && into.report || 'csvReport';
+  /* What could not be read at all, so the summary can say so by name. A
+     file that fails is otherwise indistinguishable from one nobody picked. */
+  const failed = [];
 
   for (const file of list) {
     /* A spreadsheet is parsed in the browser: the file never leaves the
        device unless the user goes ahead, and a bad file gets an answer
        instantly rather than after an upload. */
-    if (isSpreadsheet(file)) { await handleCsv(file, reportId); continue; }
+    /* Inside its own try. This await used to sit outside the one below, so
+       a single unparseable spreadsheet threw straight out of the loop:
+       every remaining file in the batch was never read, no card appeared
+       for any of them, and updateImportTotals() at the end never ran. One
+       bad file took the other seven with it, silently. */
+    if (isSpreadsheet(file)) {
+      try { await handleCsv(file, reportId); }
+      catch (err) { failed.push({ name: file.name, why: err && err.message || 'could not be read' }); }
+      continue;
+    }
 
     const id = 'up' + (++uploadSeq);
     const card = document.createElement('div');
@@ -788,9 +800,14 @@ async function handleFiles(files, into) {
       renderExtraction(card, file.name, res);
     } catch (err) {
       card.innerHTML = readerError(err.message);
+      failed.push({ name: file.name, why: err && err.message || 'could not be read' });
     }
   }
   updateImportTotals();
+  if (failed.length) {
+    announce(failed.length + (failed.length === 1 ? ' file could not be read' : ' files could not be read'));
+  }
+  return failed;
 }
 
 /* Pasted text. Tried as a spreadsheet first, because rows copied out of one
@@ -843,7 +860,68 @@ const RESULT_WORD = { won: 'won', lost: 'lost', void: 'void', cashed_out: 'cashe
    number of bets in the corner, one row per leg with that leg's own price
    beside it, and the stake and combined price along the bottom, the way
    every bookmaker prints them. */
+/* One page can hold several bets, so this decides how many cards there are
+   before anything is drawn.
+ *
+ * It used to draw exactly one, always. A photo of three printed slips fell
+ * through to the single-bet renderer, the three selections were joined with
+ * " & ", and the result was one bet called "Arsenal & Spurs & Chelsea" at
+ * one arbitrary stake, with a badge beside it reading "3".
+ *
+ * Each bet gets its own card, its own editable fields and its own Confirm,
+ * because they are separate bets and one of them being wrong should not
+ * hold up the other two. */
 function renderExtraction(card, label, res) {
+  const f = res.fields || {};
+  const bets = Array.isArray(f.bets) ? f.bets : [];
+
+  if (f.doc_type === 'pnl_summary' || bets.length <= 1) {
+    renderOneBet(card, label, res);
+    return;
+  }
+
+  /* Document-level facts every bet on the page shares. The bet's own values
+     win where it has them. */
+  const shared = {
+    readable: f.readable, doc_type: 'bet_slip', platform: f.platform,
+    bet_type: f.bet_type, free_bet: f.free_bet, each_way: f.each_way,
+    price_source: f.price_source, kickoff: f.kickoff,
+    unreadable_fields: f.unreadable_fields, notes: f.notes,
+    totals: null, pl_rows: []
+  };
+
+  const parent = card.parentNode;
+  const first = card;
+  /* Track the last card placed, or every insertBefore(first.nextSibling)
+     would put the newest card immediately after the first and the page
+     would read 1, 4, 3, 2. */
+  let after = first;
+  bets.forEach((b, i) => {
+    const one = Object.assign({}, shared, {
+      selection: b.selection, event: b.event, market: b.market,
+      bookmaker: b.bookmaker, odds: b.odds, stake: b.stake,
+      returns: b.returns, result: b.result, stage: b.stage,
+      placed_at: b.placed_at, selections: b.selections || [],
+      legs: b.legs || (b.selections || []).length || 1,
+      bet_count: 1
+    });
+    let target = first;
+    if (i > 0) {
+      target = document.createElement('div');
+      target.className = first.className;
+      target.style.marginTop = '12px';
+      target.id = 'up' + (++uploadSeq);
+      if (parent) parent.insertBefore(target, after.nextSibling);
+      after = target;
+    }
+    /* Numbered against the page they came from, so a review list of nine
+       cards from three photos can still be matched back to the photos. */
+    renderOneBet(target, label + '  ' + (i + 1) + ' of ' + bets.length, { fields: one });
+  });
+  updateImportTotals();
+}
+
+function renderOneBet(card, label, res) {
   const f = res.fields || {};
 
   /* A profit-and-loss screen from another tracker is not a bet, and logging

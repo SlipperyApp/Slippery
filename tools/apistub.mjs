@@ -343,10 +343,19 @@ export async function installStub(page, opts = {}) {
   /* The slip reader. Returns one legible slip and one the reader could only
      partly make out, which is the case the editable fields exist for. */
   let extractCall = 0;
+  /* The audit needs a specific fixture at a specific moment (the multi-bet
+     page), and counting how many calls earlier checks happened to make is
+     how that assertion rots. installStub returns a controller instead. */
+  let forced = null;
   await page.route('**/api/extract', route => {
     /* Read the counter once. `extractCall++ % 3` in the first branch and
        `extractCall % 3` in the second read different values, which silently
        skipped a case. */
+    if (forced) {
+      const fields = forced; forced = null;
+      return route.fulfill({ status: 200, contentType: 'application/json',
+                             body: JSON.stringify({ fields }) });
+    }
     const n = extractCall++ % 4;
     const body = (n === 0)
       /* Unsettled and fully legible: the common case. */
@@ -390,9 +399,41 @@ export async function installStub(page, opts = {}) {
             { selection: 'Under 3.5 Goals', event: 'Antequera CF v Granada',
               market: 'Over/Under', odds: 1.17, result: 'open' }
           ],
-          totals: null, placed_at: null, unreadable_fields: [], notes: null };
+          totals: null, placed_at: null, unreadable_fields: [], notes: null }
+      ;
     return route.fulfill({
       status: 200, contentType: 'application/json', body: JSON.stringify({ fields: body })
     });
   });
+
+  /* What the caller gets back. Only the audit uses it, and only to pin a
+     fixture it needs to assert against. */
+  return {
+    /* The next /api/extract call answers with exactly this, once. */
+    nextExtract(fields) { forced = fields; }
+  };
 }
+
+/* THREE SEPARATE BETS on one page, each with its own stake, price and
+   bookmaker. Exported because it is the case that used to be merged into a
+   single bet called "A & B & C" with one arbitrary stake, and the audit
+   asserts against it every run. */
+export const THREE_BETS = {
+  readable: true, doc_type: 'bet_list', platform: 'bet365', bet_type: 'single',
+  bet_count: 3, selection: 'Arsenal to win', event: 'Arsenal v Spurs',
+  market: 'Match result', bookmaker: 'bet365', stake: 10, odds: 1.90,
+  returns: null, result: 'open', stage: 'prematch', kickoff: null, legs: 1,
+  selections: [], totals: null, pl_rows: [], placed_at: null,
+  unreadable_fields: [], notes: null,
+  bets: [
+    { selection: 'Arsenal to win', event: 'Arsenal v Spurs', market: 'Match result',
+      bookmaker: 'bet365', odds: 1.90, stake: 10, returns: null, result: 'open',
+      stage: 'prematch', placed_at: null, selections: [], legs: 1 },
+    { selection: 'Spurs to win', event: 'Spurs v Chelsea', market: 'Match result',
+      bookmaker: 'Sky Bet', odds: 2.40, stake: 25, returns: null, result: 'open',
+      stage: 'prematch', placed_at: null, selections: [], legs: 1 },
+    { selection: 'Chelsea to win', event: 'Chelsea v Arsenal', market: 'Match result',
+      bookmaker: 'Betfair', odds: 3.10, stake: 5, returns: null, result: 'open',
+      stage: 'prematch', placed_at: null, selections: [], legs: 1 }
+  ]
+};

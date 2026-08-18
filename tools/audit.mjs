@@ -12,7 +12,7 @@ import { chromium } from 'playwright-core';
 import { readFile, mkdir, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import { createServer } from 'node:http';
-import { installStub } from './apistub.mjs';
+import { installStub, THREE_BETS } from './apistub.mjs';
 
 const root = path.dirname(path.dirname(new URL(import.meta.url).pathname));
 const CHROME = process.env.CHROME_BIN || '/opt/pw-browsers/chromium-1194/chrome-linux/chrome';
@@ -746,7 +746,7 @@ async function main() {
      that a POST leaves the browser with the right body. */
   {
     const page = await browser.newPage({ viewport: { width: 390, height: 844 } });
-    await installStub(page);
+    const stub = await installStub(page);
     const posted = [];
     page.on('request', r => {
       if (r.url().includes('/api/bets') && r.method() === 'POST') {
@@ -787,6 +787,41 @@ async function main() {
       if (Number(b.odds) !== 1.85) fail('import', 'POSTed odds ' + b.odds + ', expected 1.85');
       if (!b.selection) fail('import', 'POSTed a bet with no selection');
     }
+
+    /* A PAGE HOLDING THREE SEPARATE BETS.
+       This used to produce one card whose selection read "A & B & C" at one
+       arbitrary stake, with a badge beside it saying "3". Three bets means
+       three cards, each with its own stake, price and bookmaker, in the
+       order they were read.
+
+       The fixture is pinned rather than reached by cycling the stub: which
+       call number this is depends on how many uploads the checks above
+       happen to make, and an assertion that depends on that rots the first
+       time one of them changes. */
+    await page.evaluate(() => { const w = document.getElementById('uploadResults'); if (w) w.innerHTML = ''; });
+    stub.nextExtract(THREE_BETS);
+    await page.setInputFiles('#slipFile', {
+      name: 'three.jpg', mimeType: 'image/jpeg', buffer: Buffer.from('three-slips')
+    });
+    await page.waitForTimeout(900);
+    const many = await page.evaluate(() =>
+      [...document.querySelectorAll('#uploadResults .slipcard')].map(c => ({
+        stake: c.dataset.stake, odds: c.dataset.odds, sel: c.dataset.selection
+      })));
+    if (many.length !== 3) {
+      fail('import', 'a page holding three bets produced ' + many.length +
+        ' card(s); three separate bets must not be merged into one');
+    } else {
+      if (many.some(c => /&/.test(c.sel || ''))) {
+        fail('import', 'bets were joined with "&" into one selection: ' +
+          many.map(c => c.sel).join(' | '));
+      }
+      const stakes = many.map(c => c.stake).join(',');
+      if (stakes !== '1000,2500,500') {
+        fail('import', 'the three bets kept the wrong stakes or order: ' + stakes);
+      }
+    }
+    await page.evaluate(() => { const w = document.getElementById('uploadResults'); if (w) w.innerHTML = ''; });
 
     /* A slip the reader could only partly make out: Confirm must stay shut
        until the missing field is typed, then work. */
