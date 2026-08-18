@@ -215,7 +215,17 @@ function fromApi(r) {
     status: r.status,
     reason: r.reason || '',
     tipster: r.tipster || '',
+    /* WHERE THE ROW CAME FROM, KEPT RATHER THAN COLLAPSED.
+       This used to be flattened to viaTelegram and nothing else, so a row
+       lifted off a forwarded slip and a row out of somebody's old
+       spreadsheet were indistinguishable in the ledger. They are not the
+       same claim: one has a slip behind it and one is a line somebody
+       exported. */
+    source: r.source || 'upload',
     viaTelegram: r.source === 'telegram',
+    /* Null on a single, and on every row that predates the columns. */
+    betType: r.betType || null,
+    legs: Array.isArray(r.legs) && r.legs.length ? r.legs : null,
     year: d.getFullYear(),
     month: d.getMonth(),
     day: d.getDate(),

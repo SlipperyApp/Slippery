@@ -19,6 +19,7 @@ import { db, ensureSchema, configured } from './_lib/db.js';
 import { sessionUser } from './_lib/auth.js';
 import { cashOutcome, ledgerOutcome, payoutFor } from '../src/js/settlement.js';
 import { bookName } from '../src/js/books.js';
+import { betProblem, cleanLegs, isMulti, inferBetType, BET_TYPES } from '../src/js/betshape.js';
 import { limit } from './_lib/rate.js';
 import { unlimited, trialState, TRIAL_SLIPS, billingState } from './_lib/promo.js';
 import { onBreak } from './_lib/routes/break.js';
@@ -102,7 +103,7 @@ async function list(res, user) {
   const rows = await sql`
     SELECT id, event, selection, market, bookmaker, odds, stake_pence,
            profit_pence, outcome, status, capture_stage, placed_at, settled_at,
-           settle_reason, source
+           settle_reason, source, bet_type, legs
     FROM bets WHERE user_id = ${user.id}
     ORDER BY placed_at DESC LIMIT 2000`;
   const counted = await sql`
@@ -261,7 +262,12 @@ function shape(r) {
     placedAt: r.placed_at,
     settledAt: r.settled_at,
     reason: r.settle_reason,
-    source: r.source
+    source: r.source,
+    /* A single has neither, and null is the honest answer for the rows
+       that predate the columns. The renderers fall back to the selection
+       string, which is all those rows ever had. */
+    betType: r.bet_type || null,
+    legs: Array.isArray(r.legs) ? r.legs : null
   };
 }
 
@@ -307,19 +313,27 @@ async function create(req, res, user, body) {
   const outcome = settledNow ? importOutcome(body) : null;
   const profit = settledNow && outcome ? Math.round(Number(body.profitPence)) : null;
 
+  /* The legs and the type travel together or not at all: a type saying
+     "accumulator" over a row with no legs is worse than no type, because
+     the grader would believe it. */
+  const legs = cleanLegs(body.legs);
+  const betType = betTypeOf(body.betType, legs);
+
   const rows = await sql`
     INSERT INTO bets (user_id, event, selection, market, bookmaker, odds,
                       stake_pence, profit_pence, outcome, status, capture_stage, placed_at,
-                      settled_at, settle_reason, source)
+                      settled_at, settle_reason, source, bet_type, legs)
     VALUES (${user.id}, ${str(body.event)}, ${str(body.selection)}, ${str(body.market)},
             ${str(bookName(body.book))}, ${odds}, ${stake},
             ${profit}, ${outcome},
             ${outcome ? 'settled' : 'pending'}, ${captureStage(body)}, ${placedAt},
             ${outcome ? new Date() : null},
             ${outcome ? 'Result read from the slip' : null},
-            ${body.source === 'telegram' ? 'telegram' : 'upload'})
+            ${body.source === 'telegram' ? 'telegram' : 'upload'},
+            ${betType}, ${legs ? JSON.stringify(legs) : null})
     RETURNING id, event, selection, market, bookmaker, odds, stake_pence,
-              profit_pence, outcome, status, placed_at, settled_at, settle_reason, source`;
+              profit_pence, outcome, status, placed_at, settled_at, settle_reason, source,
+              bet_type, legs`;
   return json(res, 201, { bet: shape(rows[0]) });
 }
 
@@ -423,9 +437,14 @@ async function createMany(req, res, user, rows) {
     }
     seen.add(key);
     const settled = b.outcome && b.profitPence != null;
+    /* A spreadsheet row can carry legs too: some exports put a treble out
+       as one row with its selections in a single cell, and the parser
+       splits them. */
+    const legs = cleanLegs(b.legs);
     await sql`
       INSERT INTO bets (user_id, event, selection, market, bookmaker, odds, stake_pence,
-                        profit_pence, outcome, status, placed_at, settled_at, source)
+                        profit_pence, outcome, status, placed_at, settled_at, source,
+                        bet_type, legs)
       VALUES (${user.id}, ${str(b.event)}, ${str(b.selection)}, ${str(b.market)},
               ${str(bookName(b.book))}, ${b.odds == null ? null : Number(b.odds)},
               ${Math.round(Number(b.stakePence))},
@@ -434,7 +453,8 @@ async function createMany(req, res, user, rows) {
               ${settled ? 'settled' : 'pending'},
               ${b.placedAt ? new Date(b.placedAt) : new Date()},
               ${settled ? new Date(b.placedAt || Date.now()) : null},
-              'import')`;
+              'import',
+              ${betTypeOf(b.betType, legs)}, ${legs ? JSON.stringify(legs) : null})`;
     inserted++;
   }
   /* Everything the summary has to show, reconciled here rather than counted
@@ -537,31 +557,30 @@ async function remove(res, user, body) {
  * after-the-fact. Unknown stays null, and null is excluded from the rate
  * rather than counted either way. */
 const CAPTURE_STAGES = ['prematch', 'inplay', 'settled'];
+/* THE TYPE IS NEVER TAKEN ON TRUST WHEN THE LEGS DISAGREE WITH IT.
+ *
+ * A client can send anything. What decides is the shape of what arrived:
+ * no legs is a single whatever the body claims, and legs with an
+ * unrecognised type are classified from the fixtures they name, which is
+ * the same rule the reader uses. Legs in one fixture are a bet builder and
+ * never auto-grade; legs across fixtures are an accumulator. */
+function betTypeOf(claimed, legs) {
+  if (!legs || legs.length < 2) return null;
+  const t = String(claimed || '').toLowerCase();
+  if (BET_TYPES.includes(t) && isMulti(t)) return t;
+  return inferBetType(legs) || 'multiple';
+}
+
 function captureStage(body) {
   const v = String((body && body.stage) || '').toLowerCase();
   return CAPTURE_STAGES.includes(v) ? v : null;
 }
 
 /* ---------------- validation ----------------
-   Rejects what is structurally impossible rather than what looks unusual.
-   A £2 bet at 501.0 is rare; a £2 bet at 0.4 is not a bet. */
-export function betProblem(b) {
-  if (!b || typeof b !== 'object') return 'Nothing to log.';
-  const stake = Number(b.stakePence);
-  if (!Number.isFinite(stake) || stake <= 0) return 'A bet needs a stake.';
-  if (stake > 100_000_000) return 'That stake is larger than this tracker supports.';
-  if (Math.round(stake) !== stake) return 'Stakes are whole pence.';
-  if (b.odds != null) {
-    const o = Number(b.odds);
-    if (!Number.isFinite(o) || o <= 1) return 'Decimal odds are greater than 1.';
-    if (o > 5000) return 'Those odds are not readable.';
-  }
-  if (!str(b.selection)) return 'A bet needs a selection.';
-  for (const [k, max] of [['event', 200], ['selection', 200], ['market', 80], ['book', 80]]) {
-    if (b[k] != null && String(b[k]).length > max) return 'The ' + k + ' is too long.';
-  }
-  if (b.placedAt && Number.isNaN(new Date(b.placedAt).getTime())) return 'That is not a date.';
-  return '';
-}
+   The rules themselves live in src/js/betshape.js, imported by the browser
+   too, so the import review rejects exactly what this route rejects and
+   the two cannot drift. Re-exported because callers and tests have always
+   asked api/bets.js what a bad bet looks like. */
+export { betProblem };
 
 const str = v => (v == null ? null : String(v).trim().slice(0, 200) || null);

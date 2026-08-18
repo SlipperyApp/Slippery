@@ -28,7 +28,8 @@ const MAX_BETS = 100;
 export async function settleForUser(userId) {
   const sql = db();
   const pending = await sql`
-    SELECT id, event, selection, market, bookmaker, odds, stake_pence, placed_at
+    SELECT id, event, selection, market, bookmaker, odds, stake_pence, placed_at,
+           bet_type, legs
     FROM bets
     WHERE user_id = ${userId} AND status IN ('pending', 'ask')
       AND placed_at > now() - interval '30 days'
@@ -116,13 +117,36 @@ export async function settleForUser(userId) {
     const fixture = feed.matchFixture(bet.event, pool) || extra.get(bet.event);
     if (!fixture) { stillRunning++; continue; }
 
+    /* THE LEGS TRAVEL WITH THE BET.
+     *
+     * They did not, and that is why settleMulti() in the engine — written,
+     * tested, and carrying the locked accumulator rules — had never run
+     * once in production. A multiple was stored as one row with its legs
+     * joined into the selection string and graded as though that string
+     * were a single market, which it is not.
+     *
+     * Each leg of an accumulator is a different fixture, so each one needs
+     * its own result. Matched here, by the leg's own event, and attached
+     * as leg.fixture, which is exactly what settleMulti reads. A leg with
+     * no match leaves the whole bet pending, which is the rule: all legs
+     * grade or the bet defers. */
+    const legs = Array.isArray(bet.legs) && bet.legs.length
+      ? bet.legs.map(leg => Object.assign({}, leg, {
+          fixture: leg.event
+            ? (feed.matchFixture(leg.event, pool) || extra.get(leg.event) || null)
+            : null
+        }))
+      : null;
+
     const out = settle({
       selection: bet.selection,
       market: bet.market,
       event: bet.event,
       stakePence: bet.stake_pence,
       odds: Number(bet.odds),
-      book: bet.bookmaker
+      book: bet.bookmaker,
+      betType: bet.bet_type,
+      legs
     }, fixture);
 
     if (out.status === 'settled') {

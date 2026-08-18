@@ -196,6 +196,29 @@ export async function ensureSchema() {
    * honest answer, and guessing one would be the exact dishonesty the
    * metric exists to rule out. */
   await sql`ALTER TABLE bets ADD COLUMN IF NOT EXISTS capture_stage text`;
+
+  /* WHAT KIND OF BET IT IS, AND WHAT IT IS MADE OF.
+   *
+   * Before these two columns a multiple was stored as one row whose
+   * selection was its legs joined with " & ". The legs were destroyed at
+   * save time, which meant settleMulti() in the settlement engine — which
+   * is implemented, tested, and covers the locked accumulator rules — had
+   * never once run in production: there was nothing to give it.
+   *
+   * It also meant a bet builder and an accumulator were the same row, and
+   * they are not the same bet. A builder's legs are correlated selections
+   * in one fixture and never auto-grade; an accumulator's legs are
+   * separate fixtures and grade only when all of them do.
+   *
+   * jsonb rather than a legs table: the list endpoint reads two thousand
+   * bets in one query and nothing is ever queried ACROSS legs, so a child
+   * table buys a join and costs a round trip. Each leg is exactly what the
+   * grader reads: {selection, event, market, odds}.
+   *
+   * Both nullable. Every row that predates them is a single, takes the
+   * single path unchanged, and needs no backfill. */
+  await sql`ALTER TABLE bets ADD COLUMN IF NOT EXISTS bet_type text`;
+  await sql`ALTER TABLE bets ADD COLUMN IF NOT EXISTS legs jsonb`;
   await sql`CREATE INDEX IF NOT EXISTS bets_user_idx ON bets (user_id, placed_at DESC)`;
   await sql`CREATE INDEX IF NOT EXISTS bets_pending_idx ON bets (status) WHERE status = 'pending'`;
 

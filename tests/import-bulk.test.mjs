@@ -102,7 +102,9 @@ test('imported bets are marked as imported', async () => {
      out of the capture rate. */
   const bets = await read('api/bets.js');
   const insert = bets.slice(bets.indexOf('INSERT INTO bets (user_id, event, selection, market, bookmaker, odds, stake_pence,'));
-  assert.match(insert.slice(0, 900), /'import'\)/);
+  /* Hard-coded in the VALUES list, not taken from the request: a client
+     cannot claim its bets were imported, and cannot claim they were not. */
+  assert.match(insert.slice(0, 1200), /\n\s+'import',/);
 });
 
 test('the duplicate rule the FAQ describes is the rule that is implemented', async () => {

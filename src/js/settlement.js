@@ -532,6 +532,30 @@ export function settleTennis(bet, fx) {
 export function settle(bet, fx) {
   if (!fx) return { status: 'pending', reason: 'No result yet' };
 
+  /* A BET BUILDER NEVER GRADES ITSELF.
+   *
+   * Its legs are correlated selections inside one fixture, priced as a
+   * single product, and several of them turn on things no results feed
+   * publishes: shots, cards, corners, a named player. The locked rules
+   * already say same-game multis always come back to the user, and this is
+   * where that is enforced rather than hoped for. Checked before anything
+   * is parsed, because the cost of getting this wrong is a wrong grade on
+   * somebody's real money.
+   *
+   * Multiples and systems fall through: an accumulator across separate
+   * fixtures is graded leg by leg below, and a system is refused where the
+   * legs are read. */
+  if (bet.betType === 'bet_builder') {
+    return { status: 'ask',
+             reason: 'A bet builder is priced as one selection and its legs are ' +
+                     'correlated, so it is settled by hand' };
+  }
+  if (bet.betType === 'system') {
+    return { status: 'ask',
+             reason: 'A system bet covers several combinations from one stake, ' +
+                     'so it is settled by hand' };
+  }
+
   /* Route before parsing. The football market list is greedy enough to find
      something it recognises in a tennis or a racing selection, and grading
      "Over 2.5" on a tennis match against goals is exactly the silent wrong

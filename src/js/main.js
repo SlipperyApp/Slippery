@@ -7,6 +7,7 @@ import {
   TARGETS, FOUND, PL, hydrate, hydrateSocial, hydratePeople, setFound, addBet, settleLocal, setMe, ME, ico
 } from './data.js';
 import { settle, settleCashOut, ledgerOutcome } from './settlement.js';
+import { inferBetType, betProblem } from './betshape.js';
 import { stats, dayMap, monthTotal, targetFor, weekRange, invalidateDays, importedTotals } from './stats.js';
 import * as R from './render.js';
 import * as C from './content.js';
@@ -1073,6 +1074,15 @@ function renderOneBet(card, label, res) {
         '<input class="field slipin" data-slip="market" list="marketNames" value="' + esc(f.market || '') + '"></label>' +
     '</div>' +
     '<p class="sliphint" id="' + card.id + '-oddshint" hidden></p>' +
+    /* WHAT KIND OF MULTIPLE. Hidden on a single, and on a multiple the
+       reader could classify; shown, and required, when it could not. The
+       two settle differently, so this is a settlement input rather than a
+       label. */
+    '<div class="sliptype" id="' + card.id + '-type" hidden>' +
+      '<div class="chiprow wrap" role="group" aria-label="What kind of bet">' +
+        '<button class="chip" data-bettype="multiple" aria-pressed="false">Accumulator</button>' +
+        '<button class="chip" data-bettype="bet_builder" aria-pressed="false">Bet builder</button>' +
+      '</div><p class="typenote"></p></div>' +
     '<p class="sliptotal" id="' + card.id + '-returns"></p>' +
     '<p class="slipstage ' + stageNote[0] + '">' + esc(stageNote[1]) + '</p>' +
     '<p class="hinttext" id="' + card.id + '-hint">Check it, then confirm. Nothing is saved until you do.</p>' +
@@ -1082,6 +1092,9 @@ function renderOneBet(card, label, res) {
 
   card.dataset.stage = stage || '';
   card.dataset.result = result || '';
+  /* What the reader concluded, if it concluded anything. Null means it
+     could not tell the two apart and the person is asked. */
+  card.dataset.betType = f.bet_type || '';
   /* Returns is what the slip paid out, so profit is returns minus stake,
      the same definition the engine uses, computed once. */
   card.dataset.returns = f.returns != null ? String(Math.round(f.returns * 100)) : '';
@@ -1299,6 +1312,19 @@ function syncSlipCard(card) {
     odds: parseFloat(el.querySelector('[data-leg-field="odds"]').value)
   })).filter(l => l.selection || l.event || Number.isFinite(l.odds));
 
+  /* WHICH KIND OF MULTIPLE THIS IS, KEPT RATHER THAN FLATTENED.
+     The legs used to be joined into one selection string here and then
+     thrown away, so a treble was saved as a row nothing could grade. They
+     now travel to the server, and the type travels with them, because a
+     bet builder and an accumulator settle differently. The reader supplies
+     the type when it can read one; the person picks when it cannot. */
+  const picked = card.dataset.betType || '';
+  const betType = legs.length > 1
+    ? (picked || inferBetType(legs) || '')
+    : 'single';
+  card.dataset.betType = betType;
+  card.dataset.legList = legs.length > 1 ? JSON.stringify(legs) : '';
+
   const stake = M.parseMoney(read('stake'));
   const odds = parseFloat(read('odds'));
 
@@ -1319,6 +1345,10 @@ function syncSlipCard(card) {
   card.dataset.stake = stake != null && stake > 0 ? String(stake) : '';
   card.dataset.odds = Number.isFinite(odds) && odds > 1 ? String(odds) : '';
   card.dataset.legs = String(legs.length);
+  /* A multiple whose kind nobody has established is not ready to save:
+     saving it would either grade a same-game multi on the 90 minute score
+     or refuse to grade an accumulator that should have graded itself. */
+  card.dataset.needsType = legs.length > 1 && !betType ? '1' : '';
 
   /* The legs multiply out to the combined price. Saying so when they
      disagree catches a mistyped leg, which is the error that silently
@@ -1342,8 +1372,33 @@ function syncSlipCard(card) {
     }
   }
 
-  const ready = Boolean(card.dataset.stake && card.dataset.odds && selection);
+  const ready = Boolean(card.dataset.stake && card.dataset.odds && selection)
+    && !card.dataset.needsType;
   card.dataset.ready = ready ? '1' : '0';
+
+  /* The choice, shown only when it is genuinely open. Two legs in one
+     fixture is a bet builder and two legs in two fixtures is an
+     accumulator; this appears when the reader could not tell which, and it
+     blocks Confirm until it is answered. */
+  const typeRow = $(card.id + '-type');
+  if (typeRow) {
+    typeRow.hidden = legs.length < 2;
+    if (legs.length > 1) {
+      $$('[data-bettype]', typeRow).forEach(b => {
+        const on = b.getAttribute('data-bettype') === betType;
+        b.classList.toggle('on', on);
+        b.setAttribute('aria-pressed', String(on));
+      });
+      const note = typeRow.querySelector('.typenote');
+      if (note) {
+        note.textContent = !betType
+          ? 'Which is it? A bet builder is several picks in one game and is settled by hand.'
+          : betType === 'bet_builder'
+            ? 'Several picks in one game. Slippery will not grade this one for you.'
+            : 'Legs in different games. Slippery grades it when every leg is in.';
+      }
+    }
+  }
   /* Potential profit, so the Import totals mean something before settlement. */
   card.dataset.profit = ready
     ? String(Math.round(Number(card.dataset.stake) * (Number(card.dataset.odds) - 1)))
@@ -1427,6 +1482,11 @@ async function confirmSlip(btn) {
        the capture rate is built from, and it is the reader's observation
        rather than an inference: it comes off the slip, or it is absent. */
     stage: card.dataset.stage || undefined,
+    /* The legs, and which kind of multiple they make. Without these a
+       treble was saved as one row whose selection was its legs joined by
+       an ampersand, which nothing could ever grade. */
+    betType: card.dataset.betType || undefined,
+    legs: card.dataset.legList ? JSON.parse(card.dataset.legList) : undefined,
     source: 'upload'
   });
 
@@ -2603,6 +2663,11 @@ document.addEventListener('click', e => {
   if (c('[data-goto-totals]')) {
     const tab = document.querySelector('#importSeg [data-import="importTotals"]');
     if (tab) tab.click();
+    return;
+  }
+  if ((el = c('[data-bettype]'))) {
+    const card = el.closest('.card');
+    if (card) { card.dataset.betType = el.getAttribute('data-bettype'); syncSlipCard(card); }
     return;
   }
   if ((el = c('[data-dismiss-card]'))) { collapse(el.closest('.card'), 'Discarded'); setTimeout(updateImportTotals, 500); return; }

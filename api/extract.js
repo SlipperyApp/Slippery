@@ -27,6 +27,7 @@ import { sessionUser } from './_lib/auth.js';
 import { ensureSchema, configured as dbConfigured } from './_lib/db.js';
 import { guard } from './_lib/rate.js';
 import { bookName } from '../src/js/books.js';
+import { inferBetType } from '../src/js/betshape.js';
 
 const MODEL = process.env.EXTRACT_MODEL || 'claude-haiku-4-5';
 const MAX_IMAGE_BYTES = 8 * 1024 * 1024;
@@ -111,7 +112,7 @@ const BET_SCHEMA = {
   type: 'object',
   additionalProperties: false,
   required: ['selection', 'event', 'market', 'bookmaker', 'odds', 'stake',
-             'returns', 'result', 'stage', 'placed_at', 'selections'],
+             'returns', 'result', 'stage', 'placed_at', 'bet_type', 'selections'],
   properties: {
     selection: { type: 'string' },
     event: { type: 'string' },
@@ -123,6 +124,13 @@ const BET_SCHEMA = {
     result: oneOf(['won', 'lost', 'void', 'cashed_out', 'open']),
     stage: oneOf(['prematch', 'inplay', 'settled']),
     placed_at: { type: 'string' },
+    /* PER BET, not per document. The top-level bet_type describes the
+       first bet, which is wrong the moment one screenshot holds a single
+       and a treble. This is also a settlement input rather than a label:
+       a bet builder never auto-grades and an accumulator does, so reading
+       it wrongly is a wrong grade. `oneOf` emits a plain string enum, so
+       this costs nothing against the 16-union budget. */
+    bet_type: oneOf(['single', 'multiple', 'bet_builder', 'system']),
     selections: { type: 'array', items: LEG_SCHEMA }
   }
 };
@@ -289,6 +297,23 @@ Field notes:
   other and taking the wrong one turns a small loss into a large win.
 - bet_count: how many separate bets are on the image. A slip with four legs is
   ONE bet with four selections, so bet_count is 1 and legs is 4.
+- bet_type, ON EACH ENTRY IN bets. Four kinds, and the difference between two
+  of them decides whether the bet can be settled automatically at all:
+    "single": one selection, one stake.
+    "multiple": an accumulator, double, treble or fourfold. Several
+      selections on ONE stake, in DIFFERENT fixtures, at a combined price.
+    "bet_builder": a same-game multi. Several selections on one stake, all in
+      the SAME fixture. Bookmakers label these "Bet Builder", "BetBuilder",
+      "Same Game Multi", "SGM", "Build A Bet", "RequestABet", "#YourOdds",
+      "Bet Boost" or similar, and price them as one selection.
+    "system": Yankee, Lucky 15, Trixie, Patent, Heinz and the rest, where one
+      slip covers several combinations and the total stake is split across
+      them.
+  THE TEST IS THE FIXTURE. Legs naming one fixture are a bet_builder. Legs
+  naming different fixtures are a multiple. If the slip labels itself, believe
+  the label over the fixtures.
+  If you cannot tell, say "unknown". Do not guess between multiple and
+  bet_builder: they settle differently, and the person will be asked.
 - bets: EVERY bet on the page, one entry each, and this is the list that
   counts. bet_count must equal its length.
     A LEG AND A BET ARE NOT THE SAME THING. A treble is ONE bet with three
@@ -298,8 +323,9 @@ Field notes:
     The test is the stake. Legs share a stake; separate bets each have their
     own. If two things on the page were staked separately, they are two
     bets, however close together they are printed.
-    Each entry carries its own stake, odds, returns, bookmaker, placed_at
-    and result, because on a history screen those genuinely differ per row.
+    Each entry carries its own stake, odds, returns, bookmaker, placed_at,
+    result and bet_type, because on a history screen those genuinely differ
+    per row: one line can be a single and the next a bet builder.
     The flat selection/odds/stake fields above describe the FIRST bet only.
     Always fill bets, even for a single slip, where it has one entry.
 - result: only if the slip states it. An unsettled slip is "open". Never infer
@@ -515,6 +541,32 @@ export default async function handler(req, res) {
  * receives null for anything the reader could not read. Nothing outside
  * this function knows the sentinels exist.
  */
+/* WHAT KIND OF BET THIS IS, AND WHEN TO ADMIT WE DO NOT KNOW.
+ *
+ * A bet builder and an accumulator arrive looking the same: one stake,
+ * several legs, one price. They do not settle the same way. An accumulator
+ * grades when every leg grades, void legs dropping out; a bet builder's
+ * legs are correlated selections inside one fixture and the locked rules
+ * say it never auto-grades at all.
+ *
+ * So this trusts the reader when the reader was sure, applies the fixture
+ * test when it was not, and returns null when even that cannot answer. A
+ * null reaches the review card as a choice the person makes before Confirm
+ * will enable. That is the whole point: a wrong grade is worse than no
+ * grade, and a guess here is a wrong grade waiting to happen.
+ */
+function resolveType(b, tag, bad) {
+  const legs = Array.isArray(b.selections) ? b.selections : [];
+  const claimed = b.bet_type === UNKNOWN ? null : b.bet_type;
+  if (legs.length < 2) return claimed === 'system' ? 'system' : 'single';
+  /* A label on the slip beats an inference from the fixtures: bookmakers
+     print "Bet Builder" on the thing they are selling. */
+  if (claimed && claimed !== 'single') return claimed;
+  const guess = inferBetType(legs);
+  if (!guess && bad) bad.add(tag.trim() + ' type');
+  return guess;
+}
+
 export function sanitise(f) {
   const out = { ...f };
   const bad = new Set(Array.isArray(f.unreadable_fields) ? f.unreadable_fields : []);
@@ -612,12 +664,13 @@ export function sanitise(f) {
     reject(b, 'stake', v => typeof v === 'number' && isFinite(v) && v > 0 && v < 1e7, tag + 'stake');
     reject(b, 'returns', v => typeof v === 'number' && isFinite(v) && v >= 0 && v < 1e9, tag + 'returns');
     reject(b, 'placed_at', v => typeof v === 'string' && !Number.isNaN(Date.parse(v)), tag + 'date');
-    for (const key of ['result', 'stage']) if (b[key] === UNKNOWN) b[key] = null;
+    for (const key of ['result', 'stage', 'bet_type']) if (b[key] === UNKNOWN) b[key] = null;
     for (const key of ['selection', 'event', 'market', 'bookmaker']) {
       if (typeof b[key] === 'string') b[key] = b[key].trim().slice(0, 200) || null;
     }
     b.selections = cleanLegs(bet && bet.selections, tag);
     b.legs = b.selections.length || null;
+    b.bet_type = resolveType(b, tag, bad);
     return b;
   /* A bet with no selection and no stake is a blank row the model padded
      the array with. Keeping it would put an empty card in the review list. */
@@ -629,8 +682,10 @@ export function sanitise(f) {
       bookmaker: out.bookmaker, odds: out.odds, stake: out.stake,
       returns: out.returns, result: out.result, stage: out.stage,
       placed_at: out.placed_at, selections: out.selections,
-      legs: out.selections.length || out.legs || null
-    }].filter(b => b.selection || b.stake || b.odds);
+      legs: out.selections.length || out.legs || null,
+      bet_type: out.bet_type === UNKNOWN ? null : out.bet_type
+    }].filter(b => b.selection || b.stake || b.odds)
+      .map(b => Object.assign(b, { bet_type: resolveType(b, 'bet 1 ', bad) }));
   }
   /* bet_count is what the badge shows, so it has to be the number of bets
      actually returned rather than what the model counted on the page. They
