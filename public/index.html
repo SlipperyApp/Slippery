@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#0A0F1E">
-<meta name="description" content="Slippery reads your bet slips and tracks your real profit and loss. Capture a bet when you place it, not when it wins.">
+<meta name="description" content="Slippery reads your bet slips and tracks your real profit and loss. Log a slip before kick off, in play, or after the result.">
 <meta name="color-scheme" content="dark">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -17,7 +17,7 @@
 <link rel="preload" href="/fonts/schibsted-grotesk.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="preload" href="/fonts/spline-sans-mono.woff2" as="font" type="font/woff2" crossorigin>
 <meta property="og:title" content="Slippery, bet slip tracker">
-<meta property="og:description" content="Send a slip when you place it. Slippery reads it, tracks it, and settles it into your profit and loss.">
+<meta property="og:description" content="Send a slip before kick off, in play, or after it settled. Slippery reads it, tracks it, and settles it into your profit and loss.">
 <meta property="og:type" content="website">
 <meta property="og:image" content="/og.png">
 <meta property="og:image:width" content="1200">
@@ -31,20 +31,12 @@ to right,var(--c1) 0 36px,transparent 36px 42px)}}.linkcode{font-family:var(--fm
 <body>
 <svg xmlns="http://www.w3.org/2000/svg" style="position:absolute;width:0;height:0;overflow:hidden" aria-hidden="true" focusable="false"><defs><symbol id="i-won" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" fill="currentColor" opacity=".18"/><path d="M7.4 12.4l3.1 3.1 6.1-6.9" fill="none" stroke="currentColor"stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></symbol><symbol id="i-lost" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" fill="currentColor" opacity=".18"/><path d="M8.6 8.6l6.8 6.8M15.4 8.6l-6.8 6.8" fill="none" stroke="currentColor"stroke-width="2.2" stroke-linecap="round"/></symbol><symbol id="i-cash" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" fill="currentColor" opacity=".18"/><path d="M14.8 9.1c-.5-.8-1.5-1.3-2.7-1.3-1.7 0-2.9.9-2.9 2.2 0 3 5.8 1.4 5.8 4.4 0 1.3-1.3 2.3-3 2.3-1.3 0-2.4-.5-2.9-1.4"fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"/><path d="M12 6.1v11.8" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"/></symbol><symbol id="i-void" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" fill="currentColor" opacity=".18"/><path d="M15.6 15.4H10a2.9 2.9 0 0 1 0-5.8h4.6" fill="none" stroke="currentColor"stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/><path d="M12.8 7.2L15.4 9.6 12.8 12" fill="none" stroke="currentColor"stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/></symbol><symbol id="i-pending" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" fill="currentColor" opacity=".18"/><path d="M12 7.2V12l3 1.8" fill="none" stroke="currentColor"stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/></symbol><symbol id="i-ask" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" fill="currentColor" opacity=".18"/><path d="M9.7 9.4a2.4 2.4 0 1 1 3.2 2.3c-.6.2-.9.8-.9 1.4v.4" fill="none"stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/><circle cx="12" cy="16.4" r="1.05" fill="currentColor"/></symbol><symbol id="i-telegram" viewBox="0 0 24 24"><path fill="currentColor" d="M21.9 4.3l-3.1 14.9c-.2 1-.9 1.3-1.8.8l-4.9-3.6-2.4 2.3c-.3.3-.5.5-1 .5l.4-5 9.1-8.2c.4-.4-.1-.6-.6-.2L4.3 13.2l-4.8-1.5c-1-.3-1-1 .2-1.5L20.6 2.3c.9-.3 1.6.2 1.3 2z"/></symbol><symbol id="i-apple" viewBox="0 0 24 24"><path fill="currentColor" d="M17.05 12.5c0-2.1 1.7-3.1 1.8-3.2-1-1.4-2.5-1.6-3-1.7-1.3-.1-2.5.8-3.1.8-.6 0-1.6-.8-2.7-.8-1.4 0-2.7.8-3.4 2-1.5 2.5-.4 6.2 1 8.2.7 1 1.5 2.1 2.6 2 1-.04 1.4-.65 2.7-.65s1.6.65 2.7.63c1.1-.02 1.8-1 2.5-2 .8-1.1 1.1-2.2 1.1-2.3-.02-.01-2.2-.85-2.2-3.03zM15 5.4c.6-.7 1-1.7.9-2.7-.85.04-1.9.57-2.5 1.27-.55.62-1.03 1.63-.9 2.6.95.07 1.9-.48 2.5-1.17z"/></symbol><symbol id="i-calendar" viewBox="0 0 24 24" fill="none" stroke="currentColor"stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="3.2" y="4.8" width="17.6" height="16" rx="2.4"/><path d="M3.2 9.6h17.6M8 2.8v3.6M16 2.8v3.6"/></symbol><symbol id="i-chart" viewBox="0 0 24 24" fill="none" stroke="currentColor"stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M3.4 16.6l4.8-5.2 3.4 3 4-4.8 4.9-4.2"/><path d="M16.6 5.4h4v4"/><path d="M3.4 20.6h17.2"/></symbol><symbol id="i-trophy" viewBox="0 0 24 24" fill="none" stroke="currentColor"stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M8 21h8M12 17v4"/><path d="M7 4h10v5a5 5 0 0 1-10 0z"/><path d="M17 5h3v2a3 3 0 0 1-3 3M7 5H4v2a3 3 0 0 0 3 3"/></symbol><symbol id="i-shield" viewBox="0 0 24 24" fill="none" stroke="currentColor"stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21.6s7.6-3.8 7.6-9.5V5.2L12 2.4 4.4 5.2v6.9c0 5.7 7.6 9.5 7.6 9.5z"/><path d="M9 12l2.1 2.1L15.2 10"/></symbol><symbol id="i-camera" viewBox="0 0 24 24" fill="none" stroke="currentColor"stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M3.2 8.6a2 2 0 0 1 2-2h1.9l1.3-2.2h7.2l1.3 2.2h1.9a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5.2a2 2 0 0 1-2-2z"/><circle cx="12" cy="13" r="3.6"/></symbol><symbol id="i-bolt" viewBox="0 0 24 24" fill="none" stroke="currentColor"stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M13.4 2.4L4.2 13.6h6.3l-.9 8 9.2-11.2h-6.3z"/></symbol><symbol id="i-scales" viewBox="0 0 24 24" fill="none" stroke="currentColor"stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3.4v17.2M7.4 20.6h9.2M4.6 6.6l14.8-1.4"/><path d="M7.6 6.2L4.4 13a3.4 3.4 0 0 0 6.4 0zM16.4 5.4L13.2 12.2a3.4 3.4 0 0 0 6.4 0z"/></symbol><symbol id="i-users" viewBox="0 0 24 24" fill="none" stroke="currentColor"stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="9.4" cy="8.2" r="3.6"/><path d="M2.8 20.2a6.6 6.6 0 0 1 13.2 0"/><path d="M16.4 5.1a3.6 3.6 0 0 1 0 6.6M17.8 14.4a6.6 6.6 0 0 1 3.4 5.8"/></symbol><symbol id="i-lock" viewBox="0 0 24 24" fill="none" stroke="currentColor"stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="4.4" y="10.2" width="15.2" height="10.4" rx="2.4"/><path d="M8 10.2V7.4a4 4 0 0 1 8 0v2.8"/></symbol><symbol id="i-close" viewBox="0 0 24 24" fill="none" stroke="currentColor"stroke-width="2" stroke-linecap="round"><path d="M6.6 6.6l10.8 10.8M17.4 6.6L6.6 17.4"/></symbol><symbol id="i-plus" viewBox="0 0 24 24" fill="none" stroke="currentColor"stroke-width="2" stroke-linecap="round"><path d="M12 6.4v11.2M6.4 12h11.2"/></symbol><symbol id="i-refresh" viewBox="0 0 24 24" fill="none" stroke="currentColor"stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M20.4 12a8.4 8.4 0 1 1-2.5-6"/><path d="M20.6 4.2v5.2h-5.2"/></symbol><symbol id="i-gear" viewBox="0 0 24 24" fill="none" stroke="currentColor"stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M19.14 12.94a7.07 7.07 0 0 0 0-1.88l2.03-1.58a.5.5 0 0 0 .12-.64l-1.92-3.32a.5.5 0 0 0-.6-.22l-2.39.96a7.03 7.03 0 0 0-1.63-.94l-.36-2.54a.5.5 0 0 0-.5-.42h-3.84a.5.5 0 0 0-.5.42l-.36 2.54c-.59.24-1.13.56-1.63.94l-2.39-.96a.5.5 0 0 0-.6.22L2.71 8.84a.5.5 0 0 0 .12.64l2.03 1.58a7.07 7.07 0 0 0 0 1.88l-2.03 1.58a.5.5 0 0 0-.12.64l1.92 3.32a.5.5 0 0 0 .6.22l2.39-.96c.5.38 1.04.7 1.63.94l.36 2.54a.5.5 0 0 0 .5.42h3.84a.5.5 0 0 0 .5-.42l.36-2.54c.59-.24 1.13-.56 1.63-.94l2.39.96a.5.5 0 0 0 .6-.22l1.92-3.32a.5.5 0 0 0-.12-.64z"/><circle cx="12" cy="12" r="3.2"/></symbol><symbol id="i-arrow-down" viewBox="0 0 24 24" fill="none" stroke="currentColor"stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4.6v14.2M6.2 13.4L12 19.2l5.8-5.8"/></symbol><symbol id="i-google" viewBox="0 0 24 24"><path fill="currentColor" d="M21.6 12.23c0-.71-.06-1.4-.18-2.05H12v3.88h5.38a4.6 4.6 0 0 1-2 3.02v2.5h3.24c1.9-1.74 2.98-4.3 2.98-7.35z"/><path fill="currentColor" d="M12 22c2.7 0 4.96-.9 6.62-2.42l-3.24-2.5c-.9.6-2.05.96-3.38.96-2.6 0-4.8-1.76-5.59-4.12H3.06v2.59A10 10 0 0 0 12 22z"/><path fill="currentColor" d="M6.41 13.92a6 6 0 0 1 0-3.84V7.49H3.06a10 10 0 0 0 0 9.02l3.35-2.59z"/><path fill="currentColor" d="M12 5.98c1.47 0 2.79.51 3.83 1.5l2.87-2.87C16.95 2.99 14.7 2 12 2A10 10 0 0 0 3.06 7.49l3.35 2.59C7.2 7.72 9.4 5.98 12 5.98z"/></symbol></defs></svg>
 <a class="skip" href="#main">Skip to content</a>
-
-<!-- The living background. Everything inside is decorative and contained. -->
 <div class="sky" aria-hidden="true">
   <div class="sky-wash"></div>
   <div class="sky-orb o1"></div>
   <div class="sky-orb o2"></div>
   <div class="sky-orb o3"></div>
-  <!-- Silk ribbons.
-       The artwork lives in CSS as a background image with the gaussian blur
-       baked into the SVG itself. That is the whole trick: a live
-       `filter: blur()` is re-evaluated on every scroll frame (measured 49.9ms
-       p95, i.e. 30fps), whereas a blurred SVG used as a background is
-       rasterised once and thereafter only composited (16.8ms, 60fps).
-       Outer div = scroll parallax, inner div = drift. -->
+  
   <div class="sky-silk">
     <div class="sky-band" data-parallax="0.12"><div class="sky-band-in b1"></div></div>
     <div class="sky-band" data-parallax="-0.07"><div class="sky-band-in b2"></div></div>
@@ -52,16 +44,11 @@ to right,var(--c1) 0 36px,transparent 36px 42px)}}.linkcode{font-family:var(--fm
   <div class="sky-grain"></div>
   <div class="sky-vig"></div>
 </div>
-
 <header class="topbar site-only" id="topbarSite">
   <button class="brand" data-nav="landing" aria-label="Slippery home">
     <span class="mark" aria-hidden="true"></span><span>Slipp<i>ery</i></span>
   </button>
-  <!-- Two text links and one filled pill, in that weight order. The old
-       bar pointed at three page anchors, one of which (secHow) no longer
-       exists, so a third of the navigation was already dead. Destinations
-       beat anchors here: somebody deciding whether to sign up wants the
-       price and a way back in, not a scroll shortcut. -->
+  
   <div class="topbar-right">
     <nav class="anchors" aria-label="Site">
       <button data-nav="pricing">Pricing</button>
@@ -70,7 +57,6 @@ to right,var(--c1) 0 36px,transparent 36px 42px)}}.linkcode{font-family:var(--fm
     <button class="btn primary small" id="ctaStart" data-nav="setup">Get Started</button>
   </div>
 </header>
-
 <header class="topbar app-only" id="topbarApp">
   <button class="brand" data-nav="landing" aria-label="Slippery home">
     <span class="mark" aria-hidden="true"></span><span>Slipp<i>ery</i></span>
@@ -80,49 +66,11 @@ to right,var(--c1) 0 36px,transparent 36px 42px)}}.linkcode{font-family:var(--fm
     Linked
   </button>
 </header>
-
 <main id="main">
 <p class="sr" aria-live="polite" id="announcer"></p>
-
-<!-- ══════════════ LANDING ══════════════ -->
 <section class="view on" id="landing" aria-label="Home">
-
-  <!-- ══════════════════════════════════════════════════════════════
-       THE LANDING PAGE. FOUR BLOCKS.
-       ══════════════════════════════════════════════════════════════
-       It was twelve, and eight of those were one component repeated
-       with a different accent colour, followed by a six item grid
-       telling the same story again. A feature tour that long argues
-       on a competitor's ground and buries the only thing here nobody
-       else can copy.
-
-       Four blocks now: the claim, how it works, the proof, the ask.
-
-       NO GLASS ON THIS PAGE. No backdrop-filter, no translucent
-       panel, no gradient, no drop shadow. The old page was frosted
-       cards floating on gradients, which is the default answer and
-       is why it read as a template. Everything here is flat, spaced,
-       and separated by a hairline or by nothing at all.
-
-       THE FIGURES ARE THE ONLY ORNAMENT. If something on this page
-       is coloured, it is because it is money and the sign means
-       something.
-
-       What was removed, and why, so it does not come back:
-         · eight repeated feature sections  -> the bloat itself
-         · "Six things, done properly"      -> said it a second time
-         · the bookmaker strip              -> /books already exists
-         · proof stats                      -> unearned for the stage
-         · testimonials                     -> QUOTES was empty
-         · the Telegram block               -> already beat two below
-         · the FAQ                          -> #faqs already holds it
-         · app store badges                 -> neither app exists
-         · "Founded by Zhang et al." with a verified tick, which was
-           live on production: fabricated attribution wearing a trust
-           badge on a public page
-       ══════════════════════════════════════════════════════════════ -->
-
-  <!-- ─────────────── 1. THE CLAIM ─────────────── -->
+  
+  
   <header class="lead">
     <div class="wrap">
       <p class="cap reveal">Bet tracking for UK and Irish bettors</p>
@@ -130,35 +78,24 @@ to right,var(--c1) 0 36px,transparent 36px 42px)}}.linkcode{font-family:var(--fm
       <p class="lead-sub reveal">Send a slip before kick off, in play, or after it
         settled. Slippery reads it, settles it, and shows what your record actually
         says instead of what you remember.</p>
-      <!-- One heavy, one plain. Two competing buttons make neither the
-           obvious next step, and the quiet one is a way in for somebody
-           not ready to hand over an email. -->
+      
       <div class="lead-act reveal">
         <button class="btn primary" data-nav="setup">Start tracking free</button>
         <button class="lead-alt" data-nav="demo">or see a live demo first</button>
       </div>
       <p class="lead-fine reveal">Two weeks free. 35 slips. No card.</p>
     </div>
-
-    <!-- The product's own evidence, framed flat.
-         This was wrapped in fake browser chrome, traffic light dots and
-         a URL bar, which pretended the product was a website being
-         looked at rather than the thing itself. A hairline frame and a
-         label do the same job without the costume. -->
+    
     <div class="wrap">
       <figure class="shot reveal">
         <div class="shot-in">
-          <!-- Real figures from the labelled worked example, the same one
-               the demo page runs on, not invented numbers and not the
-               visitor's, since they have none yet. -->
+          
           <div class="shot-head">
             <p class="cap">Your dashboard</p>
             <p class="cap" id="chromeRange"></p>
           </div>
           <div class="shot-stats" id="chromeStats"></div>
-          <!-- Flat stroke. The area fill that used to sit under this was a
-               gradient wash, which is decoration: the shape is the
-               information. -->
+          
           <svg class="shot-line" viewBox="0 0 300 66" preserveAspectRatio="none" aria-hidden="true">
             <path id="previewLine" fill="none" stroke="currentColor" stroke-width="1.5"
                   stroke-linejoin="round" stroke-linecap="round" d=""/>
@@ -167,14 +104,12 @@ to right,var(--c1) 0 36px,transparent 36px 42px)}}.linkcode{font-family:var(--fm
       </figure>
     </div>
   </header>
-
-  <!-- ─────────────── 2. HOW IT WORKS ─────────────── -->
+  
   <div class="jack" id="jack" aria-label="How a slip becomes a settled bet">
     <div class="jack-stage">
       <div class="jack-inner">
-
         <div class="jack-scenes" aria-hidden="true">
-          <!-- 1. the slip -->
+          
           <div class="jk-scene s1">
             <div class="jk-slip">
               <div class="jk-slip-top"><span class="jk-slip-book">Paddy Power</span><span class="jk-slip-ref">O/9241</span></div>
@@ -183,7 +118,7 @@ to right,var(--c1) 0 36px,transparent 36px 42px)}}.linkcode{font-family:var(--fm
               <div class="jk-slip-foot"><span>Stake <b class="tnum">£306.18</b></span><span>Odds <b class="tnum">1.25</b></span></div>
             </div>
           </div>
-          <!-- 2. the bot reads it -->
+          
           <div class="jk-scene s2">
             <div class="jk-bubble">
               <p class="jk-bh">Slip read</p>
@@ -196,7 +131,7 @@ to right,var(--c1) 0 36px,transparent 36px 42px)}}.linkcode{font-family:var(--fm
               <p class="jk-bq">Tracking it. I will settle it at full time.</p>
             </div>
           </div>
-          <!-- 3. it settles onto the calendar -->
+          
           <div class="jk-scene s3">
             <div class="jk-cal">
               <span class="jk-c"></span><span class="jk-c up"></span><span class="jk-c dn"></span><span class="jk-c"></span><span class="jk-c up"></span>
@@ -207,11 +142,8 @@ to right,var(--c1) 0 36px,transparent 36px 42px)}}.linkcode{font-family:var(--fm
             </div>
           </div>
         </div>
-
         <div class="jack-copy">
-          <!-- Progress. Each segment fills with its own scene's presence, so
-               the rail is the same number the scenes are reading, there is
-               no second source of truth to drift. -->
+          
           <div class="jack-rail" aria-hidden="true">
             <span class="jack-tick"><i></i></span>
             <span class="jack-tick"><i></i></span>
@@ -220,9 +152,7 @@ to right,var(--c1) 0 36px,transparent 36px 42px)}}.linkcode{font-family:var(--fm
           <p class="jack-step-n"><span class="tnum" id="jackN">01</span> <em>/ 03</em></p>
           <h2 class="jack-h" id="jackH">You place the bet.</h2>
           <p class="jack-p" id="jackP">Screenshot the slip and forward it to the bot. That is the entire capture step, and it happens before you know the result.</p>
-          <!-- Shown only under prefers-reduced-motion, where the sequence
-               does not pin and the three beats are simply stacked. The
-               scenes are decorative, so one summary is the whole story. -->
+          
           <div class="jack-sum">
             <h2>Three beats, one slip.</h2>
             <p>You place the bet and forward the slip. Slippery lifts the stake, odds, selection and bookmaker off the image. At full time it grades the bet on the 90-minute score and lands it on your calendar, and anything ambiguous asks you rather than guessing.</p>
@@ -230,9 +160,7 @@ to right,var(--c1) 0 36px,transparent 36px 42px)}}.linkcode{font-family:var(--fm
         </div>
       </div>
     </div>
-
-    <!-- The scroll track. Each step is one viewport tall and snaps, so the
-         sequence advances in three deliberate beats rather than smearing. -->
+    
     <div class="jack-track">
       <div class="jack-step" data-step="0"
            data-h="You place the bet."
@@ -245,12 +173,7 @@ to right,var(--c1) 0 36px,transparent 36px 42px)}}.linkcode{font-family:var(--fm
            data-p="At full time the bet is graded on the 90-minute score and lands on your calendar. Anything ambiguous asks you rather than guessing."></div>
     </div>
   </div>
-
-  <!-- ─────────────── 3. THE PROOF ───────────────
-       Promoted. This was one of eight sections, three quarters of the
-       way down, which is the wrong place for the single strongest
-       thing on the page. It is the whole argument in one picture:
-       the same eight bets, recorded two ways. -->
+  
   <div class="proof snap-point">
     <div class="wrap">
       <p class="cap reveal">Why it has to be logged, not remembered</p>
@@ -263,21 +186,14 @@ to right,var(--c1) 0 36px,transparent 36px 42px)}}.linkcode{font-family:var(--fm
         the right is simply never told about the others.</p>
     </div>
   </div>
-
-  <!-- ─────────────── 4. THE ASK ─────────────── -->
+  
   <div class="close">
     <div class="wrap">
       <h2 class="reveal">Find out what your record actually says.</h2>
       <p class="reveal">If it tells you something you did not want to hear, that is
         the product working.</p>
       <button class="btn primary reveal" data-nav="setup">Start free</button>
-
-      <!-- The way onward. Cutting the page to four blocks took the feature
-           tour, the pricing table and the FAQ off it, and they were the
-           only routes into those views from here: a visitor who wanted to
-           know how settlement works had nothing to press. Three text links
-           rather than a nav bar, because this is the end of the page and a
-           second navigation would be a fifth block pretending not to be. -->
+      
       <nav class="onward reveal" aria-label="More about Slippery">
         <button data-nav="howto">How it works</button>
         <button data-nav="pricing">Pricing</button>
@@ -285,20 +201,13 @@ to right,var(--c1) 0 36px,transparent 36px 42px)}}.linkcode{font-family:var(--fm
       </nav>
     </div>
   </div>
-
 </section>
-
-<!-- ══════════════ SETUP ══════════════ -->
 <section class="view" id="setup" aria-label="Create your account">
   <div class="wrap nar">
     <h1 class="sr">Create your Slippery account</h1>
     <div class="wizbar" id="wizbar" aria-hidden="true"></div>
-
     <div class="step on" data-step="0">
-      <!-- The reassurance rail. Three facts a person weighs before typing
-           an email into a gambling-adjacent product, said before the form
-           rather than in fine print under it. Above the form on a phone,
-           beside it on a desktop. -->
+      
       <div class="authrail" aria-hidden="true">
         <span><b>Two weeks free</b>35 slips, no card</span>
         <span><b>Your figures are yours</b>Private by default</span>
@@ -309,13 +218,8 @@ to right,var(--c1) 0 36px,transparent 36px 42px)}}.linkcode{font-family:var(--fm
           <button class="on" data-auth="up" aria-pressed="true">Create account</button>
           <button data-auth="in" aria-pressed="false">Log in</button>
         </div>
-
-        <!-- Federated sign in. Rendered by main.js only for providers this
-             deployment holds credentials for, so there is never a button
-             here that cannot finish what it starts. Hidden entirely when
-             neither is configured, rather than shown greyed out. -->
+        
         <div class="fed" id="fedButtons" hidden></div>
-
         <div id="authSignup">
           <h2>Create your account</h2>
           <p class="stepnote">One minute and you are in.</p>
@@ -340,10 +244,7 @@ to right,var(--c1) 0 36px,transparent 36px 42px)}}.linkcode{font-family:var(--fm
           </div>
           <p class="stepnote" id="nameStatus" aria-live="polite" style="margin:8px 0 0;font-size:12.5px">Three characters or more, letters and numbers.</p>
           <p class="formerr" id="suNameErr" hidden></p>
-          <!-- The promo field used to sit here as well as on the plan
-               screen. Two places to type one code is two places to mistype
-               it, and a code entered before a plan is chosen cannot show
-               what it is worth. It lives on the plan screen only. -->
+          
           <label class="fieldrow" for="ageOk" style="margin-top:14px;cursor:pointer">
             <span class="lab">I am 18 or over<small>Slippery is strictly for adults</small></span>
             <input type="checkbox" id="ageOk" style="width:22px;height:22px;flex:0 0 auto;accent-color:var(--p)">
@@ -353,13 +254,10 @@ to right,var(--c1) 0 36px,transparent 36px 42px)}}.linkcode{font-family:var(--fm
             <button class="pillbtn link" style="padding:0;min-height:0;background:none;border:none" data-nav="terms">Terms</button> and
             <button class="pillbtn link" style="padding:0;min-height:0;background:none;border:none" data-nav="privacy">Privacy Policy</button>.</p>
         </div>
-
         <div id="authLogin" hidden>
           <h2>Welcome back</h2>
           <p class="stepnote">Log in to pick up where you left off.</p>
-          <!-- Username or email. The display name is unique and it is the
-               thing people actually remember; insisting on the address they
-               happened to sign up with is a needless dead end. -->
+          
           <label class="label" for="liUser">Username or email</label>
           <input class="field" id="liUser" type="text" autocomplete="username" spellcheck="false" autocapitalize="none" placeholder="DariusOdds or you@example.com" aria-describedby="liUserErr">
           <p class="formerr" id="liUserErr" hidden></p>
@@ -368,10 +266,7 @@ to right,var(--c1) 0 36px,transparent 36px 42px)}}.linkcode{font-family:var(--fm
           <p class="formerr" id="liPwErr" hidden></p>
           <button class="pillbtn link" id="forgotPw" style="margin-top:13px">Forgotten your password?</button>
         </div>
-
-        <!-- Password reset, in place rather than on its own page: it is two
-             fields and a code, and losing the account context to a separate
-             screen is how people end up resetting the wrong account. -->
+        
         <div id="authForgot" hidden>
           <h2>Reset your password</h2>
           <p class="stepnote" id="forgotLead">Tell us the username or email on the account and we will send a code.</p>
@@ -398,17 +293,12 @@ to right,var(--c1) 0 36px,transparent 36px 42px)}}.linkcode{font-family:var(--fm
       </div>
       <div class="stepnav"><button class="btn primary" id="authGo" data-wizard="1">Continue</button></div>
     </div>
-
     <div class="step" data-step="1">
       <div class="card settingcard">
         <div class="stepglyph" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 6h16v12H4z"/><path d="M4 7l8 6 8-6"/></svg></div>
         <h2>Check your email</h2>
         <p class="stepnote">We sent a six digit code to <b id="verifyMail">your inbox</b>. It expires in ten minutes.</p>
-        <!-- The single most useful sentence on this screen. A first message
-             from an address nobody has written to lands in spam often
-             enough that "it never arrived" is usually "it did arrive". The
-             sender is filled in from the server, because the From address
-             depends on which mailbox the deployment is sending through. -->
+        
         <p class="spamnote">Not there? Check your spam or junk folder for <b class="mailfrom">the Slippery address</b>, and mark it as not spam so the next one lands properly.</p>
         <label class="sr" for="verifyCode">Verification code</label>
         <input class="field codeinput" id="verifyCode" inputmode="numeric" maxlength="6" autocomplete="one-time-code" placeholder="000000" aria-describedby="verifyErr">
@@ -424,7 +314,6 @@ to right,var(--c1) 0 36px,transparent 36px 42px)}}.linkcode{font-family:var(--fm
         <button class="btn primary" data-wizard="1">Verify</button>
       </div>
     </div>
-
     <div class="step" data-step="2">
       <div class="card settingcard">
         <div class="stepglyph" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/></svg></div>
@@ -445,7 +334,6 @@ to right,var(--c1) 0 36px,transparent 36px 42px)}}.linkcode{font-family:var(--fm
         <button class="btn primary" data-wizard="1">Continue</button>
       </div>
     </div>
-
     <div class="step" data-step="3">
       <div class="card settingcard">
         <div class="stepglyph" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 1v22M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg></div>
@@ -472,16 +360,12 @@ to right,var(--c1) 0 36px,transparent 36px 42px)}}.linkcode{font-family:var(--fm
         <button class="btn primary" data-wizard="1">Continue</button>
       </div>
     </div>
-
     <div class="step" data-step="4">
       <div class="card settingcard">
         <div class="stepglyph" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg></div>
         <h2>Bring your history</h2>
         <p class="stepnote">Move it across and this becomes your only ledger.</p>
-        <!-- The real import, here rather than three buttons that pick a
-             format and do nothing. It is the same drop zone, the same
-             reader and the same Confirm as the Import screen; only the
-             container ids differ, because two elements cannot share one. -->
+        
         <button class="card dropzone" id="setupDrop" type="button">
           <span class="glyph" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 16V4M7 9l5-5 5 5M4 20h16"/></svg></span>
           <span class="t">Drop anything here, or tap to choose</span>
@@ -498,7 +382,6 @@ to right,var(--c1) 0 36px,transparent 36px 42px)}}.linkcode{font-family:var(--fm
       </div>
       <button class="btn ghost full" data-wizard="1" style="margin-top:9px">Skip for now</button>
     </div>
-
     <div class="step" data-step="5">
       <div class="card settingcard">
         <div class="stepglyph" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg></div>
@@ -511,7 +394,6 @@ to right,var(--c1) 0 36px,transparent 36px 42px)}}.linkcode{font-family:var(--fm
         <button class="btn primary" data-wizard="1">Continue</button>
       </div>
     </div>
-
     <div class="step" data-step="6">
       <div class="card settingcard">
         <div class="stepglyph" aria-hidden="true"><svg viewBox="0 0 24 24"><use href="#i-telegram"/></svg></div>
@@ -527,7 +409,6 @@ to right,var(--c1) 0 36px,transparent 36px 42px)}}.linkcode{font-family:var(--fm
       </div>
       <button class="btn ghost full" data-wizard="1" style="margin-top:9px">Skip for now</button>
     </div>
-
     <div class="step" data-step="7">
       <div class="card settingcard" style="text-align:center">
         <svg class="tick" viewBox="0 0 60 60" role="img" aria-label="Setup complete"><circle cx="30" cy="30" r="26"/><path d="M18 31l8 8 16-17"/></svg>
@@ -540,13 +421,6 @@ to right,var(--c1) 0 36px,transparent 36px 42px)}}.linkcode{font-family:var(--fm
     </div>
   </div>
 </section>
-
-<!-- ══════════════ HOW IT WORKS ══════════════
-     One explainer, not three. This page, the Telegram preview and the
-     landing "how it works" section all told the same story, so the other
-     two are gone and every link points here. A guide you can scroll and
-     screenshot beats a fake video player you have to sit through: nothing
-     to press, nothing to wait for, and each step is readable at a glance. -->
 <section class="view" id="howto" aria-label="How it works">
   <div class="wrap nar page-lede">
     <div class="reveal" style="margin-bottom:18px">
@@ -554,12 +428,7 @@ to right,var(--c1) 0 36px,transparent 36px 42px)}}.linkcode{font-family:var(--fm
       <h1 style="font-size:28px;margin-top:6px">Two halves, one slip.</h1>
       <p class="lede">The bot takes it in, the dashboard is where it lands. Figures throughout are one worked example, followed the whole way.</p>
     </div>
-    <!-- EXACTLY TWO EXPLAINERS.
-         There were five numbered steps here, a Telegram preview on the
-         landing page and a "how it works" section above it, all narrating
-         the same journey in three places. It is one story with two halves,
-         so it is told once, in two chapters: what the bot does with a slip,
-         and what the dashboard does with the result. -->
+    
     <div class="chapter" id="chapBot">
       <div class="chaphead">
         <span class="chapglyph" aria-hidden="true"><svg viewBox="0 0 24 24"><use href="#i-telegram"/></svg></span>
@@ -568,7 +437,6 @@ to right,var(--c1) 0 36px,transparent 36px 42px)}}.linkcode{font-family:var(--fm
       </div>
       <ol class="guide" id="guideBot"></ol>
     </div>
-
     <div class="chapter" id="chapDash">
       <div class="chaphead">
         <span class="chapglyph" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="17" rx="2"/><path d="M3 9h18M8 2v4M16 2v4"/></svg></span>
@@ -583,24 +451,6 @@ to right,var(--c1) 0 36px,transparent 36px 42px)}}.linkcode{font-family:var(--fm
     </div>
   </div>
 </section>
-
-<!-- ══════════════ DEMO ══════════════
-     A stranger could not see the product at all: every app screen is
-     behind the session gate, correctly, because those screens show a real
-     person's money. This is the other half of that decision. It is a
-     worked example, labelled as one on screen and in the markup, read
-     only, and built from the same SAMPLE the marketing pages use. It is
-     NOT the dashboard with fake data in it: nothing here can be edited,
-     and no control pretends to save. -->
-<!-- ══════════════ DEMO ══════════════
-     No account, nothing editable, someone else's numbers. It is explorable
-     rather than a video because the thing being demonstrated is analysis,
-     and a picture of analysis proves nothing: the periods switch, the days
-     open, the tables are real.
-
-     Labelled as fabricated twice, once as a badge and once as a
-     disclaimer. A demo record with a nice curve on it is an advert unless
-     it says plainly that nobody earned these numbers. -->
 <section class="view" id="demo" aria-label="Demo">
   <div class="wrap page-lede">
     <div class="demobar-top">
@@ -618,8 +468,6 @@ to right,var(--c1) 0 36px,transparent 36px 42px)}}.linkcode{font-family:var(--fm
     </div>
   </div>
 </section>
-
-<!-- ══════════════ PRICING ══════════════ -->
 <section class="view" id="pricing" aria-label="Pricing">
   <div class="wrap nar page-lede">
     <div class="reveal" style="text-align:center;margin-bottom:16px">
@@ -631,12 +479,6 @@ to right,var(--c1) 0 36px,transparent 36px 42px)}}.linkcode{font-family:var(--fm
     <p class="fineprint" style="margin-top:16px">Prices in GBP. Slippery is an analytics tool, not a bookmaker, and never handles stakes or winnings.</p>
   </div>
 </section>
-
-<!-- ══════════════ PAYMENT ══════════════
-     Where "change plan" and every plan button lands. Card payments need a
-     payment processor account, which is the owner's to open, so this page
-     is honest about that rather than showing a card form that goes nowhere.
-     A promo code is a real payment path and works here in full. -->
 <section class="view" id="pay" aria-label="Payment">
   <div class="wrap nar page-lede">
     <button class="pillbtn" data-nav="pricing" style="margin-bottom:14px">Back to pricing</button>
@@ -646,7 +488,6 @@ to right,var(--c1) 0 36px,transparent 36px 42px)}}.linkcode{font-family:var(--fm
       <p class="hinttext" id="payPlanNote"></p>
       <ul class="paylist" id="payFeatures"></ul>
     </div>
-
     <div class="card pad" style="margin-top:10px">
       <h2 style="font-size:15px">Have a code?</h2>
       <p class="fineprint" style="margin:5px 0 10px">Applies to your account immediately, no card needed.</p>
@@ -657,20 +498,7 @@ to right,var(--c1) 0 36px,transparent 36px 42px)}}.linkcode{font-family:var(--fm
       </div>
       <p class="stepnote" id="payPromoNote" aria-live="polite" style="margin:9px 0 0;font-size:12.5px"></p>
     </div>
-
-    <!-- THE CARD FORM.
-         Laid out exactly as it will be when a processor is connected, and
-         every field disabled with a real reason attached. Two things this
-         is careful about:
-
-         · It never accepts a card number. Not disabled-then-enabled by a
-           flag, not posted anywhere: the inputs have no name and no
-           handler. A page that collects a PAN before there is somewhere
-           compliant to send it is the single worst thing this codebase
-           could ship, and "it is only a placeholder" is exactly how that
-           happens.
-         · It does not pretend. The notice says what is missing and who can
-           fix it, so nobody taps Pay and wonders what went wrong. -->
+    
     <div class="card pad paycard" style="margin-top:10px">
       <div class="cardhead"><span class="title">Card details</span>
         <span class="tagbit">Not live yet</span></div>
@@ -687,12 +515,7 @@ to right,var(--c1) 0 36px,transparent 36px 42px)}}.linkcode{font-family:var(--fm
       <button class="btn primary full" style="margin-top:13px" disabled>Start the free trial</button>
       <p class="hinttext">Taking cards needs a payment processor account in the business name, which only the owner can open. Until it exists these fields do nothing and no page here will ask for a card. Paid plans are granted by promo code, and the trial runs its full two weeks.</p>
     </div>
-
-    <!-- THE BILLING RULES, WRITTEN DOWN.
-         These are enforced in api/_lib/promo.js and tested, so they are
-         the actual behaviour rather than a description of an intention.
-         What is not built is the charge itself, which needs the processor
-         account above. -->
+    
     <div class="card pad" style="margin-top:10px">
       <div class="cardhead"><span class="title">How the billing works</span></div>
       <ul class="bklist">
@@ -701,36 +524,20 @@ to right,var(--c1) 0 36px,transparent 36px 42px)}}.linkcode{font-family:var(--fm
         <li><b>Two days, then the account locks.</b> If a monthly charge does not go through, logging stops 48 hours later. Reading never stops, and nothing is ever deleted for non-payment: everything already logged stays exactly where it is, and paying unlocks it.</li>
       </ul>
     </div>
-
     <p class="fineprint" style="margin-top:14px">Prices in GBP. Slippery never handles stakes or winnings.</p>
   </div>
 </section>
-
-<!-- ══════════════ DASHBOARD ══════════════ -->
 <section class="view" id="dash" aria-label="Dashboard">
   <h1 class="sr">Your dashboard</h1>
-  <!-- OUTSIDE .wrap, deliberately.
-       The sticky bar was inside the 660px column and bled to it with a
-       negative margin, so on a desktop browser its background stopped
-       dead at 692px with the page continuing either side of it. Sitting
-       outside the column lets the bar be as wide as the window while its
-       three buttons stay centred on the same 660px the content uses.
-
-       Not done with 100vw: on a desktop with a classic scrollbar, 100vw
-       counts the scrollbar's width and pushes the page sideways, which is
-       the overflow bug this codebase has already paid for once. -->
+  
   <div class="subnav"><div class="inner" id="subnav" role="tablist" aria-label="Dashboard sections">
     <button role="tab" aria-selected="true" aria-controls="paneOverview" id="tabOverview" data-pane="overview">Overview</button>
     <button role="tab" aria-selected="false" aria-controls="paneLedger" id="tabLedger" data-pane="ledger">Ledger</button>
     <button role="tab" aria-selected="false" aria-controls="paneSocial" id="tabSocial" data-pane="social">Social</button>
   </div></div>
-
   <div class="wrap">
     <div class="pane on" id="paneOverview" role="tabpanel" aria-labelledby="tabOverview" tabindex="0">
-      <!-- What is left of the trial. Hidden entirely on a paid account, and
-           on a fresh one it is a thin line rather than a card, because on
-           day one there is nothing to worry about. It only becomes a card
-           when the trial is nearly out or already gone. -->
+      
       <div class="trialbar" id="trialBar" hidden>
         <div class="trialbar-row">
           <span class="trialbar-text" id="trialText"></span>
@@ -738,7 +545,6 @@ to right,var(--c1) 0 36px,transparent 36px 42px)}}.linkcode{font-family:var(--fm
         </div>
         <div class="trialbar-track" aria-hidden="true"><i id="trialFill"></i></div>
       </div>
-
       <div class="card" id="newMonthCard" style="padding:15px;margin-bottom:10px;border-color:rgba(var(--orb2),.4);background:rgba(var(--orb2),.08)">
         <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:9px">
           <span class="eyebrow">New month</span>
@@ -756,18 +562,7 @@ to right,var(--c1) 0 36px,transparent 36px 42px)}}.linkcode{font-family:var(--fm
           <button class="btn primary" id="newMonthSave">Save</button>
         </div>
       </div>
-
-      <!-- THE SLIP.
-           This is the one card that is not like the others, and the thing
-           it is shaped like is the artifact the whole product is about: a
-           bookmaker's slip, with a tear line across it, a punched notch
-           either side of the tear, and a monospaced reference row along the
-           top. Every one of those details is borrowed from the object in
-           the user's hand rather than invented, which is why it reads as
-           this product's own rather than as a card with more shadow.
-
-           Everything else on the dashboard stays quiet. One card carries
-           the identity; the rest carry information. -->
+      
       <div class="card flush slipcard-hero" style="margin-bottom:10px">
         <div class="sliprule" aria-hidden="true">
           <span class="sliprule-id" id="headlineRef"></span>
@@ -792,14 +587,7 @@ to right,var(--c1) 0 36px,transparent 36px 42px)}}.linkcode{font-family:var(--fm
             <span>ROI <b id="statRoi"></b></span>
           </div>
           <p class="imported" id="importedNote" hidden></p>
-          <!-- THE TRUST LINE.
-               The claim this product makes is that the figure above is real
-               rather than a highlight reel, and until now nothing on the
-               screen supported it. This does: the share of the record that
-               was logged before a ball was kicked. You cannot cherry-pick
-               bets you committed to before they resolved, so a high number
-               here is the one statistic in a betting tracker that cannot be
-               gamed by omission. -->
+          
           <button class="capture" id="captureLine" hidden data-nav-help="capture">
             <span class="capbar" aria-hidden="true"><i id="captureFill"></i></span>
             <span class="captext" id="captureText"></span>
@@ -811,7 +599,6 @@ to right,var(--c1) 0 36px,transparent 36px 42px)}}.linkcode{font-family:var(--fm
           <div class="foot"><span id="goalEarned"></span><span id="goalPace2"></span></div>
         </div>
       </div>
-
       <div class="card running" id="runningCard" style="margin-bottom:10px" hidden>
         <button class="runhead" id="runToggle" aria-expanded="false" aria-controls="runList">
           <span class="left"><span class="dot" aria-hidden="true"></span><b id="runCount"></b></span>
@@ -819,16 +606,13 @@ to right,var(--c1) 0 36px,transparent 36px 42px)}}.linkcode{font-family:var(--fm
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></span>
         </button>
         <div id="runList" hidden></div>
-        <!-- Always visible, not buried inside the collapsed list: the
-             question "did any of these land?" is the reason to look at this
-             card at all, so the answer must not be two taps away. -->
+        
         <div class="runcheck">
           <button class="btn ghost small full" id="checkResults">
             <svg viewBox="0 0 24 24" aria-hidden="true"><use href="#i-refresh"/></svg>
             Check results now</button>
         </div>
       </div>
-
       <div class="card pad" style="margin-bottom:10px">
         <div class="calnav">
           <button id="calPrev" aria-label="Previous month"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" aria-hidden="true"><path d="M15 18l-6-6 6-6"/></svg></button>
@@ -846,19 +630,15 @@ to right,var(--c1) 0 36px,transparent 36px 42px)}}.linkcode{font-family:var(--fm
           <span><i class="swatch-none"></i>No bets</span>
         </div>
       </div>
-
       <div class="kpis" id="kpiRow"></div>
-
       <div class="card pad" style="margin-bottom:10px">
         <div class="cardhead"><span class="title">Recent bets</span>
           <button class="meta" id="viewAllBets" aria-expanded="false">View all</button></div>
         <div class="betlist short" id="recentBets"></div>
       </div>
-
       <button class="card" id="moreToggle" aria-expanded="false" style="display:flex;width:100%;align-items:center;justify-content:space-between;padding:0 15px;min-height:48px;font-size:13.5px;font-weight:550;color:var(--t2)">
         <span id="moreLabel">Show more</span><span class="switch" aria-hidden="true"></span>
       </button>
-
       <div id="moreBlock" hidden style="margin-top:12px">
         <div class="kpis pair" id="kpiPair" style="margin-bottom:10px"></div>
         <div class="card pad" style="margin-bottom:10px">
@@ -872,7 +652,6 @@ to right,var(--c1) 0 36px,transparent 36px 42px)}}.linkcode{font-family:var(--fm
         </div>
       </div>
     </div>
-
     <div class="pane" id="paneLedger" role="tabpanel" aria-labelledby="tabLedger" tabindex="0">
       <div class="notice">
         <span>Showing <b class="scoped"></b></span>
@@ -885,7 +664,6 @@ to right,var(--c1) 0 36px,transparent 36px 42px)}}.linkcode{font-family:var(--fm
         <button class="on" data-ledger="ledgerBets" aria-pressed="true">Bets</button>
         <button data-ledger="ledgerAnalysis" aria-pressed="false">Analysis</button>
       </div>
-
       <div id="ledgerBets">
         <div class="searchbox">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>
@@ -895,7 +673,6 @@ to right,var(--c1) 0 36px,transparent 36px 42px)}}.linkcode{font-family:var(--fm
         <div class="chiprow" id="betFilters" role="group" aria-label="Filter by outcome"></div>
         <div class="card pad"><div id="ledgerList"></div></div>
       </div>
-
       <div id="ledgerAnalysis" hidden>
         <div class="kpis" id="ledgerKpis" style="margin-bottom:11px"></div>
         <div class="card pad" style="margin-bottom:10px">
@@ -918,7 +695,6 @@ to right,var(--c1) 0 36px,transparent 36px 42px)}}.linkcode{font-family:var(--fm
         <div class="card pad"><div class="cardhead"><span class="title">By tipster</span><button class="meta" data-nav="settings">Manage</button></div><div class="barlist" id="tipsterBars"></div></div>
       </div>
     </div>
-
     <div class="pane" id="paneSocial" role="tabpanel" aria-labelledby="tabSocial" tabindex="0">
       <div class="notice">
         <span>Showing <b class="scoped"></b></span>
@@ -933,7 +709,6 @@ to right,var(--c1) 0 36px,transparent 36px 42px)}}.linkcode{font-family:var(--fm
         <button data-social="socialFollowing" aria-pressed="false">Following</button>
         <button data-social="socialFollowers" aria-pressed="false">Followers</button>
       </div>
-
       <div id="socialGroups">
         <div id="groupList"></div>
         <div class="card pad" id="groupBoard" style="margin-top:2px"></div>
@@ -942,25 +717,12 @@ to right,var(--c1) 0 36px,transparent 36px 42px)}}.linkcode{font-family:var(--fm
           <button class="btn primary" id="groupCreate">Create a group</button>
           <button class="btn ghost" id="groupJoin">Join with a code</button>
         </div>
-        <!-- Create and join both open in here, one at a time. Neither is a
-             separate view: a group is two fields, and losing the board you
-             are looking at to fill them in is a worse trade than the space. -->
+        
         <div id="groupForms" hidden></div>
       </div>
-
-      <!-- The directory. Public groups only, alphabetically, and nothing
-           about them beyond a name and a head count: a directory is a list
-           of doors, not a window.
-
-           EVERY group is listed, private ones included. Hiding private
-           groups made them undiscoverable and left their owners passing a
-           code around outside the app; listing them without a gate would
-           make "private" meaningless. The gate is the door rather than the
-           listing: nobody gets into any group, public or private, without
-           the person who made it saying yes. -->
+      
       <div id="socialBrowse" hidden>
-        <!-- Waiting on the owner. Renders nothing at all when nothing is
-             waiting, rather than an empty panel to scroll past forever. -->
+        
         <div class="card pad" id="reqWrap" hidden style="margin-bottom:11px">
           <div class="cardhead"><span class="title">Waiting on you</span>
             <span class="meta"><span id="reqCount">0</span> asking</span></div>
@@ -978,21 +740,17 @@ to right,var(--c1) 0 36px,transparent 36px 42px)}}.linkcode{font-family:var(--fm
         </div>
         <div id="browseList" aria-live="polite"></div>
       </div>
-
       <div id="socialFollowing" hidden>
         <div class="searchbox">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>
           <label class="sr" for="peopleSearch">Search Slippers</label>
           <input class="field" id="peopleSearch" type="search" placeholder="Find a Slipper by name…" autocomplete="off">
         </div>
-        <!-- Search results sit above the list rather than replacing it, so
-             following somebody does not lose the list you were looking at.
-             Hidden entirely until there is a query. -->
+        
         <div class="card pad" id="peopleFound" style="margin-bottom:10px" hidden></div>
         <div id="followingSummary"></div>
         <div class="card pad"><div id="followingList"></div></div>
       </div>
-
       <div id="socialFollowers" hidden>
         <div id="followersSummary"></div>
         <div class="card pad" style="margin-bottom:10px"><div id="followersList"></div></div>
@@ -1008,8 +766,6 @@ to right,var(--c1) 0 36px,transparent 36px 42px)}}.linkcode{font-family:var(--fm
     </div>
   </div>
 </section>
-
-<!-- ══════════════ PROFILE ══════════════ -->
 <section class="view" id="prof" aria-label="Profile">
   <div class="wrap nar">
     <h1 class="sr">Profile</h1>
@@ -1027,8 +783,6 @@ to right,var(--c1) 0 36px,transparent 36px 42px)}}.linkcode{font-family:var(--fm
     <div id="profileBody"></div>
   </div>
 </section>
-
-<!-- ══════════════ IMPORT ══════════════ -->
 <section class="view" id="imp" aria-label="Import">
   <div class="wrap nar">
     <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px;margin-bottom:14px">
@@ -1041,17 +795,11 @@ to right,var(--c1) 0 36px,transparent 36px 42px)}}.linkcode{font-family:var(--fm
       <p>Slips can be read, but nothing can be saved until <code id="backendNeeds">DATABASE_URL</code>
         is set. Your ledger will be empty until then.</p>
     </div>
-    <!-- ONE import.
-         Upload and Other were two tabs asking the same question in two
-         places: a slip went in the first, a spreadsheet in the second, and
-         a screenshot from another tracker fitted neither. There is now one
-         drop zone that takes anything and works out what it got, so nobody
-         has to classify their own file before they can hand it over. -->
+    
     <div class="seg" id="importSeg" role="group" aria-label="Import method" style="margin-bottom:13px">
       <button class="on" data-import="importUpload" aria-pressed="true">Add bets</button>
       <button data-import="importTotals" aria-pressed="false">Type totals</button>
     </div>
-
     <div id="importUpload">
       <button class="card dropzone" id="dropzone" type="button">
         <span class="glyph" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 16V4M7 9l5-5 5 5M4 20h16"/></svg></span>
@@ -1060,7 +808,6 @@ to right,var(--c1) 0 36px,transparent 36px 42px)}}.linkcode{font-family:var(--fm
       </button>
       <label class="sr" for="slipFile">Choose slips, statements or a spreadsheet</label>
       <input type="file" id="slipFile" accept="image/png,image/jpeg,image/webp,image/heic,image/heif,application/pdf,.csv,.tsv,.txt,text/csv,text/tab-separated-values,text/plain" multiple hidden>
-
       <details class="disclose pastebox">
         <summary>Or paste a list of bets</summary>
         <p class="fineprint" style="margin:3px 0 9px">Typed notes, a message from a friend, rows copied
@@ -1069,21 +816,12 @@ to right,var(--c1) 0 36px,transparent 36px 42px)}}.linkcode{font-family:var(--fm
         <textarea class="field pastearea" id="pasteBets" rows="5" placeholder="Arsenal v Chelsea, over 2.5, £25 at 1.85, bet365&#10;Sirius v Djurgarden, over 2.5, £100 at 1.90, won"></textarea>
         <button class="btn ghost full" id="pasteGo" style="margin-top:9px">Read these bets</button>
       </details>
-
-      <!-- Auto-complete for the two fields the reader most often gets
-           nearly right. A datalist rather than a select: the list is a
-           shortcut, not a closed set, and somebody with an account at a
-           bookmaker nobody has heard of must still be able to type it. -->
+      
       <datalist id="bookNames"></datalist>
       <datalist id="marketNames"></datalist>
       <div id="uploadResults"></div>
       <div id="csvReport"></div>
-
-      <!-- The review summary.
-           It used to be four numbers with no units and no time frame:
-           "Profit" mixed the potential return of an open bet with the
-           settled profit of a graded one, so the figure was never true of
-           anything. Each line now says what it is counting and over what. -->
+      
       <div class="reviewbar" id="reviewBar" hidden>
         <div class="reviewline"><span class="k">Ready to add</span><span class="v" id="readyCount">0</span></div>
         <div class="reviewline"><span class="k">Still needs a number</span><span class="v warn" id="retakeCount">0</span></div>
@@ -1091,39 +829,23 @@ to right,var(--c1) 0 36px,transparent 36px 42px)}}.linkcode{font-family:var(--fm
         <div class="reviewline" id="reviewProfitLine"><span class="k" id="importProfitLabel">If they all win</span><span class="v m" id="importProfit">None</span></div>
       </div>
     </div>
-
-    <!-- Profit and loss for a period, with no slips behind it.
-         This was a grid of boxes labelled Mon..Sun and Jan..Dec with no
-         year attached to any of them, and a save button that printed
-         "Totals added" and stored nothing. You could not say WHICH Monday
-         you meant, which is the only thing that matters about a daily
-         figure. It is now one dated row at a time, and the date is a real
-         date you pick. -->
+    
     <div id="importTotals" hidden>
       <div class="card pad">
         <div class="cardhead"><span class="title">Add a profit figure</span>
           <span class="meta" id="totalsSummary">Nothing added yet</span></div>
         <p class="fineprint" style="margin-bottom:11px">For a day, a week or a month you already have the number for. These go on your calendar without pretending to be bets.</p>
-
         <div class="seg" id="totalsSeg" role="group" aria-label="Which period this figure covers">
           <button data-totals="day" class="on" aria-pressed="true">A day</button>
           <button data-totals="week" aria-pressed="false">A week</button>
           <button data-totals="month" aria-pressed="false">A month</button>
         </div>
-
-        <!-- The period in words, so there is never a question about what
-             the figure is being attached to. Updated on every change. -->
+        
         <p class="plperiod" id="plPeriodLabel">Profit for <b>today</b></p>
-
         <div class="plentry">
           <div class="plfield">
             <label class="label" for="plDate">Date</label>
-            <!-- A native date input: it is the only control that gets a
-                 phone's own picker, handles months and leap years without
-                 us reimplementing a calendar, and reaches any day forwards
-                 or backwards. No min or max, because the brief asks for
-                 future days and somebody logging a figure for a game next
-                 week is not making a mistake. -->
+            
             <input class="field" type="date" id="plDate">
           </div>
           <div class="plfield">
@@ -1138,17 +860,13 @@ to right,var(--c1) 0 36px,transparent 36px 42px)}}.linkcode{font-family:var(--fm
         <p class="formerr" id="plErr" hidden></p>
         <button class="btn primary full" id="plAdd" style="margin-top:11px">Add to calendar</button>
       </div>
-
-      <!-- What has been added, most recent first. The compact dated list
-           the import ends up as, and the same list a screenshot import
-           fills. -->
+      
       <div class="card pad" id="plListCard" style="margin-top:10px" hidden>
         <div class="cardhead"><span class="title">Added figures</span>
           <span class="meta" id="plTotal"></span></div>
         <div id="plList"></div>
       </div>
     </div>
-
     <button class="card" data-nav="howto" style="display:flex;align-items:center;gap:11px;padding:13px;margin-top:16px;width:100%;text-align:left;border-color:rgba(var(--orb2),.3);background:rgba(var(--orb2),.08)">
       <svg viewBox="0 0 24 24" style="width:20px;height:20px;color:var(--s);flex:0 0 auto" aria-hidden="true"><use href="#i-telegram"/></svg>
       <span><span style="font-size:13px;font-weight:600;display:block">Faster: forward it to the bot</span>
@@ -1156,12 +874,9 @@ to right,var(--c1) 0 36px,transparent 36px 42px)}}.linkcode{font-family:var(--fm
     </button>
   </div>
 </section>
-
-<!-- ══════════════ SETTINGS ══════════════ -->
 <section class="view" id="settings" aria-label="Settings">
   <div class="wrap nar">
     <h1 style="font-size:23px;margin-bottom:14px">Settings</h1>
-
     <div class="card settingcard">
       <h2 class="cardtitle"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M5 5l2 2M17 17l2 2M19 5l-2 2M7 17l-2 2"/></svg>Appearance</h2>
       <p class="desc">Green and red never change. They mean something.</p>
@@ -1173,26 +888,15 @@ to right,var(--c1) 0 36px,transparent 36px 42px)}}.linkcode{font-family:var(--fm
       <div class="fieldrow"><span class="lab">Show profit in</span><label class="sr" for="profitFormat">Show profit in</label>
         <select class="select compact" id="profitFormat"><option>Currency</option><option>Units</option><option>Both</option></select></div>
     </div>
-
-    <!-- THE BOT LINK.
-         Two states, and the page only ever shows the one that is true,
-         because the old card showed a code and a "connected since" line
-         written into the markup, so an account with no bot linked was told
-         it had one.
-
-         Linked: which Telegram account, since when, and Unlink.
-         Not linked: a six character code with a live countdown, a
-         regenerate button, and the one-tap deep link. -->
+    
     <div class="card settingcard">
       <h2 class="cardtitle"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="#i-telegram"/></svg>Telegram bot</h2>
-
       <div id="tgLinked" hidden>
         <div class="livedot"><i aria-hidden="true"></i><span id="tgState">Connected</span></div>
         <p class="desc" id="tgSince"></p>
         <div class="fieldrow"><span class="lab">Disconnect this chat<small>Nothing is deleted. Every bet stays on your account.</small></span>
           <button class="pillbtn danger" id="tgUnlink">Unlink</button></div>
       </div>
-
       <div id="tgUnlinked" hidden>
         <p class="desc">Send this code to the bot as <span translate="no">/link CODE</span>, or tap the button and it travels with you.</p>
         <p class="linkcode" translate="no" id="linkCodeSettings">------</p>
@@ -1203,7 +907,6 @@ to right,var(--c1) 0 36px,transparent 36px 42px)}}.linkcode{font-family:var(--fm
         </div>
       </div>
     </div>
-
     <div class="card settingcard">
       <h2 class="cardtitle"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M12 1v22M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>Units and targets</h2>
       <p class="desc">Your standard stake. Groups and following are measured in units.</p>
@@ -1220,22 +923,14 @@ to right,var(--c1) 0 36px,transparent 36px 42px)}}.linkcode{font-family:var(--fm
         <input class="field compact m" id="targetSettings" inputmode="decimal" value="2500" autocomplete="off"></div>
       <div class="targetlist" id="targetListSettings"></div>
     </div>
-
         <div class="card settingcard">
       <h2 class="cardtitle"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg>Who can see your figures</h2>
       <p class="desc">What Slippers following you can see.</p>
       <div class="optionlist" id="privacySettings"></div>
-      <!-- Stated, not switched. Units-only is locked by the brief and a
-           stake size never leaves the server, so a toggle here would imply
-           an option that does not exist and cannot be built. The
-           "discoverable by name" switch was removed outright: it duplicated
-           the privacy list directly above it and was not true either way,
-           because the directory lists every account by name and privacy
-           governs the figures, not the listing. -->
+      
       <div class="fieldrow"><span class="lab">Share units only<small>Your stake sizes never leave the server</small></span>
         <span class="always">Always</span></div>
     </div>
-
     <div class="card settingcard">
       <h2 class="cardtitle"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21v-1a6 6 0 0 1 6-6h4a6 6 0 0 1 6 6v1"/></svg>Account</h2>
       <div class="fieldrow"><span class="lab">Display name<small>Set at signup, cannot be changed</small></span>
@@ -1251,25 +946,17 @@ to right,var(--c1) 0 36px,transparent 36px 42px)}}.linkcode{font-family:var(--fm
         <span class="pillbtn locked m" id="planUsage">0 of 35</span></div>
       <div class="fieldrow"><span class="lab">Promo code<small>Applies to this account straight away</small></span>
         <button class="pillbtn" data-pay="promo">Enter</button></div>
-      <!-- Two different things, so two rows. An email address being proven
-           and an account being verified are unrelated: one is a click on a
-           link, the other is a claim that the figures are real. Sharing a
-           row said "Verified" to everyone who had confirmed an email. -->
+      
       <div class="fieldrow"><span class="lab">Email address</span><span class="pillbtn locked" id="verifyState">Verified</span></div>
       <div class="fieldrow"><span class="lab">Verified tick<small id="tickNote">Not granted yet</small></span>
         <span class="pillbtn locked" id="tickState">No</span></div>
       <div class="fieldrow"><span class="lab">Billing</span><button class="pillbtn" data-pay="yearly">Manage</button></div>
     </div>
-
     <div class="card settingcard">
       <h2 class="cardtitle"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M3 3v18h18"/><path d="M7 14l4-4 3 3 5-6"/></svg>Your betting</h2>
       <div class="fieldrow"><span class="lab">Show tipster next to bets</span>
         <button class="switch" id="showTipster" role="switch" aria-checked="true" aria-label="Show tipster"></button></div>
-      <!-- Which bet count to show. Tracker starts at 0 and every bet in it
-           has a slip behind it; lifetime adds the history brought across at
-           import, which is the true total and also a figure this tracker
-           cannot show the workings for. Both are honest, so it is a choice
-           rather than a decision made for you. -->
+      
       <div class="fieldrow"><span class="lab">Bet count<small id="countModeNote">Only bets logged here, starting at 0</small></span>
         <div class="seg tight" id="countSeg" role="group" aria-label="Which bet count to show">
           <button data-count="tracker" class="on" aria-pressed="true">Tracker</button>
@@ -1293,31 +980,20 @@ to right,var(--c1) 0 36px,transparent 36px 42px)}}.linkcode{font-family:var(--fm
           <button class="btn ghost" id="bookAdd" style="padding:0 15px">Add</button></div>
       </details>
     </div>
-
     <div class="card settingcard">
       <h2 class="cardtitle"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M12 2l2.4 6.9L21 11l-6.6 2.1L12 20l-2.4-6.9L3 11l6.6-2.1z"/></svg>How slips are read</h2>
       <details class="disclose">
         <summary>Reading rules <span class="count">2</span></summary>
-        <!-- These were switches that flipped and saved nothing. Two of
-             them describe how the reader and the grader always work and
-             cannot be turned off, so they are stated. "Catch duplicate
-             slips" is gone: nothing implements it, and a switch for an
-             unbuilt feature is the plainest kind of lie an interface can
-             tell. -->
+        
         <div class="fieldrow"><span class="lab">Asks for a retake if unclear<small>It never guesses at a number</small></span>
           <span class="always">Always</span></div>
         <div class="fieldrow"><span class="lab">Catches the same bet worded differently<small>Away goals under 0.5 and BTTS No settle identically</small></span>
           <span class="always">Always</span></div>
       </details>
     </div>
-
     <div class="card settingcard">
       <h2 class="cardtitle"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>Your data</h2>
-      <!-- This was a select that toasted "CSV selected" and never produced
-           a file. It needs a button, because choosing a format is not the
-           same act as asking for the download. Excel is gone from the list:
-           it emitted nothing, and a CSV opens in Excel anyway, so naming a
-           format we do not write was just a promise to break. -->
+      
       <div class="fieldrow"><span class="lab">Export all bets<small>Everything Slippery holds on you, in one file</small></span>
         <span style="display:flex;gap:7px;align-items:center">
           <label class="sr" for="exportFormat">Export format</label>
@@ -1326,11 +1002,7 @@ to right,var(--c1) 0 36px,transparent 36px 42px)}}.linkcode{font-family:var(--fm
         </span></div>
       <div class="fieldrow"><span class="lab">Slip images<small>Kept 90 days, then deleted automatically</small></span>
         <button class="pillbtn" id="purgeImages">Delete now</button></div>
-      <!-- Take a break. Not buried, and not dressed up as a feature.
-           The brief flags that the red and green grid and the rankings are
-           engagement mechanics; this is the counterweight, and it only
-           counts for anything if it is easy to find and impossible to
-           undo. -->
+      
       <div class="fieldrow"><span class="lab">Take a break<small id="breakNote">Turns off logging for as long as you choose</small></span>
         <button class="pillbtn" id="breakOpen">Set</button></div>
       <div class="dangerbox" id="breakBox" hidden>
@@ -1342,16 +1014,11 @@ to right,var(--c1) 0 36px,transparent 36px 42px)}}.linkcode{font-family:var(--fm
         </div>
         <p class="fineprint" style="margin-top:11px">Gambling should not stop being fun. <a href="https://www.begambleaware.org" target="_blank" rel="noopener">BeGambleAware</a> and <a href="https://www.gamcare.org.uk" target="_blank" rel="noopener">GamCare</a> are there whenever you want them.</p>
       </div>
-
       <div class="fieldrow"><span class="lab">Reset all bets<small>Deletes every bet and slip image. Keeps your account.</small></span>
         <button class="pillbtn danger" id="resetBets">Reset</button></div>
       <div class="fieldrow"><span class="lab">Delete account<small>Everything goes. This cannot be undone.</small></span>
         <button class="pillbtn danger" id="deleteAccount">Delete</button></div>
-      <!-- Both of these used to be a toast that deleted nothing, so both
-           now confirm in place. Reset arms on a second tap; deleting the
-           account asks for the display name, because it is the one action
-           in the product with no way back and a mis-tap should not be
-           enough to trigger it. -->
+      
       <div class="dangerbox" id="deleteBox" hidden>
         <p class="dangerlead">This deletes every bet, every stored slip image, your groups and your account. There is no undo and no export afterwards.</p>
         <label class="label" for="deleteConfirm">Type <b id="deleteName">your display name</b> to confirm</label>
@@ -1363,7 +1030,6 @@ to right,var(--c1) 0 36px,transparent 36px 42px)}}.linkcode{font-family:var(--fm
         </div>
       </div>
     </div>
-
     <div class="card settingcard">
       <h2 class="cardtitle"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M12 20h9M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/></svg>More</h2>
       <div class="fieldrow"><span class="lab">Help</span><button class="pillbtn link" data-nav="help">Open</button></div>
@@ -1376,8 +1042,6 @@ to right,var(--c1) 0 36px,transparent 36px 42px)}}.linkcode{font-family:var(--fm
     </div>
   </div>
 </section>
-
-<!-- ══════════════ HELP ══════════════ -->
 <section class="view" id="help" aria-label="Help">
   <div class="wrap nar page-lede">
     <div class="reveal" style="margin-bottom:14px">
@@ -1387,8 +1051,6 @@ to right,var(--c1) 0 36px,transparent 36px 42px)}}.linkcode{font-family:var(--fm
     <div id="helpFaq"></div>
   </div>
 </section>
-
-<!-- ══════════════ TERMS ══════════════ -->
 <section class="view" id="terms" aria-label="Terms of use">
   <div class="wrap nar legal">
     <button class="pillbtn" data-nav="landing" style="margin-bottom:14px">Back</button>
@@ -1401,8 +1063,6 @@ to right,var(--c1) 0 36px,transparent 36px 42px)}}.linkcode{font-family:var(--fm
     <div id="termsBody"></div>
   </div>
 </section>
-
-<!-- ══════════════ PRIVACY ══════════════ -->
 <section class="view" id="privacy" aria-label="Privacy policy">
   <div class="wrap nar legal">
     <button class="pillbtn" data-nav="landing" style="margin-bottom:14px">Back</button>
@@ -1415,15 +1075,6 @@ to right,var(--c1) 0 36px,transparent 36px 42px)}}.linkcode{font-family:var(--fm
     <div id="privacyBody"></div>
   </div>
 </section>
-
-<!-- ══════════════ BOOKMAKERS ══════════════
-     One template, one page per bookmaker, generated from a table in
-     content.js rather than hand-written twelve times. What makes them
-     worth having is that each one states the thing that is actually
-     different about grading that bookmaker's slips — bet365's Asian
-     handicaps push where everyone else's lose — so the page answers a
-     question instead of repeating the landing copy with a name swapped
-     in, which is what a thin SEO page is. -->
 <section class="view" id="books" aria-label="Bookmakers">
   <div class="wrap page-lede">
     <div class="reveal">
@@ -1435,11 +1086,6 @@ to right,var(--c1) 0 36px,transparent 36px 42px)}}.linkcode{font-family:var(--fm
     <div class="bkpage" id="bookPage" hidden></div>
   </div>
 </section>
-
-<!-- ══════════════ CALCULATORS ══════════════
-     Pure arithmetic, so it can be honest. Nothing here needs a feed, an
-     account or a price we do not have — which is exactly why these four
-     and not the ones that would need a paid odds source. -->
 <section class="view" id="calc" aria-label="Calculators">
   <div class="wrap page-lede">
     <div class="reveal">
@@ -1450,8 +1096,6 @@ to right,var(--c1) 0 36px,transparent 36px 42px)}}.linkcode{font-family:var(--fm
     <div class="calcs" id="calcList"></div>
   </div>
 </section>
-
-<!-- ══════════════ FAQS ══════════════ -->
 <section class="view" id="faqs" aria-label="Frequently asked questions">
   <div class="wrap nar page-lede">
     <div class="reveal" style="margin-bottom:14px">
@@ -1462,8 +1106,6 @@ to right,var(--c1) 0 36px,transparent 36px 42px)}}.linkcode{font-family:var(--fm
     <div id="faqsBody"></div>
   </div>
 </section>
-
-<!-- ══════════════ COMING SOON ══════════════ -->
 <section class="view" id="soon" aria-label="Coming soon">
   <div class="wrap page-lede">
     <div class="reveal">
@@ -1479,8 +1121,6 @@ to right,var(--c1) 0 36px,transparent 36px 42px)}}.linkcode{font-family:var(--fm
     </div>
   </div>
 </section>
-
-<!-- ══════════════ CHANGELOG ══════════════ -->
 <section class="view" id="log" aria-label="Changelog">
   <div class="wrap page-lede">
     <div class="reveal">
@@ -1491,8 +1131,6 @@ to right,var(--c1) 0 36px,transparent 36px 42px)}}.linkcode{font-family:var(--fm
     <div class="loglist" id="logList"></div>
   </div>
 </section>
-
-<!-- ══════════════ FEEDBACK ══════════════ -->
 <section class="view" id="feedback" aria-label="Feedback">
   <div class="wrap nar page-lede">
     <div class="reveal">
@@ -1524,8 +1162,6 @@ to right,var(--c1) 0 36px,transparent 36px 42px)}}.linkcode{font-family:var(--fm
     </form>
   </div>
 </section>
-
-<!-- ══════════════ UTILITIES ══════════════ -->
 <section class="view" id="util" aria-label="Data utilities">
   <div class="wrap page-lede">
     <div class="reveal">
@@ -1537,7 +1173,6 @@ to right,var(--c1) 0 36px,transparent 36px 42px)}}.linkcode{font-family:var(--fm
   </div>
 </section>
 </main>
-
 <div class="scrim" id="scrim"></div>
 <div class="sheet" id="daySheet" role="dialog" aria-modal="true" aria-labelledby="dayTitle">
   <div class="grip" aria-hidden="true"></div>
@@ -1548,15 +1183,6 @@ to right,var(--c1) 0 36px,transparent 36px 42px)}}.linkcode{font-family:var(--fm
   <div id="dayList" style="margin-top:6px"></div>
   <button class="btn ghost full" id="dayClose" style="margin-top:12px">Close</button>
 </div>
-
-<!-- FIRST RUN TOUR.
-     Shown once, to a signed-in account that has not finished it. The state
-     is a column on the users row, not a browser flag: iOS Safari gives this
-     app no localStorage, so a client-side "seen it" would replay the tour
-     on every visit on the primary platform.
-
-     Skip is on every step. The tour is the default path, not a trap, and
-     somebody who already knows the product should not be held in it. -->
 <div class="tour" id="tour" hidden role="dialog" aria-modal="true" aria-labelledby="tourTitle">
   <div class="tour-card">
     <p class="tour-step" id="tourStep">Step 1 of 6</p>
@@ -1572,7 +1198,6 @@ to right,var(--c1) 0 36px,transparent 36px 42px)}}.linkcode{font-family:var(--fm
     </div>
   </div>
 </div>
-
 <div class="themeintro" id="themeIntro" hidden aria-hidden="true">
   <div class="themeintro-in">
     <span class="themeintro-chip"></span>
@@ -1580,24 +1205,7 @@ to right,var(--c1) 0 36px,transparent 36px 42px)}}.linkcode{font-family:var(--fm
     <div class="themeintro-dots" id="themeIntroDots"></div>
   </div>
 </div>
-
 <div class="toasts" id="toasts"></div>
-
-<!-- ON EVERY PAGE, not just the landing footer.
-     The benchmark puts this line everywhere and it is right to: a product
-     that turns a gambling record into a green and red grid should carry
-     the reminder wherever somebody is looking at it, not only where they
-     arrived. Rendered outside every view so it cannot be missed by
-     navigating past it. -->
-<!-- ONE FOOTER, EVERY VIEW, including inside the app.
-     There used to be two: a link row that only existed on the landing page
-     and a separate 18+ strip everywhere else, so signing in lost you every
-     route out except the tab bar. This is rendered outside the views, so no
-     navigation can get past it.
-
-     Three social icons are specified. One is rendered, because one exists.
-     A row of icons linking to accounts nobody has registered is three dead
-     ends dressed as credibility. -->
 <footer class="sitefoot" aria-label="Site">
   <div class="sitefoot-in">
     <div class="sitefoot-brand">
@@ -1606,7 +1214,6 @@ to right,var(--c1) 0 36px,transparent 36px 42px)}}.linkcode{font-family:var(--fm
       </button>
       <p>Log the slip. It remembers when.</p>
     </div>
-
     <nav class="sitefoot-links" aria-label="Footer">
       <button data-anchor="secAll">Features</button>
       <button data-nav="pricing">Pricing</button>
@@ -1619,7 +1226,6 @@ to right,var(--c1) 0 36px,transparent 36px 42px)}}.linkcode{font-family:var(--fm
       <button data-nav="help">Support</button>
       <button data-nav="dash">Dashboard</button>
     </nav>
-
     <div class="sitefoot-legal">
       <p class="sitefoot-copy">© <span id="footYear">2026</span> Slippery. Slippery tracks bets. It does not accept them and never handles money.</p>
       <div class="sitefoot-social">
@@ -1634,14 +1240,12 @@ to right,var(--c1) 0 36px,transparent 36px 42px)}}.linkcode{font-family:var(--fm
       </nav>
     </div>
   </div>
-
   <div class="agebar">
     <span class="ageroundel" aria-hidden="true">18+</span>
     <span>Please gamble responsibly.</span>
     <a href="https://www.begambleaware.org" target="_blank" rel="noopener">GambleAware.org</a>
   </div>
 </footer>
-
 <nav class="tabbar" aria-label="App sections">
   <button data-nav="dash"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="3" y="3" width="8" height="8" rx="2"/><rect x="13" y="3" width="8" height="5" rx="2"/><rect x="13" y="10" width="8" height="11" rx="2"/><rect x="3" y="13" width="8" height="8" rx="2"/></svg>Dashboard</button>
   <button data-nav="imp"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M12 16V4M7 9l5-5 5 5M4 20h16"/></svg>Import</button>

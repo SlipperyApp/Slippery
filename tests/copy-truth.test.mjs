@@ -20,7 +20,14 @@ import { readFile, readdir } from 'node:fs/promises';
 const root = new URL('../', import.meta.url);
 
 async function copySources() {
-  const out = [['src/app.html', await readFile(new URL('src/app.html', root), 'utf8')]];
+  /* build.mjs is in here because the meta description and the Open Graph
+     text live in it, and they said "Capture a bet when you place it, not
+     when it wins" long after every visible string had been corrected. Copy
+     that only search engines and link previews see is still copy. */
+  const out = [
+    ['src/app.html', await readFile(new URL('src/app.html', root), 'utf8')],
+    ['build.mjs', await readFile(new URL('build.mjs', root), 'utf8')]
+  ];
   const dir = new URL('src/js/', root);
   for (const n of await readdir(dir)) {
     if (!n.endsWith('.js')) continue;

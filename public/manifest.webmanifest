@@ -1,7 +1,7 @@
 {
   "name": "Slippery, bet slip tracker",
   "short_name": "Slippery",
-  "description": "Send a slip when you place it. Slippery reads it, tracks it, and settles it.",
+  "description": "Send a slip whenever you have it. Slippery reads it, tracks it, and settles it.",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",

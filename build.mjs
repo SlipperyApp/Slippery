@@ -108,7 +108,7 @@ const HEAD = ({ css, js, html, sprite }) => `<!DOCTYPE html>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#0A0F1E">
-<meta name="description" content="Slippery reads your bet slips and tracks your real profit and loss. Capture a bet when you place it, not when it wins.">
+<meta name="description" content="Slippery reads your bet slips and tracks your real profit and loss. Log a slip before kick off, in play, or after the result.">
 <meta name="color-scheme" content="dark">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -121,7 +121,7 @@ const HEAD = ({ css, js, html, sprite }) => `<!DOCTYPE html>
 <link rel="preload" href="/fonts/schibsted-grotesk.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="preload" href="/fonts/spline-sans-mono.woff2" as="font" type="font/woff2" crossorigin>
 <meta property="og:title" content="Slippery, bet slip tracker">
-<meta property="og:description" content="Send a slip when you place it. Slippery reads it, tracks it, and settles it into your profit and loss.">
+<meta property="og:description" content="Send a slip before kick off, in play, or after it settled. Slippery reads it, tracks it, and settles it into your profit and loss.">
 <meta property="og:type" content="website">
 <meta property="og:image" content="/og.png">
 <meta property="og:image:width" content="1200">
@@ -141,7 +141,7 @@ ${html}
 const MANIFEST = {
   name: 'Slippery, bet slip tracker',
   short_name: 'Slippery',
-  description: 'Send a slip when you place it. Slippery reads it, tracks it, and settles it.',
+  description: 'Send a slip whenever you have it. Slippery reads it, tracks it, and settles it.',
   start_url: '/',
   scope: '/',
   display: 'standalone',
@@ -196,7 +196,22 @@ async function main() {
   await mkdir(out(''), { recursive: true });
 
   const { css, classCount, fileCount } = await collectCss();
-  const html = await readFile(src('app.html'), 'utf8');
+  /* HTML COMMENTS DO NOT SHIP.
+   *
+   * CSS comments are dropped by minifyCss and JS comments by esbuild, but
+   * the markup's never were, so every explanatory note in app.html went out
+   * to every visitor. That is a couple of kilobytes on each page load and,
+   * worse, it published the reasoning: the note recording that a fabricated
+   * "Founded by Zhang et al." credit had been removed was itself shipping,
+   * in full, in the page source.
+   *
+   * The comments are worth keeping in src, they are the design record. They
+   * are simply not for the browser. Safe as a blanket strip because
+   * app.html carries no <script>, so there is no JS string that could
+   * contain the sequence; the sprite is treated the same way just below. */
+  const html = (await readFile(src('app.html'), 'utf8'))
+    .replace(/<!--[\s\S]*?-->/g, '')
+    .replace(/\n{2,}/g, '\n');
   /* The sprite has to be a real, rendered element, `display:none` on an
      SVG stops Safari resolving <use> into it. Hence the 0x0 clip instead. */
   const sprite = (await readFile(src('icons.svg'), 'utf8'))
