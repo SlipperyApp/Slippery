@@ -4,7 +4,13 @@
 export const $ = id => document.getElementById(id);
 export const $$ = (sel, root) => Array.prototype.slice.call((root || document).querySelectorAll(sel));
 
-export const RM = matchMedia('(prefers-reduced-motion: reduce)').matches;
+/* Guarded so this module can be imported outside a browser. The tests run
+   in node, and a module that reads matchMedia at import time makes every
+   module that transitively imports it untestable — which is how the
+   content modules came to have no unit tests at all. In a browser the
+   value is unchanged. */
+export const RM = typeof matchMedia === 'function'
+  && matchMedia('(prefers-reduced-motion: reduce)').matches;
 
 /** Escape anything that came from a user or an API before it touches innerHTML. */
 export function esc(s) {
@@ -73,7 +79,7 @@ export function paintSeg(container) {
 export function paintSegs(root) { $$('.seg', root || document).forEach(paintSeg); }
 
 /** Reveal-on-scroll. One observer for the whole app. */
-const io = window.IntersectionObserver
+const io = typeof window !== 'undefined' && window.IntersectionObserver
   ? new IntersectionObserver(entries => {
       entries.forEach(e => {
         if (e.isIntersecting) { e.target.classList.add('shown'); io.unobserve(e.target); }

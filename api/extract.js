@@ -26,6 +26,7 @@ import { json, methodGuard, readJson, clientIp, fail, blockCrossOrigin } from '.
 import { sessionUser } from './_lib/auth.js';
 import { ensureSchema, configured as dbConfigured } from './_lib/db.js';
 import { guard } from './_lib/rate.js';
+import { bookName } from '../src/js/books.js';
 
 const MODEL = process.env.EXTRACT_MODEL || 'claude-haiku-4-5';
 const MAX_IMAGE_BYTES = 8 * 1024 * 1024;
@@ -545,6 +546,26 @@ export function sanitise(f) {
       if (!out[key]) { out[key] = null; bad.add(key); }
     }
   }
+  /* THE BOOKMAKER IS RESOLVED, NOT PASSED THROUGH.
+     Slips spell a brand every way there is: "Bet 365", "BET365",
+     "paddypower", "Leo Vegas". Left as free text, the same bookmaker
+     became several rows in every breakdown, duplicate detection stopped
+     matching on it, and the settlement engine fell through to the European
+     handicap table for a bet365 slip that should push. Folding it through
+     the registry once, here, is what makes every later step agree.
+
+     An unknown name is KEPT as typed. Somebody with an account at a
+     bookmaker nobody here has heard of still placed a real bet, and losing
+     the name would be worse than not knowing the platform. */
+  if (typeof out.bookmaker === 'string' && out.bookmaker) out.bookmaker = bookName(out.bookmaker);
+  /* `platform` stays as the reader saw it: it is which APP the screenshot
+     came from, which is not the same question as which platform powers the
+     brand. The registry answers the second from the first wherever it is
+     needed, so there is nothing to write here. */
+  for (const b of out.bets || []) {
+    if (typeof b.bookmaker === 'string' && b.bookmaker) b.bookmaker = bookName(b.bookmaker);
+  }
+
   /* notes is the reader's own commentary, not a field off the slip, so an
      empty one means it had nothing to add. Naming it as unreadable would
      put "notes" in front of the user on every clean read. */

@@ -1284,7 +1284,10 @@
         <div class="addrow" style="margin-top:12px"><label class="sr" for="bookInput">New bookmaker</label>
           <input class="field" id="bookInput" placeholder="Add a bookmaker…" autocomplete="off">
           <label class="sr" for="bookParent">Group</label>
-          <select class="select" id="bookParent" style="max-width:110px"><option>Flutter</option><option>Kambi</option><option selected>Other</option></select>
+          <!-- Filled from the registry in books.js at render time. It was a
+               hardcoded three, so a platform added to the registry was not
+               offerable here and every brand on it landed under "Other". -->
+          <select class="select" id="bookParent" style="max-width:110px"></select>
           <button class="btn ghost" id="bookAdd" style="padding:0 15px">Add</button></div>
       </details>
     </div>

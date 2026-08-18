@@ -6,6 +6,7 @@
  * from render.js, which reads the signed-in ledger. Nothing here touches a
  * user's data except the utilities panel, which asks the server.
  */
+import { BOOKMAKERS } from './books.js';
 import { $, $$, esc, setHTML, on, toast } from './dom.js';
 import { ico } from './data.js';
 
@@ -23,68 +24,104 @@ import { ico } from './data.js';
    bookmaker's app. Where we have not tested a slip format we say so
    rather than implying full coverage.
    ============================================================ */
-export const BOOKPAGES = [
+/* The prose, keyed by registry id. The NAME and the HANDICAP STYLE are not
+   here: they live in books.js, which is also what the settlement engine
+   reads, so a page cannot claim European handicaps while the grader uses
+   the Asian table. This table is only the part a person had to write.
+
+   A brand with no entry still gets a page, generated from its registry row
+   below. That is the point of the registry: adding a Kambi brand is one
+   row, and the reference screen picks it up without anybody remembering to
+   come here. */
+const BOOK_COPY = [
   {
-    id: 'bet365', name: 'bet365', handicap: 'Asian',
+    id: 'bet365',
     edge: 'Asian handicaps. A −1 on a 2−1 win is a push and your stake comes back. Everywhere else that same bet loses, because the handicap draw is its own outcome. Slippery grades bet365 slips on the Asian table and the rest on the European one.',
     reads: ['Single and multiple slips from the app', 'Bet builder slips with each leg priced', 'The combined price on a treble', 'Cash out shown on the slip'],
     caution: 'Bet builder legs are read but never auto-graded. Player and card markets always come back to you.'
   },
   {
-    id: 'paddy-power', name: 'Paddy Power', handicap: 'European',
+    id: 'paddy-power',
     edge: 'European handicaps, so a −1 on a 2−1 win loses rather than pushes. Each way slips carry the place terms on the slip itself, which is where they are read from rather than assumed.',
     reads: ['Single, multiple and each way slips', 'Place terms as printed', 'Settled history screens with dated rows'],
     caution: 'Racing is never settled automatically here or anywhere. No feed we trust publishes finishing positions we can prove.'
   },
   {
-    id: 'sky-bet', name: 'Sky Bet', handicap: 'European',
+    id: 'sky-bet',
     edge: 'Doubles where one stake covers several selections are read as one bet with legs, not split into separate bets. That was a real extraction bug on this format and it is the thing to check first if a Sky Bet slip looks wrong.',
     reads: ['Request a bet slips', 'Doubles and trebles with a combined price', 'Build a bet with per-leg prices'],
     caution: 'Build a bet legs come back to you. A same-game multi is never graded automatically.'
   },
   {
-    id: 'william-hill', name: 'William Hill', handicap: 'European',
+    id: 'william-hill',
     edge: 'A just-placed slip and a won slip look similar on this app, so the capture stage is taken from the slip state rather than inferred from whether a result is printed.',
     reads: ['Single and multiple slips', 'Bet history screens', 'Cash out values'],
     caution: 'Where the slip does not print a result, the bet is logged as running rather than guessed at.'
   },
   {
-    id: 'ladbrokes', name: 'Ladbrokes', handicap: 'European',
+    id: 'ladbrokes',
     edge: 'Handicap draws are their own outcome, so a −1 acts like a −1.5. Whole lines on totals still push: over 2.0 on a 1−1 is void, not a loss.',
     reads: ['Single and multiple slips', 'Settled bet history'],
     caution: 'Bet builders and player props always come back to you.'
   },
   {
-    id: 'coral', name: 'Coral', handicap: 'European',
+    id: 'coral',
     edge: 'Same grading table as Ladbrokes, and the slip format is close enough that both are read by the same path. Where the two differ is the reference format, which is what the extractor keys on.',
     reads: ['Single and multiple slips', 'Settled bet history'],
     caution: 'Bet builders and player props always come back to you.'
   },
   {
-    id: 'betfred', name: 'Betfred', handicap: 'European',
+    id: 'betfred',
     edge: 'Bonus and boost lines appear on the slip and are not stake. They are read as what they are, so a boosted return does not become a stake you never placed.',
     reads: ['Single and multiple slips', 'Boosted odds slips'],
     caution: 'A free bet stake is logged at the stake shown. Whether a free bet stake counts in your P/L is your call, not ours.'
   },
   {
-    id: 'betfair', name: 'Betfair', handicap: 'European',
+    id: 'betfair',
     edge: 'Exchange bets carry commission, which the sportsbook slips do not. A lay is not a back with the sign flipped and is never graded as one.',
     reads: ['Sportsbook single and multiple slips'],
     caution: 'Exchange lays are read but always come back to you to settle. Commission is not modelled.'
   },
   {
-    id: 'unibet', name: 'Unibet', handicap: 'European',
+    id: 'unibet',
     edge: 'Kambi platform, so the slip layout is shared with LeoVegas and 32Red and all three are read by the same path.',
     reads: ['Single and multiple slips', 'Combi slips with a combined price'],
     caution: 'Player and card markets always come back to you.'
   },
   {
-    id: 'smarkets', name: 'Smarkets', handicap: 'European',
+    id: 'smarkets',
     edge: 'An exchange, so the price on the slip is the price you got rather than a sportsbook price. Commission is not modelled and settlement is by hand.',
     reads: ['Order and position screens'],
     caution: 'Never settled automatically. Exchange positions are handed back to you.'
   }
 ];
+
+
+/* Registry row plus prose, which is what the pages render from. Anything
+   the copy table does not cover is stated from the facts we hold rather
+   than left out, because a bookmaker with no page at all reads as one
+   Slippery cannot handle. */
+export const BOOKPAGES = BOOKMAKERS.map(b => {
+  const copy = BOOK_COPY.find(c => c.id === b.id);
+  const shared = BOOKMAKERS.filter(x => x.provider === b.provider && x.id !== b.id);
+  return {
+    id: b.id,
+    name: b.name,
+    provider: b.provider,
+    handicap: b.handicap === 'asian' ? 'Asian' : 'European',
+    edge: copy ? copy.edge
+      : b.handicap === 'asian'
+        ? 'Asian handicaps, so a whole line can push and the stake comes back.'
+        : 'European handicaps, so the handicap draw is its own outcome and a −1 behaves like a −1.5.' +
+          (shared.length
+            ? ' On the ' + b.provider + ' platform, so the slip layout is shared with ' +
+              shared.map(x => x.name).join(' and ') + ' and all of them are read by the same path.'
+            : ''),
+    reads: copy ? copy.reads : ['Single and multiple slips'],
+    caution: copy ? copy.caution
+      : 'No slip from this bookmaker has been tested here yet, so read what comes back before you confirm it. Player and card markets always come back to you.'
+  };
+});
 
 const bookCard = b =>
   '<button class="bkcard" data-bookpage="' + esc(b.id) + '">' +

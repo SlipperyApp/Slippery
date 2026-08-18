@@ -26,6 +26,7 @@
  *    in the middle, and a win rate that looks worse than the ROI. A demo
  *    record that climbs in a straight line is an advert.
  */
+import { bookName } from './books.js';
 
 /* mulberry32: small, fast, and identical everywhere. */
 function rng(seed) {
@@ -58,7 +59,10 @@ const MARKETS = [
   'Full Time Result', 'Over 2.5 Goals', 'Under 2.5 Goals', 'Both Teams to Score',
   'Asian Handicap', 'Double Chance', 'Draw No Bet', 'Over 9.5 Corners'
 ];
-const BOOKS = ['bet365', 'Paddy Power', 'Sky Bet', 'William Hill', 'Ladbrokes', 'Betfred', 'Coral'];
+/* Real brands from the registry, so a sample bet cannot name a bookmaker
+   the settlement engine and the reference pages have never heard of. */
+const BOOKS = ['bet365', 'Paddy Power', 'Sky Bet', 'William Hill', 'Ladbrokes', 'Betfred', 'Coral']
+  .map(bookName);
 const COMPS = ['Premier League', 'La Liga', 'Bundesliga', 'Serie A', 'Ligue 1', 'Champions League'];
 
 /* Odds bands, their share of the record, and the return on turnover each

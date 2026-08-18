@@ -18,6 +18,7 @@ import { json, methodGuard, readJson, fail, clientIp, blockCrossOrigin } from '.
 import { db, ensureSchema, configured } from './_lib/db.js';
 import { sessionUser } from './_lib/auth.js';
 import { cashOutcome, ledgerOutcome, payoutFor } from '../src/js/settlement.js';
+import { bookName } from '../src/js/books.js';
 import { limit } from './_lib/rate.js';
 import { unlimited, trialState, TRIAL_SLIPS, billingState } from './_lib/promo.js';
 import { onBreak } from './_lib/routes/break.js';
@@ -311,7 +312,7 @@ async function create(req, res, user, body) {
                       stake_pence, profit_pence, outcome, status, capture_stage, placed_at,
                       settled_at, settle_reason, source)
     VALUES (${user.id}, ${str(body.event)}, ${str(body.selection)}, ${str(body.market)},
-            ${str(body.book)}, ${odds}, ${stake},
+            ${str(bookName(body.book))}, ${odds}, ${stake},
             ${profit}, ${outcome},
             ${outcome ? 'settled' : 'pending'}, ${captureStage(body)}, ${placedAt},
             ${outcome ? new Date() : null},
@@ -387,9 +388,11 @@ async function createMany(req, res, user, rows) {
     const d = v ? new Date(v) : new Date();
     return Number.isNaN(d.getTime()) ? '' : d.toISOString().slice(0, 10);
   };
+  /* Folded through the registry before it becomes a key, or "Bet 365" and
+     "bet365" are two different bets on the same day for the same stake. */
   const keyOf = (day, selection, stakePence, book) =>
     day + '|' + String(selection || '').trim().toLowerCase() +
-    '|' + Math.round(Number(stakePence)) + '|' + String(book || '').trim().toLowerCase();
+    '|' + Math.round(Number(stakePence)) + '|' + bookName(book).trim().toLowerCase();
 
   const days = [...new Set(good.map(b => dayKey(b.placedAt)))].filter(Boolean);
   const seen = new Set();
@@ -424,7 +427,7 @@ async function createMany(req, res, user, rows) {
       INSERT INTO bets (user_id, event, selection, market, bookmaker, odds, stake_pence,
                         profit_pence, outcome, status, placed_at, settled_at, source)
       VALUES (${user.id}, ${str(b.event)}, ${str(b.selection)}, ${str(b.market)},
-              ${str(b.book)}, ${b.odds == null ? null : Number(b.odds)},
+              ${str(bookName(b.book))}, ${b.odds == null ? null : Number(b.odds)},
               ${Math.round(Number(b.stakePence))},
               ${settled ? Math.round(Number(b.profitPence)) : null},
               ${settled ? importOutcome(b) : null},

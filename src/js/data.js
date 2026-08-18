@@ -11,12 +11,14 @@
  * renderers stay ignorant of where the data came from.
  */
 
-export const BOOKS = {
-  Flutter: ['Paddy Power', 'Betfair', 'Sky Bet'],
-  Kambi: ['Unibet', 'LeoVegas', '32Red'],
-  Other: ['bet365', 'William Hill', 'Betfred', 'Ladbrokes', 'Coral', 'Smarkets']
-};
-export const ALL_BOOKS = Object.values(BOOKS).flat();
+import { booksByProvider, ALL_BOOK_NAMES } from './books.js';
+
+/* Brands grouped by the platform behind them. One row per brand lives in
+   books.js; this is that list, arranged for the reference screen. It used
+   to be a hand-kept copy, which is how Kambi came to be a heading here and
+   three unrelated rows in the settlement table at the same time. */
+export const BOOKS = booksByProvider();
+export const ALL_BOOKS = ALL_BOOK_NAMES.slice();
 export const TIPSTERS = ['Self', 'HB', 'Zhang', 'James'];
 
 /* Periwinkle first, and first means default: it is what :root carries in

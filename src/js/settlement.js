@@ -21,35 +21,32 @@
    ====================================================================== */
 
 import { sportOf, HORSES_REASON } from './sports.js';
+import { BOOKMAKERS, bookKey } from './books.js';
+/* Re-exported because the graders and the tests have always asked
+   settlement.js how a bookmaker name folds. The answer now lives in the
+   registry; this is where callers still look for it. */
+export { bookKey };
 
 /* ---- how each bookmaker settles.
    Asian: a whole-number handicap can push and the stake comes back.
    European (3 way): the same scoreline is a loss, because the handicap
    draw is a separate outcome. So -1 behaves like -1.5 for the backer.
 
-   Lookup table, never hardcoded at the call site, so adding a bookmaker
-   is a data change. Keys are compared case-insensitively and with
-   punctuation stripped, because slips spell them inconsistently
-   ("bet365", "Bet 365", "BET365"). ---- */
-export const BOOK_RULES = {
-  'bet365':       { handicap: 'asian' },
-  'paddypower':   { handicap: 'european' },
-  'betfair':      { handicap: 'european' },
-  'skybet':       { handicap: 'european' },
-  'williamhill':  { handicap: 'european' },
-  'ladbrokes':    { handicap: 'european' },
-  'coral':        { handicap: 'european' },
-  'betfred':      { handicap: 'european' },
-  'unibet':       { handicap: 'european' },
-  'leovegas':     { handicap: 'european' },
-  '32red':        { handicap: 'european' },
-  'smarkets':     { handicap: 'european' }
-};
+   Derived from the registry in books.js, so adding a bookmaker is one row
+   in one file rather than four edits nothing checks. Keys are compared
+   case-insensitively and with punctuation stripped, and every alias
+   resolves too, because slips spell them inconsistently ("bet365",
+   "Bet 365", "BET365"). ---- */
+export const BOOK_RULES = Object.fromEntries(
+  BOOKMAKERS.map(b => [bookKey(b.id), { handicap: b.handicap }]));
+/* Aliases resolve too, so a slip that says "Bet 365" grades on the Asian
+   table rather than falling through to the European default. */
+for (const b of BOOKMAKERS) {
+  BOOK_RULES[bookKey(b.name)] = { handicap: b.handicap };
+  for (const a of b.aliases || []) BOOK_RULES[bookKey(a)] = { handicap: b.handicap };
+}
 export const DEFAULT_RULES = { handicap: 'european' };
 
-export function bookKey(book) {
-  return String(book || '').toLowerCase().replace(/[^a-z0-9]/g, '');
-}
 export function rulesFor(book) {
   return BOOK_RULES[bookKey(book)] || DEFAULT_RULES;
 }

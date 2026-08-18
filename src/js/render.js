@@ -1067,6 +1067,13 @@ export function renderMisc() {
   setHTML('tipsterChips', TIPSTERS.map(t =>
     '<span class="tagchip">' + esc(t) +
     '<button data-remove-tipster="' + esc(t) + '" aria-label="Remove ' + esc(t) + '">×</button></span>').join(''));
+  /* The platform choices are the platforms that exist, so a provider added
+     to the registry can be picked here without editing the markup. */
+  const parent = $('bookParent');
+  if (parent && !parent.options.length) {
+    parent.innerHTML = Object.keys(BOOKS).map(g =>
+      '<option' + (g === 'In-house' ? ' selected' : '') + '>' + esc(g) + '</option>').join('');
+  }
   setHTML('bookGroups', Object.keys(BOOKS).map(g =>
     '<div class="bookgroup"><div class="h">' + esc(g) + '<span>' + BOOKS[g].length + '</span></div>' +
     '<div class="items">' + BOOKS[g].map(b => '<span class="item">' + esc(b) + '</span>').join('') +
