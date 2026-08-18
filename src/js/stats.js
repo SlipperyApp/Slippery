@@ -154,7 +154,7 @@ export function usablePl() {
   return kept.map(x => x.p);
 }
 
-function plInScope(S) {
+export function plInScope(S) {
   /* 4 is all time, 3 is one year. They were the same number before, which
      is how "all time" and "this year" came to be the same query. */
   const scope = S.period === 'a' ? 4
@@ -343,3 +343,43 @@ export function lifetime() {
 /* yearProfit() lived here as a second, subtly different way of summing a
    year, with no callers left once the period picker gained a real Yearly
    branch. yearTotal above is the one sum. */
+
+/* ---------------- the two ledgers, side by side ----------------
+ *
+ * There are two kinds of record in here and they are not the same kind of
+ * fact. A bet was logged through Slippery and has a slip behind it: a
+ * selection, a price, a stake, a result that can be checked. An imported
+ * figure is a dated profit or loss and nothing else, brought across from
+ * wherever somebody kept their record before.
+ *
+ * Both are true and both belong in the totals for the period they fall in.
+ * Only one of them can be checked, so they are counted apart and shown
+ * apart, and the reconciliation below is what makes the headline figure
+ * add up in public rather than in a comment.
+ *
+ * What imported history NEVER touches, because there are no bets behind it:
+ * the win rate, the streak, the best and worst day, the capture rate, and
+ * the trial slip count. A figure with no result cannot be a win, and a day
+ * that is one number cannot be a run of good days.
+ */
+export function reconcile(S) {
+  let logged = 0, loggedBets = 0, loggedTurnover = 0;
+  for (const b of scopeBets(S)) {
+    logged += b.profit;
+    loggedTurnover += b.stake;
+    loggedBets++;
+  }
+  const rows = plInScope(S);
+  let imported = 0, importedBets = 0, importedTurnover = 0;
+  for (const p of rows) {
+    imported += p.profit || 0;
+    importedBets += p.bets || 0;
+    importedTurnover += p.turnover || 0;
+  }
+  return {
+    logged, loggedBets, loggedTurnover,
+    imported, importedBets, importedTurnover, importedRows: rows,
+    total: logged + imported,
+    turnover: loggedTurnover + importedTurnover
+  };
+}

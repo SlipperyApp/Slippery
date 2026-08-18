@@ -106,6 +106,7 @@ async function main() {
       const hit = sel => { const e = document.querySelector(sel); if (e) e.click(); };
       hit('#calMode [data-cal="y"]');
       hit('[data-pane="ledger"]');
+      hit('#ledgerSeg [data-ledger="ledgerHistory"]');
       hit('#ledgerSeg [data-ledger="ledgerAnalysis"]');
       hit('[data-pane="social"]');
       hit('[data-profile]');
@@ -1221,6 +1222,14 @@ async function main() {
     });
     await page.waitForTimeout(400);
     await page.screenshot({ path: path.join(SHOT_DIR, 'ledger-390.png') });
+    /* The imported ledger beside the logged one, which is the whole point
+       of the History tab and therefore worth looking at. */
+    await page.evaluate(() =>
+      document.querySelector('#ledgerSeg [data-ledger="ledgerHistory"]').click());
+    await page.waitForTimeout(300);
+    await page.screenshot({ path: path.join(SHOT_DIR, 'history-390.png') });
+    await page.evaluate(() =>
+      document.querySelector('#ledgerSeg [data-ledger="ledgerBets"]').click());
     await page.evaluate(() => document.querySelector('[data-pane="social"]').click());
     await page.waitForTimeout(400);
     await page.screenshot({ path: path.join(SHOT_DIR, 'social-390.png') });

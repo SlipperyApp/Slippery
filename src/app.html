@@ -865,8 +865,14 @@
           <button data-period="a" aria-label="All time">All</button>
         </div>
       </div>
+      <!-- Three tabs, because there are two kinds of record and one
+           reconciliation between them. Bets were logged here and have a
+           slip behind each one. History was imported: a dated figure and
+           nothing else. Both count toward the period total, only one can
+           be checked, so they are shown apart and added up in the open. -->
       <div class="seg" id="ledgerSeg" role="group" aria-label="Ledger view" style="margin-bottom:12px">
         <button class="on" data-ledger="ledgerBets" aria-pressed="true">Bets</button>
+        <button data-ledger="ledgerHistory" aria-pressed="false">History</button>
         <button data-ledger="ledgerAnalysis" aria-pressed="false">Analysis</button>
       </div>
 
@@ -878,6 +884,19 @@
         </div>
         <div class="chiprow" id="betFilters" role="group" aria-label="Filter by outcome"></div>
         <div class="card pad"><div id="ledgerList"></div></div>
+      </div>
+
+      <div id="ledgerHistory" hidden>
+        <div class="card pad" style="margin-bottom:10px">
+          <div class="cardhead"><span class="title">Where the figure comes from</span>
+            <span class="meta scoped"></span></div>
+          <div id="reconRows"></div>
+        </div>
+        <div class="card pad">
+          <div class="cardhead"><span class="title">Imported history</span>
+            <span class="meta" id="historyMeta"></span></div>
+          <div id="historyList"></div>
+        </div>
       </div>
 
       <div id="ledgerAnalysis" hidden>

@@ -589,6 +589,21 @@ input[type=date]{
     & svg{width:13px;height:13px}
     &:hover{color:var(--neg);background:rgba(252,165,165,.10)}}}
 
+/* The addition, shown rather than asserted. Two sources and their sum, in
+   the order somebody would add them up on paper: what was logged here,
+   what was brought across, and what the headline therefore says. */
+.reconrow{
+  display:flex;align-items:baseline;gap:12px;padding:10px 0;
+  &+.reconrow{border-top:1px solid var(--e2)}
+  & .rk{flex:1;min-width:0;font-size:13px;color:var(--t1);
+    & small{display:block;font-size:11.5px;color:var(--t3);margin-top:2px;line-height:1.45}}
+  & .rv{font-family:var(--fm);font-weight:600;font-size:14px;flex:0 0 auto;
+    font-variant-numeric:tabular-nums lining-nums}
+  &.total{
+    border-top:1px solid var(--e1);margin-top:2px;
+    & .rk{font-weight:600}
+    & .rv{font-size:16.5px}}}
+
 /* settings */
 .settingcard{
   padding:16px;margin-bottom:12px;

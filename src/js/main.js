@@ -2428,7 +2428,8 @@ document.addEventListener('click', e => {
       b.setAttribute('aria-pressed', String(on));
     });
     paintSeg($('ledgerSeg'));
-    ['ledgerBets', 'ledgerAnalysis'].forEach(x => { $(x).hidden = x !== S.ledgerView; });
+    ['ledgerBets', 'ledgerHistory', 'ledgerAnalysis'].forEach(x => { $(x).hidden = x !== S.ledgerView; });
+    if (S.ledgerView === 'ledgerHistory') R.renderHistory();
     return;
   }
   if ((el = c('#socialSeg button'))) {

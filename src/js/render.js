@@ -9,7 +9,7 @@ import {
 } from './data.js';
 import {
   importedTotals,
-  stats, lifetime, dayMap, monthTotal, yearTotal, dowLabels, dowOffset, weekRange, targetFor
+  stats, lifetime, reconcile, dayMap, monthTotal, yearTotal, dowLabels, dowOffset, weekRange, targetFor
 } from './stats.js';
 
 export const MS = new Intl.DateTimeFormat('en-GB', { month: 'short' });
@@ -312,7 +312,7 @@ export function renderHeadline() {
     note.hidden = false;
     note.textContent = M.plain(p.ledgerBets) + ' slips in the ledger, plus ' +
       (imp.bets ? M.plain(imp.bets) + ' imported bets' : 'imported figures') +
-      ' with no slips behind them.';
+      ' with no slips behind them. Ledger, History shows the addition.';
   } else note.hidden = true;
 
   $('kpiRow').innerHTML = [
@@ -753,21 +753,68 @@ export function renderPl() {
   setHTML('plTotal', PL.length + ' figure' + (PL.length === 1 ? '' : 's') +
     ' · <b class="' + M.tone(sum) + '">' + M.money0s(sum) + '</b>');
 
-  list.innerHTML = PL.map(p => {
-    const d = new Date(p.date + 'T12:00:00');
-    const when = Number.isNaN(d.getTime()) ? p.date
-      : p.period === 'month' ? ML.format(d)
-      : p.period === 'week' ? 'Week of ' + DS.format(d)
-      : DS.format(d) + ' ' + d.getFullYear();
-    return '<div class="plrow">' +
-      '<span class="pld">' + esc(when) +
-        (PL_TAG[p.period] ? '<span class="plt">' + PL_TAG[p.period] + '</span>' : '') +
-        (p.source === 'import' ? '<span class="plt">imported</span>' : '') + '</span>' +
-      '<span class="plv ' + M.tone(p.profit) + '">' + M.signed(p.profit) + '</span>' +
-      '<button class="plx" data-remove-pl="' + esc(p.id) + '" ' +
-        'aria-label="Remove the figure for ' + esc(when) + '">' + ico('i-close') + '</button>' +
-    '</div>';
-  }).join('');
+  list.innerHTML = PL.map(p => plRow(p, true)).join('');
+}
+
+/* ---------------- the two ledgers, side by side ----------------
+ *
+ * A bet logged here has a slip behind it. An imported figure is a date and
+ * an amount and nothing else. Both belong in the period total and only one
+ * of them can be checked, so the ledger shows them apart and adds them up
+ * where you can see the addition, rather than folding history into the
+ * headline and mentioning it in a note underneath.
+ */
+export function renderHistory() {
+  const rows = $('reconRows');
+  if (!rows) return;
+  const r = reconcile(S);
+
+  const line = (k, v, sub, tone) =>
+    '<div class="reconrow"><span class="rk">' + esc(k) +
+      (sub ? '<small>' + esc(sub) + '</small>' : '') + '</span>' +
+    '<span class="rv ' + (tone || M.tone(v)) + '">' + M.signed(v) + '</span></div>';
+
+  rows.innerHTML =
+    line('Logged here', r.logged,
+      r.loggedBets + (r.loggedBets === 1 ? ' bet with a slip behind it' : ' bets, each with a slip behind it')) +
+    line('Imported history', r.imported,
+      r.importedRows.length
+        ? r.importedRows.length + (r.importedRows.length === 1 ? ' figure' : ' figures') +
+          (r.importedBets ? ', covering ' + M.plain(r.importedBets) + ' bets' : ', no bets behind them')
+        : 'Nothing imported in this period') +
+    '<div class="reconrow total"><span class="rk">Net ' + esc(periodWord()) + '</span>' +
+    '<span class="rv ' + M.tone(r.total) + '">' + M.signed(r.total) + '</span></div>';
+
+  setText('historyMeta', r.importedRows.length
+    ? r.importedRows.length + (r.importedRows.length === 1 ? ' figure' : ' figures') + ', ' + periodWord()
+    : '');
+  $('historyList').innerHTML = r.importedRows.length
+    ? r.importedRows.map(plRow).join('')
+    : '<div class="emptystate"><div class="t">No imported history here</div>' +
+      '<p>Figures brought across from another tracker appear in the period they are dated. ' +
+      'Bring some across from Import.</p></div>';
+}
+
+/* One imported figure, the same row on the Import screen and here. The
+   remove button only belongs where they are being added, so it is an
+   argument rather than always drawn. */
+function plRow(p, removable) {
+  const d = new Date(p.date + 'T12:00:00');
+  const when = Number.isNaN(d.getTime()) ? p.date
+    : p.period === 'month' ? ML.format(d)
+    : p.period === 'week' ? 'Week of ' + DS.format(d)
+    : p.period === 'year' ? String(d.getFullYear())
+    : DS.format(d) + ' ' + d.getFullYear();
+  return '<div class="plrow">' +
+    '<span class="pld">' + esc(when) +
+      (PL_TAG[p.period] ? '<span class="plt">' + PL_TAG[p.period] + '</span>' : '') +
+      (p.source === 'import' ? '<span class="plt">imported</span>' : '') + '</span>' +
+    '<span class="plv ' + M.tone(p.profit) + '">' + M.signed(p.profit) + '</span>' +
+    (removable
+      ? '<button class="plx" data-remove-pl="' + esc(p.id) + '" ' +
+        'aria-label="Remove the figure for ' + esc(when) + '">' + ico('i-close') + '</button>'
+      : '') +
+  '</div>';
 }
 
 /* ---------------- the group directory ----------------
@@ -1214,6 +1261,7 @@ export function renderAll() {
   renderTrial();
   renderPlan();
   renderPl();
+  renderHistory();
 }
 
 
