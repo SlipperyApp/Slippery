@@ -418,6 +418,44 @@ export async function ensureSchema() {
      first. */
   await sql`CREATE INDEX IF NOT EXISTS follows_followee_idx ON follows (followee_id)`;
 
+  /* SIGNUPS THAT HAVE NOT BEEN VERIFIED YET.
+   *
+   * The users row used to be INSERTed before the code was even sent. The
+   * partial unique indexes above key on deleted_at IS NULL, not on
+   * verification, so an abandoned signup held the email address AND the
+   * display name permanently, with no expiry sweep anywhere. A second
+   * attempt on the same address got a flat "that email already has an
+   * account", the person could not log in because login refuses unverified
+   * accounts, and the display name was gone for good.
+   *
+   * It also started the fourteen day trial clock, so somebody who signed
+   * up, never received the mail, and came back a fortnight later found the
+   * trial already over. And it consumed the promo code, which is UNIQUE per
+   * user and therefore unrecoverable.
+   *
+   * Nothing about an account exists until the address is proved. The code
+   * lives here rather than in verification_codes because that table is
+   * keyed by user_id and there is no user yet.
+   */
+  await sql`
+    CREATE TABLE IF NOT EXISTS pending_signups (
+      email_lower   text PRIMARY KEY,
+      email         text NOT NULL,
+      display_name  text NOT NULL,
+      name_lower    text NOT NULL,
+      password_hash text NOT NULL,
+      promo_code    text,
+      code_hash     text NOT NULL,
+      expires_at    timestamptz NOT NULL,
+      attempts      int NOT NULL DEFAULT 0,
+      created_at    timestamptz NOT NULL DEFAULT now()
+    )`;
+  /* Not unique: two people may both be waiting to verify the same name, and
+     refusing the second of them would reintroduce the reservation this
+     table exists to remove. Whoever verifies first gets it, and the other
+     is asked for a different one at that point. */
+  await sql`CREATE INDEX IF NOT EXISTS pending_signups_name_idx ON pending_signups (name_lower)`;
+
   /* Federated sign-in.
    *
    * oauth_identities is the join between a provider's opaque subject id and

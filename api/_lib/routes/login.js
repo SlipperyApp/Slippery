@@ -9,7 +9,7 @@ import { ensureSchema, configured } from '../db.js';
 import { guard } from '../rate.js';
 import {
   verifyPassword, equalisePasswordTiming, createSession, setSessionCookie,
-  identifierProblem, findByIdentifier
+  identifierProblem, findByIdentifier, findPendingByIdentifier
 } from '../auth.js';
 
 export default async function handler(req, res) {
@@ -34,9 +34,22 @@ export default async function handler(req, res) {
 
     const user = await findByIdentifier(identifier);
     if (!user) {
+      /* Somebody who signed up and never verified has no users row at all
+         now, so without this they would be told their password is wrong and
+         have no way back to the code. Same 403 as an unverified account, so
+         the client's existing resend path picks it up unchanged. The
+         password is still checked first: the reply names an address, and
+         naming it to anyone who types the identifier would leak it. */
+      const pending = await findPendingByIdentifier(identifier);
+      if (pending && await verifyPassword(password, pending.password_hash)) {
+        return json(res, 403, {
+          error: 'Verify your email first. We can resend the code.',
+          needsVerification: true, email: pending.email
+        });
+      }
       /* Hash anyway. Returning early here makes "no such account" measurably
          faster than "wrong password", which is an account enumeration oracle. */
-      await equalisePasswordTiming(password);
+      if (!pending) await equalisePasswordTiming(password);
       return json(res, 401, { error: 'That username and password do not match.' });
     }
     if (!(await verifyPassword(password, user.password_hash))) {

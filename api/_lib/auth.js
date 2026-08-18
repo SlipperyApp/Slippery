@@ -107,6 +107,95 @@ export async function checkVerificationCode(userId, code) {
   return { ok: true };
 }
 
+/* ── SIGNUPS WAITING ON A CODE ──────────────────────────────────
+ *
+ * Same rules as verification_codes, against pending_signups instead,
+ * because that table is keyed by user_id and at this point there is no
+ * user. Nothing about an account exists until the address is proved: not
+ * the row, not the reserved email, not the reserved name, not the trial
+ * clock, and not the redeemed promo code.
+ * ─────────────────────────────────────────────────────────────── */
+
+/** Create or replace the pending signup for an address and return its code. */
+export async function issuePendingSignup(fields) {
+  const sql = db();
+  const code = newCode();
+  await sql`
+    INSERT INTO pending_signups (email_lower, email, display_name, name_lower,
+                                 password_hash, promo_code, code_hash, expires_at)
+    VALUES (${fields.email.toLowerCase()}, ${fields.email}, ${fields.name},
+            ${fields.name.toLowerCase()}, ${fields.passwordHash},
+            ${fields.promoCode || null}, ${sha256(code)},
+            now() + ${CODE_TTL_MIN + ' minutes'}::interval)
+    ON CONFLICT (email_lower) DO UPDATE SET
+      email = EXCLUDED.email,
+      display_name = EXCLUDED.display_name,
+      name_lower = EXCLUDED.name_lower,
+      password_hash = EXCLUDED.password_hash,
+      promo_code = EXCLUDED.promo_code,
+      code_hash = EXCLUDED.code_hash,
+      expires_at = EXCLUDED.expires_at,
+      attempts = 0,
+      created_at = now()`;
+  return code;
+}
+
+/**
+ * Issue a fresh code against a pending signup that already exists, without
+ * touching the name, the password or the promo code it is holding. The
+ * resend button must not be able to rewrite what somebody typed.
+ * Returns the code, or null when there is nothing outstanding.
+ */
+export async function refreshPendingCode(email) {
+  const code = newCode();
+  const rows = await db()`
+    UPDATE pending_signups
+       SET code_hash = ${sha256(code)},
+           expires_at = now() + ${CODE_TTL_MIN + ' minutes'}::interval,
+           attempts = 0
+     WHERE email_lower = ${String(email || '').toLowerCase()}
+     RETURNING email_lower`;
+  return rows.length ? code : null;
+}
+
+export async function pendingSignup(email) {
+  const rows = await db()`
+    SELECT * FROM pending_signups WHERE email_lower = ${String(email || '').toLowerCase()}`;
+  return rows[0] || null;
+}
+
+/**
+ * Check a code against a pending signup. Does NOT delete the row: the
+ * caller still has to create the account, and losing the password hash
+ * because the name turned out to be taken would strand somebody who did
+ * everything right.
+ */
+export async function checkPendingCode(email, code) {
+  const sql = db();
+  const lower = String(email || '').toLowerCase();
+  const rows = await sql`
+    SELECT code_hash, attempts, expires_at < now() AS expired
+    FROM pending_signups WHERE email_lower = ${lower}`;
+  if (!rows.length) return { ok: false, reason: 'No code outstanding. Send a new one.' };
+  const row = rows[0];
+  if (row.expired) return { ok: false, reason: 'That code has expired. Send a new one.' };
+  if (row.attempts >= MAX_CODE_ATTEMPTS) {
+    return { ok: false, reason: 'Too many attempts on that code. Send a new one.' };
+  }
+  const given = Buffer.from(sha256(String(code)), 'hex');
+  const want = Buffer.from(row.code_hash, 'hex');
+  const match = given.length === want.length && timingSafeEqual(given, want);
+  if (!match) {
+    await sql`UPDATE pending_signups SET attempts = attempts + 1 WHERE email_lower = ${lower}`;
+    return { ok: false, reason: 'That code is not right. Check the email or resend it.' };
+  }
+  return { ok: true };
+}
+
+export async function clearPendingSignup(email) {
+  await db()`DELETE FROM pending_signups WHERE email_lower = ${String(email || '').toLowerCase()}`;
+}
+
 export async function createSession(userId) {
   const sql = db();
   const token = newToken();
@@ -224,6 +313,21 @@ export async function findByIdentifier(identifier) {
                 FROM users WHERE email_lower = ${v} AND deleted_at IS NULL`
     : await sql`SELECT id, email, display_name, password_hash, email_verified
                 FROM users WHERE name_lower = ${v} AND deleted_at IS NULL`;
+  return rows[0] || null;
+}
+
+/* The pending-signup twin of findByIdentifier. Name matches are allowed
+   too: pending names are not reserved, so more than one row can hold the
+   same one — the most recent is the one whose code was sent last. */
+export async function findPendingByIdentifier(identifier) {
+  const v = String(identifier || '').trim().toLowerCase();
+  if (!v) return null;
+  const sql = db();
+  const rows = looksLikeEmail(v)
+    ? await sql`SELECT email, display_name, password_hash FROM pending_signups
+                WHERE email_lower = ${v}`
+    : await sql`SELECT email, display_name, password_hash FROM pending_signups
+                WHERE name_lower = ${v} ORDER BY created_at DESC LIMIT 1`;
   return rows[0] || null;
 }
 

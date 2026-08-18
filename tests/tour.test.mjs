@@ -7,6 +7,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
+import { readFileSync } from 'node:fs';
 
 const read = p => readFile(new URL('../' + p, import.meta.url), 'utf8');
 
@@ -96,4 +97,23 @@ test('the session query selects the column it reports', async () => {
   const me = await read('api/_lib/routes/me.js');
   assert.ok(auth.includes('u.onboarded_at'), 'sessionUser must select onboarded_at');
   assert.ok(me.includes('onboarded: Boolean(user.onboarded_at)'), 'and me must report it');
+});
+
+/* The tour and the setup wizard are one sequence, not two overlapping ones.
+ *
+ * Verifying an email signs you in, which re-reads the session, which used
+ * to pop the six-step tour on top of step 2 of a wizard the person was
+ * halfway through. Finishing the tour then navigated to Import, abandoning
+ * the rest of setup: the unit, the target, the privacy choice and the theme
+ * were all silently skipped. */
+test('the tour waits for setup to finish rather than covering it', () => {
+  const src = readFileSync(new URL('../src/js/main.js', import.meta.url), 'utf8');
+  const open = src.slice(src.indexOf("onboarded === false"));
+  const decision = open.slice(0, 500);
+  assert.match(decision, /S\.view === 'setup'/,
+    'the tour must not open over the setup wizard');
+  assert.match(decision, /tourPending = true/);
+  /* And the deferral has to be spent, or the tour would never be shown to
+     the accounts that most need it. */
+  assert.match(src, /tourPending = false;\s*\n\s*go\('dash'\);\s*\n\s*openTour\(\);/);
 });

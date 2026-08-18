@@ -46,7 +46,15 @@ async function loadSession() {
   /* Shown once the account is known and only when the server says it has
      not been finished. Waiting for the server answer is the point: guessing
      from the client is what would make it replay. */
-  if (r.ok && r.body.user && r.body.user.onboarded === false) openTour();
+  if (r.ok && r.body.user && r.body.user.onboarded === false) {
+    /* Not while the setup wizard is still running. Verifying signs you in,
+       which re-read the session, which popped the tour on top of step 2 of
+       a wizard the person was halfway through — and finishing the tour
+       navigated to Import, abandoning the rest of setup. The two are one
+       sequence: verify, finish setup, then the tour. */
+    if (S.view === 'setup') tourPending = true;
+    else openTour();
+  }
   return r.ok ? r.body.user : null;
 }
 
@@ -84,6 +92,9 @@ const TOUR = [
 ];
 
 let tourAt = 0;
+/* Set when the tour was due but setup had not finished. Spent by the last
+   slide's Open dashboard. */
+let tourPending = false;
 
 function tourPaint() {
   const [title, body] = TOUR[tourAt];
@@ -2271,6 +2282,14 @@ document.addEventListener('click', e => {
   if ((el = c('[data-utilrun]'))) { runUtility(el.getAttribute('data-utilrun')); return; }
   if ((el = c('[data-demoperiod]'))) { D.demoPeriod(el.getAttribute('data-demoperiod')); return; }
   if ((el = c('[data-demoday]'))) { D.demoDay(el.getAttribute('data-demoday')); return; }
+
+  /* The end of setup is the start of the tour, in that order. */
+  if (c('.step[data-step="7"] [data-nav="dash"]') && tourPending) {
+    tourPending = false;
+    go('dash');
+    openTour();
+    return;
+  }
 
   if ((el = c('[data-nav]'))) {
     /* "Sign In" and "Get Started" are the same view. The mode attribute

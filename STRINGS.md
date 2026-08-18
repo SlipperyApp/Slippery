@@ -241,10 +241,6 @@ usually worst and hardest to find, which is why they are included.
 - button: "Verify"
 - h2: "Pick your plan"
 - note: "Start free and change later."
-- field label: "Promo code"
-- placeholder: "Enter a code…"
-- button: "Apply"
-- note: "A code applies to this account straight away."
 - h2: "Units and target"
 - note: "A unit is your standard stake. A target is a line to measure against, and you can change it or ignore it."
 - text: "Unit size"
@@ -280,6 +276,10 @@ usually worst and hardest to find, which is why they are included.
 - button: "+£48−£12InkNear black, violet cast. The darkest."
 - button: "+£48−£12TideMarine teal. The coolest."
 - button: "+£48−£12ChalkWarm sepia. The only warm one."
+- field label: "Got a promo code?"
+- placeholder: "Enter a code…"
+- button: "Apply"
+- note: "A code applies to this account straight away."
 - button: "Open dashboard"
 
 ## Dashboard: overview, ledger, social

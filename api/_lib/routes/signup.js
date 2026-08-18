@@ -1,17 +1,33 @@
 /* POST /api/auth/signup
  *
- * Uniqueness on email and display name is enforced by the database, not by a
- * check-then-insert. Two simultaneous signups for the same name both read
- * "free" and both insert; only a UNIQUE index actually decides. So the insert
- * runs optimistically and the constraint violation is the answer.
+ * NOTHING IS RESERVED UNTIL THE ADDRESS IS PROVED.
+ *
+ * This used to INSERT the users row before the code was even sent, and the
+ * partial unique indexes key on deleted_at IS NULL rather than on
+ * verification, so an abandoned signup held the email and the display name
+ * for ever. It also started the trial clock and burned the promo code.
+ *
+ * The signup now lands in pending_signups and becomes an account only in
+ * verify.js, which is where the email, the name, the fourteen day clock and
+ * the promo redemption are all claimed at once.
+ *
+ * Uniqueness is still decided by the database rather than by the check
+ * below: two people can be waiting to verify the same name and only one can
+ * have it, so the check here is a courtesy and the unique index at
+ * verification is the answer.
+ *
+ * One exception, deliberate: a deployment with no mail provider creates the
+ * account directly, because a code nobody can receive would strand every
+ * signup at the verify step.
  */
 import { json, methodGuard, readJson, clientIp, fail } from '../http.js';
-import { db, ensureSchema, configured, uniqueViolation, violatedIndex } from '../db.js';
+import { db, ensureSchema, configured } from '../db.js';
 import { guard } from '../rate.js';
 import * as mail from '../mail.js';
 import { lookup as lookupPromo, planUntil, trialEnd, TRIAL_DAYS, TRIAL_SLIPS } from '../promo.js';
 import {
-  hashPassword, issueVerificationCode, linkCode, createSession, setSessionCookie,
+  hashPassword, linkCode, createSession, setSessionCookie,
+  issuePendingSignup, clearPendingSignup,
   emailProblem, passwordProblem, nameProblem
 } from '../auth.js';
 
@@ -68,35 +84,33 @@ export default async function handler(req, res) {
     const sql = db();
     const passwordHash = await hashPassword(password);
 
-    let user;
-    try {
-      const rows = await sql`
-        INSERT INTO users (email, email_lower, display_name, name_lower,
-                           password_hash, age_confirmed, link_code,
-                           plan, plan_until, promo_code, verified, trial_ends_at)
-        VALUES (${email}, ${email.toLowerCase()}, ${name}, ${name.toLowerCase()},
-                ${passwordHash}, true, ${linkCode()},
-                ${plan}, ${until}, ${promo ? promo.code : null},
-                ${verified}, ${trialEndsAt})
-        RETURNING id, display_name`;
-      user = rows[0];
-      if (promo) {
-        await sql`INSERT INTO promo_redemptions (user_id, code, plan, months)
-                  VALUES (${user.id}, ${promo.code}, ${promo.plan}, ${promo.months || null})`;
+    /* NOTHING IS RESERVED UNTIL THE ADDRESS IS PROVED.
+     *
+     * The users row used to be INSERTed right here, before the code was
+     * even sent. The partial unique indexes key on deleted_at IS NULL, not
+     * on verification, so an abandoned signup held the email AND the
+     * display name permanently, with no expiry sweep anywhere. The second
+     * attempt got a flat "that email already has an account", login refuses
+     * unverified accounts, and the name was gone for good. It also started
+     * the fourteen day trial clock and consumed the promo code, which is
+     * UNIQUE per user and therefore unrecoverable.
+     *
+     * A courtesy check, not the decision. The decision is made at
+     * verification, against the unique indexes, because two people can be
+     * waiting to verify the same name at once and only one can have it. */
+    const taken = await sql`
+      SELECT email_lower, name_lower FROM users
+      WHERE (email_lower = ${email.toLowerCase()} OR name_lower = ${name.toLowerCase()})
+        AND deleted_at IS NULL`;
+    for (const row of taken) {
+      if (row.email_lower === email.toLowerCase()) {
+        return json(res, 409, {
+          error: 'That email already has an account. Log in instead?', field: 'email'
+        });
       }
-    } catch (err) {
-      if (!uniqueViolation(err)) throw err;
-      const index = violatedIndex(err);
-      if (index.includes('name')) {
-        return json(res, 409, { error: name + ' is already taken. Try another.', field: 'name' });
-      }
-      /* Email collision. Say the address is in use rather than inventing a
-         different story: this endpoint is behind a rate limit, the signup
-         form is public, and a vague message just strands a real user who
-         forgot they had signed up. */
-      return json(res, 409, {
-        error: 'That email already has an account. Log in instead?', field: 'email'
-      });
+    }
+    if (taken.length) {
+      return json(res, 409, { error: name + ' is already taken. Try another.', field: 'name' });
     }
 
     const grant = promo ? { code: promo.code, label: promo.label, note: promo.note } : null;
@@ -106,42 +120,50 @@ export default async function handler(req, res) {
     const trial = { endsAt: trialEndsAt.toISOString(), days: TRIAL_DAYS, slips: TRIAL_SLIPS };
 
     if (mail.configured()) {
-      const code = await issueVerificationCode(user.id);
+      const code = await issuePendingSignup({
+        email, name, passwordHash, promoCode: promo ? promo.code : null
+      });
       try {
         await mail.sendVerificationEmail(email, code);
       } catch (err) {
-        /* The account exists and the address is now taken, so failing here
-           would strand someone on an account they cannot get into. Sign them
-           in and say the email did not go out, the address is unproven, and
-           the resend button is still there. */
+        /* Nothing was reserved, so there is nobody to strand. Clear the
+           pending row and say the mail did not go, rather than signing
+           somebody in on an address nobody has proved. */
         console.error('[slippery] verification mail failed', err.message);
-        await sql`UPDATE users SET email_verified = true WHERE id = ${user.id}`;
-        const token = await createSession(user.id);
-        setSessionCookie(res, token);
-        return json(res, 201, {
-          ok: true, name: user.display_name, emailSent: false, verified: true, plan, grant, trial,
-          notice: 'We could not send the code just now, so you are signed in already.'
+        await clearPendingSignup(email);
+        return json(res, 502, {
+          error: 'We could not send the code just now. Try again in a moment.'
         });
       }
       return json(res, 201, {
-        ok: true, name: user.display_name, emailSent: true, plan, grant, trial,
+        ok: true, name, emailSent: true, plan, grant, trial,
         /* So the verify screen can name what to look for in a spam folder. */
         from: mail.fromAddress()
       });
     }
 
     /* No mail provider on this deployment.
-       Issuing a code nobody can receive would strand every signup at the
-       verify step, so the account is marked verified and signed in instead,
-       and the client is told delivery is off rather than shown a code it
-       cannot have received. This is a real trade-off and it is deliberate:
-       until RESEND_API_KEY is set, an address is unproven. Set the key and
-       the normal code flow resumes with no other change. */
-    await db()`UPDATE users SET email_verified = true WHERE id = ${user.id}`;
-    const token = await createSession(user.id);
-    setSessionCookie(res, token);
+       A code nobody can receive would strand every signup at the verify
+       step, so the account is created and signed in directly. This is the
+       one path that still writes a users row without proof of the address,
+       and it is deliberate: set the mail credentials and the normal flow
+       resumes with no other change. */
+    const made = await sql`
+      INSERT INTO users (email, email_lower, display_name, name_lower,
+                         password_hash, age_confirmed, link_code, email_verified,
+                         plan, plan_until, promo_code, verified, trial_ends_at)
+      VALUES (${email}, ${email.toLowerCase()}, ${name}, ${name.toLowerCase()},
+              ${passwordHash}, true, ${linkCode()}, true,
+              ${plan}, ${until}, ${promo ? promo.code : null},
+              ${Boolean(promo && promo.verify)}, ${trialEndsAt})
+      RETURNING id, display_name`;
+    if (promo) {
+      await sql`INSERT INTO promo_redemptions (user_id, code, plan, months)
+                VALUES (${made[0].id}, ${promo.code}, ${promo.plan}, ${promo.months || null})`;
+    }
+    setSessionCookie(res, await createSession(made[0].id));
     return json(res, 201, {
-      ok: true, name: user.display_name, emailSent: false, verified: true, plan, grant, trial,
+      ok: true, name: made[0].display_name, emailSent: false, verified: true, plan, grant, trial,
       notice: 'Email verification is off on this deployment, so you are signed in already.'
     });
   } catch (err) {

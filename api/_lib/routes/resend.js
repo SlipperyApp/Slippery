@@ -3,7 +3,7 @@ import { json, methodGuard, readJson, clientIp, fail } from '../http.js';
 import { db, ensureSchema, configured } from '../db.js';
 import { guard } from '../rate.js';
 import * as mail from '../mail.js';
-import { issueVerificationCode, emailProblem } from '../auth.js';
+import { issueVerificationCode, refreshPendingCode, emailProblem } from '../auth.js';
 
 export default async function handler(req, res) {
   if (!methodGuard(req, res, ['POST'])) return;
@@ -16,9 +16,14 @@ export default async function handler(req, res) {
     const email = String(body.email || '').trim();
     if (emailProblem(email)) return json(res, 400, { error: 'Enter a valid email address.' });
 
+    /* Two places an outstanding code can live. Since an unverified signup
+       no longer creates a users row, the pending table is the usual one;
+       the users branch is for accounts made before that change and for
+       deployments with no mail provider, which still sign up directly. */
+    const lower = email.toLowerCase();
     const rows = await db()`
       SELECT id FROM users
-      WHERE email_lower = ${email.toLowerCase()} AND deleted_at IS NULL AND email_verified = false`;
+      WHERE email_lower = ${lower} AND deleted_at IS NULL AND email_verified = false`;
 
     /* Whether the ADDRESS exists stays secret, or this endpoint becomes an
        account checker. Whether the SEND worked does not: reporting "New
@@ -34,8 +39,10 @@ export default async function handler(req, res) {
         needs: 'mail'
       });
     }
-    if (rows.length) {
-      const code = await issueVerificationCode(rows[0].id);
+    const code = rows.length
+      ? await issueVerificationCode(rows[0].id)
+      : await refreshPendingCode(lower);
+    if (code) {
       try {
         await mail.sendVerificationEmail(email, code);
       } catch (err) {

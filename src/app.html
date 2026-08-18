@@ -399,14 +399,6 @@
         <h2>Pick your plan</h2>
         <p class="stepnote">Start free and change later.</p>
         <div class="planpick" id="planChoice" role="radiogroup" aria-label="Plan"></div>
-        <div class="promobox" id="promoBox">
-          <label class="label" for="planPromo">Promo code</label>
-          <div class="addrow">
-            <input class="field" id="planPromo" spellcheck="false" autocapitalize="characters" maxlength="24" placeholder="Enter a code…" autocomplete="off" aria-describedby="planPromoNote">
-            <button class="btn ghost" id="planPromoGo" style="padding:0 17px">Apply</button>
-          </div>
-          <p class="stepnote" id="planPromoNote" aria-live="polite" style="margin:8px 0 0;font-size:12.5px">A code applies to this account straight away.</p>
-        </div>
       </div>
       <div class="stepnav">
         <button class="btn ghost" data-wizard="-1">Back</button>
@@ -503,6 +495,20 @@
         <p class="stepnote">One last thing, pick how it looks.</p>
         <div style="text-align:left"><div class="themepick" id="swatchesSetup" role="group" aria-label="Colour scheme"></div></div>
         <div style="text-align:left;margin-top:14px" id="setupSummary"></div>
+        <!-- The promo box sits at the end of setup rather than beside the
+             plan choice. On the plan step it read as a discount on a
+             purchase that is not being made yet, and somebody who came in
+             with a code had to spend it before seeing what they were
+             joining. Here the account already exists, so /api/promo can
+             redeem it against a real session and say what it granted. -->
+        <div class="promobox" id="promoBox" style="text-align:left;margin-top:14px">
+          <label class="label" for="planPromo">Got a promo code?</label>
+          <div class="addrow">
+            <input class="field" id="planPromo" spellcheck="false" autocapitalize="characters" maxlength="24" placeholder="Enter a code…" autocomplete="off" aria-describedby="planPromoNote">
+            <button class="btn ghost" id="planPromoGo" style="padding:0 17px">Apply</button>
+          </div>
+          <p class="stepnote" id="planPromoNote" aria-live="polite" style="margin:8px 0 0;font-size:12.5px">A code applies to this account straight away.</p>
+        </div>
       </div>
       <button class="btn primary full" data-nav="dash" style="margin-top:12px">Open dashboard</button>
     </div>

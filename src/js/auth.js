@@ -33,7 +33,7 @@ export function whenSignedIn(fn) { onSignedIn = fn; }
 
 const ERR_FIELD = {
   suEmail: 'suEmail', suPw: 'suPw', suPw2: 'suPw2', suName: 'suName',
-  suPromo: 'suPromo', ageOk: 'ageOk', liUser: 'liUser', liPw: 'liPw',
+  ageOk: 'ageOk', liUser: 'liUser', liPw: 'liPw',
   verify: 'verifyCode', fgUser: 'fgUser', fgCode: 'fgCode', fgPw: 'fgPw'
 };
 
@@ -171,8 +171,10 @@ async function signup(next) {
   btn.disabled = true;
   btn.textContent = 'Creating…';
   const { ok, status, body } = await post('/api/auth/signup', {
-    email, password: $('suPw').value, name, ageConfirmed: true,
-    promo: $('suPromo') ? $('suPromo').value.trim() : ''
+    /* No promo here. A code is redeemed against a real account on the last
+       setup slide, so an abandoned signup can no longer consume one that is
+       unique per user and never comes back. */
+    email, password: $('suPw').value, name, ageConfirmed: true
   });
   btn.disabled = false;
   btn.textContent = 'Continue';
@@ -183,7 +185,6 @@ async function signup(next) {
        is authoritative rather than a guess made a moment earlier. */
     if (body.field === 'email') { showError('suEmail', body.error); $('suEmail').focus(); return; }
     if (body.field === 'name') { showError('suName', body.error); $('suName').focus(); return; }
-    if (body.field === 'promo') { showError('suPromo', body.error); $('suPromo').focus(); return; }
     toast(body.error || 'Could not create that account.');
     return;
   }
@@ -450,21 +451,6 @@ export function handleInput(t) {
     t.value = t.value.replace(/\D/g, '').slice(0, 6);
     const key = t.id === 'fgCode' ? 'fgCode' : 'verify';
     if (!$(key + 'Err').hidden && t.value.length === 6) showError(key, '');
-    return true;
-  }
-  if (t.id === 'suPromo') {
-    /* Codes are handed out on screenshots and typed back with whatever
-       spacing and case people feel like. Fold it as they type so the field
-       shows exactly what will be sent. */
-    t.value = t.value.toUpperCase().replace(/[^A-Z0-9]/g, '');
-    if (!$('suPromoErr').hidden) showError('suPromo', '');
-    const status = $('promoStatus');
-    if (status) {
-      status.textContent = t.value
-        ? 'Checked when you continue.'
-        : 'Leave it blank if you do not have one.';
-      status.className = 'stepnote';
-    }
     return true;
   }
   if (t.id === 'planPromo' || t.id === 'payPromo') {
