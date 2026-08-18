@@ -106,9 +106,15 @@
     background:rgba(var(--orb1),.55)}}
 
 /* chips */
+/* Chips: the selection control for a set that will not fit on one line at
+   390px. A segment has a sliding thumb and therefore has to stay on one
+   row; a chip row scrolls, or wraps when the set is short and known. The
+   unit presets used to be a third component, .unitrow, whose only real
+   difference from this was that it wrapped. */
 .chiprow{display:flex;gap:7px;overflow-x:auto;padding-bottom:9px;
   scrollbar-width:none;overscroll-behavior-x:contain;
-  &::-webkit-scrollbar{display:none}}
+  &::-webkit-scrollbar{display:none}
+  &.wrap{flex-wrap:wrap;overflow:visible;padding-bottom:0;margin:11px 0 8px}}
 .chip{
   display:inline-flex;align-items:center;gap:5px;
   font-family:var(--fm);font-size:11.5px;color:var(--t2);

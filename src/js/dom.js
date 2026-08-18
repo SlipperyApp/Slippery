@@ -53,29 +53,72 @@ export function collapse(el, msg) {
     Measured, so it must only run while the control is actually laid out,
     calling it inside a display:none pane gives offsetWidth 0 and a thumb
     scaled to nothing. Every caller re-runs it when its pane is shown. */
-export function paintSeg(container) {
-  if (!container) return;
+/* THE SEGMENTED CONTROL.
+ *
+ * One component, one selected state, one thumb. The selection used to be
+ * marked three different ways — a class, aria-pressed and aria-selected —
+ * because three controls had grown up separately, and paintSeg had to
+ * query for all three.
+ *
+ * The thumb is measured rather than computed in CSS because the buttons
+ * are content-width, so its position is only knowable after layout. That
+ * is also what made it fragile: measuring inside a hidden pane returns
+ * zero, paintSeg returned early, and the thumb stayed at its 100px CSS
+ * default sitting over the first button. Seven call sites re-ran it by
+ * hand to work around that, and each one was a place somebody had to
+ * remember.
+ *
+ * A ResizeObserver replaces all seven. A pane going from hidden to visible
+ * is a resize from zero, so the control repaints itself the moment it can
+ * be measured, whoever revealed it.
+ */
+const SEG_SEL = 'button.on, button[aria-pressed="true"], button[aria-selected="true"]';
+const watched = new WeakSet();
+const segRO = typeof ResizeObserver === 'function'
+  ? new ResizeObserver(entries => { for (const e of entries) paint(e.target); })
+  : null;
+
+function paint(container) {
   let thumb = container.querySelector(':scope > .thumb');
-  /* Three ways a segment marks its selection, because three different
-     controls in this app legitimately use different ones: a tab strip is
-     aria-selected, a toggle group is aria-pressed, and the older segments
-     carry a class. Missing aria-pressed here left the browse sort thumb at
-     its CSS default of 100px sitting at the far left, overlapping the
-     button next to it, because paintSeg found no active button and
-     returned before setting a transform. */
-  const active = container.querySelector(
-    'button.on, button[aria-selected="true"], button[aria-pressed="true"]');
+  const active = container.querySelector(SEG_SEL);
   if (!thumb) {
     thumb = document.createElement('span');
     thumb.className = 'thumb';
     thumb.setAttribute('aria-hidden', 'true');
     container.insertBefore(thumb, container.firstChild);
   }
-  if (!active || !active.offsetWidth) return;
+  /* Nothing measurable yet. Leaving the thumb hidden rather than parked
+     over the first button means a control that is never revealed does not
+     show a selection it does not have. */
+  if (!active || !active.offsetWidth) { thumb.style.opacity = '0'; return; }
+  thumb.style.opacity = '';
   thumb.style.transform =
     'translateX(' + (active.offsetLeft - container.clientLeft) + 'px) scaleX(' +
     (active.offsetWidth / 100) + ')';
 }
+
+export function paintSeg(container) {
+  if (!container) return;
+  if (segRO && !watched.has(container)) { watched.add(container); segRO.observe(container); }
+  paint(container);
+}
+
+/**
+ * Move the selection in a segmented control and repaint it. One place that
+ * knows how a segment marks itself selected, so a new control cannot mark
+ * itself a fourth way.
+ */
+export function selectSeg(container, button) {
+  if (!container || !button) return;
+  const tabs = button.getAttribute('role') === 'tab';
+  $$('button', container).forEach(b => {
+    const on = b === button;
+    b.classList.toggle('on', on);
+    b.setAttribute(tabs ? 'aria-selected' : 'aria-pressed', String(on));
+  });
+  paintSeg(container);
+}
+
 export function paintSegs(root) { $$('.seg', root || document).forEach(paintSeg); }
 
 /** Reveal-on-scroll. One observer for the whole app. */

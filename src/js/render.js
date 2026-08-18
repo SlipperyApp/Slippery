@@ -1106,7 +1106,7 @@ export function renderMisc() {
   setText('accountName', S.name);
   setText('unitExample', '1u is ' + M.money0(S.unit) + ', so a ' + M.money0(S.unit * 2) + ' bet is 2u.');
   setText('slipCount', M.plain(LEDGER.length) + ' slips');
-  $$('.unitrow').forEach(row => {
+  $$('#unitRowSetup, #unitRowSettings').forEach(row => {
     $$('button', row).forEach(b => {
       const u = b.getAttribute('data-unit');
       b.setAttribute('aria-pressed', String(u !== 'custom' && +u === S.unit));

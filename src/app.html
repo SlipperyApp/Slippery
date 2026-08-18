@@ -412,10 +412,10 @@
         <h2>Units and target</h2>
         <p class="stepnote">A unit is your standard stake. A target is a line to measure against, and you can change it or ignore it.</p>
         <p class="label">Unit size</p>
-        <div class="unitrow" id="unitRowSetup" role="group" aria-label="Unit size">
-          <button data-unit="1000">£10</button><button data-unit="2000">£20</button>
-          <button data-unit="5000">£50</button><button data-unit="10000" aria-pressed="true">£100</button>
-          <button data-unit="custom">Custom</button>
+        <div class="chiprow wrap" id="unitRowSetup" role="group" aria-label="Unit size">
+          <button class="chip" data-unit="1000">£10</button><button class="chip" data-unit="2000">£20</button>
+          <button class="chip" data-unit="5000">£50</button><button class="chip" data-unit="10000" aria-pressed="true">£100</button>
+          <button class="chip" data-unit="custom">Custom</button>
         </div>
         <label class="sr" for="unitCustomSetup">Custom unit</label>
         <input class="field" id="unitCustomSetup" inputmode="decimal" placeholder="For example 35…" hidden autocomplete="off">
@@ -1212,10 +1212,10 @@
     <div class="card settingcard">
       <h2 class="cardtitle"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M12 1v22M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>Units and targets</h2>
       <p class="desc">Your standard stake. Groups and following are measured in units.</p>
-      <div class="unitrow" id="unitRowSettings" role="group" aria-label="Unit size">
-        <button data-unit="1000">£10</button><button data-unit="2000">£20</button>
-        <button data-unit="5000">£50</button><button data-unit="10000" aria-pressed="true">£100</button>
-        <button data-unit="custom">Custom</button>
+      <div class="chiprow wrap" id="unitRowSettings" role="group" aria-label="Unit size">
+        <button class="chip" data-unit="1000">£10</button><button class="chip" data-unit="2000">£20</button>
+        <button class="chip" data-unit="5000">£50</button><button class="chip" data-unit="10000" aria-pressed="true">£100</button>
+        <button class="chip" data-unit="custom">Custom</button>
       </div>
       <label class="sr" for="unitCustomSettings">Custom unit</label>
       <input class="field" id="unitCustomSettings" inputmode="decimal" placeholder="For example 35…" hidden style="margin-bottom:6px" autocomplete="off">

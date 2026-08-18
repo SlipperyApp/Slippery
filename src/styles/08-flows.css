@@ -195,14 +195,6 @@
     & .v{font-family:var(--fm);font-size:13px;font-variant-numeric:tabular-nums lining-nums}
     &[aria-pressed=true] .v{color:var(--s);font-weight:600}}}
 
-.unitrow{display:flex;gap:6px;flex-wrap:wrap;margin:11px 0 8px;
-  & button{font-family:var(--fm);font-size:12.5px;padding:9px 13px;border-radius:10px;
-    background:var(--c2);border:1px solid var(--e1);color:var(--t2);min-height:44px;
-    transition:background var(--tb),color var(--tb),border-color var(--tb),transform var(--tf);
-    &:active{transform:scale(.95)}
-    &[aria-pressed=true]{background:rgba(var(--orb1),.32);color:var(--t1);
-      border-color:rgba(var(--orb1),.55)}}}
-
 /* swatches */
 /* Theme swatches, zoomed in.
    A whole 140deg gradient inside a 60px square read as a two-tone tile

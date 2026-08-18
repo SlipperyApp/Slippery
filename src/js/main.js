@@ -1,5 +1,5 @@
 /* Wiring and init. One delegated listener per event type. */
-import { $, $$, esc, RM, toast, announce, collapse, paintSeg, paintSegs, reveal, trapFocus, setText, setHTML } from './dom.js';
+import { $, $$, esc, RM, toast, announce, collapse, paintSeg, paintSegs, selectSeg, reveal, trapFocus, setText, setHTML } from './dom.js';
 import { S, canUsePeriod, periodNeedsFocus } from './state.js';
 import * as M from './money.js';
 import {
@@ -453,12 +453,7 @@ function syncPeriodButtons() {
   return usable;
 }
 function syncCalModeButtons() {
-  $$('#calMode button').forEach(b => {
-    const on = b.getAttribute('data-cal') === S.calMode;
-    b.classList.toggle('on', on);
-    b.setAttribute('aria-pressed', String(on));
-  });
-  paintSeg($('calMode'));
+  selectSeg($('calMode'), $$('#calMode button').find(b => b.getAttribute('data-cal') === S.calMode));
 }
 
 function drawAll() {
@@ -2422,24 +2417,14 @@ document.addEventListener('click', e => {
   if ((el = c('[data-filter]'))) { S.filter = el.getAttribute('data-filter'); R.renderLedger(); return; }
   if ((el = c('#ledgerSeg button'))) {
     S.ledgerView = el.getAttribute('data-ledger');
-    $$('#ledgerSeg button').forEach(b => {
-      const on = b === el;
-      b.classList.toggle('on', on);
-      b.setAttribute('aria-pressed', String(on));
-    });
-    paintSeg($('ledgerSeg'));
+    selectSeg($('ledgerSeg'), el);
     ['ledgerBets', 'ledgerHistory', 'ledgerAnalysis'].forEach(x => { $(x).hidden = x !== S.ledgerView; });
     if (S.ledgerView === 'ledgerHistory') R.renderHistory();
     return;
   }
   if ((el = c('#socialSeg button'))) {
     S.socialView = el.getAttribute('data-social');
-    $$('#socialSeg button').forEach(b => {
-      const on = b === el;
-      b.classList.toggle('on', on);
-      b.setAttribute('aria-pressed', String(on));
-    });
-    paintSeg($('socialSeg'));
+    selectSeg($('socialSeg'), el);
     ['socialGroups', 'socialBrowse', 'socialFollowing', 'socialFollowers']
       .forEach(x => { $(x).hidden = x !== S.socialView; });
     /* The directory is fetched when it is opened, not on every dashboard
@@ -2448,10 +2433,6 @@ document.addEventListener('click', e => {
     if (S.socialView === 'socialBrowse') {
       loadBrowse($('browseSearch').value.trim());
       loadRequests();
-      /* The sliding pill is drawn from measured button widths, so it has
-         to be painted once the segment is actually on screen. Painted only
-         on click, it sat at the wrong width until the first tap. */
-      paintSeg($('browseSortSeg'));
     }
     return;
   }
@@ -2497,9 +2478,9 @@ document.addEventListener('click', e => {
     R.renderTargets(); R.renderGoal();
     return;
   }
-  if ((el = c('.unitrow button'))) {
+  if ((el = c('[data-unit]'))) {
     const raw = el.getAttribute('data-unit');
-    const row = el.closest('.unitrow');
+    const row = el.closest('.chiprow');
     const custom = row.id === 'unitRowSettings' ? $('unitCustomSettings') : $('unitCustomSetup');
     custom.hidden = raw !== 'custom';
     if (raw === 'custom') custom.focus(); else { S.unit = +raw; saveUnit(); }
@@ -2542,23 +2523,12 @@ document.addEventListener('click', e => {
 
   if ((el = c('#importSeg button'))) {
     S.importView = el.getAttribute('data-import');
-    $$('#importSeg button').forEach(b => {
-      const on = b === el;
-      b.classList.toggle('on', on);
-      b.setAttribute('aria-pressed', String(on));
-    });
-    paintSeg($('importSeg'));
+    selectSeg($('importSeg'), el);
     ['importUpload', 'importTotals'].forEach(x => { $(x).hidden = x !== S.importView; });
-    if (S.importView === 'importTotals') requestAnimationFrame(() => paintSeg($('totalsSeg')));
     return;
   }
   if ((el = c('#totalsSeg button'))) {
-    $$('#totalsSeg button').forEach(b => {
-      const on = b === el;
-      b.classList.toggle('on', on);
-      b.setAttribute('aria-pressed', String(on));
-    });
-    paintSeg($('totalsSeg'));
+    selectSeg($('totalsSeg'), el);
     renderTotals(el.getAttribute('data-totals'));
     return;
   }
@@ -2668,9 +2638,7 @@ document.addEventListener('click', e => {
   if ((el = c('#groupJoinGo'))) { joinGroup(el); return; }
   if ((el = c('[data-browsesort]'))) {
     browseSort = el.getAttribute('data-browsesort');
-    $$('[data-browsesort]').forEach(b =>
-      b.setAttribute('aria-pressed', String(b === el)));
-    paintSeg($('browseSortSeg'));
+    selectSeg($('browseSortSeg'), el);
     loadBrowse($('browseSearch').value.trim());
     return;
   }
