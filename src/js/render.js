@@ -1330,13 +1330,12 @@ export function renderAll() {
 
 /* ---------------- the Telegram link ----------------
  *
- * The countdown is the point. A code with ten minutes on it and no visible
- * clock is a code somebody types out at minute eleven and is told did not
- * match, with nothing on screen having changed. One interval for the whole
- * app, cleared whenever the state is repainted, so switching views does
- * not leave timers running in the background.
+ * Two states only, because that is all this card is now: linked, showing
+ * who and since when and how to unlink, or not linked, showing one button
+ * into the setup flow. The code, its live countdown and the deep link went
+ * with the flow into src/js/botsetup.js, where the instructions around
+ * them live and where the waiting and error states have somewhere to go.
  */
-let linkTick = null;
 
 export function renderTelegram(user) {
   const linked = Boolean(user && user.telegramLinked);
@@ -1347,8 +1346,6 @@ export function renderTelegram(user) {
   if (on) on.hidden = !linked;
   if (off) off.hidden = linked;
 
-  if (linkTick) { clearInterval(linkTick); linkTick = null; }
-
   if (linked) {
     setText('tgState', user.telegramUsername ? 'Connected as @' + user.telegramUsername : 'Connected');
     const at = user.telegramLinkedAt ? new Date(user.telegramLinkedAt) : null;
@@ -1358,30 +1355,8 @@ export function renderTelegram(user) {
     return;
   }
 
-  const code = $('linkCodeSettings');
-  if (code) code.textContent = user && user.linkCode ? user.linkCode : '------';
-  paintCountdown(user && user.linkCodeExpiresAt);
-  if (user && user.linkCodeExpiresAt) {
-    linkTick = setInterval(() => paintCountdown(user.linkCodeExpiresAt), 1000);
-  }
+  /* The code, its countdown and the deep link moved into the bot setup
+     sheet, where the instructions around them are. This card is now one
+     button into that flow, so there is nothing left to paint here. */
 }
 
-function paintCountdown(expiresAt) {
-  const el = $('tgCountdown');
-  if (!el) return;
-  if (!expiresAt) {
-    el.textContent = 'Tap New code to get one. It lasts ten minutes.';
-    return;
-  }
-  const left = new Date(expiresAt) - Date.now();
-  if (left <= 0) {
-    if (linkTick) { clearInterval(linkTick); linkTick = null; }
-    const code = $('linkCodeSettings');
-    if (code) code.textContent = '------';
-    el.textContent = 'That code has expired. Tap New code for another.';
-    return;
-  }
-  const m = Math.floor(left / 60000);
-  const sec = Math.floor((left % 60000) / 1000);
-  el.textContent = 'Expires in ' + m + ':' + String(sec).padStart(2, '0');
-}

@@ -1100,19 +1100,51 @@ async function main() {
     if (after.linkedShown) fail('telegram', 'Unlink said it worked and the card still shows linked');
     if (!after.unlinkedShown) fail('telegram', 'after unlinking there is no way to link again');
 
-    /* And a fresh code, with a countdown that is actually counting. */
-    await page.evaluate(() => { const b = document.getElementById('tgNewCode'); if (b) b.click(); });
-    await page.waitForTimeout(600);
+    /* And the way back in. The code, its countdown and the deep link live
+       in the bot setup flow now, so this drives the flow rather than the
+       card: the card is one button into it. */
+    await page.evaluate(() => { const b = document.getElementById('botSetupOpen'); if (b) b.click(); });
+    await page.waitForTimeout(300);
+    const opened = await page.evaluate(() =>
+      document.getElementById('botSheet').classList.contains('on'));
+    if (!opened) fail('telegram', 'Set up the bot did not open the flow');
+
+    await page.evaluate(() => { const b = document.getElementById('botStart'); if (b) b.click(); });
+    await page.waitForTimeout(700);
     const coded = await page.evaluate(() => ({
-      code: (document.getElementById('linkCodeSettings') || {}).textContent || '',
-      countdown: (document.getElementById('tgCountdown') || {}).textContent || ''
+      state: document.getElementById('botSheet').dataset.state,
+      code: (document.getElementById('botCode') || {}).textContent || '',
+      countdown: (document.getElementById('botCountdown') || {}).textContent || '',
+      href: (document.getElementById('botOpen') || {}).dataset ? document.getElementById('botOpen').dataset.href : ''
     }));
-    if (!/^[A-Z0-9]{6}$/.test(coded.code.trim()))
-      fail('telegram', 'New code produced "' + coded.code + '", expected six characters');
-    if (/[OIL01U]/.test(coded.code.trim()))
+    if (coded.state !== 'code')
+      fail('telegram', 'asking for a code left the flow on "' + coded.state + '"');
+    if (!/^SLIP-[A-Z0-9]{4}$/.test(coded.code.trim()))
+      fail('telegram', 'New code produced "' + coded.code + '", expected SLIP-XXXX');
+    if (/[OIL01U]/.test(coded.code.trim().slice(5)))
       fail('telegram', 'the code contains a character people mistype: ' + coded.code);
     if (!/expires in \d+:\d\d/i.test(coded.countdown))
       fail('telegram', 'a ten minute code has no visible countdown: ' + coded.countdown);
+    if (!/t\.me\/SlipperyAppBot\?start=SLIP-/.test(coded.href || ''))
+      fail('telegram', 'the deep link does not carry the code: ' + coded.href);
+
+    /* Waiting is a state with a way out of it, not a silence. */
+    await page.evaluate(() => { const b = document.getElementById('botWaiting'); if (b) b.click(); });
+    await page.waitForTimeout(300);
+    const waiting = await page.evaluate(() => ({
+      state: document.getElementById('botSheet').dataset.state,
+      check: Boolean(document.getElementById('botCheck')),
+      back: Boolean(document.getElementById('botBack'))
+    }));
+    if (waiting.state !== 'waiting') fail('telegram', 'no waiting state after sending the code');
+    if (!waiting.check || !waiting.back)
+      fail('telegram', 'the waiting state gives no way to re-check or go back');
+
+    await page.evaluate(() => { const b = document.getElementById('botSkip'); if (b) b.click(); });
+    await page.waitForTimeout(300);
+    const closed = await page.evaluate(() =>
+      !document.getElementById('botSheet').classList.contains('on'));
+    if (!closed) fail('telegram', 'Skip for now did not close the flow');
 
     await page.close();
   }

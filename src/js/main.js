@@ -14,6 +14,7 @@ import * as C from './content.js';
 import * as P from './pages.js';
 import { sportOf } from './sports.js';
 import { demoPayload } from './sample.js';
+import * as Bot from './botsetup.js';
 import { initMotion, syncThemeColor } from './motion.js';
 import { extractSlip, readText, get, post, patch, del } from './api.js';
 import { parseBetsCsv } from './csv.js';
@@ -2293,84 +2294,29 @@ async function decideRequest(btn, yes, groupId, personId) {
    with the tap and the bot links the chat without anyone typing anything.
    Then the page waits for the server to agree, because the bot is the only
    thing that actually knows. */
-const BOT = 'SlipperyAppBot';
-let linkPoll = null;
-
-/* Issue a code. The server generates it, because a code the browser picks
-   is a code the browser can pick to be somebody else's. */
-async function newLinkCode(btn) {
-  if (btn) { btn.disabled = true; btn.textContent = 'Getting one…'; }
-  const r = await post('/api/auth/link', { action: 'new' });
-  if (btn) { btn.disabled = false; btn.textContent = 'New code'; }
-  if (r.status === 401) { go('setup'); toast('Log in first.'); return null; }
-  if (!r.ok) { toast(r.body.error || 'Could not get a code just now.'); return null; }
-  /* Repaint from the session rather than from this reply, so Settings and
-     the setup step cannot end up showing different codes. */
+/* Re-read the session and repaint whatever it drives. The bot links in
+   another app, so the only thing that knows it worked is the server. */
+async function refreshAccount() {
   const me = await get('/api/auth/me');
-  if (me.ok && me.body.user) R.renderAccount(me.body.user);
-  return r.body.linkCode;
+  if (me.ok && me.body.user) { setMe(me.body.user); R.renderAccount(me.body.user); }
 }
 
-/* UNLINK, AND MEAN IT.
-   The server answers with what it actually cleared, and this reads that
-   answer rather than assuming. Four controls in this codebase once
-   confirmed actions they never performed. */
+/* The flow owns issuing codes, opening Telegram and waiting for the answer
+   now; see src/js/botsetup.js. What is left here is unlinking, which
+   belongs to the Settings card rather than to the flow.
+
+   UNLINK, AND MEAN IT. The server answers with what it actually cleared,
+   and this reads that answer rather than assuming. Four controls in this
+   codebase once confirmed actions they never performed. */
 async function unlinkTelegram(btn) {
   if (btn) { btn.disabled = true; btn.textContent = 'Unlinking…'; }
   const r = await post('/api/auth/link', { action: 'unlink' });
   if (btn) { btn.disabled = false; btn.textContent = 'Unlink'; }
   if (!r.ok) { toast(r.body.error || 'Could not unlink just now.'); return; }
-  const me = await get('/api/auth/me');
-  if (me.ok && me.body.user) R.renderAccount(me.body.user);
+  await refreshAccount();
   toast(r.body.unlinked
     ? 'Telegram unlinked. Nothing was deleted.'
     : 'That chat was not linked.');
-}
-
-async function openTelegram(btn) {
-  let code = (($('linkCodeSettings') || $('linkCode') || {}).textContent || '').trim();
-  /* No usable code on screen means none has been issued or the last one
-     expired. Getting one is what the person wanted anyway, so do it rather
-     than telling them to press a different button first. */
-  if (!code || /^-+$/.test(code) || code === 'Not linked yet') {
-    code = await newLinkCode(null);
-    if (!code) return;
-  }
-  const url = 'https://t.me/' + BOT + '?start=' + encodeURIComponent(code);
-  /* noopener: without it the opened tab gets a handle on this window. */
-  window.open(url, '_blank', 'noopener');
-  btn.textContent = 'Waiting for Telegram…';
-  btn.disabled = true;
-  pollForLink(btn);
-}
-
-/* Ten checks, six seconds apart. Linking happens in another app, so there
-   is no event to listen for, and a minute is long enough for someone to
-   switch across, press start and come back. It gives up quietly rather than
-   polling forever in a background tab. */
-function pollForLink(btn) {
-  if (linkPoll) clearInterval(linkPoll);
-  let tries = 0;
-  linkPoll = setInterval(async () => {
-    tries++;
-    const r = await get('/api/auth/me');
-    const linked = r.ok && r.body.user && r.body.user.telegramLinked;
-    if (linked) {
-      clearInterval(linkPoll); linkPoll = null;
-      R.renderAccount(r.body.user);
-      const dot = $('telegramLinked');
-      if (dot) dot.hidden = false;
-      if (btn) { btn.textContent = 'Linked'; btn.disabled = true; }
-      toast('Telegram linked. Forward a slip whenever you like.');
-      return;
-    }
-    if (tries >= 10) {
-      clearInterval(linkPoll); linkPoll = null;
-      if (btn) { btn.textContent = 'Open Telegram and link'; btn.disabled = false; }
-      toast('Not linked yet. In the chat, send: /link ' +
-        (($('linkCodeSettings') || $('linkCode') || {}).textContent || '').trim());
-    }
-  }, 6000);
 }
 
 /* The trial has stopped this upload. The server says which half ran out,
@@ -2754,6 +2700,25 @@ document.addEventListener('click', e => {
      unit row, the import tabs, both dropzones, and Confirm on an imported
      slip. Any delegated selector here must be specific enough that it
      cannot match <html> or <body>. */
+  /* The bot flow. One sheet, opened from three places, so its handlers
+     live together rather than being spread across the screens that use it. */
+  if ((el = c('#botStart'))) { Bot.beginBotSetup(el); return; }
+  if ((el = c('#botCopy'))) { Bot.copyCode(el); return; }
+  if ((el = c('#botOpen'))) { Bot.openTelegram(el); return; }
+  if (c('#botWaiting')) { Bot.startWaiting(); return; }
+  if ((el = c('#botCheck'))) { Bot.checkOnce(el); return; }
+  if (c('#botBack')) { Bot.showCode(); return; }
+  if (c('#botSkip')) {
+    Bot.closeBotSetup(false);
+    toast('You can connect the bot from Settings whenever you like.');
+    return;
+  }
+  if (c('#botDone')) { Bot.closeBotSetup(true); refreshAccount(); return; }
+  if (c('#botSetupOpen') || c('#telegramLink')) {
+    Bot.openBotSetup({ onDone: refreshAccount });
+    return;
+  }
+
   if (c('#tourSkip')) { closeTour(false); return; }
   if (c('#tourBack')) { if (tourAt > 0) { tourAt--; tourPaint(); } return; }
   if (c('#tourNext')) {
@@ -2815,7 +2780,6 @@ document.addEventListener('click', e => {
     if (want === 'promo') setTimeout(() => $('payPromo').focus(), 260);
     return;
   }
-  if ((el = c('#planPromoGo'))) { redeemPromo(el, 'planPromo', 'planPromoNote'); return; }
   if ((el = c('#payPromoGo'))) { redeemPromo(el, 'payPromo', 'payPromoNote'); return; }
   if (c('#suggestName')) {
     const f = $('suName');
@@ -2964,7 +2928,6 @@ document.addEventListener('click', e => {
     loadBrowse($('browseSearch').value.trim());
     return;
   }
-  if (c('#tgNewCode')) { newLinkCode($('tgNewCode')); return; }
   if (c('#tgUnlink')) { unlinkTelegram($('tgUnlink')); return; }
   if ((el = c('[data-decide]'))) {
     decideRequest(el, el.getAttribute('data-decide') === 'yes',
@@ -3019,7 +2982,6 @@ document.addEventListener('click', e => {
     toast(MS.format(new Date(TODAY.year, TODAY.month, 1)) + ' target set to ' + M.money0(v));
     return;
   }
-  if ((el = c('#telegramLink')) || (el = c('#telegramLinkSettings'))) { openTelegram(el); return; }
 });
 
 function handleWizard(dir) {

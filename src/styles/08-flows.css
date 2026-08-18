@@ -96,6 +96,22 @@
 .planopt-note{font-size:11.5px;color:var(--t2);line-height:1.45}
 .planopt-add{font-size:11.5px;color:var(--s)}
 
+/* Have a promo code? Closed by default, because most people do not have
+   one and a form that asks everyone for something rare is longer for
+   nobody's benefit. */
+.promoask{
+  margin-top:14px;
+  & summary{
+    font-size:13px;color:var(--s);padding:8px 0;min-height:40px;
+    display:flex;align-items:center;gap:7px;
+    list-style:none;cursor:pointer;
+    &::-webkit-details-marker{display:none}
+    &::before{content:'+';font-family:var(--fm);font-size:15px;line-height:1;
+      transition:transform var(--tb) var(--ez)}}
+  &[open] summary::before{transform:rotate(45deg)}
+  & .field{margin-top:2px}
+  & .stepnote{margin:8px 0 0;font-size:12.5px}}
+
 .promobox{margin-top:16px;padding-top:14px;border-top:1px solid var(--e1)}
 .paylist{list-style:none;margin:12px 0 0;display:flex;flex-direction:column;gap:8px;
   & li{display:flex;gap:9px;align-items:flex-start;font-size:13px}
@@ -719,6 +735,59 @@ input[type=date]{
      is reserved for money. */
   &.off{color:var(--t2);
     & i{background:var(--t3);box-shadow:none}}}
+
+/* THE BOT SETUP SHEET.
+   A sheet rather than a screen: connecting the bot is a task you come back
+   from, not a place you go. Four states share the same frame so the
+   buttons stay where the thumb left them. */
+.botsheet{
+  & h2{font-size:19px;letter-spacing:-.01em;margin:0}
+  & .botsub{margin:7px 0 0;font-size:13px;line-height:1.6;color:var(--t2)}
+  & .bothead{display:flex;gap:12px;align-items:flex-start}
+  & .botglyph{
+    flex:0 0 auto;width:38px;height:38px;border-radius:12px;display:grid;place-items:center;
+    background:rgba(var(--orb2),.16);border:1px solid rgba(var(--orb2),.34);color:var(--s);
+    & svg{width:19px;height:19px}}
+  & .botsteps{
+    margin:15px 0 17px;padding:0;list-style:none;counter-reset:bs;
+    & li{
+      counter-increment:bs;position:relative;padding:7px 0 7px 30px;
+      font-size:13px;color:var(--t2);
+      &::before{
+        content:counter(bs);position:absolute;left:0;top:6px;
+        width:20px;height:20px;border-radius:50%;display:grid;place-items:center;
+        font-family:var(--fm);font-size:10.5px;color:var(--t1);
+        background:var(--c1);border:1px solid var(--e1)}}}
+  /* The code, at the size somebody reads a code off a screen. */
+  & .botcode{
+    margin:16px 0 0;text-align:center;
+    font-size:clamp(30px,10vw,40px);font-weight:700;letter-spacing:.08em;
+    font-variant-numeric:tabular-nums lining-nums;
+    user-select:all;-webkit-user-select:all}
+  & .botclock{
+    margin:6px 0 16px;text-align:center;
+    font-family:var(--fm);font-size:11.5px;color:var(--t3);
+    &.gone{color:var(--neg)}}
+  & .btnrow{display:flex;gap:9px;
+    & .btn{flex:1}}
+  & .hinttext{margin-top:12px}
+  & .tick{width:52px;height:52px;margin:0 auto 10px;display:block}
+  & #botSkip{display:block;margin:14px auto 0}
+  & #botErr{margin-top:12px}}
+
+/* Waiting, said with three dots rather than a spinner: a spinner claims
+   progress is being made, and what is actually happening is that we are
+   listening. Opacity only, so it costs nothing on the compositor. */
+.botwait{
+  display:flex;gap:7px;justify-content:center;margin:22px 0;
+  & i{
+    width:7px;height:7px;border-radius:50%;background:var(--s);
+    animation:botpulse 1.25s var(--ease-in-out) infinite;
+    &:nth-child(2){animation-delay:.16s}
+    &:nth-child(3){animation-delay:.32s}}}
+@keyframes botpulse{0%,100%{opacity:.22}50%{opacity:1}}
+@media (prefers-reduced-motion:reduce){
+  .botwait i{animation:none;opacity:.6}}
 
 /* telegram preview */
 .chatlog{padding:14px;display:flex;flex-direction:column;gap:9px;background:rgba(8,13,24,.5)}

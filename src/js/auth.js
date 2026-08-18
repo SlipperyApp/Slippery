@@ -5,7 +5,7 @@
  * database constraint, not a check, see api/_lib/db.js. A client-side
  * "is this taken?" is a race by definition.
  */
-import { $, $$, toast, paintSeg } from './dom.js';
+import { $, $$, toast, paintSeg, setText } from './dom.js';
 import { S } from './state.js';
 import { post } from './api.js';
 
@@ -32,7 +32,7 @@ let onSignedIn = async () => {};
 export function whenSignedIn(fn) { onSignedIn = fn; }
 
 const ERR_FIELD = {
-  suEmail: 'suEmail', suPw: 'suPw', suPw2: 'suPw2', suName: 'suName',
+  suEmail: 'suEmail', suPw: 'suPw', suPw2: 'suPw2', suName: 'suName', suPromo: 'suPromo',
   ageOk: 'ageOk', liUser: 'liUser', liPw: 'liPw',
   verify: 'verifyCode', fgUser: 'fgUser', fgCode: 'fgCode', fgPw: 'fgPw'
 };
@@ -171,10 +171,12 @@ async function signup(next) {
   btn.disabled = true;
   btn.textContent = 'Creating…';
   const { ok, status, body } = await post('/api/auth/signup', {
-    /* No promo here. A code is redeemed against a real account on the last
-       setup slide, so an abandoned signup can no longer consume one that is
-       unique per user and never comes back. */
-    email, password: $('suPw').value, name, ageConfirmed: true
+    /* The code travels with the signup and is redeemed at verification,
+       not here: pending_signups carries promo_code and verify.js spends it
+       once the address is proved, so an abandoned signup still cannot
+       consume a code that is unique per user. */
+    email, password: $('suPw').value, name, ageConfirmed: true,
+    promo: $('suPromo') ? $('suPromo').value.trim() : ''
   });
   btn.disabled = false;
   btn.textContent = 'Continue';
@@ -185,6 +187,15 @@ async function signup(next) {
        is authoritative rather than a guess made a moment earlier. */
     if (body.field === 'email') { showError('suEmail', body.error); $('suEmail').focus(); return; }
     if (body.field === 'name') { showError('suName', body.error); $('suName').focus(); return; }
+    if (body.field === 'promo') {
+      /* Open the disclosure before pointing at the field inside it, or the
+         error is announced against something nobody can see. */
+      const ask = $('promoAsk');
+      if (ask) ask.open = true;
+      showError('suPromo', body.error);
+      $('suPromo').focus();
+      return;
+    }
     toast(body.error || 'Could not create that account.');
     return;
   }
@@ -453,7 +464,18 @@ export function handleInput(t) {
     if (!$(key + 'Err').hidden && t.value.length === 6) showError(key, '');
     return true;
   }
-  if (t.id === 'planPromo' || t.id === 'payPromo') {
+  if (t.id === 'suPromo') {
+    /* Codes are handed out on screenshots and typed back with whatever
+       spacing and case people feel like. Fold as they type so the field
+       shows exactly what will be sent. */
+    t.value = t.value.toUpperCase().replace(/[^A-Z0-9]/g, '');
+    if (!$('suPromoErr').hidden) showError('suPromo', '');
+    setText('suPromoNote', t.value
+      ? 'Checked when you continue. Nothing is used until your email is verified.'
+      : 'Leave it blank if you do not have one.');
+    return true;
+  }
+  if (t.id === 'payPromo') {
     t.value = t.value.toUpperCase().replace(/[^A-Z0-9]/g, '');
     return true;
   }

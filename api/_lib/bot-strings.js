@@ -274,14 +274,33 @@ export const BOT = {
  * owner would rather not send to a customer.
  */
 export const LINK_ALPHABET = '23456789ABCDEFGHJKMNPQRSTVWXYZ';
-export const LINK_LENGTH = 6;
+/* SLIP-XXXX. The prefix is the point: a bare six characters in a chat
+ * window is a string somebody might or might not have been sent, and half
+ * the failed links were people pasting the wrong thing. A code that says
+ * what it is is a code people paste correctly.
+ *
+ * Four characters of a thirty character alphabet is 810,000 codes, single
+ * use, alive for ten minutes, and rate limited to twelve per ten minutes.
+ * A collision retries, as it always has.
+ *
+ * This also repairs a latent break. linkCode() in auth.js has always
+ * seeded the column with SLIP-XXXX at account creation, and looksLikeCode
+ * rejected it: nine characters with a dash in the middle. Every account
+ * was created holding a code the bot would refuse. */
+export const LINK_PREFIX = 'SLIP';
+export const LINK_LENGTH = 4;
 export const LINK_TTL_MS = 10 * 60 * 1000;
+
+/** How a code is shown and sent: SLIP-4F2K. */
+export const formatCode = body => LINK_PREFIX + '-' + String(body || '').toUpperCase();
 
 /** Is this the shape of one of our codes? Used before touching the database. */
 export function looksLikeCode(input) {
-  const s = String(input || '').trim().toUpperCase();
-  if (s.length !== LINK_LENGTH) return false;
-  for (const ch of s) if (!LINK_ALPHABET.includes(ch)) return false;
+  const s = normaliseCode(input);
+  if (!s.startsWith(LINK_PREFIX)) return false;
+  const body = s.slice(LINK_PREFIX.length);
+  if (body.length !== LINK_LENGTH) return false;
+  for (const ch of body) if (!LINK_ALPHABET.includes(ch)) return false;
   return true;
 }
 
@@ -296,5 +315,12 @@ export function looksLikeCode(input) {
  * looksLikeCode says so in a sentence that names the problem.
  */
 export function normaliseCode(input) {
-  return String(input || '').trim().toUpperCase().replace(/[^A-Z0-9]/g, '');
+  const folded = String(input || '').trim().toUpperCase().replace(/[^A-Z0-9]/g, '');
+  /* "4F2K" typed on its own is the code without its prefix, which is what
+     somebody reading it off a screen will often send. Accept it: the
+     prefix is there to help people, not to catch them out. */
+  if (folded && !folded.startsWith(LINK_PREFIX) && folded.length === LINK_LENGTH) {
+    return LINK_PREFIX + folded;
+  }
+  return folded;
 }

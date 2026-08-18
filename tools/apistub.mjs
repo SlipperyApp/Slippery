@@ -112,9 +112,9 @@ export async function installStub(page, opts = {}) {
         body: JSON.stringify({ unlinked: was, telegramLinked: false }) });
     }
     const expires = new Date(Date.now() + 10 * 60 * 1000).toISOString();
-    user = { ...user, linkCode: 'K7M2QP', linkCodeExpiresAt: expires };
+    user = { ...user, linkCode: 'SLIP-K7M2', linkCodeExpiresAt: expires };
     return route.fulfill({ status: 200, contentType: 'application/json',
-      body: JSON.stringify({ linkCode: 'K7M2QP', linkCodeExpiresAt: expires, ttlMs: 600000 }) });
+      body: JSON.stringify({ linkCode: 'SLIP-K7M2', linkCodeExpiresAt: expires, ttlMs: 600000 }) });
   });
 
   await page.route('**/api/bets', route => {

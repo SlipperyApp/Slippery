@@ -33,6 +33,31 @@ export const CODES = {
   ULTRAS: { plan: 'monthly', months: 2, verify: true, group: 'Ultras', groupVisibility: 'public',
     label: 'First 2 months free, verified',
     note: 'Two months free, then £3.49 a month, and your account is verified.' },
+  /* The second group code, the same shape as ULTRAS. Adding one is a row
+     here: ensurePromoGroup does the group work for anything carrying
+     `group`, and the first redeemer creates and owns it. */
+  HBVALUE: { plan: 'monthly', months: 2, group: 'HBValue', groupVisibility: 'public',
+    label: 'First 2 months free',
+    note: 'Two months free, then £3.49 a month, and you are in the HBValue group.' },
+
+  /* THE ADMIN GRANT. A year, no card, and no charge at the end of it.
+   *
+   * `renews:false` is what makes the last part true. Every other paid code
+   * here is "free months, then billing picks up from plan_until", which is
+   * right for a promotion and wrong for a grant: nobody handed a free year
+   * has agreed to pay for a second one. A non-renewing grant sets no due
+   * date at all, so the account lapses to free when the year is up rather
+   * than to a debt it never accepted.
+   *
+   * A NOTE ON WHERE THIS LIVES. It is in source, on the owner's
+   * instruction, in a public repository — so anyone reading the repo can
+   * grant themselves a year. It is a long random string rather than a
+   * word, which stops it being guessed but not being read. Rotating it
+   * means editing this line and pushing. */
+  SLIPNKWHAVPXTZ5Z: { plan: 'yearly', months: 12, renews: false, verify: true,
+    label: 'A year, on the house',
+    note: 'Twelve months of the yearly plan, no card, and nothing to pay at the end of it.' },
+
   /* Gifting. Kept as their own codes rather than a quantity field so a
      gifted month cannot be turned into twelve by editing a form value. */
   GIFT1: { plan: 'monthly', months: 1, label: '1 month free', note: 'One month on us.' },
@@ -182,6 +207,20 @@ export function billingState(user, now = new Date()) {
       graceEndsAt: null, reason: 'lifetime' };
   }
 
+  /* A NON-RENEWING GRANT NEVER OWES ANYTHING EITHER.
+     A promotion is free months and then billing; a grant is a gift, and
+     nobody who was handed a free year has agreed to pay for a second one.
+     With no charge date there is nothing to fall due, nothing to lock, and
+     when the period ends the account lapses to free rather than to a debt.
+     The grant is recognised by the absence of a due date on a paid plan,
+     which is exactly what firstChargeAt() returning null writes. */
+  if (plan !== 'free' && !due) {
+    return { plan, card, owes: false, locked: false, canCancelFree: true,
+      graceEndsAt: null, dueAt: null,
+      until: until ? until.toISOString() : null,
+      reason: 'granted' };
+  }
+
   /* Nothing is owed until a charge has actually been requested, and a
      charge already paid clears it however late it was. */
   const owes = Boolean(due && due <= now && !(paid && paid >= due));
@@ -227,5 +266,9 @@ export function canSubscribe(user, promo) {
 export function firstChargeAt(promo, from = new Date()) {
   if (!promo) return new Date(from);
   if (promo.plan === 'lifetime') return null;
+  /* A grant that does not renew never has a first charge. Returning the
+     end of the granted period here would make the account owe money on the
+     day the gift ran out, which is the opposite of a gift. */
+  if (promo.renews === false) return null;
   return planUntil(promo, from) || new Date(from);
 }

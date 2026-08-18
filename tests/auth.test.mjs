@@ -1,6 +1,7 @@
 /* Auth primitives. No database needed, these are the pure parts, and they
  * are the parts where a mistake is a security bug rather than a bug. */
 import { test } from 'node:test';
+import { looksLikeCode } from '../api/_lib/bot-strings.js';
 import assert from 'node:assert/strict';
 import {
   hashPassword, verifyPassword, newCode, newToken, linkCode, sha256,
@@ -72,8 +73,13 @@ test('session tokens are long, unique and URL-safe', () => {
 test('link codes avoid the characters people misread', () => {
   for (let i = 0; i < 300; i++) {
     const code = linkCode();
-    assert.match(code, /^SLIP-[A-HJ-NP-Z2-9]{4}$/,
+    /* Stored folded, because that is what normaliseCode turns anything
+       typed into and what the bot compares against. Shown with the dash. */
+    assert.match(code, /^SLIP[A-HJ-NP-Z2-9]{4}$/,
       'no I, O, 0 or 1, these get read aloud and typed wrong');
+    assert.equal(looksLikeCode(code), true,
+      'the seeded code must be one the bot will accept — it was not, for every ' +
+      'account ever created, because the seed and the checker had different shapes');
   }
 });
 

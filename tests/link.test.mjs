@@ -10,7 +10,8 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import {
-  BOT, LINK_ALPHABET, LINK_LENGTH, LINK_TTL_MS, looksLikeCode, normaliseCode
+  BOT, LINK_ALPHABET, LINK_LENGTH, LINK_PREFIX, LINK_TTL_MS,
+  formatCode, looksLikeCode, normaliseCode
 } from '../api/_lib/bot-strings.js';
 
 test('the alphabet has no character anybody has to guess at', () => {
@@ -19,24 +20,37 @@ test('the alphabet has no character anybody has to guess at', () => {
       bad + ' is in the alphabet, and it is one of the pairs people mistype');
   }
   assert.equal(new Set(LINK_ALPHABET).size, LINK_ALPHABET.length, 'no duplicates');
-  assert.ok(LINK_ALPHABET.length >= 26, 'enough characters to be worth six of them');
+  assert.ok(LINK_ALPHABET.length >= 26, 'enough characters to be worth four of them');
 });
 
-test('a code is six characters and lasts ten minutes', () => {
-  assert.equal(LINK_LENGTH, 6);
+test('a code is SLIP and four characters, and lasts ten minutes', () => {
+  /* The prefix is the point. A bare six characters in a chat window is a
+     string somebody might or might not have been sent; a code that says
+     what it is is a code people paste correctly. */
+  assert.equal(LINK_PREFIX, 'SLIP');
+  assert.equal(LINK_LENGTH, 4);
   assert.equal(LINK_TTL_MS, 10 * 60 * 1000);
+  assert.equal(formatCode('4F2K'), 'SLIP-4F2K');
 });
 
 test('case and punctuation are forgiven', () => {
-  assert.equal(normaliseCode(' ab2-c3d '), 'AB2C3D');
-  assert.equal(normaliseCode('AB2 C3D'), 'AB2C3D');
+  assert.equal(normaliseCode(' slip-4f2k '), 'SLIP4F2K');
+  assert.equal(normaliseCode('SLIP 4F2K'), 'SLIP4F2K');
+  assert.equal(normaliseCode('slip4f2k'), 'SLIP4F2K');
+});
+
+test('the prefix is help, not a trap', () => {
+  /* Somebody reading the code off a screen often sends only the four
+     characters. That is the code, and refusing it would be pedantry. */
+  assert.equal(normaliseCode('4F2K'), 'SLIP4F2K');
+  assert.equal(looksLikeCode('4F2K'), true);
 });
 
 test('a confusable character is rejected rather than silently stripped', () => {
   /* Stripping the O would turn a six character code into a five character
      one and fail for a reason nobody could work out. */
-  assert.equal(normaliseCode('AB2C3O').length, 6, 'nothing is removed');
-  assert.equal(looksLikeCode('AB2C3O'), false, 'and it is refused');
+  assert.equal(normaliseCode('SLIP-2C3O'), 'SLIP2C3O', 'nothing is removed');
+  assert.equal(looksLikeCode('SLIP-2C3O'), false, 'and it is refused');
   assert.match(BOT.linkBadShape('AB2C3O'), /no O, I, or zero/);
 });
 
@@ -47,9 +61,16 @@ test('the wrong length is not a code', () => {
 });
 
 test('a real code passes', () => {
-  const code = LINK_ALPHABET.slice(0, 6);
+  const code = 'SLIP-' + LINK_ALPHABET.slice(0, 4);
   assert.equal(looksLikeCode(code), true);
   assert.equal(looksLikeCode(code.toLowerCase()), true, 'typed in lower case is still the code');
+});
+
+test('a code that is not one of ours is refused', () => {
+  assert.equal(looksLikeCode('ZZZZ-4F2K'), false, 'wrong prefix');
+  assert.equal(looksLikeCode('SLIP-4F2'), false, 'too short');
+  assert.equal(looksLikeCode('SLIP-4F2KK'), false, 'too long');
+  assert.equal(looksLikeCode(''), false);
 });
 
 /* ---------------- the messages ----------------

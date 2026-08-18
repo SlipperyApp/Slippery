@@ -84,10 +84,11 @@ async function promote(req, res, pending, code, body) {
   try {
     const rows = await sql`
       INSERT INTO users (email, email_lower, display_name, name_lower,
-                         password_hash, age_confirmed, link_code, email_verified,
+                         password_hash, age_confirmed, link_code, link_code_expires_at, email_verified,
                          plan, plan_until, promo_code, verified, trial_ends_at)
       VALUES (${pending.email}, ${pending.email_lower}, ${name}, ${name.toLowerCase()},
-              ${pending.password_hash}, true, ${linkCode()}, true,
+              ${pending.password_hash}, true, ${linkCode()},
+              now() + interval '10 minutes', true,
               ${promo ? promo.plan : 'free'}, ${promo ? planUntil(promo) : null},
               ${promo ? promo.code : null}, ${Boolean(promo && promo.verify)},
               ${trialEndsAt})

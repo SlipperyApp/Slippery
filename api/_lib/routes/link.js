@@ -16,10 +16,13 @@ import { json, methodGuard, readJson, fail } from '../http.js';
 import { db, ensureSchema, configured, uniqueViolation } from '../db.js';
 import { sessionUser } from '../auth.js';
 import { limit } from '../rate.js';
-import { LINK_ALPHABET, LINK_LENGTH, LINK_TTL_MS } from '../bot-strings.js';
+import { LINK_ALPHABET, LINK_LENGTH, LINK_TTL_MS, LINK_PREFIX, formatCode } from '../bot-strings.js';
 
+/* Stored folded, SLIP4F2K, because that is what normaliseCode() turns
+   anything the person types into, and the bot compares the two. Shown with
+   the dash. */
 function makeCode() {
-  let out = '';
+  let out = LINK_PREFIX;
   for (let i = 0; i < LINK_LENGTH; i++) out += LINK_ALPHABET[randomInt(LINK_ALPHABET.length)];
   return out;
 }
@@ -59,9 +62,10 @@ export default async function handler(req, res) {
     }
 
     const expiresAt = new Date(Date.now() + LINK_TTL_MS);
-    /* Retry on a collision rather than failing. Six characters from thirty
-       gives 729 million, so this effectively never runs, but a unique
-       index that can reject an insert needs a caller that handles it. */
+    /* Retry on a collision rather than failing. Four characters from thirty
+       gives 810,000 live-for-ten-minutes codes, so this is rare, but a
+       unique index that can reject an insert needs a caller that handles
+       it. */
     for (let attempt = 0; attempt < 5; attempt++) {
       const code = makeCode();
       try {
@@ -69,7 +73,9 @@ export default async function handler(req, res) {
           UPDATE users SET link_code = ${code}, link_code_expires_at = ${expiresAt}
           WHERE id = ${user.id}`;
         return json(res, 200, {
-          linkCode: code,
+          /* Folded for comparison, formatted for reading. The client shows
+             the second and the bot receives either. */
+          linkCode: formatCode(code.slice(LINK_PREFIX.length)),
           linkCodeExpiresAt: expiresAt.toISOString(),
           /* The client shows a countdown, so it needs the length as well
              as the deadline: a clock that is a minute out otherwise shows

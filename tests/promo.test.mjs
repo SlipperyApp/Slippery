@@ -10,7 +10,8 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import {
   lookup, normalise, planUntil, unlimited, CODES,
-  trialEnd, trialState, TRIAL_DAYS, TRIAL_SLIPS
+  trialEnd, trialState, TRIAL_DAYS, TRIAL_SLIPS,
+  billingState, canSubscribe, firstChargeAt
 } from '../api/_lib/promo.js';
 
 test('codes are matched however they are typed', () => {
@@ -128,4 +129,72 @@ test('every code declares a plan the entitlement check understands', () => {
       code + ' must actually grant unlimited slips');
     assert.ok(spec.label && spec.note, code + ' needs wording for the UI');
   }
+});
+
+/* ---------------- the two group codes and the admin grant ---------------- */
+
+test('HBVALUE is the same shape as ULTRAS, which is the point of the field', () => {
+  const hb = lookup('HBVALUE');
+  assert.equal(hb.plan, 'monthly');
+  assert.equal(hb.months, 2);
+  assert.equal(hb.group, 'HBValue');
+  /* ensurePromoGroup does the group work for anything carrying `group`, so
+     a second group code is a row rather than a code path. */
+  const ultras = lookup('ULTRAS');
+  assert.equal(typeof ultras.group, typeof hb.group);
+});
+
+test('a group code grants two months and then ordinary billing', () => {
+  for (const code of ['ULTRAS', 'HBVALUE']) {
+    const p = lookup(code);
+    const from = new Date('2026-01-15T00:00:00Z');
+    const until = planUntil(p, from);
+    assert.equal(until.toISOString().slice(0, 10), '2026-03-15');
+    /* And the first charge is at the end of the free months, not today. */
+    assert.equal(firstChargeAt(p, from).toISOString(), until.toISOString());
+  }
+});
+
+test('the admin code is a year, and it does not roll into a charge', () => {
+  /* This is the requirement that needed a new property. Every other paid
+     code is "free months, then billing picks up", which is right for a
+     promotion and wrong for a grant: nobody handed a free year has agreed
+     to pay for a second one. */
+  const codes = Object.keys(CODES).filter(c => CODES[c].renews === false);
+  assert.equal(codes.length, 1, 'exactly one non-renewing grant');
+  const admin = lookup(codes[0]);
+  assert.equal(admin.plan, 'yearly');
+  assert.equal(admin.months, 12);
+  assert.equal(firstChargeAt(admin, new Date()), null, 'a grant has no first charge');
+});
+
+test('the admin code is not a word anybody would try', () => {
+  const code = Object.keys(CODES).find(c => CODES[c].renews === false);
+  assert.ok(code.length >= 14, 'short enough to guess is short enough to be guessed');
+  assert.match(code, /[0-9]/, 'not a dictionary word');
+});
+
+test('a granted account owes nothing, and lapses to free rather than to a debt', () => {
+  const until = new Date(Date.now() + 300 * 86400000).toISOString();
+  const state = billingState({ plan: 'yearly', planUntil: until, cardAdded: false });
+  assert.equal(state.owes, false);
+  assert.equal(state.locked, false);
+  assert.equal(state.dueAt, null, 'no due date means nothing can fall due');
+  assert.equal(state.reason, 'granted');
+  /* And it is distinguishable from lifetime, which is a different promise. */
+  assert.notEqual(state.reason, 'lifetime');
+});
+
+test('an ordinary unpaid month still falls due, so the grant rule is not a hole', () => {
+  const state = billingState({
+    plan: 'monthly',
+    chargeDueAt: new Date(Date.now() - 1000).toISOString()
+  });
+  assert.equal(state.owes, true);
+  assert.equal(state.reason, 'due');
+});
+
+test('a promo starts a paid plan with no card, and only a promo does', () => {
+  assert.equal(canSubscribe({ cardAdded: false }, lookup('HBVALUE')).ok, true);
+  assert.equal(canSubscribe({ cardAdded: false }, null).ok, false);
 });

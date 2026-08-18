@@ -150,10 +150,11 @@ export default async function handler(req, res) {
        resumes with no other change. */
     const made = await sql`
       INSERT INTO users (email, email_lower, display_name, name_lower,
-                         password_hash, age_confirmed, link_code, email_verified,
+                         password_hash, age_confirmed, link_code, link_code_expires_at, email_verified,
                          plan, plan_until, promo_code, verified, trial_ends_at)
       VALUES (${email}, ${email.toLowerCase()}, ${name}, ${name.toLowerCase()},
-              ${passwordHash}, true, ${linkCode()}, true,
+              ${passwordHash}, true, ${linkCode()},
+              now() + interval '10 minutes', true,
               ${plan}, ${until}, ${promo ? promo.code : null},
               ${Boolean(promo && promo.verify)}, ${trialEndsAt})
       RETURNING id, display_name`;

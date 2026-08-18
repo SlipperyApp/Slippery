@@ -370,10 +370,27 @@
           </div>
           <p class="stepnote" id="nameStatus" aria-live="polite" style="margin:8px 0 0;font-size:12.5px">Three characters or more, letters and numbers.</p>
           <p class="formerr" id="suNameErr" hidden></p>
-          <!-- The promo field used to sit here as well as on the plan
-               screen. Two places to type one code is two places to mistype
-               it, and a code entered before a plan is chosen cannot show
-               what it is worth. It lives on the plan screen only. -->
+          <!-- THE CODE IS TYPED WHERE THE ACCOUNT IS TYPED.
+               It lived at the end of setup, five screens after the point
+               where somebody who came in holding one wants to use it, and
+               a code that grants two free months has a bearing on the plan
+               step it sat after. Closed by default, because most people do
+               not have one and asking everyone for something rare is how a
+               form gets longer for no one's benefit.
+
+               It travels with the signup rather than being redeemed here:
+               pending_signups already carries promo_code and verify.js
+               redeems it once the address is proved, so an abandoned
+               signup still cannot burn a code that is unique per user. -->
+          <details class="promoask" id="promoAsk">
+            <summary>Have a promo code?</summary>
+            <label class="sr" for="suPromo">Promo code</label>
+            <input class="field" id="suPromo" spellcheck="false" autocapitalize="characters"
+                   maxlength="24" placeholder="Enter it here…" autocomplete="off"
+                   aria-describedby="suPromoNote">
+            <p class="stepnote" id="suPromoNote" aria-live="polite">Checked when you continue. Nothing is used until your email is verified.</p>
+            <p class="formerr" id="suPromoErr" hidden></p>
+          </details>
           <label class="fieldrow" for="ageOk" style="margin-top:14px;cursor:pointer">
             <span class="lab">I am 18 or over<small>Slippery is strictly for adults</small></span>
             <input type="checkbox" id="ageOk" style="width:22px;height:22px;flex:0 0 auto;accent-color:var(--p)">
@@ -538,10 +555,9 @@
       <div class="card settingcard">
         <div class="stepglyph" aria-hidden="true"><svg viewBox="0 0 24 24"><use href="#i-telegram"/></svg></div>
         <h2>Connect Telegram</h2>
-        <p class="stepnote">Forward slips and they land here.</p>
-        <p class="linkcode" translate="no" id="linkCode">Not linked yet</p>
-        <button class="btn primary full" id="telegramLink">Open Telegram and link</button>
-        <div class="livedot" id="telegramLinked" hidden><i aria-hidden="true"></i><span>Linked</span></div>
+        <p class="stepnote">Forward a slip the moment you place it and it lands here, read and tracked. About a minute to set up, and you can do it later from Settings.</p>
+        <button class="btn primary full" id="telegramLink">Set up the bot</button>
+        <div class="livedot" id="telegramLinked" hidden><i aria-hidden="true"></i><span>Connected</span></div>
       </div>
       <div class="stepnav">
         <button class="btn ghost" data-wizard="-1">Back</button>
@@ -557,20 +573,6 @@
         <p class="stepnote">One last thing, pick how it looks.</p>
         <div style="text-align:left"><div class="themepick" id="swatchesSetup" role="group" aria-label="Colour scheme"></div></div>
         <div style="text-align:left;margin-top:14px" id="setupSummary"></div>
-        <!-- The promo box sits at the end of setup rather than beside the
-             plan choice. On the plan step it read as a discount on a
-             purchase that is not being made yet, and somebody who came in
-             with a code had to spend it before seeing what they were
-             joining. Here the account already exists, so /api/promo can
-             redeem it against a real session and say what it granted. -->
-        <div class="promobox" id="promoBox" style="text-align:left;margin-top:14px">
-          <label class="label" for="planPromo">Got a promo code?</label>
-          <div class="addrow">
-            <input class="field" id="planPromo" spellcheck="false" autocapitalize="characters" maxlength="24" placeholder="Enter a code…" autocomplete="off" aria-describedby="planPromoNote">
-            <button class="btn ghost" id="planPromoGo" style="padding:0 17px">Apply</button>
-          </div>
-          <p class="stepnote" id="planPromoNote" aria-live="polite" style="margin:8px 0 0;font-size:12.5px">A code applies to this account straight away.</p>
-        </div>
       </div>
       <button class="btn primary full" data-nav="dash" style="margin-top:12px">Open dashboard</button>
     </div>
@@ -1268,14 +1270,14 @@
           <button class="pillbtn danger" id="tgUnlink">Unlink</button></div>
       </div>
 
+      <!-- Not linked: one button into the guided flow. The code, the
+           countdown and the deep link used to be here, in a card that
+           explained none of it; they are in the sheet now, with the
+           instructions and the states around them. Somebody who skipped
+           the bot during setup comes back to this. -->
       <div id="tgUnlinked" hidden>
-        <p class="desc">Send this code to the bot as <span translate="no">/link CODE</span>, or tap the button and it travels with you.</p>
-        <p class="linkcode" translate="no" id="linkCodeSettings">------</p>
-        <p class="hinttext" id="tgCountdown" aria-live="polite">No code yet.</p>
-        <div class="btnrow" style="margin-top:11px">
-          <button class="btn primary small" id="telegramLinkSettings">Open Telegram</button>
-          <button class="btn ghost small" id="tgNewCode">New code</button>
-        </div>
+        <p class="desc">Forward a slip the moment you place it and it lands here, read and tracked. Takes about a minute to connect.</p>
+        <button class="btn primary full" id="botSetupOpen" style="margin-top:11px">Set up the bot</button>
       </div>
     </div>
 
@@ -1584,6 +1586,64 @@
 </main>
 
 <div class="scrim" id="scrim"></div>
+<!-- CONNECTING THE BOT.
+     One sheet, four states, opened from setup, from Settings, and from the
+     last step of the tutorial. Everything it needs already existed: the
+     server issues a code, the bot accepts one, the client can poll. What
+     did not exist was a path through it. -->
+<div class="sheet botsheet" id="botSheet" role="dialog" aria-modal="true"
+     aria-labelledby="botTitle" data-state="explain">
+  <div class="grip" aria-hidden="true"></div>
+  <p class="sr" id="botLive" aria-live="polite"></p>
+
+  <div data-botstate="explain">
+    <div class="bothead">
+      <span class="botglyph" aria-hidden="true"><svg viewBox="0 0 24 24"><use href="#i-telegram"/></svg></span>
+      <div><h2 id="botTitle">Connect Telegram</h2>
+        <p class="botsub">Forward a slip the moment you place it and it lands here, read and tracked. It is the fastest way to log a bet and the only one that captures it before you know the result.</p></div>
+    </div>
+    <ol class="botsteps">
+      <li>We give you a code</li>
+      <li>You send it to <b translate="no">@SlipperyAppBot</b></li>
+      <li>Slips you forward land in your ledger</li>
+    </ol>
+    <button class="btn primary full" id="botStart">Get a code</button>
+  </div>
+
+  <div data-botstate="code" hidden>
+    <h2>Send this to the bot</h2>
+    <p class="botsub">Tap Open Telegram and the code goes with you. Nothing to type.</p>
+    <p class="botcode m" id="botCode" translate="no">••••</p>
+    <p class="botclock" id="botCountdown"></p>
+    <div class="btnrow">
+      <button class="btn primary" id="botOpen">Open Telegram</button>
+      <button class="btn ghost" id="botCopy">Copy code</button>
+    </div>
+    <p class="hinttext">Already in Telegram? Send <b translate="no">/link YOUR-CODE</b> to the bot.</p>
+    <button class="pillbtn link" id="botWaiting">I have sent it</button>
+  </div>
+
+  <div data-botstate="waiting" hidden>
+    <h2>Waiting for Telegram</h2>
+    <p class="botsub">Press Start in the bot, or send it the code. This page is watching and will say so the moment it lands.</p>
+    <div class="botwait" aria-hidden="true"><i></i><i></i><i></i></div>
+    <div class="btnrow">
+      <button class="btn ghost" id="botCheck">Check again</button>
+      <button class="pillbtn" id="botBack">Show the code</button>
+    </div>
+  </div>
+
+  <div data-botstate="done" hidden>
+    <svg class="tick" viewBox="0 0 60 60" role="img" aria-label="Connected"><circle cx="30" cy="30" r="26"/><path d="M18 31l8 8 16-17"/></svg>
+    <h2>Connected</h2>
+    <p class="botsub">Linked to <b id="botWho" translate="no">your Telegram</b>. Forward a slip whenever you place one.</p>
+    <button class="btn primary full" id="botDone">Done</button>
+  </div>
+
+  <p class="formerr" id="botErr" hidden></p>
+  <button class="pillbtn" id="botSkip">Skip for now</button>
+</div>
+
 <div class="sheet" id="daySheet" role="dialog" aria-modal="true" aria-labelledby="dayTitle">
   <div class="grip" aria-hidden="true"></div>
   <div class="dayhead">

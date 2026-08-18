@@ -6,6 +6,7 @@
  * needs no build step. Parameters below are the OWASP-recommended floor.
  */
 import { randomBytes, scrypt, timingSafeEqual, createHash } from 'node:crypto';
+import { LINK_ALPHABET, LINK_LENGTH, LINK_PREFIX, LINK_TTL_MS } from './bot-strings.js';
 import { promisify } from 'node:util';
 import { db } from './db.js';
 
@@ -58,11 +59,20 @@ export function newCode() {
 
 export function newToken() { return randomBytes(32).toString('base64url'); }
 
+/* The code seeded on a new account.
+ *
+ * It used to have its own alphabet and its own shape, and the shape was
+ * one the bot rejected: nine characters with a dash, against a checker
+ * that wanted six bare ones. Every account was therefore created holding a
+ * code that could never be used, and the only working path was pressing
+ * "New code" in Settings.
+ *
+ * One generator, one alphabet, one format now, and it is the bot's. Stored
+ * folded because that is what the bot compares against. */
 export function linkCode() {
-  const alphabet = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';  // no I/O/0/1
-  let out = '';
-  for (const byte of randomBytes(4)) out += alphabet[byte % alphabet.length];
-  return 'SLIP-' + out;
+  let out = LINK_PREFIX;
+  for (const byte of randomBytes(LINK_LENGTH)) out += LINK_ALPHABET[byte % LINK_ALPHABET.length];
+  return out;
 }
 
 const CODE_TTL_MIN = 10;
