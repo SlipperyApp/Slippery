@@ -33,6 +33,18 @@ export function AppShell() {
       dispose = mountProto(host.current, {
         onReady(a: ProtoApi) {
           api.current = a;
+          /* The audit drives the product through the same entry points the
+             interface uses, rather than hunting for selectors that a copy
+             change would break. Exposed on purpose and harmless: everything
+             here is already reachable by clicking. */
+          (window as unknown as { __slippery: unknown }).__slippery = {
+            go: a.go,
+            sheet: a.sheet,
+            closeSheet: a.closeSheet,
+            setTheme: a.setTheme,
+            sheetKeys: Object.keys(a.sheets),
+            viewKeys: Object.keys(a.views),
+          };
           hydrateFromServer(a);
           a.go(viewForPath(window.location.pathname));
         },
