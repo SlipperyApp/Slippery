@@ -1,0 +1,12 @@
+import { chromium } from 'playwright-core';
+const b = await chromium.launch({ executablePath: '/opt/pw-browsers/chromium-1194/chrome-linux/chrome' });
+const p = await b.newPage({ viewport: { width: 1440, height: 900 } });
+await p.goto('http://localhost:3100/dashboard', { waitUntil: 'domcontentloaded' });
+await p.waitForTimeout(1200);
+await p.screenshot({ path: '/tmp/desk.png' });
+const nav = await p.evaluate(() => { const n = document.querySelector('.navbar'); const r = n?.getBoundingClientRect(); return r && { w: Math.round(r.width), x: Math.round(r.x) }; });
+console.log('sidebar', nav);
+await p.goto('http://localhost:3100/settings', { waitUntil: 'domcontentloaded' });
+await p.waitForTimeout(900);
+await p.screenshot({ path: '/tmp/desk-settings.png' });
+await b.close();

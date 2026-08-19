@@ -97,6 +97,8 @@ async function sweepViewport(browser: Browser, vp: (typeof VIEWPORTS)[number]) {
   /* All eight themes, in sequence, on this viewport. */
   await applyEveryTheme(page, vp.name, errors);
 
+  await assertReducedMotionKeepsContent(page, vp.name);
+
   /* axe, on the screens that carry the most of the interface. */
   for (const path of ['/', '/dashboard', '/ledger', '/settings', '/signup', '/social']) {
     await auditAccessibility(page, path, vp.name);
@@ -287,7 +289,15 @@ async function applyEveryTheme(page: Page, vpName: string, errors: string[]) {
   await page.evaluate(() => (window as any).__slippery.setTheme('periwinkle'));
 }
 
+/* Audited on a page that has finished arriving.
+ *
+ * The landing page reveals its sections on scroll, so a contrast check run
+ * against the page as it loads measures text at six percent opacity and
+ * reports thirty one failures that are the animation, not the design. Under
+ * reduced motion every section is present and still, which is both the
+ * settled state and a state a real person can be in. */
 async function auditAccessibility(page: Page, path: string, vpName: string) {
+  await page.emulateMedia({ reducedMotion: 'reduce' });
   await page.goto(BASE + path, { waitUntil: 'domcontentloaded' });
   await page.waitForTimeout(600);
   await page.addScriptTag({ content: axeSource });
@@ -295,10 +305,38 @@ async function auditAccessibility(page: Page, path: string, vpName: string) {
     // @ts-expect-error injected
     return await window.axe.run(document, { resultTypes: ['violations'] });
   });
-  const violations = (result as { violations: { id: string; impact: string; nodes: unknown[] }[] }).violations;
+  const violations = (result as { violations: { id: string; impact: string; nodes: { html: string }[] }[] }).violations;
   if (violations.length) {
-    note(`${vpName} axe ${path}`, violations.map((v) => `${v.id} (${v.impact}, ${v.nodes.length})`).join(', '));
+    note(`${vpName} axe ${path}`, violations
+      .map((v) => `${v.id} (${v.impact}, ${v.nodes.length}) first: ${v.nodes[0]?.html.slice(0, 70)}`)
+      .join(' | '));
   }
+  await page.emulateMedia({ reducedMotion: 'no-preference' });
+}
+
+/* REDUCED MOTION MEANS PRESENT BUT STILL, NEVER ABSENT.
+ *
+ * `.reveal` hides a section with a plain opacity of zero and brings it back
+ * with a class from an IntersectionObserver. Switching the transition off
+ * does not put the content back, so the kill switch alone left somebody who
+ * asked for less motion with a landing page missing most of its content. */
+async function assertReducedMotionKeepsContent(page: Page, vpName: string) {
+  await page.emulateMedia({ reducedMotion: 'reduce' });
+  await page.goto(BASE + '/', { waitUntil: 'domcontentloaded' });
+  await page.waitForTimeout(500);
+  const hidden = await page.evaluate(() =>
+    Array.from(document.querySelectorAll('.reveal'))
+      .filter((el) => Number(getComputedStyle(el).opacity) < 0.99).length);
+  if (hidden) note(vpName + ' reduced motion', hidden + ' sections stay invisible with motion turned off');
+
+  const moving = await page.evaluate(() =>
+    Array.from(document.querySelectorAll('.ph *'))
+      .filter((el) => {
+        const cs = getComputedStyle(el);
+        return cs.animationName !== 'none' && cs.animationDuration !== '0s';
+      }).length);
+  if (moving) note(vpName + ' reduced motion', moving + ' elements still animate');
+  await page.emulateMedia({ reducedMotion: 'no-preference' });
 }
 
 /* NONE OF THE SECRETS MAY REACH THE BUNDLE. Names and values both: a name in

@@ -17,6 +17,10 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer;text-a
 a{color:inherit;text-decoration:none}
 :focus-visible{outline:2px solid var(--s,#8FD0FB);outline-offset:2px;border-radius:6px}
 .i{width:1em;height:1em;vertical-align:-.14em;fill:currentColor}
+/* Read, not drawn. clip-path rather than display:none or width:0, both of
+   which take the element out of the accessibility tree along with the text. */
+.sronly{position:absolute;width:1px;height:1px;margin:-1px;padding:0;overflow:hidden;
+ clip-path:inset(50%);white-space:nowrap;border:0}
 
 .ph .body,.ph .navbar,.ph .sheet{transition:opacity .19s ease}
 .ph.tswap .body,.ph.tswap .navbar,.ph.tswap .sheet{opacity:0}
@@ -175,14 +179,20 @@ button.setrow:hover{padding-left:3px}
 .cal .dow{font-size:9px;color:var(--t4);text-align:center}
 .cal .c{aspect-ratio:1;max-height:56px;border-radius:8px;border:1px solid var(--line);display:flex;flex-direction:column;
  align-items:center;justify-content:center;gap:1px;font-size:11px;font-weight:600;opacity:0;transform:scale(.86);position:relative;overflow:hidden}
-.cal .c .dn{font-size:9.5px;color:var(--t4)}
+/* The day number is a label on a coloured square, so it inherits whichever
+   cell tint it lands on. At --t4 it measured 2.14 to 1 against a profitable
+   cell and 1.43 to 1 against an empty one. --t2 is the lightest token that
+   clears 4.5 to 1 on every cell in every theme. */
+.cal .c .dn{font-size:9.5px;color:var(--t2)}
 .cal .c.in{opacity:1;transform:none;transition:opacity .34s var(--e),transform .34s var(--e)}
 .cal .c.p{background:color-mix(in srgb,var(--pos) 16%,transparent);border-color:color-mix(in srgb,var(--pos) 32%,transparent);color:var(--pos);font-weight:700}
 .cal .c.n{background:color-mix(in srgb,var(--neg) 14%,transparent);border-color:color-mix(in srgb,var(--neg) 30%,transparent);color:var(--neg);font-weight:700}
 .cal .c.none{background:rgba(255,255,255,.022)}
 .cal .c.none::after{content:"";position:absolute;left:-12%;right:-12%;top:50%;height:1px;background:var(--line);transform:rotate(-38deg)}
 .cal .c.fut{border-style:dashed;border-color:rgba(255,255,255,.055);background:none}
-.cal .c.fut .dn{color:rgba(255,255,255,.16)}
+/* A future day carries no figure and is deliberately quiet, but quiet is
+   not the same as unreadable: it still has to say which date it is. */
+.cal .c.fut .dn{color:var(--t3)}
 .cal .c.today{outline:1.5px solid var(--s);outline-offset:-1px}
 .cal .c.pad{border:0;background:none}
 .callegend{display:flex;gap:16px;justify-content:center;margin-top:12px;font-size:11.5px;color:var(--t3);flex-wrap:wrap}
@@ -388,8 +398,13 @@ ul.steps p{margin:0;font-size:13px;color:var(--t2)}
 .tgt2 td:last-child{text-align:right;font-weight:700;font-family:"Spline Sans Mono",ui-monospace,monospace}
 .tgconf{display:inline-flex;align-items:center;gap:5px;font-size:10px;padding:3px 8px;border-radius:999px;
  background:color-mix(in srgb,var(--pos) 15%,transparent);color:var(--pos);margin-top:8px}
-.tgfoot{font-size:10.5px;color:var(--t4);margin-top:7px;font-style:normal}
-.tgtime{font-size:9.5px;opacity:.6;margin-top:4px;text-align:right}
+/* Both of these sit at 10.5px and under, which is where a token that reads
+   comfortably at 14px stops clearing 4.5 to 1. --t4 is the quietest token in
+   the set and was never meant to carry running text; --t2 is. */
+.tgfoot{font-size:10.5px;color:var(--t2);margin-top:7px;font-style:normal}
+/* The timestamp sits on the accent bubble, so it darkens with opacity rather
+   than taking a token. At .6 it measured 2.96 to 1 against that bubble. */
+.tgtime{font-size:9.5px;opacity:.85;margin-top:4px;text-align:right}
 .statband{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
 .statb{border:1px solid var(--line);border-radius:14px;padding:16px 12px;text-align:center;background:var(--card)}
 .statb b{display:block;font-size:25px;font-weight:700;letter-spacing:-.03em;line-height:1;font-family:"Spline Sans Mono",ui-monospace,monospace}
@@ -485,8 +500,17 @@ details.q b{color:var(--t1)}
  .ph:has(.navbar) .pane>input,
  .ph:has(.navbar) .pane>label,
  .ph:has(.navbar) .pane>details{grid-column:1/-1}
+ /* The ledger tool row is one line on a wide screen, and the search box
+    grows into whatever is left. min-width was 220px against a nowrap row,
+    which at 1024 forced the three chips 169px past the edge: a fixed
+    minimum inside a row that may not wrap is a horizontal scrollbar with
+    extra steps. It now shrinks to a floor that still holds a search term,
+    and the row wraps rather than overflowing when even that will not fit. */
  .ltools{flex-wrap:nowrap}
- .lsearch{min-width:220px}
+ .lsearch{min-width:150px}
+ @media(max-width:1199px){
+  .ltools{flex-wrap:wrap}
+ }
  .bet .d{font-size:12px}
  .g3{grid-template-columns:repeat(3,minmax(0,1fr))}
  .cal{max-width:392px}
@@ -543,4 +567,15 @@ details.q b{color:var(--t1)}
  .toast.on{transform:translateX(-50%)}
  .tutbox{max-width:420px}
 }
-@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}.cal .c{opacity:1!important;transform:none!important}}
+@media (prefers-reduced-motion:reduce){
+ *{animation:none!important;transition:none!important}
+ .cal .c{opacity:1!important;transform:none!important}
+ /* THE KILL SWITCH ALONE WAS NOT ENOUGH.
+    `.reveal` hides its section with a plain `opacity:0` and reveals it by
+    adding a class from an IntersectionObserver. Switching the transition off
+    does not put the content back: it leaves it hidden with no animation to
+    bring it in, so somebody who asked for less motion got a landing page
+    with most of its content permanently invisible. Reduced motion means
+    present but still, never absent. */
+ .reveal,.ph .body.enter>*{opacity:1!important;transform:none!important}
+}
