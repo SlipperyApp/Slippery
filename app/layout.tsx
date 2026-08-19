@@ -9,6 +9,16 @@ export const metadata: Metadata = {
   description:
     'A bet tracker for UK and Irish bettors. Capture the slip when you place it, not when it wins.',
   applicationName: 'Slippery',
+  manifest: '/manifest.webmanifest',
+  icons: {
+    icon: [
+      { url: '/icon.svg', type: 'image/svg+xml' },
+      { url: '/favicon-32.png', sizes: '32x32', type: 'image/png' },
+    ],
+    apple: '/apple-touch-icon.png',
+  },
+  /* A number in the ledger is a number, not a phone number for iOS Safari to
+     turn into a tappable link with its own colour. */
   other: { 'format-detection': 'telephone=no' },
 };
 
