@@ -21,5 +21,6 @@ export type ProtoApi = {
   sheets: Record<string, unknown>;
   groups: [string, [string, string][]][];
   setTheme: (theme: string) => void;
+  startTutorial: () => void;
   hydrate: (patch: Partial<ProtoCur>) => void;
 };

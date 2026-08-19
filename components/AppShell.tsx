@@ -41,7 +41,14 @@ export function AppShell() {
             go: a.go,
             sheet: a.sheet,
             closeSheet: a.closeSheet,
+            repaint: a.repaint,
             setTheme: a.setTheme,
+            startTutorial: a.startTutorial,
+            /* The live state object, not a copy: the audit changes a setting
+               and repaints, which is what the interface does, rather than
+               reaching for a control whose selector a copy change would
+               break. */
+            cur: a.cur,
             sheetKeys: Object.keys(a.sheets),
             viewKeys: Object.keys(a.views),
           };

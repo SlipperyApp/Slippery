@@ -10,8 +10,9 @@
     "db:generate": "drizzle-kit generate",
     "db:migrate": "node --experimental-strip-types scripts/migrate.ts",
     "e2e": "node --experimental-strip-types tests/e2e/run.ts",
-    "verify": "npm run build && npm test && npm run e2e",
-    "icons": "node tools/icons.mjs"
+    "verify": "npm run build && npm test && npm run fidelity && npm run e2e",
+    "icons": "node tools/icons.mjs",
+    "fidelity": "node --experimental-strip-types tests/e2e/fidelity.ts"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.68.0",

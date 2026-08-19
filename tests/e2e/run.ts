@@ -98,6 +98,13 @@ async function sweepViewport(browser: Browser, vp: (typeof VIEWPORTS)[number]) {
   await applyEveryTheme(page, vp.name, errors);
 
   await assertReducedMotionKeepsContent(page, vp.name);
+  await assertOddsConvert(page, vp.name);
+  await assertProfitDisplaySwitches(page, vp.name);
+  await assertWeekStartReorders(page, vp.name);
+  await assertCalendarIsHonest(page, vp.name);
+  await assertEighthsSlider(page, vp.name);
+  /* The spec names 390 and 1440 for the tutorial specifically. */
+  if (vp.name === '390' || vp.name === '1440') await assertTutorialCompletes(page, vp.name);
 
   /* axe, on the screens that carry the most of the interface. */
   for (const path of ['/', '/dashboard', '/ledger', '/settings', '/signup', '/social']) {
@@ -296,6 +303,207 @@ async function applyEveryTheme(page: Page, vpName: string, errors: string[]) {
  * reports thirty one failures that are the animation, not the design. Under
  * reduced motion every section is present and still, which is both the
  * settled state and a state a real person can be in. */
+
+/* ---------------- the behaviours the spec names by name ----------------
+ *
+ * Each of these is a sentence in the definition of done. They are checked in
+ * the running product rather than in a unit test, because every one of them
+ * is a setting whose whole job is to change what is on screen, and a unit
+ * test of the conversion function proves nothing about whether the screen
+ * uses it.
+ */
+
+async function assertOddsConvert(page: Page, vpName: string) {
+  await page.goto(BASE + '/ledger', { waitUntil: 'domcontentloaded' });
+  await page.waitForTimeout(500);
+
+  const read = () => page.evaluate(() =>
+    (document.querySelector('.ph .body') as HTMLElement)?.innerText ?? '');
+
+  const set = async (format: string) => {
+    await page.evaluate((f) => {
+      const api = (window as any).__slippery;
+      api.cur.oddsFmt = f;
+      api.repaint();
+    }, format);
+    await page.waitForTimeout(250);
+    return read();
+  };
+
+  /* 1.90 is on the first row of the ledger in every state of the product. */
+  const decimal = await set('Decimal');
+  if (!decimal.includes('1.90')) note(vpName + ' odds', 'decimal does not show 1.90');
+
+  const fractional = await set('Fractional');
+  if (!fractional.includes('9/10')) {
+    note(vpName + ' odds', '1.90 did not convert to 9/10 in fractional');
+  }
+
+  const american = await set('American');
+  if (!american.includes('-111')) {
+    note(vpName + ' odds', '1.90 did not convert to -111 in American');
+  }
+
+  await set('Decimal');
+}
+
+async function assertProfitDisplaySwitches(page: Page, vpName: string) {
+  await page.goto(BASE + '/ledger', { waitUntil: 'domcontentloaded' });
+  await page.waitForTimeout(500);
+
+  const set = async (mode: string) => {
+    await page.evaluate((m) => {
+      const api = (window as any).__slippery;
+      api.cur.showIn = m;
+      api.repaint();
+    }, mode);
+    await page.waitForTimeout(250);
+    return page.evaluate(() => (document.querySelector('.ph .body') as HTMLElement)?.innerText ?? '');
+  };
+
+  const currency = await set('Currency');
+  if (!currency.includes('+£9.00')) note(vpName + ' profit display', 'currency does not show +£9.00');
+
+  const units = await set('Units');
+  if (!units.includes('+0.36u')) note(vpName + ' profit display', 'units does not show +0.36u');
+  if (units.includes('+£9.00')) note(vpName + ' profit display', 'units still shows the money figure');
+
+  await set('Currency');
+}
+
+async function assertWeekStartReorders(page: Page, vpName: string) {
+  await page.goto(BASE + '/dashboard', { waitUntil: 'domcontentloaded' });
+  await page.waitForTimeout(600);
+
+  const letters = async (start: number) => {
+    await page.evaluate((w) => {
+      const api = (window as any).__slippery;
+      api.cur.weekStart = w;
+      document.querySelectorAll('[data-cal]').forEach((c) => c.removeAttribute('data-d'));
+      api.repaint();
+    }, start);
+    await page.waitForTimeout(350);
+    return page.evaluate(() =>
+      Array.from(document.querySelectorAll('.cal .dow')).slice(0, 7).map((d) => d.textContent).join(''));
+  };
+
+  const monday = await letters(1);
+  const sunday = await letters(0);
+  if (monday !== 'MTWTFSS') note(vpName + ' week start', 'Monday start reads "' + monday + '"');
+  if (sunday !== 'SMTWTFS') note(vpName + ' week start', 'Sunday start reads "' + sunday + '"');
+  await letters(1);
+}
+
+/* NO FUTURE DAY CARRIES A VALUE.
+   A calendar square showing a profit for a day that has not happened is the
+   single most damaging thing this product could draw. */
+async function assertCalendarIsHonest(page: Page, vpName: string) {
+  await page.goto(BASE + '/dashboard', { waitUntil: 'domcontentloaded' });
+  await page.waitForTimeout(600);
+
+  await page.evaluate(() => {
+    const card = document.querySelector('[data-cardid=cal]');
+    const toggle = card?.querySelector('[data-cal-toggle]') as HTMLElement | null;
+    toggle?.click();
+  });
+  await page.waitForTimeout(700);
+
+  const bad = await page.evaluate(() =>
+    Array.from(document.querySelectorAll('.cal .c.fut'))
+      .filter((c) => /[+−-]?\d/.test((c.querySelector('span:not(.dn)')?.textContent ?? '')))
+      .map((c) => c.textContent?.trim() ?? ''));
+  if (bad.length) note(vpName + ' calendar', 'future days carry a figure: ' + bad.join(', '));
+
+  /* August 2026 has 31 days, and the grid must show all of them. */
+  const days = await page.evaluate(() =>
+    document.querySelectorAll('.cal .c:not(.pad)').length);
+  if (days !== 31) note(vpName + ' calendar', 'the expanded month draws ' + days + ' days, not 31');
+}
+
+/* THE EIGHTHS SLIDER IS OF REMAINING STAKE, NOT OF THE ORIGINAL.
+   Two consecutive half cash outs leave a quarter running. This is the rule
+   the old data model could not represent at all. */
+async function assertEighthsSlider(page: Page, vpName: string) {
+  await page.goto(BASE + '/dashboard', { waitUntil: 'domcontentloaded' });
+  await page.waitForTimeout(500);
+
+  const pull = async (eighths: number) => {
+    await page.evaluate(() => (window as any).__slippery.sheet('cashout'));
+    await page.waitForTimeout(300);
+    const moved = await page.evaluate((e) => {
+      const slider = document.querySelector('[data-cashslider]') as HTMLInputElement | null;
+      if (!slider) return false;
+      slider.value = String(e);
+      slider.dispatchEvent(new Event('input', { bubbles: true }));
+      return true;
+    }, eighths);
+    if (!moved) { note(vpName + ' cash out', 'the eighths slider is not in the sheet'); return null; }
+    await page.waitForTimeout(250);
+    const before = await page.evaluate(() => (window as any).__slippery.cur.cashRem);
+    await page.evaluate(() => (document.querySelector('[data-cashdo]') as HTMLElement)?.click());
+    await page.waitForTimeout(300);
+    const after = await page.evaluate(() => (window as any).__slippery.cur.cashRem);
+    return { before, after };
+  };
+
+  await page.evaluate(() => { (window as any).__slippery.cur.cashRem = 100; });
+
+  const first = await pull(4);
+  if (!first) return;
+  if (Math.abs(Number(first.after) - 50) > 0.01) {
+    note(vpName + ' cash out', 'four eighths of £100 left £' + first.after + ', not £50');
+  }
+
+  const second = await pull(4);
+  if (!second) return;
+  if (Math.abs(Number(second.after) - 25) > 0.01) {
+    note(vpName + ' cash out',
+      'a second four eighths left £' + second.after + ', not £25: the slider is reading the ' +
+      'original stake rather than what is still running');
+  }
+}
+
+/* THE TUTORIAL WALKS ALL TEN STEPS WITH SOMETHING TO POINT AT.
+   A step whose spotlight has no size is a step pointing at nothing, which is
+   how a tour quietly becomes ten modals over a dimmed screen. */
+async function assertTutorialCompletes(page: Page, vpName: string) {
+  await page.goto(BASE + '/dashboard', { waitUntil: 'domcontentloaded' });
+  await page.waitForTimeout(500);
+
+  const started = await page.evaluate(() => {
+    const fn = (window as any).__slippery?.startTutorial;
+    if (typeof fn !== 'function') return false;
+    fn();
+    return true;
+  });
+  if (!started) { note(vpName + ' tutorial', 'there is no way to start it'); return; }
+
+  for (let step = 1; step <= 10; step++) {
+    await page.waitForTimeout(650);
+    const spot = await page.evaluate(() => {
+      const el = document.querySelector('.tut .spot') as HTMLElement | null;
+      if (!el) return null;
+      const r = el.getBoundingClientRect();
+      return { w: Math.round(r.width), h: Math.round(r.height), opacity: Number(getComputedStyle(el).opacity) };
+    });
+    if (!spot) { note(vpName + ' tutorial', 'step ' + step + ' has no spotlight element'); return; }
+    if (!spot.w || !spot.h || !spot.opacity) {
+      note(vpName + ' tutorial', 'step ' + step + ' points at nothing: ' + spot.w + 'x' + spot.h + ' at opacity ' + spot.opacity);
+    }
+    const advanced = await page.evaluate(() => {
+      const next = document.querySelector('[data-tutnext]') as HTMLElement | null;
+      if (!next) return false;
+      next.click();
+      return true;
+    });
+    if (!advanced) { note(vpName + ' tutorial', 'step ' + step + ' has no way forward'); return; }
+  }
+
+  await page.waitForTimeout(600);
+  const stillOpen = await page.evaluate(() => Boolean(document.querySelector('.tut.on')));
+  if (stillOpen) note(vpName + ' tutorial', 'it did not finish after ten steps');
+}
+
 async function auditAccessibility(page: Page, path: string, vpName: string) {
   await page.emulateMedia({ reducedMotion: 'reduce' });
   await page.goto(BASE + path, { waitUntil: 'domcontentloaded' });

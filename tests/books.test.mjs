@@ -96,31 +96,39 @@ test('Kambi is a platform with brands on it, not a label', () => {
   assert.deepEqual(booksByProvider().Kambi, BOOKMAKERS.filter(b => b.provider === 'Kambi').map(b => b.name));
 });
 
-test('the picker offers every brand the registry knows', () => {
-  /* Both directions. A brand in the registry that nobody can pick is dead
-     code; a brand in the picker that the registry has never heard of cannot
-     be graded by the rules of the book that took the bet. */
-  assert.deepEqual(ALL_BOOKS.slice().sort(), ALL_BOOK_NAMES.slice().sort());
+test('every brand the picker offers is one the grader knows', () => {
+  /* One direction only, deliberately. A brand in the picker that the
+     registry has never heard of cannot be graded by the rules of the book
+     that took the bet, and that is a wrong settlement. The registry knowing
+     more brands than the picker offers is fine: the picker is the
+     prototype's list and "Add a custom bookmaker" reaches the rest. */
+  for (const name of ALL_BOOKS) {
+    assert.ok(findBook(name), name + ' is offered at signup and the grader does not know it');
+  }
 });
 
-test('the one bookmaker that grades Asian handicaps can actually be picked', () => {
-  /* bet365 pushes a whole handicap line where everybody else loses it. It
-     was absent from the prototype's picker, which made that rule
-     unreachable. */
-  assert.ok(ALL_BOOKS.includes('bet365'));
+test('the grader knows bet365 even though the picker does not offer it', () => {
+  /* bet365 pushes a whole handicap line where everybody else loses it, which
+     is the single most consequential settlement rule in the product. It is
+     not in the prototype's picker, so it arrives through "Add a custom
+     bookmaker" or off a slip, and it has to grade correctly either way. */
+  assert.equal(ALL_BOOKS.includes('bet365'), false, 'the picker is the prototype list');
+  assert.ok(ALL_BOOK_NAMES.includes('bet365'), 'and the registry still knows it');
   assert.equal(rulesFor('bet365').handicap, 'asian');
+  assert.equal(rulesFor('Bet 365').handicap, 'asian');
 });
 
 test('adding a brand is one row, and every consumer sees it', () => {
   /* The whole claim of the registry, checked rather than asserted in a
-     comment. Mr Green was added to the Kambi rows and nothing else was
-     touched. */
+     comment. Adding Mr Green to the Kambi rows gives the grader its rules,
+     the platform grouping its membership and the alias table its spellings,
+     with nothing else touched. */
   const green = findBook('Mr Green');
   assert.ok(green, 'Mr Green should be in the registry');
   assert.equal(green.provider, 'Kambi');
   assert.equal(rulesFor('mr. green').handicap, 'european', 'the grader knows it');
-  assert.ok(ALL_BOOKS.includes('Mr Green'), 'the settings list knows it');
-  assert.ok(BOOKS.Kambi.includes('Mr Green'), 'and under the right platform');
+  assert.equal(bookName('mrgreen.com'), 'Mr Green', 'and every spelling reaches it');
+  assert.ok(booksByProvider().Kambi.includes('Mr Green'), 'under the right platform');
 });
 
 test('the signup picker and the grader name the same brands', () => {

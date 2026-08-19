@@ -51,19 +51,37 @@ drizzle/              checked-in migrations, applied forward only
 tests/                node:test, plus the browser audit under tests/e2e
 ```
 
+## The specification lives in the repository
+
+`SPEC.md` is the brief, verbatim: the data model, the rulings, the screens,
+the bot's reply table, the compliance requirements and the definition of done.
+`tests/fixtures/prototype.html` is the prototype, byte for byte. Between them
+they are the answer to any question about what this is meant to do.
+
+**The prototype wins on look, SPEC.md wins on rules.** Where the two disagree,
+`npm run fidelity` is the referee: it drives the prototype and the app through
+all thirty five views, every sheet and all eight themes side by side and
+compares what each puts on screen. Any difference fails, except the ones
+listed in `ALLOWED` at the top of `tests/e2e/fidelity.ts`, each with the rule
+that overrides the prototype written next to it. Adding to that list is a
+deliberate act; drifting from the prototype is not possible by accident.
+
 ## Commands
 
 ```
 npm run dev        develop
 npm run build      build
 npm test           unit and rule tests
+npm run fidelity   every view, sheet and theme against the prototype itself
 npm run e2e        the browser audit: six viewports, every route, eight themes
 npm run db:migrate apply the checked-in migrations
-npm run verify     build, test, audit
+npm run icons      re-rasterise the app icons after changing public/icon.svg
+npm run verify     build, test, fidelity, audit
 ```
 
-`npm run e2e` needs the built app running (`npm run build && npm start`) and
-Chromium. It writes screenshots to `test-results/`.
+`npm run fidelity` and `npm run e2e` need the built app running
+(`npm run build && npm start -- -p 3100`) and Chromium. The audit writes
+screenshots to `test-results/`.
 
 ## Environment
 
@@ -111,7 +129,13 @@ rather than an hour of guessing at a local probe with a residential IP.
 
 `POST /api/admin/reset` with `x-admin-secret`. **A dry run is the default**: it
 reports the counts it would delete and writes nothing. Send `{"confirm":true}`
-to actually wipe every account and recreate `Tester1@Tester.com`.
+to act.
+
+SPEC.md asks for the owner's own signed-up account to be wiped back to clean
+while the Tester accounts **and their group membership** stay intact, so the
+route takes `keepEmails` and preserves those accounts, their bets and the
+groups they belong to. Passing `all: true` wipes everything and recreates
+`Tester1@Tester.com` from seed instead.
 
 ## Compliance
 
