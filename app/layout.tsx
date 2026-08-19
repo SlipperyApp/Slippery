@@ -1,5 +1,7 @@
 import type { Metadata, Viewport } from 'next';
+import { headers } from 'next/headers';
 import { IconSprite } from '@/components/IconSprite';
+import './fonts.css';
 import './proto.css';
 
 export const metadata: Metadata = {
@@ -17,25 +19,33 @@ export const viewport: Viewport = {
   themeColor: '#0A0F1E',
 };
 
-export default function RootLayout({ children }: { children: React.ReactNode }) {
+export default async function RootLayout({ children }: { children: React.ReactNode }) {
+  /* Handed to Next so its own bootstrap scripts carry the nonce the policy
+     in middleware.ts requires. */
+  const nonce = (await headers()).get('x-nonce') ?? undefined;
+
   return (
     <html lang="en-GB" data-t="periwinkle">
       <head>
-        <link rel="preconnect" href="https://fonts.googleapis.com" />
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="" />
-        {/* The prototype names Schibsted Grotesk and Spline Sans Mono in its
-            font stacks but only ever loads Poppins, so on any machine without
-            them installed it silently fell back to the system sans and the
-            tabular figures in the ledger stopped lining up. Loading all three
-            is the fix; it is the one prototype bug worth naming. */}
-        <link
-          href="https://fonts.googleapis.com/css2?family=Poppins:wght@700;800&family=Schibsted+Grotesk:wght@400;500;600;700;800&family=Spline+Sans+Mono:wght@400;500;600;700&display=swap"
-          rel="stylesheet"
-        />
+        {/* No third-party font host. The faces are served from this origin,
+            so the policy does not have to allow one and a blocked CDN cannot
+            drop the app into a fallback face, which is what stops the ledger's
+            tabular figures lining up. */}
+        <link rel="preload" href="/fonts/SchibstedGrotesk-400-latin.woff2" as="font" type="font/woff2" crossOrigin="" />
+        <link rel="preload" href="/fonts/SplineSansMono-400-latin.woff2" as="font" type="font/woff2" crossOrigin="" />
       </head>
       <body data-t="periwinkle">
         <IconSprite />
         {children}
+        {/* The tombstone worker at /sw.js unregisters the cache-first worker
+            the previous build installed. Registering it is what reaches the
+            people who still have the old one. */}
+        <script
+          nonce={nonce}
+          dangerouslySetInnerHTML={{
+            __html: `if('serviceWorker' in navigator){navigator.serviceWorker.register('/sw.js').catch(function(){})}`,
+          }}
+        />
       </body>
     </html>
   );
