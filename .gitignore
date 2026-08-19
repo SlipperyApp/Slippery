@@ -1,11 +1,7 @@
-node_modules/
-.vercel
+node_modules
+.next
 .env
-.env.*
-!.env.example
-*.log
-tools/screens/
-
-# Generated preview builds — rebuild with `node tools/preview.mjs`
-slippery-preview.html
-slippery-artifact.html
+.env.local
+*.tsbuildinfo
+next-env.d.ts
+test-results
