@@ -17,11 +17,11 @@
   "dependencies": {
     "@anthropic-ai/sdk": "^0.68.0",
     "@neondatabase/serverless": "^0.10.4",
-    "@types/ws": "^8.18.1",
     "drizzle-orm": "^0.38.4",
     "next": "^15.1.6",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
+    "server-only": "^0.0.1",
     "stripe": "^17.5.0",
     "ws": "^8.21.3"
   },
@@ -29,10 +29,10 @@
     "@types/node": "^22.10.6",
     "@types/react": "^19.0.7",
     "@types/react-dom": "^19.0.3",
+    "@types/ws": "^8.18.1",
     "axe-core": "^4.10.2",
     "drizzle-kit": "^0.30.2",
     "playwright-core": "^1.49.1",
-    "server-only": "^0.0.1",
     "typescript": "^5.7.3"
   },
   "engines": {

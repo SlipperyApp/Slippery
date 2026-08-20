@@ -1,5 +1,10 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
+  "$comment": "framework, buildCommand and outputDirectory are stated here on purpose. The previous vercel.json set framework:null with buildCommand 'node build.mjs' and outputDirectory 'public', and Vercel keeps those in the project's own settings once it has seen them. build.mjs no longer exists, so a deployment that falls back to the dashboard values dies before it starts. Values in this file override the dashboard, which makes the build reproducible from the repository rather than from a settings page nobody can diff.",
+  "framework": "nextjs",
+  "buildCommand": "next build",
+  "installCommand": "npm ci",
+  "outputDirectory": ".next",
   "regions": ["lhr1"],
   "crons": [{ "path": "/api/cron/results", "schedule": "0 6 * * *" }]
 }
