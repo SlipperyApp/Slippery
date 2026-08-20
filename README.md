@@ -108,6 +108,20 @@ rather than an hour of guessing at a local probe with a residential IP.
 
 ## Deploying, and the three things that bite
 
+0. **`vercel.json` states the build settings on purpose, and must stay
+   schema-clean.** The previous file set `framework: null` with
+   `buildCommand: "node build.mjs"` and `outputDirectory: "public"`. Vercel
+   copies those into the project's own settings the first time it sees them,
+   and deleting them from the file does not delete them from the dashboard, so
+   a build kept being asked to run a script this rebuild removed. The values
+   here override the dashboard, which makes the build reproducible from the
+   repository rather than from a settings page nobody can diff.
+   **Vercel rejects any top-level key outside its schema and fails the whole
+   deployment in about fifteen seconds, before a build starts, pointing at the
+   project-configuration docs rather than naming the key.** A `$comment` key
+   is enough to do it. `$schema` is the only non-setting key it allows, which
+   is why this explanation is here and not in the file.
+
 1. **`public/sw.js` is a tombstone, not a service worker.** The previous build
    installed a cache-first worker at that path. Anybody who added the web app
    to their home screen still has it, and it will keep serving the old shell
