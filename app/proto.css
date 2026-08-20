@@ -11,6 +11,9 @@
  --e:cubic-bezier(.32,.72,0,1)}
 *{box-sizing:border-box}
 html,body{margin:0;background:#070B14;color:#F2F5FA;line-height:1.5;
+ /* The app is the viewport. The document scrolling behind a fixed tab bar is
+    what lets the bar drift on iOS. */
+ overscroll-behavior:none;
  font-family:"Schibsted Grotesk",-apple-system,BlinkMacSystemFont,"Segoe UI",system-ui,sans-serif;-webkit-font-smoothing:antialiased}
 .mono{font-family:"Spline Sans Mono",ui-monospace,SFMono-Regular,Menlo,monospace;font-variant-numeric:tabular-nums}
 button{font:inherit;color:inherit;background:none;border:0;cursor:pointer;text-align:inherit}
@@ -29,7 +32,13 @@ a{color:inherit;text-decoration:none}
 .stage{padding:0;display:block}
 .ph{width:100%;max-width:100%;border-radius:0;border:0;background:var(--bg);
  overflow:hidden;position:relative;height:100svh;box-shadow:none;color:var(--t1)}
-.ph .body{position:absolute;inset:0;overflow-y:auto;overflow-x:hidden;padding-bottom:88px;scroll-behavior:smooth}
+.ph .body{position:absolute;inset:0;overflow-y:auto;overflow-x:hidden;scroll-behavior:smooth;
+ /* Clears the fixed bar and the home indicator together, so the last card is
+    reachable rather than tucked underneath. */
+ padding-bottom:calc(var(--navh) + 24px + env(safe-area-inset-bottom));
+ /* The scroller is this element, never the document. Without it iOS bounces
+    the whole page and the fixed bar appears to drift. */
+ overscroll-behavior:contain;-webkit-overflow-scrolling:touch}
 .ph .body::-webkit-scrollbar{width:0}
 @media(max-width:640px){
  .stage{padding:0}
@@ -67,7 +76,7 @@ a{color:inherit;text-decoration:none}
 .av:hover{transform:scale(1.07)}
 .tabs{display:flex;justify-content:center;gap:24px;padding:10px 0;border-bottom:1px solid var(--line);
  position:sticky;top:51px;background:var(--bg);z-index:19}
-.tabs button{font-size:11.5px;letter-spacing:.13em;color:var(--t3);padding-bottom:6px;position:relative;transition:color .3s}
+.tabs button{font-size:11.5px;letter-spacing:.13em;word-spacing:-.065em;color:var(--t3);padding-bottom:6px;position:relative;transition:color .3s}
 .tabs button[aria-current=true]{color:var(--t1)}
 .tabs button::after{content:"";position:absolute;left:0;right:0;bottom:0;height:2px;background:var(--p);
  transform:scaleX(0);transition:transform .4s var(--e)}
@@ -79,8 +88,34 @@ a{color:inherit;text-decoration:none}
 .ph .body.enter>*{animation:secIn .55s var(--e) both}
 @keyframes secIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
 @keyframes pi{from{opacity:0;transform:translateY(9px)}to{opacity:1;transform:none}}
-.navbar{position:absolute;left:0;right:0;bottom:0;display:flex;z-index:30;background:var(--elev);
- border-top:1px solid var(--line);padding:8px 6px calc(14px + env(safe-area-inset-bottom))}
+/* THE BOTTOM TAB BAR, ANCHORED TO THE VIEWPORT AND NOT TO THE PAGE.
+ *
+ * It was `position:absolute; bottom:0` inside a `height:100svh` box. On a
+ * desktop browser that looks identical to fixed. On iPhone it is not: Safari
+ * puts its address bar at the BOTTOM, the layout viewport extends underneath
+ * it because of viewport-fit=cover, and an absolutely positioned bar sits at
+ * the bottom of its container rather than at the bottom of what you can see.
+ * The result is a tab bar behind the search field, which is where this
+ * started.
+ *
+ * Fixed anchors it to the viewport instead. Nothing above it creates a
+ * containing block (no transform, no filter, no will-change on .ph or
+ * .stage), which is the condition for fixed to mean what it says.
+ *
+ * The safe-area inset is what keeps it clear of the home indicator and the
+ * address bar, and it only reports a real value because the viewport is
+ * declared viewport-fit=cover. Without that it silently returns zero and the
+ * bar goes back under the chrome. */
+/* A fallback only. The real value is measured from the bar and written back
+   by the render layer, because the bar's height depends on the type size,
+   the icon size and the safe-area inset, and a number guessed here goes
+   stale the first time any of the three changes. That is exactly how the
+   last card ended up six pixels underneath it. */
+:root{--navh:76px}
+.navbar{position:fixed;left:0;right:0;bottom:0;display:flex;z-index:30;background:var(--elev);
+ border-top:1px solid var(--line);padding:8px 6px calc(14px + env(safe-area-inset-bottom));
+ /* Its own layer, so scrolling the page behind it never repaints it. */
+ transform:translateZ(0)}
 .navbar button{flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;font-size:10.5px;
  color:var(--t3);padding:7px 0;border-radius:14px;transition:.3s var(--e)}
 .navbar button[aria-current=true]{color:var(--s);background:rgba(255,255,255,.06)}
@@ -92,7 +127,7 @@ a{color:inherit;text-decoration:none}
 .card{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:14px;margin-bottom:11px;
  box-shadow:0 1px 2px color-mix(in srgb,var(--t1) 4%,transparent)}
 .card.t{padding:11px}
-.lbl{font-size:10.5px;letter-spacing:.13em;text-transform:uppercase;color:var(--t3)}
+.lbl{font-size:10.5px;letter-spacing:.13em;word-spacing:-.065em;text-transform:uppercase;color:var(--t3)}
 /* fluid segmented control */
 .seg{display:inline-flex;background:rgba(255,255,255,.06);border-radius:999px;padding:3px;position:relative;isolation:isolate}
 .seg .ind{position:absolute;top:3px;bottom:3px;border-radius:999px;background:var(--p);z-index:-1;
@@ -135,7 +170,7 @@ a{color:inherit;text-decoration:none}
 .bet .d{font-size:11.5px;color:var(--t3);margin-top:2px;line-height:1.4}
 .bet .v{text-align:right;font-size:13.5px;font-weight:700;white-space:nowrap}
 .bet .v small{display:block;font-size:10.5px;font-weight:400;color:var(--t3);margin-top:2px}
-.tag{font-size:9px;letter-spacing:.09em;padding:2px 6px;border-radius:4px;background:color-mix(in srgb,var(--s) 15%,transparent);color:var(--s);margin-left:6px}
+.tag{font-size:9px;letter-spacing:.09em;word-spacing:-.045em;padding:2px 6px;border-radius:4px;background:color-mix(in srgb,var(--s) 15%,transparent);color:var(--s);margin-left:6px}
 .ltools{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:10px}
 .lsearch{flex:1;min-width:150px;margin:0;padding:8px 11px;font-size:13.5px}
 .bulkbar{display:flex;gap:10px;align-items:center;justify-content:space-between;flex-wrap:wrap;
@@ -181,7 +216,7 @@ button.setrow:hover{padding-left:3px}
 .field{width:100%;background:rgba(255,255,255,.05);border:1px solid var(--line);border-radius:11px;
  padding:12px 13px;color:var(--t1);font:inherit;font-size:15px;margin-top:6px;transition:.28s var(--e)}
 .field:focus{outline:none;border-color:var(--p);background:rgba(255,255,255,.07)}
-.flabel{font-size:11px;letter-spacing:.11em;text-transform:uppercase;color:var(--t3);margin-top:14px;display:block}
+.flabel{font-size:11px;letter-spacing:.11em;word-spacing:-.055em;text-transform:uppercase;color:var(--t3);margin-top:14px;display:block}
 .cal{display:grid;grid-template-columns:repeat(7,1fr);gap:5px;max-width:340px;margin:0 auto}
 .cal .dow{font-size:9px;color:var(--t4);text-align:center}
 .cal .c{aspect-ratio:1;max-height:56px;border-radius:8px;border:1px solid var(--line);display:flex;flex-direction:column;
@@ -297,7 +332,7 @@ button.setrow:hover{padding-left:3px}
 @keyframes w4{0%,100%{transform:translate(10%,3%) rotate(-5deg) scaleY(.9)}50%{transform:translate(-8%,-4%) rotate(4deg) scaleY(1.28)}}
 .lsec{padding:32px 20px}
 .lsec.c{text-align:center}
-.leyebrow{font-size:10.5px;letter-spacing:.15em;text-transform:uppercase;color:var(--t3);margin:0 0 11px}
+.leyebrow{font-size:10.5px;letter-spacing:.15em;word-spacing:-.075em;text-transform:uppercase;color:var(--t3);margin:0 0 11px}
 .lh1{font-size:32px;line-height:1.07;letter-spacing:-.03em;margin:0 0 13px;font-weight:700}
 .lh1 em{font-style:normal;position:relative;display:inline-block;
  background:linear-gradient(100deg,var(--s) 0%,var(--p) 28%,#fff 45%,var(--s) 62%,var(--p) 100%);
@@ -321,11 +356,20 @@ ul.steps li:first-child{border-top:0}
 ul.steps .no{font-size:11px;color:var(--p);flex:0 0 20px;padding-top:3px}
 ul.steps h3{margin:0 0 2px;font-size:15px}
 ul.steps p{margin:0;font-size:13px;color:var(--t2)}
-.storeb{display:flex;gap:9px;justify-content:center;margin-top:8px;flex-wrap:wrap}
-.storeb{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;align-items:center}
+/* Both stores require clear space of a quarter the badge height on every
+   side, and Apple requires forty pixels minimum onscreen. The badge is 44px
+   tall, so the gap and the margin are 11px, stated as a fraction of the
+   height rather than as a number that can drift away from it. */
+.storeb{--badgeh:44px;--badgeclear:calc(var(--badgeh) / 4);
+ display:flex;gap:var(--badgeclear);justify-content:center;flex-wrap:wrap;align-items:center;
+ margin-top:var(--badgeclear);padding:0 var(--badgeclear)}
 .badgelink{display:inline-block;line-height:0;border-radius:8px;transition:transform .26s var(--e),opacity .26s}
 .badgelink:hover{transform:translateY(-2px)}
-.badgelink svg{height:44px;width:auto;display:block}
+.badgelink svg{height:var(--badgeh);width:auto;display:block}
+/* Two badges plus their clear space need 306px. Below that they stack rather
+   than shrinking, because scaling a badge below Apple's forty pixel minimum
+   is the one thing the guidelines are unambiguous about. */
+@media(max-width:340px){.storeb{flex-direction:column}}
 .storenote{font-size:11.5px;color:var(--t3);margin-top:11px}
 .slip{position:relative;border-radius:16px;padding:14px;background:var(--elev);border:1px dashed color-mix(in srgb,var(--p) 55%,transparent);overflow:hidden;text-align:left}
 .slip.scanning{box-shadow:0 0 32px color-mix(in srgb,var(--p) 20%,transparent)}
@@ -404,7 +448,7 @@ ul.steps p{margin:0;font-size:13px;color:var(--t2)}
 .statband{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
 .statb{border:1px solid var(--line);border-radius:14px;padding:16px 12px;text-align:center;background:var(--card)}
 .statb b{display:block;font-size:25px;font-weight:700;letter-spacing:-.03em;line-height:1;font-family:"Spline Sans Mono",ui-monospace,monospace}
-.statb span{display:block;font-size:10.5px;letter-spacing:.11em;text-transform:uppercase;color:var(--t3);margin-top:7px}
+.statb span{display:block;font-size:10.5px;letter-spacing:.11em;word-spacing:-.055em;text-transform:uppercase;color:var(--t3);margin-top:7px}
 .msg{max-width:88%;padding:8px 11px;border-radius:13px;font-size:12px;margin-bottom:7px;animation:mi .34s var(--e)}
 @keyframes mi{from{opacity:0;transform:translateY(7px)}to{opacity:1;transform:none}}
 .msg.me{margin-left:auto;background:var(--p);color:var(--bg);border-bottom-right-radius:4px}
@@ -425,7 +469,7 @@ details.q summary::after{content:"⌄";color:var(--p);font-weight:400;font-size:
 details.q[open] summary::after{transform:rotate(180deg);color:var(--s)}
 details.q p{margin:0;padding:0 15px 14px;color:var(--t2);font-size:12.5px;line-height:1.55}
 details.q b{color:var(--t1)}
-.qcat{font-size:10px;letter-spacing:.15em;text-transform:uppercase;color:var(--p);margin:20px 0 8px;text-align:left;font-weight:600}
+.qcat{font-size:10px;letter-spacing:.15em;word-spacing:-.075em;text-transform:uppercase;color:var(--p);margin:20px 0 8px;text-align:left;font-weight:600}
 .plan{border:1px solid var(--line);border-radius:16px;padding:18px;background:var(--card);margin-bottom:12px;text-align:left;
  display:flex;flex-direction:column;transition:.3s var(--e)}
 .plan:hover{border-color:color-mix(in srgb,var(--p) 55%,transparent);transform:translateY(-2px)}
@@ -435,7 +479,7 @@ details.q b{color:var(--t1)}
 .plan .pn{font-size:12.5px;color:var(--t3);margin:5px 0 14px;min-height:36px}
 .plan ul{flex:1;margin:0 0 16px}
 .plan li{padding:5px 0}
-.badge{font-size:9.5px;letter-spacing:.1em;text-transform:uppercase;padding:3px 8px;border-radius:999px;
+.badge{font-size:9.5px;letter-spacing:.1em;word-spacing:-.05em;text-transform:uppercase;padding:3px 8px;border-radius:999px;
  background:var(--p);color:var(--bg);font-weight:700;white-space:nowrap}
 .saveline{display:inline-flex;align-items:center;gap:6px;margin:10px 0 0;font-size:13px;font-weight:700;
  color:var(--pos);background:color-mix(in srgb,var(--pos) 14%,transparent);
@@ -477,6 +521,67 @@ details.q b{color:var(--t1)}
 .tutnav{display:flex;gap:8px;margin-top:12px;align-items:center}
 .tutnav .prog{flex:1;font-size:11px;color:var(--t3)}
 
+/* ═══ HOW TEXT BREAKS AND SPACES ═══
+ *
+ * Three things, all of which show worst at 360px where there is least room
+ * for a line to go wrong.
+ *
+ * WORD SPACING UNDER TRACKING. Letter-spacing widens the gap between words by
+ * exactly as much as it widens the gap between letters, so every tracked
+ * uppercase label in this product had word gaps reading as gaps between
+ * phrases. Each tracked rule now carries a word-spacing of half its tracking,
+ * which restores the proportion without running the words together. Half
+ * rather than all, because tracked uppercase genuinely wants a little more
+ * word space than set text does.
+ *
+ * BREAKING. `balance` on short headings so a two line heading splits evenly
+ * instead of leaving one word on the second line. `pretty` on body copy,
+ * which is the same idea for the last line of a paragraph. Both degrade to
+ * normal wrapping where they are not supported, so nothing depends on them.
+ *
+ * OVERFLOW. A handle, an email address or a long competition name has no
+ * space in it to break at, and on a narrow screen it pushes the layout wider
+ * than the viewport. `anywhere` lets it break mid-word rather than take the
+ * page with it. Applied only where the text comes from a person, never to
+ * copy, because breaking a word mid-syllable is worse than a short line. */
+.lh1,.lh2,h1,h2,h3,h4,.tutbox h4{text-wrap:balance}
+p,.lsub,.dd,.note,.tdesc,.tutbox p,.q p{text-wrap:pretty}
+
+/* Text somebody typed, which can be one long unbroken run. */
+.wh,.handle,.bet .n,.bet .d,.gname,.pname,.tgb,.msg,input,textarea{overflow-wrap:anywhere}
+
+/* Money and odds never break, and never re-space. A figure that wraps between
+   the sign and the digits reads as two numbers. */
+.mono,.big,.v,.price,.statb b{font-variant-numeric:tabular-nums;white-space:nowrap;word-spacing:normal}
+
+/* ═══ DECORATIVE MOTION STOPS WHEN NOBODY IS LOOKING AT IT ═══
+ *
+ * The landing page is 5862px tall and had thirty eight elements animating at
+ * once, every one of them infinite, whether or not they were on screen. Four
+ * wave layers, a scanning slip, a pulsing ring, typing dots, blips. The
+ * scroll itself measured fine on a desktop compositor, but a phone is paying
+ * for all of it continuously: paint work for pixels nobody can see, and
+ * battery for the privilege.
+ *
+ * `animation-play-state:paused` costs nothing to toggle and the compositor
+ * stops the work outright. Two rules drive it:
+ *
+ *   .offscreen  set by the observer in the render layer, removed on the way
+ *               back. Distinct from `.reveal.in`, which is one-way on
+ *               purpose because content must not un-appear when you scroll up.
+ *   .hidden-tab set on the root when the document is not visible, so a
+ *               locked phone or a background tab is not animating at all.
+ */
+.offscreen,
+.offscreen *,
+[data-hidden] .ph *{animation-play-state:paused!important}
+
+/* The four hero ribbons are the most expensive thing on the page: large,
+   overlapping, and always moving. Their own layer keeps them off the main
+   thread, and they are the first thing to stop when scrolled past. */
+.rb1,.rb2,.rb3,.rb4{will-change:transform}
+.offscreen .rb1,.offscreen .rb2,.offscreen .rb3,.offscreen .rb4{will-change:auto}
+
 /* ═══ desktop web layout ═══ */
 @media(min-width:1000px){
  /* single-purpose screens read as a centred column, not a stretched row */
@@ -517,8 +622,11 @@ details.q b{color:var(--t1)}
  .ph{width:100%;max-width:1180px;margin:0 auto;height:auto;min-height:100svh;border-radius:0;display:flex;overflow:visible;
   box-shadow:none}
  .ph .body{position:relative;inset:auto;flex:1;min-width:0;padding-bottom:28px;overflow:visible;height:auto}
+ /* At this width it is a sidebar, not a tab bar, so it goes back into the
+    flow. `position:relative` overrides the fixed above it. */
  .navbar{position:relative;order:-1;width:210px;flex:0 0 210px;flex-direction:column;justify-content:flex-start;
-  border-top:0;border-right:1px solid var(--line);padding:18px 12px;gap:3px;background:var(--elev)}
+  border-top:0;border-right:1px solid var(--line);padding:18px 12px;gap:3px;background:var(--elev);
+  transform:none;height:100svh;position:sticky;top:0}
  .navbar button{flex:0 0 auto;flex-direction:row;justify-content:flex-start;gap:12px;padding:11px 13px;font-size:14px}
  .navbar svg{width:18px;height:18px}
  .appbar{padding:14px 20px}
@@ -548,7 +656,7 @@ details.q b{color:var(--t1)}
  .plans2>.plan ul{flex:1}
  .plans2>.plan .price{font-size:31px}
  .plans2>.plan .price span,.plans2>.plan .was{display:inline-block}
- .storeb{gap:12px}
+ .storeb{--badgeh:48px}
  .lsec>ul.steps{max-width:600px;margin:0 auto}
  .lsec>ul.steps{max-width:640px;margin:0 auto}
  .lsec>.plan{max-width:560px;margin-left:auto;margin-right:auto}

@@ -105,6 +105,8 @@ async function sweepViewport(browser: Browser, vp: (typeof VIEWPORTS)[number]) {
   await assertWeekStartReorders(page, vp.name);
   await assertCalendarIsHonest(page, vp.name);
   await assertEighthsSlider(page, vp.name);
+  await assertOffscreenMotionStops(page, vp.name);
+  await assertTabBarIsAnchored(page, vp.name);
   /* The spec names 390 and 1440 for the tutorial specifically. */
   if (vp.name === '390' || vp.name === '1440') await assertTutorialCompletes(page, vp.name);
 
@@ -340,6 +342,113 @@ function isAcceptedContrast(v: { id: string; nodes: { target: string[] }[] }): b
     acceptedSeen.add(`${match.selector.source}  ${match.ratio}\n      would be fixed by ${match.fix}`);
     return true;
   });
+}
+
+
+/* DECORATIVE MOTION MUST STOP WHEN IT IS OFF SCREEN.
+ *
+ * The landing page is 5862px tall and had thirty eight elements animating at
+ * once, every one infinite, whether or not anybody could see them. A desktop
+ * compositor absorbs that; a phone pays for it in frames and in battery, and
+ * this is what "the landing page lags a little" was.
+ *
+ * The check is not "is it fast here", because here is not a phone. It is
+ * "is anything still moving that nobody is looking at", which is the same
+ * answer on every machine. */
+async function assertOffscreenMotionStops(page: Page, vpName: string) {
+  await page.goto(BASE + '/', { waitUntil: 'domcontentloaded' });
+  await page.waitForTimeout(1500);
+
+  /* THE RULE, WITH NO MAGIC NUMBER IN IT.
+     Not "fewer than N animations", which is a different N on every viewport
+     and tells you nothing when it changes. The property that matters is that
+     nothing infinite is running for an element you cannot see, and that is
+     the same sentence at 360 and at 1440. */
+  const strays = () => page.evaluate(() => {
+    const out: { name: string; cls: string; top: number }[] = [];
+    for (const el of Array.from(document.querySelectorAll<HTMLElement>('.ph *'))) {
+      const c = getComputedStyle(el);
+      if (c.animationName === 'none') continue;
+      if (c.animationPlayState !== 'running') continue;
+      if (c.animationIterationCount !== 'infinite') continue;
+      const r = el.getBoundingClientRect();
+      const seen = r.bottom > 0 && r.top < window.innerHeight && r.width > 0 && r.height > 0;
+      if (!seen) out.push({ name: c.animationName, cls: String(el.className).slice(0, 24), top: Math.round(r.top) });
+    }
+    return out;
+  });
+
+  const atTop = await strays();
+  if (atTop.length) {
+    note(vpName + ' motion',
+      atTop.length + ' infinite animations run off screen at the top of the landing page: ' +
+      [...new Set(atTop.map((a) => a.name))].join(', '));
+  }
+
+  /* `scroll-behavior:smooth` turns one assignment into an animation, so the
+     measurement would race it. Jumped instantly instead, and both scrollers
+     are moved because which one is live depends on the width. */
+  await page.evaluate(() => {
+    const body = document.querySelector('.body') as HTMLElement;
+    body.style.scrollBehavior = 'auto';
+    document.documentElement.style.scrollBehavior = 'auto';
+    body.scrollTop = body.scrollHeight;
+    window.scrollTo(0, document.documentElement.scrollHeight);
+  });
+  await page.waitForTimeout(1400);
+
+  const atBottom = await strays();
+  if (atBottom.length) {
+    note(vpName + ' motion',
+      atBottom.length + ' infinite animations still run off screen with the page scrolled to the bottom: ' +
+      [...new Set(atBottom.map((a) => a.name))].join(', '));
+  }
+
+  const paused = await page.evaluate(() => document.querySelector('.lhero')?.classList.contains('offscreen'));
+  if (!paused) note(vpName + ' motion', 'the hero is scrolled away and has not been marked off screen');
+}
+
+/* THE BOTTOM TAB BAR IS ANCHORED TO THE VIEWPORT.
+ *
+ * It was absolutely positioned inside a 100svh box, which looks identical to
+ * fixed on a desktop and puts the bar behind Safari's bottom address bar on
+ * an iPhone. Position is checkable; the address bar is not, so this checks
+ * the property that caused it. */
+async function assertTabBarIsAnchored(page: Page, vpName: string) {
+  if (Number(vpName) >= 1000) return;   // it is a sidebar at that width
+
+  await page.goto(BASE + '/dashboard', { waitUntil: 'domcontentloaded' });
+  await page.waitForTimeout(600);
+
+  const bar = await page.evaluate(() => {
+    const el = document.querySelector('.navbar') as HTMLElement | null;
+    if (!el) return null;
+    const cs = getComputedStyle(el);
+    const r = el.getBoundingClientRect();
+    return {
+      position: cs.position,
+      bottom: Math.round(window.innerHeight - r.bottom),
+      paddingBottom: cs.paddingBottom,
+      height: Math.round(r.height),
+    };
+  });
+  if (!bar) { note(vpName + ' tab bar', 'there is no tab bar'); return; }
+  if (bar.position !== 'fixed') {
+    note(vpName + ' tab bar', `is ${bar.position}, not fixed, so it scrolls with the page and lands behind the browser chrome on iOS`);
+  }
+  if (bar.bottom !== 0) note(vpName + ' tab bar', `sits ${bar.bottom}px above the bottom of the viewport`);
+
+  /* The last card has to be reachable rather than tucked under the bar. */
+  const reachable = await page.evaluate(() => {
+    const body = document.querySelector('.body') as HTMLElement;
+    body.style.scrollBehavior = 'auto';
+    body.scrollTop = body.scrollHeight;
+    const barTop = (document.querySelector('.navbar') as HTMLElement).getBoundingClientRect().top;
+    const last = body.lastElementChild?.lastElementChild as HTMLElement | undefined;
+    if (!last) return true;
+    return last.getBoundingClientRect().bottom <= barTop + 1;
+  });
+  if (!reachable) note(vpName + ' tab bar', 'the last card is still underneath the bar at full scroll');
 }
 
 /* Audited on a page that has finished arriving.
