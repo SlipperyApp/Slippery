@@ -159,7 +159,10 @@ async function grab(page, { route, viewport, state }) {
     )].filter(Boolean);
     return { html: doc.outerHTML, height, sprite };
   });
-  return { route, viewport, state, html, height: Math.min(height + 24, 6000), sprite };
+  /* Capped only against a runaway measurement, not against real content:
+     the landing page is over six thousand pixels tall and a 6000 ceiling was
+     quietly cutting the last 480px off it. */
+  return { route, viewport, state, html, height: Math.min(height + 24, 20000), sprite };
 }
 
 /* ── the page's own stylesheet, once ───────────────────────────────────── */
@@ -386,7 +389,7 @@ function assemble(captures, fontFaces) {
     let html = c.body;
     /* Any data URI that appears more than once anywhere becomes a token. */
     html = html.replace(/data:(?:image|font)\/[a-z0-9+.-]+;base64,[A-Za-z0-9+/=]+/g,
-      (uri) => '\u0001A' + intern(assetTable, assetIndex, uri) + '\u0001');
+      (uri) => '%%SNAPASSET' + intern(assetTable, assetIndex, uri) + '%%');
     return { c: intern(cssTable, cssIndex, c.css), h: html };
   });
 
@@ -472,7 +475,7 @@ isolated in an iframe carrying only the CSS rules and icon symbols it uses.</foo
    every asset that appears in more than one capture. */
 const F=${jsonEmbed(fontFaces)},C=${jsonEmbed(cssTable)},A=${jsonEmbed(assetTable)},B=${jsonEmbed(bodies)};
 const build=(i)=>{const b=B[i];
-  return b.h.replace(/\u0001A(\d+)\u0001/g,(m,n)=>A[+n])
+  return b.h.replace(/%%SNAPASSET(\d+)%%/g,(m,n)=>A[+n])
     .replace('</head>','<style>'+F+C[b.c]+'</style></head>');};
 const io=new IntersectionObserver((es)=>{for(const e of es){if(!e.isIntersecting)continue;
   const f=e.target;io.unobserve(f);f.srcdoc=build(+f.dataset.i);}},{rootMargin:'900px 0px'});
