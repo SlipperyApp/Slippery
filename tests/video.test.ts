@@ -97,16 +97,23 @@ test('no single film is heavier than three megabytes', () => {
   }
 });
 
-test('the embed asks for nothing until somebody wants it', () => {
+test('no film asks for anything until somebody wants it', () => {
   const client = read('lib/proto/runtime.js');
-  const embed = client.slice(client.indexOf('const EXPLAINER='), client.indexOf('const WAVES='));
-  assert.match(embed, /preload="none"/);
-  assert.match(embed, /playsinline/);
-  assert.match(embed, /muted/);
-  assert.match(embed, /poster=/);
-  assert.doesNotMatch(embed, /autoplay/, 'a video that starts by itself on a page about money is an ambush');
-  assert.match(embed, /<source src="\/video\/explainer\.webm"/);
-  assert.match(embed, /<source src="\/video\/explainer\.mp4"/);
+  /* One helper builds all six now, so there is one place this can be wrong
+     rather than six. */
+  const helper = client.slice(client.indexOf('function film(name, label)'),
+                              client.indexOf('let filmMQ = null;'));
+  assert.match(helper, /preload="none"/);
+  assert.match(helper, /playsinline/);
+  assert.match(helper, /muted/);
+  assert.match(helper, /v\.poster = /, 'no poster, so the space is empty while it waits');
+  assert.doesNotMatch(helper, /autoplay/, 'a video that starts by itself on a page about money is an ambush');
+  assert.match(helper, /type="video\/webm"/);
+  assert.match(helper, /type="video\/mp4"/);
+  /* Sources are set in script, after the shape is known, so the browser
+     cannot start fetching the wrong cut. */
+  assert.doesNotMatch(helper, /<source src="\/video\/[a-z-]+\.webm"/,
+    'a hardcoded source defeats the point of two cuts');
 });
 
 /* The palette is copied into the video because a render cannot read a custom

@@ -692,12 +692,12 @@ button.setrow:hover{padding-left:3px}
 
 .lsub{color:var(--t2);font-size:15px;margin:0 auto;max-width:46ch;line-height:1.62;text-wrap:pretty}
 .lh2{font-family:var(--serif);font-weight:700;font-size:clamp(23px,3vw,29px);letter-spacing:-.014em;margin:0 0 13px;line-height:1.16;text-wrap:balance}
-ul.steps{list-style:none;padding:0;margin:0;text-align:left}
-ul.steps li{display:flex;gap:13px;padding:12px 0;border-top:1px solid var(--line)}
-ul.steps li:first-child{border-top:0}
+ol.steps,ul.steps{list-style:none;padding:0;margin:0;text-align:left}
+ol.steps li,ul.steps li{display:flex;gap:13px;padding:12px 0;border-top:1px solid var(--line)}
+ol.steps li:first-child,ul.steps li:first-child{border-top:0}
 ul.steps .no{font-size:11px;color:var(--p);flex:0 0 20px;padding-top:3px}
-ul.steps h3{margin:0 0 2px;font-size:15px}
-ul.steps p{margin:0;font-size:13px;color:var(--t2)}
+ol.steps h3,ul.steps h3{margin:0 0 2px;font-size:15px}
+ol.steps p,ul.steps p{margin:0;font-size:13px;color:var(--t2)}
 .storeb{display:flex;gap:9px;justify-content:center;margin-top:8px;flex-wrap:wrap}
 .herocta{display:flex;flex-direction:column;align-items:center;gap:11px;margin:28px 0 0}
 .herocta .btn{min-width:264px}
@@ -1111,8 +1111,8 @@ details.q b{color:var(--t1)}
  .plans2>.plan .price{font-size:31px}
  .plans2>.plan .price span,.plans2>.plan .was{display:inline-block}
  .storeb{gap:12px}
- .lsec>ul.steps{max-width:600px;margin:0 auto}
- .lsec>ul.steps{max-width:640px;margin:0 auto}
+ .lsec>ol.steps,ul.steps{max-width:600px;margin:0 auto}
+ .lsec>ol.steps,ul.steps{max-width:640px;margin:0 auto}
  .lsec>.plan{max-width:560px;margin-left:auto;margin-right:auto}
  .lsec>.faqbox,.lsec>.qcat{max-width:680px;margin-left:auto;margin-right:auto}
  .lfoot{padding:34px 24px 56px}
@@ -1263,7 +1263,6 @@ p,.lsub,.dd,.note,.tdesc{text-wrap:pretty}
  /* Its own layer while playing, so a video decode never repaints the
     ribbons behind it. */
  transform:translateZ(0)}
-.vidcap{text-align:center;margin-top:9px}
 @media(max-width:640px){.vidwrap{margin:18px auto 2px}}
 
 /* A leg the reader has not returned yet. It holds the line's height so the
@@ -1417,7 +1416,6 @@ input[type=range][data-cashslider]:focus-visible{outline:2px solid var(--s);outl
  border:1px solid var(--line);background:var(--elev);
  /* The tall cut is a phone shape and must not become a wall of video. */
  max-height:min(78svh,720px);object-fit:contain}
-.filmcap{margin-top:9px;text-align:center;font-size:12px}
 .film:focus-visible{outline:2px solid var(--s);outline-offset:3px}
 @media(min-width:1000px){
  .filmwrap{max-width:860px}
@@ -1455,11 +1453,6 @@ input[type=range][data-cashslider]:focus-visible{outline:2px solid var(--s);outl
  .herofacts li{font-size:12px}
 }
 
-/* Tabular figures already sit on one advance width. Letter-spacing on top of
- * that pushes the comma and the decimal point away from the digits they
- * belong to, which is how "+£1,184.00" came to read as "+£1 , 184 . 00". */
-.mono,.big,[class*=mono]{letter-spacing:normal}
-
 /* THE FILM IS ONE PALETTE AND THE PRODUCT HAS EIGHT.
  *
  * A rendered film cannot read a custom property, so all six are Carbon. In
@@ -1477,4 +1470,229 @@ input[type=range][data-cashslider]:focus-visible{outline:2px solid var(--s);outl
  border-radius:2px;pointer-events:none;
  background:linear-gradient(90deg,transparent,color-mix(in srgb,var(--s) 55%,transparent),transparent)}
 .film{border:0;border-radius:var(--r);background:#0C0E13}
-.filmcap{margin-top:10px;margin-bottom:2px}
+
+/* ═══ THREE STEPS, ON A LINE ═══════════════════════════════════════════════
+ *
+ * The 01 / 02 / 03 numerals were doing nothing the order of the list did not
+ * already say, and three numbers in a column read as a table of contents. A
+ * dot on a connecting line says the same thing — these follow one another —
+ * and says it as a shape rather than as more text to read.
+ *
+ * The rule is drawn on the list itself rather than as a border on each item,
+ * so it runs BETWEEN the dots and stops at the first and last rather than
+ * hanging off both ends.
+ * ═══════════════════════════════════════════════════════════════════════ */
+ol.steps{position:relative;counter-reset:none}
+ol.steps li{border-top:0;position:relative;padding:14px 0;gap:18px;align-items:flex-start}
+ol.steps .dot{position:relative;flex:0 0 auto;width:13px;height:13px;margin-top:5px;
+ border-radius:50%;background:var(--bg);border:2px solid var(--p);z-index:1}
+/* The connector: from this dot's centre down to the next one's. */
+ol.steps li:not(:last-child) .dot::after{content:"";position:absolute;
+ left:50%;top:100%;width:2px;height:calc(100% + 28px);
+ transform:translateX(-50%);background:color-mix(in srgb,var(--p) 34%,transparent)}
+/* The last step is the one that completes, so its dot is filled. */
+ol.steps li:last-child .dot{background:var(--p)}
+@media (pointer: coarse){ ol.steps .dot::before{display:none} }
+
+/* ═══ THE THREE PLANS ══════════════════════════════════════════════════════
+ *
+ * All three buttons were the same 13px pill: two ghost and one filled. At a
+ * glance the page offered three equivalent choices, and the one it actually
+ * recommends — annual, which is the one with the badge and the saving on it
+ * — won only by being slightly darker. Hierarchy that only exists in the
+ * fill is not hierarchy.
+ *
+ * Annual is now taller, heavier, wider in its own column and lifted off the
+ * page; monthly is an outline; the trial is quietest of the three because it
+ * costs nothing and needs no persuasion. The order of loudness is the order
+ * of the recommendation, and it holds without colour.
+ * ═══════════════════════════════════════════════════════════════════════ */
+.plans2 .plan .btn{width:100%;border-radius:14px;font-size:15px;padding:15px 20px;
+ min-height:52px;letter-spacing:-.005em;
+ transition:transform .18s var(--ease-out),box-shadow .24s var(--ease-out),
+  background-color .2s var(--ease),border-color .2s var(--ease)}
+/* Free trial: the quietest. Nothing is being asked for. */
+.plans2 .plan:not(.pick2) .btn.ghost{background:none;border:1px solid var(--line);color:var(--t2)}
+.plans2 .plan:not(.pick2) .btn.ghost:hover{border-color:color-mix(in srgb,var(--p) 60%,transparent);color:var(--t1)}
+/* Monthly: an outline in the accent, so it reads as a real second option. */
+.plans2 .plan:nth-child(2) .btn.ghost{border-color:color-mix(in srgb,var(--p) 55%,transparent);color:var(--t1)}
+/* Annual: the recommendation, and it looks like one. */
+.plans2 .plan.pick2 .btn{font-size:16.5px;min-height:60px;font-weight:800;
+ box-shadow:0 10px 26px color-mix(in srgb,var(--p) 26%,transparent)}
+.plans2 .plan.pick2 .btn:hover{transform:translateY(-2px);
+ box-shadow:0 16px 38px color-mix(in srgb,var(--p) 34%,transparent)}
+.plans2 .plan .btn:active{transform:scale(.985)}
+
+/* The card carries the same order. */
+.plans2 .plan.pick2{border-color:color-mix(in srgb,var(--p) 62%,transparent);
+ box-shadow:0 0 0 3px color-mix(in srgb,var(--p) 14%,transparent),
+  0 18px 44px color-mix(in srgb,#000 34%,transparent)}
+.plan .badge{font-size:10.5px;letter-spacing:.09em;text-transform:uppercase;font-weight:700;
+ padding:5px 10px;border-radius:999px;background:var(--p);color:var(--bg);white-space:nowrap}
+.plan .saveline{font-size:12.5px;font-weight:600;color:var(--pos);margin:2px 0 4px}
+
+@media(min-width:900px){
+ .plans2{display:grid;grid-template-columns:1fr 1fr 1.14fr;gap:16px;align-items:stretch}
+ .plans2>.plan{margin-bottom:0}
+ /* The recommended column is wider and stands a little proud of the row. */
+ .plans2>.plan.pick2{transform:translateY(-10px);padding:24px;z-index:1}
+ .plans2>.plan.pick2:hover{transform:translateY(-14px)}
+}
+@media(prefers-reduced-motion:reduce){
+ .plans2 .plan.pick2 .btn:hover,.plans2>.plan.pick2,.plans2>.plan.pick2:hover{transform:none}
+}
+
+/* ═══ ONE DOOR ═════════════════════════════════════════════════════════════
+ * One primary action. Everything else is outline weight, so there is never
+ * a question of which button is the one. */
+.authpane{max-width:420px;margin:0 auto;padding-top:26px}
+.authhead{text-align:center;margin-bottom:22px}
+.authh{font-family:var(--serif);font-weight:700;font-size:clamp(24px,5.4vw,29px);
+ line-height:1.14;letter-spacing:-.018em;margin:0 0 8px;text-wrap:balance}
+.authsub{margin:0;max-width:34ch;margin-inline:auto}
+
+.btn.full.authsocial{display:flex;align-items:center;justify-content:center;gap:11px;
+ min-height:50px;font-size:14.5px;border-radius:13px}
+.authsocial svg{flex:0 0 auto}
+
+.authdiv{display:flex;align-items:center;gap:12px;margin:18px 0 14px;
+ font-size:11.5px;color:var(--t4);letter-spacing:.06em;text-transform:uppercase;
+ word-spacing:-.03em}
+.authdiv::before,.authdiv::after{content:"";flex:1;height:1px;background:var(--line)}
+
+/* THE DOCUMENTS ARE CONTROLS, NOT SMALL PRINT.
+ * "By continuing you agree" asks somebody to accept a document they have
+ * not been shown. Each of these opens the real thing, and the tick fills
+ * only once it has been read to the end. */
+.authdocs{display:flex;flex-direction:column;gap:8px;margin:18px 0 16px}
+.docbtn{display:flex;align-items:center;gap:12px;width:100%;text-align:left;
+ padding:13px 14px;border:1px solid var(--line);border-radius:13px;background:var(--card);
+ min-height:58px;transition:border-color .22s var(--ease),background-color .22s var(--ease),
+  transform .16s var(--ease-out)}
+.docbtn:hover{border-color:color-mix(in srgb,var(--p) 55%,transparent);
+ background:color-mix(in srgb,var(--t1) 3%,transparent)}
+.docbtn:active{transform:scale(.99)}
+.docbtn .dtick{flex:0 0 auto;width:22px;height:22px;border-radius:50%;
+ border:2px solid color-mix(in srgb,var(--t4) 70%,transparent);
+ display:grid;place-items:center;transition:border-color .2s var(--ease),background-color .2s var(--ease)}
+.docbtn .dtick::after{content:"";width:9px;height:5px;border-left:2px solid var(--bg);
+ border-bottom:2px solid var(--bg);transform:rotate(-45deg) scale(0);transform-origin:center;
+ transition:transform .26s cubic-bezier(.2,1.6,.4,1)}
+.docbtn.done{border-color:color-mix(in srgb,var(--pos) 45%,transparent)}
+.docbtn.done .dtick{background:var(--pos);border-color:var(--pos)}
+.docbtn.done .dtick::after{transform:rotate(-45deg) scale(1)}
+.docbtn .dtxt{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}
+.docbtn .dtxt b{font-size:14px;font-weight:600;color:var(--t1)}
+.docbtn .dtxt i{font-style:normal;font-size:11.5px;color:var(--t3)}
+.docbtn.done .dtxt i{color:var(--pos)}
+.docbtn .caret{color:var(--t4);flex:0 0 auto}
+
+.authgo{min-height:54px;font-size:15.5px;border-radius:14px}
+.authgo[disabled]{opacity:.42;cursor:not-allowed;transform:none;box-shadow:none}
+.authgo[disabled]:hover{filter:none;transform:none;box-shadow:none}
+/* Never a bare disabled button: the line below always says what is left. */
+.authneed{text-align:center;margin-top:9px;min-height:1.2em;color:var(--t3)}
+.authalt{text-align:center;margin-top:16px}
+.authalt button{font-size:13px;color:var(--t3);text-decoration:underline;
+ text-underline-offset:4px;padding:8px 4px;transition:color .2s var(--ease)}
+.authalt button:hover{color:var(--t1)}
+
+/* The acknowledgement is disabled until the document has been read. */
+.ackbar .btn[disabled]{opacity:.45;cursor:not-allowed}
+.ackbar .btn[disabled]:hover{filter:none;transform:none;box-shadow:none}
+
+@media(min-width:1000px){
+ .authpane{padding-top:52px;max-width:440px}
+}
+
+/* ═══ HOVER, EVERYWHERE SOMETHING IS PRESSABLE ════════════════════════════
+ *
+ * Buttons and the plan cards had hover states; almost nothing else did. A
+ * row that opens a sheet, a chip that filters, a nav item, a table row, a
+ * group in a list: all pressable, none of them saying so until you clicked
+ * and something happened. On a laptop the pointer is the question and hover
+ * is the answer, and its absence is why the product read as flat.
+ *
+ * Only under a fine pointer. On a touch screen there is no hover, and a
+ * sticky one after a tap is worse than none.
+ * ═══════════════════════════════════════════════════════════════════════ */
+@media (hover: hover) and (pointer: fine) {
+ /* Rows that go somewhere. */
+ .setrow,.bet,.lrow,.grprow,.card.t,.leg,.tgcard,.pickrow,.acrow{
+  transition:background-color .18s var(--ease),border-color .18s var(--ease),
+   transform .16s var(--ease-out)}
+ button.setrow:hover,.setrow[data-sheet]:hover,.setrow[data-go]:hover,
+ button.bet:hover,.bet[data-sheet]:hover,
+ .lrow:hover,.grprow:hover,.acrow:hover{
+  background:color-mix(in srgb,var(--t1) 5%,transparent)}
+ button.card.t:hover,.card.t[data-sheet]:hover,.card.t[data-go]:hover{
+  border-color:color-mix(in srgb,var(--p) 48%,transparent);
+  background:color-mix(in srgb,var(--t1) 3.5%,transparent)}
+
+ /* Chips and pills that filter or open something. */
+ .chip,.pill,.lbl[data-sheet]{transition:border-color .18s var(--ease),
+  background-color .18s var(--ease),color .18s var(--ease)}
+ button.chip:hover,button.pill:hover{
+  border-color:color-mix(in srgb,var(--p) 60%,transparent);color:var(--t1);
+  background:color-mix(in srgb,var(--p) 12%,transparent)}
+
+ /* Navigation: the top bar, the tab bar and the desktop sidebar. */
+ .tnav button,.navbar button,.lfoot nav button{
+  transition:color .18s var(--ease),background-color .18s var(--ease)}
+ .tnav button:hover,.lfoot nav button:hover{color:var(--t1)}
+ .navbar button:hover{color:var(--t1);background:color-mix(in srgb,var(--t1) 6%,transparent)}
+ .navbar button[aria-current=true]:hover{background:color-mix(in srgb,var(--p) 14%,transparent)}
+
+ /* Icon buttons and the back caret. */
+ .iconb,.nav,.burger{transition:background-color .18s var(--ease),color .18s var(--ease)}
+ .iconb:hover,.nav:hover,.burger:hover{
+  background:color-mix(in srgb,var(--t1) 8%,transparent);color:var(--t1)}
+
+ /* The calendar. A day you can open should look like one. */
+ .cal .c{transition:transform .16s var(--ease-out),box-shadow .18s var(--ease)}
+ .cal .c:hover{transform:scale(1.06);
+  box-shadow:0 0 0 1px color-mix(in srgb,var(--s) 46%,transparent)}
+
+ /* Theme swatches and the tab strip. */
+ .swatch{transition:transform .16s var(--ease-out)}
+ .swatch:hover{transform:translateY(-2px)}
+ .tabs button:hover{color:var(--t1)}
+
+ /* The films: the frame lifts, so it reads as one thing you can press. */
+ .filmwrap{transition:border-color .22s var(--ease)}
+ .filmwrap:hover{border-color:color-mix(in srgb,var(--s) 34%,transparent)}
+
+ /* FAQ rows. */
+ details.q summary{transition:color .18s var(--ease)}
+ details.q summary:hover{color:var(--t1)}
+}
+@media(prefers-reduced-motion:reduce){
+ .cal .c:hover,.swatch:hover{transform:none}
+}
+
+/* ═══ STAKING DISCIPLINE ═══ */
+.stakeplot{display:flex;flex-direction:column;gap:7px;margin:8px 0 4px}
+.stakescale{display:flex;justify-content:space-between;font-size:9.5px;color:var(--t4);
+ letter-spacing:.05em;text-transform:uppercase;word-spacing:-.04em;padding:0 0 2px 62px}
+.stakerow{display:flex;align-items:center;gap:9px}
+.stakerow .sw2{flex:0 0 53px;font-size:10.5px;color:var(--t3);white-space:nowrap}
+.stakerow .strack{position:relative;flex:1;height:16px;display:flex;align-items:center;min-width:0}
+.stakerow .sbase{position:absolute;left:0;top:0;bottom:0;width:2px;border-radius:2px;
+ background:color-mix(in srgb,var(--s) 55%,transparent)}
+.stakerow .sbar{position:absolute;left:2px;height:9px;border-radius:0 5px 5px 0;
+ transition:width .55s var(--e)}
+.stakerow .sbar.p{background:var(--p)}
+.stakerow .sbar.a{background:var(--a)}
+.stakerow .sbar.neg{background:var(--neg)}
+/* A week that held the plan is a dot on the line, not a bar of length zero. */
+.stakerow .sdot{position:absolute;left:-2px;width:9px;height:9px;border-radius:50%;
+ background:var(--pos)}
+.stakerow .sval{flex:0 0 auto;font-size:10.5px;color:var(--t3);min-width:56px;text-align:right}
+.stakerow .sval.a{color:var(--a)}
+.stakerow .sval.neg{color:var(--neg)}
+.stakerow .sval.p{color:var(--p)}
+
+/* ═══ SPARKLINES ═══ */
+.barline .h .hv{display:flex;align-items:center;gap:9px}
+.spark{flex:0 0 auto;display:block;opacity:.85}
+@media(max-width:360px){ .spark{display:none} }

@@ -1,7 +1,7 @@
 import { Composition } from 'remotion';
-import { Explainer } from './Explainer';
+import { Explainer, EXPLAINER_LENGTH } from './Explainer';
 import { InAction, Bot, Importing, Social, Settling, LENGTHS } from './Films';
-import { FPS, DURATION } from './theme';
+import { FPS } from './theme';
 
 /* TWO CUTS OF EVERY FILM, FROM ONE COMPONENT.
  *
@@ -23,8 +23,11 @@ const FILMS = [
 
 export const Root: React.FC = () => (
   <>
-    <Composition id="Explainer" component={Explainer} durationInFrames={DURATION} fps={FPS} width={1920} height={1080} />
-    <Composition id="ExplainerVertical" component={Explainer} durationInFrames={DURATION} fps={FPS} width={1080} height={1920} />
+    {/* Same 1280/720 pair as the other five: these play in a column, never
+        full screen, and the file that arrives over a phone connection is the
+        one that matters. */}
+    <Composition id="Explainer" component={Explainer} durationInFrames={EXPLAINER_LENGTH} fps={FPS} width={1280} height={720} />
+    <Composition id="ExplainerVertical" component={Explainer} durationInFrames={EXPLAINER_LENGTH} fps={FPS} width={720} height={1280} />
     {FILMS.map(([id, component, durationInFrames]) => (
       <Composition key={id} id={id} component={component}
         durationInFrames={durationInFrames} fps={FPS} width={1280} height={720} />

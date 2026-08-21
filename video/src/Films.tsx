@@ -29,7 +29,7 @@ const Slip: React.FC<{ book: string; legs: [string, string?][]; stake: string; r
   return (
     <Card w={640}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 22 }}>
-        <b style={{ fontFamily: F.ui, fontSize: 27, color: C.t1 }}>{book}</b>
+        <b style={{ fontFamily: F.ui, fontSize: 33, color: C.t1 }}>{book}</b>
         <Pill text="SLIP" />
       </div>
       <div style={{ position: 'relative', overflow: 'hidden', borderRadius: 12 }}>
@@ -37,16 +37,16 @@ const Slip: React.FC<{ book: string; legs: [string, string?][]; stake: string; r
           const s = spring({ frame: f - 10 - i * 6, fps: 30, config: { damping: 18, stiffness: 120 } });
           return (
             <div key={name} style={{
-              display: 'flex', gap: 16, alignItems: 'center', padding: '13px 0',
+              display: 'flex', gap: 20, alignItems: 'center', padding: '16px 0',
               opacity: s, transform: `translateX(${(1 - s) * -12}px)`,
             }}>
               <span style={{
-                width: 16, height: 16, borderRadius: 8, flex: '0 0 auto',
+                width: 22, height: 22, borderRadius: 11, flex: '0 0 auto',
                 border: `2px solid ${C.s}`, background: `${C.s}33`,
               }} />
               <div>
-                <div style={{ fontFamily: F.ui, fontSize: 25, color: C.t1 }}>{name}</div>
-                {mkt ? <div style={{ fontFamily: F.ui, fontSize: 20, color: C.t3 }}>{mkt}</div> : null}
+                <div style={{ fontFamily: F.ui, fontSize: 31, color: C.t1 }}>{name}</div>
+                {mkt ? <div style={{ fontFamily: F.ui, fontSize: 25, color: C.t3 }}>{mkt}</div> : null}
               </div>
             </div>
           );
@@ -59,10 +59,10 @@ const Slip: React.FC<{ book: string; legs: [string, string?][]; stake: string; r
         ) : null}
       </div>
       <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 22, paddingTop: 20, borderTop: `1px solid ${C.line}` }}>
-        <div><div style={{ fontFamily: F.ui, fontSize: 20, color: C.t3 }}>Stake</div>
-          <b style={{ fontFamily: F.mono, fontSize: 30, color: C.t1 }}>{stake}</b></div>
-        <div style={{ textAlign: 'right' }}><div style={{ fontFamily: F.ui, fontSize: 20, color: C.t3 }}>Returns</div>
-          <b style={{ fontFamily: F.mono, fontSize: 30, color: C.t1 }}>{ret}</b></div>
+        <div><div style={{ fontFamily: F.ui, fontSize: 25, color: C.t3 }}>Stake</div>
+          <b style={{ fontFamily: F.mono, fontSize: 36, color: C.t1 }}>{stake}</b></div>
+        <div style={{ textAlign: 'right' }}><div style={{ fontFamily: F.ui, fontSize: 25, color: C.t3 }}>Returns</div>
+          <b style={{ fontFamily: F.mono, fontSize: 36, color: C.t1 }}>{ret}</b></div>
       </div>
     </Card>
   );
@@ -77,7 +77,7 @@ const Bubble: React.FC<{ text: string; mine?: boolean; delay?: number }> = ({ te
       background: mine ? C.p : C.elev, color: mine ? C.bg : C.t1,
       border: mine ? 'none' : `1px solid ${C.line}`,
       borderRadius: 20, borderBottomRightRadius: mine ? 6 : 20, borderBottomLeftRadius: mine ? 20 : 6,
-      padding: '18px 24px', fontFamily: F.ui, fontSize: 25, lineHeight: 1.35,
+      padding: '20px 26px', fontFamily: F.ui, fontSize: 31, lineHeight: 1.38,
       opacity: s, transform: `translateY(${(1 - s) * 14}px) scale(${0.96 + s * 0.04})`,
     }}>{text}</div>
   );
@@ -85,7 +85,7 @@ const Bubble: React.FC<{ text: string; mine?: boolean; delay?: number }> = ({ te
 
 /* A figure that counts to its value rather than appearing at it. */
 const Count: React.FC<{ to: number; prefix?: string; tone?: string; size?: number }> =
-({ to, prefix = '', tone, size = 96 }) => {
+({ to, prefix = '', tone, size = 104 }) => {
   const f = useCurrentFrame();
   const v = interpolate(f, [6, 44], [0, to], { extrapolateLeft: 'clamp', extrapolateRight: 'clamp', easing: easeOut });
   const sign = to >= 0 ? '+' : '−';
@@ -104,11 +104,11 @@ export const InAction: React.FC = () => (
     <Beat from={0}>
       <Stage step="01 / 04" title="Your record, honestly.">
         <Card w={640}>
-          <div style={{ fontFamily: F.ui, fontSize: 22, letterSpacing: '.14em', color: C.t3, textTransform: 'uppercase', marginBottom: 12 }}>Net this month</div>
+          <div style={{ fontFamily: F.ui, fontSize: 26, letterSpacing: '.14em', color: C.t3, textTransform: 'uppercase', marginBottom: 14 }}>Net this month</div>
           <Count to={962.5} prefix="£" />
-          <div style={{ display: 'flex', gap: 30, marginTop: 20 }}>
-            <span style={{ fontFamily: F.ui, fontSize: 24, color: C.t2 }}>Bets <b style={{ fontFamily: F.mono, color: C.t1 }}>96</b></span>
-            <span style={{ fontFamily: F.ui, fontSize: 24, color: C.t2 }}>Units <b style={{ fontFamily: F.mono, color: C.pos }}>+38.5u</b></span>
+          <div style={{ display: 'flex', gap: 42, marginTop: 26 }}>
+            <span style={{ fontFamily: F.ui, fontSize: 30, color: C.t2 }}>Bets <b style={{ fontFamily: F.mono, color: C.t1 }}>96</b></span>
+            <span style={{ fontFamily: F.ui, fontSize: 30, color: C.t2 }}>Units <b style={{ fontFamily: F.mono, color: C.pos }}>+38.5u</b></span>
           </div>
         </Card>
       </Stage>
@@ -131,8 +131,8 @@ export const InAction: React.FC = () => (
     <Beat from={BEAT * 3}>
       <Stage step="04 / 04" title="What is still running, and what it is worth.">
         <Card w={640}>
-          <Row first k="Chelsea v Newcastle" v="£100 open" tone={C.a} delay={4} />
-          <Row k="Kempton 19:45" v="£20 open" tone={C.a} delay={10} />
+          <Row first k="Chelsea v Newcastle" v="£100 open" text tone={C.a} delay={4} />
+          <Row k="Kempton 19:45" v="£20 open" text tone={C.a} delay={10} />
           <Row k="At risk" v="£120.00" tone={C.a} delay={18} />
         </Card>
       </Stage>
@@ -145,9 +145,9 @@ const Grid: React.FC = () => {
   const f = useCurrentFrame();
   const vertical = useVertical();
   const vals = [186, -58, 264, -96, 64, 0, 212, -74, 148, 0, -41, 238, 0, 229, 112, 0, 0, -33, 91, 0, 175];
-  const cell = vertical ? 84 : 74;
+  const cell = vertical ? 74 : 68;
   return (
-    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: 10, width: cell * 7 + 60, maxWidth: '100%' }}>
+    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: 12, width: cell * 7 + 72, maxWidth: '100%' }}>
       {vals.map((v, i) => {
         const s = spring({ frame: f - 6 - i * 1.6, fps: 30, config: { damping: 20, stiffness: 140 } });
         const tone = v > 0 ? C.pos : v < 0 ? C.neg : C.t4;
@@ -157,7 +157,7 @@ const Grid: React.FC = () => {
             border: `1px solid ${v ? tone + '55' : C.line}`,
             background: v ? tone + '1F' : 'transparent',
             display: 'grid', placeItems: 'center',
-            fontFamily: F.mono, fontSize: 19, fontWeight: 700, color: v ? tone : C.t4,
+            fontFamily: F.mono, fontSize: 21, fontWeight: 700, color: v ? tone : C.t4,
             opacity: s, transform: `scale(${0.86 + s * 0.14})`,
           }}>{v ? (v > 0 ? '+' : '−') + Math.abs(v) : '·'}</div>
         );
@@ -184,9 +184,9 @@ export const Bot: React.FC = () => (
     <Beat from={BEAT}>
       <Stage step="Three steps, once" title="Link it, then never think about it.">
         <Card w={660}>
-          <Row first k="Create an account" v="You get a code" delay={4} />
-          <Row k="Paste it to the bot" v="One time only" delay={12} />
-          <Row k="Forward slips" v="Or add it to a group" delay={20} />
+          <Row first k="Create an account" v="You get a code" text delay={4} />
+          <Row k="Paste it to the bot" v="One time only" text delay={12} />
+          <Row k="Forward slips" v="Or add it to a group" text delay={20} />
         </Card>
       </Stage>
     </Beat>
@@ -211,9 +211,9 @@ export const Importing: React.FC = () => (
     <Beat from={0}>
       <Stage step="01 / 03" title="Bring the history you already have.">
         <Card w={640}>
-          <Row first k="CSV from another tracker" v="Any columns" delay={4} />
-          <Row k="A bookmaker statement" v="PDF or CSV" delay={12} />
-          <Row k="Screenshots of old slips" v="Several at once" delay={20} />
+          <Row first k="CSV from another tracker" v="Any columns" text delay={4} />
+          <Row k="A bookmaker statement" v="PDF or CSV" text delay={12} />
+          <Row k="Screenshots of old slips" v="Several at once" text delay={20} />
         </Card>
       </Stage>
     </Beat>
@@ -230,11 +230,11 @@ export const Importing: React.FC = () => (
     <Beat from={BEAT * 2}>
       <Stage step="03 / 03" title="Kept apart from what you log now.">
         <Card w={640}>
-          <div style={{ fontFamily: F.ui, fontSize: 25, color: C.t2, lineHeight: 1.5 }}>
+          <div style={{ fontFamily: F.ui, fontSize: 32, color: C.t2, lineHeight: 1.42 }}>
             Imported figures move net, turnover and the calendar.
           </div>
           <div style={{ height: 18 }} />
-          <div style={{ fontFamily: F.ui, fontSize: 25, color: C.t1, lineHeight: 1.5 }}>
+          <div style={{ fontFamily: F.ui, fontSize: 32, color: C.t1, lineHeight: 1.42 }}>
             They never touch win rate, streaks, or best and worst day — there is no slip behind them.
           </div>
         </Card>
@@ -263,16 +263,16 @@ export const Social: React.FC = () => (
         <Card w={660}>
           <Row first k="£10 stake, won at 1.90" v="+0.36u" tone={C.pos} delay={4} />
           <Row k="£500 stake, won at 1.90" v="+0.36u" tone={C.pos} delay={14} />
-          <Row k="Same call, same score" v="—" delay={24} />
+          <Row k="Same call, same score" v="—" text delay={24} />
         </Card>
       </Stage>
     </Beat>
     <Beat from={BEAT * 2}>
       <Stage step="Private by default" title="Nothing is shared until you say so.">
         <Card w={660}>
-          <Row first k="Private" v="Nothing leaves" delay={4} />
-          <Row k="Friends only" v="People you follow back" delay={12} />
-          <Row k="Public" v="Anyone, if you choose it" delay={20} />
+          <Row first k="Private" v="Nothing leaves" text delay={4} />
+          <Row k="Friends only" v="People you follow back" text delay={12} />
+          <Row k="Public" v="Anyone, if you choose it" text delay={20} />
         </Card>
       </Stage>
     </Beat>
@@ -289,30 +289,30 @@ export const Settling: React.FC = () => (
     <Beat from={0}>
       <Stage step="Six outcomes" title="Every slip lands in one of six places.">
         <Card w={680}>
-          <Row first k="Won" v="Stake back, plus profit" tone={C.pos} delay={4} />
-          <Row k="Lost" v="Stake gone" tone={C.neg} delay={9} />
-          <Row k="Void" v="Stake back, £0 profit" delay={14} />
-          <Row k="Cashed out" v="What you actually took" tone={C.a} delay={19} />
+          <Row first k="Won" v="Stake back, plus profit" text tone={C.pos} delay={4} />
+          <Row k="Lost" v="Stake gone" text tone={C.neg} delay={9} />
+          <Row k="Void" v="Stake back, £0 profit" text delay={14} />
+          <Row k="Cash out" v="What you actually took" text tone={C.a} delay={19} />
         </Card>
       </Stage>
     </Beat>
     <Beat from={BEAT}>
       <Stage step="Whole lines" title="Over 2.0 on a 1–1 is a push, not a loss.">
         <Card w={680}>
-          <Row first k="Over 2.0 · final 1–1" v="Void" delay={4} />
-          <Row k="Over 2.25 · final 1–1" v="Half lost" tone={C.a} delay={12} />
-          <Row k="Over 2.5 · final 1–1" v="Lost" tone={C.neg} delay={20} />
+          <Row first k="Over 2.0 · final 1–1" v="Void" text delay={4} />
+          <Row k="Over 2.25 · final 1–1" v="Half lost" text tone={C.a} delay={12} />
+          <Row k="Over 2.5 · final 1–1" v="Lost" text tone={C.neg} delay={20} />
         </Card>
       </Stage>
     </Beat>
     <Beat from={BEAT * 2}>
       <Stage step="Ninety minutes" title="Extra time and penalties never count.">
         <Card w={680}>
-          <div style={{ fontFamily: F.ui, fontSize: 26, color: C.t2, lineHeight: 1.5 }}>
+          <div style={{ fontFamily: F.ui, fontSize: 32, color: C.t2, lineHeight: 1.42 }}>
             If the feed cannot prove the score at ninety minutes, the bet is not graded.
           </div>
           <div style={{ height: 20 }} />
-          <div style={{ fontFamily: F.serif, fontWeight: 700, fontSize: 40, color: C.t1, lineHeight: 1.2 }}>
+          <div style={{ fontFamily: F.serif, fontWeight: 700, fontSize: 46, color: C.t1, lineHeight: 1.2 }}>
             A wrong grade is worse than no grade.
           </div>
         </Card>
@@ -321,10 +321,10 @@ export const Settling: React.FC = () => (
     <Beat from={BEAT * 3}>
       <Stage step="It asks" title="When it is not sure, it says so.">
         <Card w={680}>
-          <Row first k="Player props" v="Always asks" tone={C.a} delay={4} />
-          <Row k="Anytime scorer" v="Always asks" tone={C.a} delay={10} />
-          <Row k="Bet builders" v="Always asks" tone={C.a} delay={16} />
-          <Row k="Cash out" v="Only you know" tone={C.a} delay={22} />
+          <Row first k="Player props" v="Always asks" text tone={C.a} delay={4} />
+          <Row k="Anytime scorer" v="Always asks" text tone={C.a} delay={10} />
+          <Row k="Bet builders" v="Always asks" text tone={C.a} delay={16} />
+          <Row k="Cash out" v="Only you know" text tone={C.a} delay={22} />
         </Card>
       </Stage>
     </Beat>

@@ -28,12 +28,13 @@ const FILMS = [
   ['Settling', 'settling'],
 ];
 
-const jobs = [
-  ['render', 'Explainer', `${OUT}/explainer.mp4`, '--codec=h264'],
-  ['render', 'Explainer', `${OUT}/explainer.webm`, '--codec=vp8'],
-  ['render', 'ExplainerVertical', `${OUT}/explainer-9x16.mp4`, '--codec=h264'],
-  ['still', 'Explainer', `${OUT}/explainer-poster.jpg`, '--frame=45'],
-];
+const jobs = [];
+
+/* The explainer is now one of the six rather than a special case, so it
+   renders in the same two cuts with the same codecs. The old 9:16 h264 stays
+   as the social asset it was always for. */
+FILMS.unshift(['Explainer', 'explainer']);
+jobs.push(['render', 'ExplainerVertical', `${OUT}/explainer-9x16.mp4`, '--codec=h264']);
 
 for (const [id, name] of FILMS) {
   jobs.push(['render', id, `${OUT}/${name}.webm`, '--codec=vp9', '--crf=40']);
