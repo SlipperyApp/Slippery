@@ -291,7 +291,7 @@ t.save(sys.argv[2])
 
 /* ── cleaning a captured document ──────────────────────────────────────── */
 
-function clean(html, spriteIds, css, fontFaces) {
+function clean(html, spriteIds) {
   let out = html;
 
   /* Nothing may rehydrate, and nothing may reach the network. */
@@ -313,9 +313,7 @@ function clean(html, spriteIds, css, fontFaces) {
    * and the asset inliner then dutifully embedded all six full files in
    * every capture on top of the three subsets. Six hundred and thirteen
    * fonts in a forty megabyte sample. They go before the CSS is written. */
-  const stripped = css.replace(/@font-face\s*\{[^}]*\}/gi, '');
-  const style = `<style>${fontFaces}${stripped}</style>`;
-  out = out.includes('</head>') ? out.replace('</head>', style + '</head>') : style + out;
+  if (!out.includes('</head>')) out = out.replace(/<html([^>]*)>/i, '<html$1><head></head>');
   return out;
 }
 
@@ -345,22 +343,67 @@ async function inlineAssets(html, fetchAsset) {
 
 const esc = (s) => String(s).replace(/&/g, '&amp;').replace(/"/g, '&quot;');
 const escText = (s) => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+const jsonEmbed = (v) => JSON.stringify(v)
+  .replace(/</g, '\\u003c').replace(/>/g, '\\u003e')
+  .replace(/\u2028/g, '\\u2028').replace(/\u2029/g, '\\u2029');
 
-function assemble(captures) {
+/* ═══ WHY THE PARENT ASSEMBLES THE SRCDOC ══════════════════════════════════
+ *
+ * Written literally into the file, `srcdoc` cannot share anything: each of a
+ * hundred and nineteen captures carries its own copy of the fonts, its own
+ * stylesheet and its own copy of every poster. Measured, that was 7.8MB of
+ * woff2 and 2.6MB of JPEG — fifty two and seventeen per cent of a file with
+ * a ten megabyte budget, and all of it the same handful of bytes over and
+ * over.
+ *
+ * So the shared parts are stored once and the parent stitches each capture
+ * together as it scrolls into view. What ends up in the browser is exactly
+ * what was asked for — an `<iframe srcdoc>` per capture, fully isolated —
+ * and the captured DOM inside it still has every script stripped, so nothing
+ * rehydrates and nothing can reach the network. The only script in the file
+ * is the ten lines below, in the wrapper, doing string concatenation.
+ *
+ * Everything renders from `file://` with the network off. Each capture's
+ * label, route and dimensions are plain markup, so the structure of the file
+ * is readable even where the frames are not.
+ * ═══════════════════════════════════════════════════════════════════════ */
+function assemble(captures, fontFaces) {
+  /* Identical pruned stylesheets and repeated assets are stored once and
+     referenced. Most captures of the same screen share both exactly. */
+  const cssTable = [];
+  const cssIndex = new Map();
+  const assetTable = [];
+  const assetIndex = new Map();
+
+  const intern = (table, index, value) => {
+    if (index.has(value)) return index.get(value);
+    const i = table.length;
+    table.push(value); index.set(value, i);
+    return i;
+  };
+
+  const bodies = captures.map((c) => {
+    let html = c.body;
+    /* Any data URI that appears more than once anywhere becomes a token. */
+    html = html.replace(/data:(?:image|font)\/[a-z0-9+.-]+;base64,[A-Za-z0-9+/=]+/g,
+      (uri) => '\u0001A' + intern(assetTable, assetIndex, uri) + '\u0001');
+    return { c: intern(cssTable, cssIndex, c.css), h: html };
+  });
+
   const groups = new Map();
-  for (const c of captures) {
-    const key = c.route;
-    if (!groups.has(key)) groups.set(key, []);
-    groups.get(key).push(c);
-  }
+  captures.forEach((c, i) => {
+    if (!groups.has(c.route)) groups.set(c.route, []);
+    groups.get(c.route).push(i);
+  });
 
-  const nav = [...groups.keys()].map((r, i) =>
-    `<a href="#s${i}">${escText(r)}</a>`).join('');
+  const nav = [...groups.keys()].map((r, i) => `<a href="#s${i}">${escText(r)}</a>`).join('');
 
-  const sections = [...groups.entries()].map(([route, list], i) => `
-<section id="s${i}">
+  const sections = [...groups.entries()].map(([route, idxs], gi) => `
+<section id="s${gi}">
   <h2 class="route">${escText(route)}</h2>
-  ${list.map((c) => `
+  ${idxs.map((i) => {
+    const c = captures[i];
+    return `
   <figure class="cap">
     <figcaption class="lab">
       <b>${escText(c.route)}</b>
@@ -368,11 +411,12 @@ function assemble(captures) {
       ${c.state ? `<span class="st">${escText(c.state)}</span>` : ''}
     </figcaption>
     <div class="frame" style="--w:${c.width}px">
-      <iframe loading="lazy" width="${c.width}" height="${c.height}"
+      <iframe data-i="${i}" width="${c.width}" height="${c.height}"
         title="${esc(c.route + ' — ' + c.viewport + (c.state ? ' — ' + c.state : ''))}"
-        sandbox="allow-same-origin" srcdoc="${esc(c.html)}"></iframe>
+        sandbox="allow-same-origin"></iframe>
     </div>
-  </figure>`).join('')}
+  </figure>`;
+  }).join('')}
 </section>`).join('');
 
   return `<!doctype html>
@@ -408,17 +452,32 @@ function assemble(captures) {
    background:#0C0E13;max-width:100%;width:var(--w)}
   iframe{display:block;border:0;max-width:100%;background:#0C0E13}
   footer{padding:24px 22px 60px;color:var(--dim);font-size:12px;border-top:1px solid var(--line)}
+  noscript p{margin:12px 22px;padding:12px 14px;border:1px solid var(--accent);border-radius:9px}
 </style>
 </head>
 <body>
 <header>
   <h1>Slippery — every screen</h1>
-  <div class="sub">${captures.length} captures · no network required · scripts stripped, so nothing here is interactive</div>
+  <div class="sub">${captures.length} captures · no network required · the captured pages have their scripts stripped, so nothing here is interactive</div>
   <nav>${nav}</nav>
 </header>
+<noscript><p>The captures are assembled in the page, so this file needs JavaScript
+enabled — not to fetch anything, only to join strings that are stored once instead
+of a hundred and nineteen times.</p></noscript>
 ${sections}
 <footer>Generated by scripts/snapshot.mjs. Each capture is the real DOM the app rendered,
-isolated in an iframe with only the CSS rules and icon symbols it uses.</footer>
+isolated in an iframe carrying only the CSS rules and icon symbols it uses.</footer>
+<script>
+/* Shared once: the three subset faces, every distinct pruned stylesheet, and
+   every asset that appears in more than one capture. */
+const F=${jsonEmbed(fontFaces)},C=${jsonEmbed(cssTable)},A=${jsonEmbed(assetTable)},B=${jsonEmbed(bodies)};
+const build=(i)=>{const b=B[i];
+  return b.h.replace(/\u0001A(\d+)\u0001/g,(m,n)=>A[+n])
+    .replace('</head>','<style>'+F+C[b.c]+'</style></head>');};
+const io=new IntersectionObserver((es)=>{for(const e of es){if(!e.isIntersecting)continue;
+  const f=e.target;io.unobserve(f);f.srcdoc=build(+f.dataset.i);}},{rootMargin:'900px 0px'});
+document.querySelectorAll('iframe[data-i]').forEach((f)=>io.observe(f));
+</script>
 </body>
 </html>`;
 }
@@ -491,7 +550,7 @@ async function main() {
   const ppage = await pctx.newPage();
   for (const c of captures) {
     await ppage.setContent(c.html, { waitUntil: 'domcontentloaded' });
-    c.css = await pruneCss(ppage, rawCss);
+    c.css = (await pruneCss(ppage, rawCss)).replace(/@font-face\s*\{[^}]*\}/gi, '');
   }
   await pctx.close();
   const avg = captures.reduce((t, c) => t + c.css.length, 0) / captures.length / 1024;
@@ -527,23 +586,23 @@ async function main() {
   };
 
   for (const c of captures) {
-    c.html = clean(c.html, c.sprite, c.css, fontFaces);
-    c.html = await inlineAssets(c.html, fetchAsset);
+    c.body = clean(c.html, c.sprite);
+    c.body = await inlineAssets(c.body, fetchAsset);
   }
   await actx.close();
   await browser.close();
 
   /* Budget. Marketing at the narrow width goes first, as instructed. */
   let kept = captures;
-  let file = assemble(kept);
+  let file = assemble(kept, fontFaces);
   if (file.length > BUDGET) {
     log(`${(file.length / 1048576).toFixed(1)}MB over budget — dropping mobile marketing captures`);
     kept = kept.filter((c) => !(c.marketing && c.viewport.startsWith('390')));
-    file = assemble(kept);
+    file = assemble(kept, fontFaces);
   }
   while (file.length > BUDGET && kept.length > 40) {
     kept = kept.filter((c, i) => !(c.route === 'sheet' && i % 2));
-    const next = assemble(kept);
+    const next = assemble(kept, fontFaces);
     if (next.length === file.length) break;
     file = next;
     log(`  still over — ${kept.length} captures left`);
