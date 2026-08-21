@@ -23,6 +23,8 @@ export const env = {
   visionApiKey: () => process.env.VISION_API_KEY || process.env.ANTHROPIC_API_KEY,
   emailApiKey: () => process.env.EMAIL_API_KEY,
   adminSecret: () => process.env.ADMIN_SECRET,
+  /* Vercel signs its cron calls with this. */
+  cronSecret: () => process.env.CRON_SECRET,
   appUrl: () =>
     process.env.NEXT_PUBLIC_APP_URL ||
     (process.env.VERCEL_PROJECT_PRODUCTION_URL
@@ -35,4 +37,5 @@ export const SECRET_NAMES = [
   'DATABASE_URL', 'AUTH_SECRET', 'GOOGLE_CLIENT_ID', 'GOOGLE_CLIENT_SECRET',
   'STRIPE_SECRET_KEY', 'STRIPE_WEBHOOK_SECRET', 'TELEGRAM_BOT_TOKEN',
   'TELEGRAM_WEBHOOK_SECRET', 'VISION_API_KEY', 'EMAIL_API_KEY', 'ADMIN_SECRET',
+  'CRON_SECRET',
 ] as const;

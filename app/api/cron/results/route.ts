@@ -20,9 +20,19 @@ export const maxDuration = 60;
 export async function GET(req: NextRequest) {
   /* Vercel signs its cron calls. Anything else is refused, or the sweep is a
      free way to make the deployment do work on demand. */
+  /* FAILS CLOSED. The guard used to be `if (secret && ...)`, which means a
+     deployment with no CRON_SECRET runs the sweep for anybody who asks —
+     and the one deployment where that matters is production, which is
+     exactly the one where somebody might forget to set it. In production a
+     missing secret is a refusal; locally it still runs, because there is
+     nothing there worth protecting and a developer should not have to
+     invent a secret to test a cron. */
   const auth = req.headers.get('authorization') || '';
   const secret = process.env.CRON_SECRET;
-  if (secret && auth !== 'Bearer ' + secret) {
+  const production = process.env.VERCEL_ENV === 'production';
+  if (!secret) {
+    if (production) return NextResponse.json({ ok: false, error: 'CRON_SECRET is not set.' }, { status: 401 });
+  } else if (auth !== 'Bearer ' + secret) {
     return NextResponse.json({ ok: false }, { status: 401 });
   }
   if (!dbReady()) return noDatabase();

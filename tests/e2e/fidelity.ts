@@ -47,9 +47,12 @@ const ALLOWED: { view: string; because: string; expect: RegExp }[] = [
       'separate timers between them, and most of the page\'s infinite ' +
       'animation. Each film ships in two cuts and the page picks the one that ' +
       'fits the device, so a phone is not handed a letterbox. The hero becomes ' +
-      'two columns above 1000px so the product is visible without scrolling. ' +
-      'Every caption states the length and that there is no sound.',
-    expect: /no sound/,
+      'two columns above 1000px so the product is visible without scrolling, ' +
+      'and loses the three-fact list and every standfirst that restated what ' +
+      'the section below it then showed. The 01/02/03 numerals are three dots ' +
+      'on a connecting line: the numerals said nothing the order of the list ' +
+      'did not already say.',
+    expect: /Send the screenshot/,
   },
   {
     view: 'reading',
@@ -277,14 +280,77 @@ function sheetKeysFromSource(): string[] {
   /* A sheet is a property at the top level of the Object.assign block, which
      is the only place in the file indented by exactly one space. */
   for (const m of block.matchAll(/^ ([a-zA-Z][a-zA-Z0-9_]*)\s*[:(]/gm)) keys.add(m[1]);
-  return [...keys];
-}
-
-function firstDifference(want: string, got: string): string {
-  let i = 0;
-  while (i < want.length && i < got.length && want[i] === got[i]) i++;
-  const at = Math.max(0, i - 40);
-  return `at character ${i}\n      prototype: ...${want.slice(at, i + 60)}\n      app:       ...${got.slice(at, i + 60)}`;
-}
-
-main().catch((err) => { console.error(err); process.exit(1); });
+  return [...keys  {
+    view: 'demo',
+    because:
+      'The demo is the dashboard, so it carries the reworked staking chart below.',
+    expect: /on plan/,
+  },
+  {
+    view: 'overview',
+    because:
+      'STAKING DISCIPLINE was six vertical bars of absolute stake with a dashed ' +
+      'line across them at one unit, which asks the reader to read each bar, ' +
+      'find the line and judge the gap, six times. The question is not what did ' +
+      'I stake, it is did I stake to plan. Every week now shares a baseline at ' +
+      'one unit: on plan is a dot on the line, over plan is a bar as long as ' +
+      'the overshoot. Discipline becomes a shape rather than an arithmetic ' +
+      'exercise. The breakdown cards also gain a sparkline each, because a ' +
+      'total says where you are and nothing about which way you are going, and ' +
+      'the two lead to opposite decisions.',
+    expect: /on plan/,
+  },
+  {
+    view: 'su1',
+    because:
+      'ONE DOOR. Sign in and sign up were two screens with a link between them, ' +
+      'asking somebody to declare something the server already knows. One ' +
+      'screen now, no toggle, with the branch decided server side and only on ' +
+      'a correct password, so it is not an account-enumeration oracle. Social ' +
+      'above the divider, email below, one primary action and everything else ' +
+      'at outline weight. Terms and Privacy are real buttons rather than a ' +
+      '"by continuing you agree" line, which asks somebody to accept a ' +
+      'document they have not been shown.',
+    expect: /Sign in or create an account/,
+  },
+  {
+    view: 'login',
+    because: 'The same screen as `su1`. There is only one door now.',
+    expect: /Sign in or create an account/,
+  },
+  {
+    view: 'review',
+    because:
+      'Three invented bets were hard coded into the review list. It renders ' +
+      'what the reader returned, and says so plainly when nothing has been ' +
+      'read: the one screen where you confirm what will enter your ledger ' +
+      'cannot be showing somebody else\'s bets. Two sentences saying the same ' +
+      'thing became one.',
+    expect: /No slip has been read yet|bets? found/,
+  },
+  {
+    view: 'referrals',
+    because:
+      'The note repeated the line directly above it — that the person you refer ' +
+      'gets the longer trial — and only its second half was new.',
+    expect: /No reward on your side/,
+  },
+  {
+    view: 'sheet:legalDoc',
+    because:
+      'The acknowledgement is disabled until the document has been scrolled to ' +
+      'the end, so the copy says scroll rather than read: it now describes a ' +
+      'condition the button actually enforces instead of asking politely.',
+    expect: /Scroll to the end/,
+  },
+  {
+    view: 'sheet:terms',
+    because: 'The same document sheet as `legalDoc`.',
+    expect: /Scroll to the end/,
+  },
+  {
+    view: 'sheet:privacypol',
+    because: 'The same document sheet as `legalDoc`.',
+    expect: /Scroll to the end/,
+  },
+];
