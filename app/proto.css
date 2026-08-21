@@ -147,14 +147,36 @@ a{color:inherit;text-decoration:none}
 @keyframes heroIn{from{opacity:0;transform:translateY(16px);filter:blur(4px)}to{opacity:1;transform:none;filter:none}}
 .lsec,.lfoot{animation:pi .5s var(--e) both}
 @media(prefers-reduced-motion:reduce){.lhero>*{animation:none}}
-.reveal{opacity:0;transform:translateY(18px);transition:opacity .62s var(--ease-out),transform .62s var(--ease-out)}
-.reveal>.lh2{text-align:center;opacity:0;transform:translateY(14px);transition:opacity .7s var(--ease-out),transform .7s var(--ease-out)}
-.reveal>.lsub{text-align:center;margin-left:auto;margin-right:auto;max-width:min(58ch,100%);opacity:0;transform:translateY(12px);transition:opacity .7s var(--ease-out) .1s,transform .7s var(--ease-out) .1s}
-.reveal.in>.lh2,.reveal.in>.lsub{opacity:1;transform:none}
-.reveal.in>*{animation:rise .6s var(--ease-out) both}
-.reveal.in>*:nth-child(2){animation-delay:.07s}
-.reveal.in>*:nth-child(3){animation-delay:.14s}
-.reveal.in>*:nth-child(4){animation-delay:.2s}
+/* ═══ SECTIONS ARRIVE, THEY DO NOT MAKE AN ENTRANCE ═══
+ *
+ * Three things were out of range. The durations ran to 700ms, which on a
+ * page you scroll means the heading is still moving when your eye has
+ * already reached it. The stagger stopped at the fourth child, so a section
+ * with six items had three arriving together at the end. And the section and
+ * its children both animated the same 18px of travel, which doubles up: the
+ * children were moving inside a box that was itself moving.
+ *
+ * Now the section fades and the children carry the travel, everything is
+ * under 500ms, and the stagger runs to eight and then stops rather than
+ * making the last item of a long list wait half a second.
+ */
+.reveal{opacity:0;transition:opacity .42s var(--ease-out)}
+.reveal.in{opacity:1}
+
+.reveal>.lh2{text-align:center}
+.reveal>.lsub{text-align:center;margin-left:auto;margin-right:auto;max-width:min(58ch,100%)}
+
+.reveal.in>*{animation:rise .46s var(--ease-out) both}
+.reveal.in>*:nth-child(1){animation-delay:0ms}
+.reveal.in>*:nth-child(2){animation-delay:45ms}
+.reveal.in>*:nth-child(3){animation-delay:90ms}
+.reveal.in>*:nth-child(4){animation-delay:135ms}
+.reveal.in>*:nth-child(5){animation-delay:180ms}
+.reveal.in>*:nth-child(6){animation-delay:225ms}
+.reveal.in>*:nth-child(7){animation-delay:270ms}
+/* Everything past the eighth arrives with the eighth. A stagger that keeps
+   counting turns a long list into a queue. */
+.reveal.in>*:nth-child(n+8){animation-delay:315ms}
 @keyframes rise{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:none}}
 @keyframes slideRise{from{opacity:0;transform:translateY(14px) scale(.985)}to{opacity:1;transform:none}}
 @media(prefers-reduced-motion:reduce){.dslide>*{animation:none}}
@@ -163,7 +185,12 @@ a{color:inherit;text-decoration:none}
 .tgbox:hover .tgstep{transform:translateX(2px)}
 .grprow{transition:background-color .22s var(--ease)}
 .grprow:hover{background:color-mix(in srgb,var(--t1) 4%,transparent)}
-@media(prefers-reduced-motion:reduce){.reveal.in>*{animation:none}}
+
+@media(prefers-reduced-motion:reduce){
+ /* Present but still. The section is visible either way; only the travel
+    goes, which is what reduced motion asks for. */
+ .reveal,.reveal.in{opacity:1}
+ .reveal.in>*{animation:none}}
 .reveal.in{opacity:1;transform:none}
 .ph .body.enter>*{animation:secIn .55s var(--e) both}
 @keyframes secIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
@@ -582,20 +609,87 @@ button.setrow:hover{padding-left:3px}
  border:1px solid color-mix(in srgb,var(--s) 26%,transparent);
  background:color-mix(in srgb,var(--s) 7%,transparent)}
 .lh1{font-family:var(--serif);font-weight:700;font-size:clamp(31px,5.2vw,44px);line-height:1.06;letter-spacing:-.018em;margin:0 0 14px;text-wrap:balance}
+/* ═══ THE HERO WORD ═══
+ *
+ * It ran three infinite animations on a 4.6s loop: a sheen sweeping the
+ * gradient, a nudge skewing the word, and the underline retracting. Forever,
+ * on a page somebody reads once. By the third pass it is not communicating
+ * anything; it is a thing moving in the corner of your eye while you try to
+ * read the sentence under it.
+ *
+ * One shot, on load, under 600ms. The word is "slip", so the motion has to
+ * mean slipping and then being caught, which is the product: the underline
+ * is what catches it.
+ *
+ * Three options are built and switchable at runtime through
+ * `data-heroanim` on the root, so they can be compared side by side rather
+ * than argued about. The default is chosen below.
+ *
+ * All three animate transform, opacity and clip-path only. The gradient no
+ * longer animates at all: `background-position` on a background-clipped text
+ * fill repaints the glyphs every frame, which is the single most expensive
+ * thing that was happening on this page.
+ */
 .lh1 em{font-style:normal;position:relative;display:inline-block;
- background:linear-gradient(100deg,var(--s) 0%,var(--p) 28%,#fff 45%,var(--s) 62%,var(--p) 100%);
- background-size:280% 100%;-webkit-background-clip:text;background-clip:text;color:transparent;
- animation:sheen 4.6s ease-in-out infinite, slipnudge 4.6s cubic-bezier(.6,0,.3,1) infinite}
+ background:linear-gradient(100deg,var(--s) 0%,var(--p) 34%,var(--t1) 52%,var(--s) 74%,var(--p) 100%);
+ background-size:100% 100%;-webkit-background-clip:text;background-clip:text;color:transparent;
+ /* Its own layer for the duration of the entrance, released afterwards so a
+    long page is not carrying a promoted layer it no longer needs. */
+ will-change:transform}
 .lh1 em::after{content:"";position:absolute;left:2%;right:14%;bottom:.06em;height:2px;border-radius:9px;
- background:linear-gradient(90deg,var(--s),transparent);transform-origin:left;animation:slipline 4.6s cubic-bezier(.6,0,.3,1) infinite}
-@keyframes sheen{0%,55%{background-position:100% 0}80%,100%{background-position:0 0}}
-@keyframes slipnudge{0%,58%{transform:translate(0,0) skewX(0)}
- 70%{transform:translate(.1em,.07em) skewX(-7deg)}
- 82%{transform:translate(-.02em,-.01em) skewX(1.5deg)}
- 92%,100%{transform:translate(0,0) skewX(0)}}
-@keyframes slipline{0%,58%{transform:scaleX(1);opacity:.85}
- 72%{transform:scaleX(.1) translateX(1.6em);opacity:0}
- 86%{transform:scaleX(1);opacity:.85}100%{transform:scaleX(1);opacity:.85}}
+ background:linear-gradient(90deg,var(--s),transparent);transform-origin:left}
+
+/* ---- A: SLIP AND CATCH -------------------------------------------------
+   The word slides down and to the right as though it is getting away, and
+   the underline arrives under it and stops it. The catch is the point: the
+   word overshoots by a hair and settles back, which is what being caught
+   looks like. */
+[data-heroanim="slip"] .lh1 em{animation:heroSlip 560ms cubic-bezier(.32,.72,0,1) both}
+[data-heroanim="slip"] .lh1 em::after{animation:heroCatch 460ms cubic-bezier(.23,1,.32,1) 120ms both}
+@keyframes heroSlip{
+ 0%{transform:translate(.34em,.26em) skewX(-9deg);opacity:0}
+ 62%{transform:translate(-.03em,-.02em) skewX(1deg);opacity:1}
+ 100%{transform:none;opacity:1}}
+@keyframes heroCatch{
+ 0%{transform:scaleX(0);opacity:0}
+ 100%{transform:scaleX(1);opacity:.85}}
+
+/* ---- B: WIPE -----------------------------------------------------------
+   The word is uncovered left to right by a clip, as though it were already
+   there and the page has only just got to it. The quietest of the three and
+   the one that reads best next to a serif. clip-path is compositable, so
+   this costs the same as a transform. */
+[data-heroanim="wipe"] .lh1 em{animation:heroWipe 520ms cubic-bezier(.23,1,.32,1) both}
+[data-heroanim="wipe"] .lh1 em::after{animation:heroWipeLine 520ms cubic-bezier(.23,1,.32,1) both}
+@keyframes heroWipe{
+ 0%{clip-path:inset(0 100% -20% 0);transform:translateY(.06em)}
+ 100%{clip-path:inset(0 -6% -20% 0);transform:none}}
+@keyframes heroWipeLine{
+ 0%{transform:scaleX(0);opacity:.85}
+ 100%{transform:scaleX(1);opacity:.85}}
+
+/* ---- C: DROP -----------------------------------------------------------
+   The word falls a short distance and the underline flexes as it lands,
+   like something caught in a net. The most literal of the three and the most
+   likely to wear thin, which is an argument against it rather than for it. */
+[data-heroanim="drop"] .lh1 em{animation:heroDrop 540ms cubic-bezier(.32,.72,0,1) both}
+[data-heroanim="drop"] .lh1 em::after{animation:heroFlex 420ms cubic-bezier(.23,1,.32,1) 140ms both}
+@keyframes heroDrop{
+ 0%{transform:translateY(-.5em) rotate(-2.5deg);opacity:0}
+ 55%{transform:translateY(.05em) rotate(.4deg);opacity:1}
+ 100%{transform:none;opacity:1}}
+@keyframes heroFlex{
+ 0%{transform:scaleX(.2) scaleY(2.4);opacity:0}
+ 55%{transform:scaleX(1.04) scaleY(1.6);opacity:.9}
+ 100%{transform:scaleX(1) scaleY(1);opacity:.85}}
+
+/* REDUCED MOTION. Not zero animation: fewer and gentler. The word still
+   arrives, it just does not travel to get there. */
+@media(prefers-reduced-motion:reduce){
+ .lh1 em,.lh1 em::after{animation:heroFade 200ms ease both!important}
+}
+@keyframes heroFade{from{opacity:0}to{opacity:1}}
+
 .lsub{color:var(--t2);font-size:15px;margin:0 auto;max-width:46ch;line-height:1.62;text-wrap:pretty}
 .lh2{font-family:var(--serif);font-weight:700;font-size:clamp(23px,3vw,29px);letter-spacing:-.014em;margin:0 0 13px;line-height:1.16;text-wrap:balance}
 ul.steps{list-style:none;padding:0;margin:0;text-align:left}
@@ -1034,6 +1128,57 @@ details.q b{color:var(--t1)}
  .toast.on{transform:translateX(-50%)}
  .tutbox{max-width:420px}
 }
+/* ═══ THE BACKGROUND RESPONDS TO SCROLL ═══
+ *
+ * The technique, not the design: four ribbon layers moving at four different
+ * rates as the page scrolls, so the hero has depth rather than a picture
+ * behind it. What makes it worth having is that it costs nothing.
+ *
+ * CSS SCROLL-DRIVEN ANIMATION, NOT A SCROLL LISTENER. `animation-timeline:
+ * scroll()` is driven by the compositor: no JavaScript runs, nothing reads
+ * layout while the page is moving, and it cannot drop a frame because it is
+ * not on the main thread at all. A scroll handler doing the same job has to
+ * read a position and write a transform every frame, which is the classic
+ * way to make a page that scrolls beautifully on a laptop stutter on a
+ * phone.
+ *
+ * Behind @supports, so a browser without it gets the drift and no parallax
+ * rather than a broken hero. Nothing here animates anything but transform.
+ *
+ * COLOUR COMES FROM THE THEME AND ONLY FROM THE THEME. The gradients are
+ * already stop-coloured with var(--lg1) and var(--lg2), so all eight themes
+ * recolour this for free and none of it is hardcoded.
+ */
+@supports (animation-timeline: scroll()) {
+  @media (prefers-reduced-motion: no-preference) {
+    .rb1,.rb2,.rb3,.rb4{
+      /* The drift keeps its own clock; the parallax runs on the scroller. */
+      animation-timeline:auto,scroll(root block);
+      animation-fill-mode:none,both;
+      animation-timing-function:ease-in-out,linear;
+      animation-iteration-count:infinite,1;
+      animation-range:normal,0 90svh;
+    }
+    /* Nearest layer moves most, furthest least, which is what makes it read
+       as depth rather than as four things sliding. */
+    .rb1{animation-name:w1,par1;animation-duration:7s,auto}
+    .rb2{animation-name:w2,par2;animation-duration:8.5s,auto}
+    .rb3{animation-name:w3,par3;animation-duration:10s,auto}
+    .rb4{animation-name:w4,par4;animation-duration:9s,auto}
+
+    /* The whole field lifts and fades as the hero leaves, so the ribbons
+       hand over to the page rather than being cut off by it. */
+    .wavewrap{animation:wavesOut linear both;animation-timeline:scroll(root block);animation-range:0 100svh}
+  }
+}
+@keyframes par1{to{transform:translate3d(0,-26px,0)}}
+@keyframes par2{to{transform:translate3d(0,-44px,0)}}
+@keyframes par3{to{transform:translate3d(0,-14px,0)}}
+@keyframes par4{to{transform:translate3d(0,-62px,0)}}
+@keyframes wavesOut{
+ 0%,55%{transform:none;opacity:1}
+ 100%{transform:translate3d(0,-40px,0);opacity:.25}}
+
 /* ═══ DECORATIVE MOTION STOPS WHEN NOBODY IS LOOKING AT IT ═══
  *
  * The landing page is long and every decorative loop on it is infinite. A

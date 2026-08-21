@@ -23,7 +23,20 @@
  * data and behaviour specification. Prototype wins on look, this document
  * wins on rules." Each entry is a place a rule wins, named here so it is a
  * decision on the record rather than a silent divergence. */
-const ALLOWED: { view: string; because: string; expect: RegExp }[] = [];
+const ALLOWED: { view: string; because: string; expect: RegExp }[] = [
+  {
+    view: 'sheet:card',
+    because:
+      'The prototype draws a card form: three plain inputs with a test card number ' +
+      'typed into them and a Save button that showed "Card updated" and did nothing. ' +
+      'Collecting card details on this origin would put the whole deployment inside ' +
+      'PCI scope, for a form that was not even wired up. Stripe\'s Billing Portal ' +
+      'handles the card, the plan change and the cancellation, with SCA and 3DS ' +
+      'behind it. This is the one place a rule beats the prototype on look as well ' +
+      'as on behaviour.',
+    expect: /held by Stripe, never by Slippery/,
+  },
+];
 
 import { chromium, type Browser, type Page } from 'playwright-core';
 import { createServer } from 'node:http';
@@ -148,7 +161,16 @@ async function compareSheets(browser: Browser) {
       await app.waitForTimeout(320);
       const want = normalise(await readSheet(spec));
       const got = normalise(await readSheet(app));
-      if (want !== got) note(`sheet ${key}`, firstDifference(want, got));
+      if (want !== got) {
+        const allowed = ALLOWED.find((a) => a.view === 'sheet:' + key);
+        if (!allowed) note(`sheet ${key}`, firstDifference(want, got));
+        else if (!allowed.expect.test(got)) {
+          note(`sheet ${key}`, 'diverges from the prototype AND from what the rule requires.\n      ' +
+            allowed.because + '\n      ' + firstDifference(want, got));
+        } else {
+          console.log(`sheet ${key}: diverges by design.\n  ${allowed.because}\n`);
+        }
+      }
       await spec.evaluate(() => (0, eval)('closeSheet')());
       await app.evaluate(() => (window as any).__slippery.closeSheet());
       await spec.waitForTimeout(120);
