@@ -1,9 +1,9 @@
-import Stripe from 'stripe';
 import { eq } from 'drizzle-orm';
 import { getDb, schema, dbReady } from '@/lib/db';
 import { viewer } from '@/lib/server/session';
 import { env } from '@/lib/server/env';
 import { ok, fail, unauthorised, noDatabase } from '@/lib/server/http';
+import { stripeClient, portalConfigurationId } from '@/lib/server/stripe';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -23,10 +23,8 @@ export async function POST() {
   const account = await viewer();
   if (!account) return unauthorised();
 
-  const key = env.stripeSecretKey();
-  if (!key) return fail(503, 'Payments are not set up on this deployment yet.');
-
-  const stripe = new Stripe(key);
+  const stripe = stripeClient();
+  if (!stripe) return fail(503, 'Payments are not set up on this deployment yet.');
 
   let customerId = account.stripeCustomerId;
   if (!customerId) {
@@ -45,6 +43,7 @@ export async function POST() {
   try {
     const session = await stripe.billingPortal.sessions.create({
       customer: customerId,
+      configuration: await portalConfigurationId(stripe),
       return_url: env.appUrl() + '/app/settings/plan',
     });
     return ok({ url: session.url });

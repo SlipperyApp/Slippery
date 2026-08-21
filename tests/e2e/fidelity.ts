@@ -46,6 +46,35 @@ const ALLOWED: { view: string; because: string; expect: RegExp }[] = [
       'before they press it. Nothing autoplays and the poster is what loads.',
     expect: /Twenty four seconds, no sound/,
   },
+  {
+    view: 'reading',
+    because:
+      'The prototype draws a bet365 slip with four named legs while it pretends ' +
+      'to read yours. Rule 6 of this codebase is that there is no demo data in ' +
+      'the app, and this is the worst place to break it: four selections somebody ' +
+      'never placed, on the screen of a product whose entire claim is an honest ' +
+      'record. The plate keeps the scanning animation and names the file instead.',
+    expect: /Nothing is saved until you have checked it/,
+  },
+  {
+    view: 'review',
+    because:
+      'Three invented bets were hard coded into the review list. It now renders ' +
+      'what the reader returned, and says so plainly when nothing has been read. ' +
+      'Same rule: the one screen where you confirm what will enter your ledger ' +
+      'cannot be showing somebody else\'s bets.',
+    expect: /Nothing to check|bets? found/,
+  },
+  {
+    view: 'import',
+    because:
+      'The dropzone navigated to a demo crop screen. It is a real file picker ' +
+      'and a real drop target now, posting to the reader. The camera emoji goes ' +
+      'with it: rule 8 forbids emoji as interface elements because they ' +
+      'rasterise from the system font, cannot take the semantic colours and ' +
+      'differ on every platform. It is the sprite icon the tab bar already uses.',
+    expect: /Screenshot, PDF or CSV/,
+  },
 ];
 
 import { chromium, type Browser, type Page } from 'playwright-core';

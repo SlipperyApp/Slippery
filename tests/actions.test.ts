@@ -71,3 +71,53 @@ test('undo cancels the write rather than reversing it afterwards', () => {
   assert.match(runtime, /cancelUndo\(\)/);
   assert.match(runtime, /Restored\. Nothing was deleted\./);
 });
+
+/* ═══ THE ONE ACTION THE PRODUCT EXISTS FOR ═══
+ *
+ * Capture at placement. If the dropzone does not upload, nothing else in
+ * this repository matters, and it did not upload until it was checked. */
+
+test('the dropzone posts a real file to the reader', () => {
+  const rt = runtime;
+  assert.match(rt, /new FormData\(\)/, 'nothing is being uploaded');
+  assert.match(rt, /'\/api\/extract'/, 'the reader route is never called');
+  assert.doesNotMatch(rt, /data-pick[^a-z]*>[\s\S]{0,80}data-go="crop"/,
+    'the dropzone still navigates to the demo crop screen');
+});
+
+test('the review screen renders what the reader returned and nothing else', () => {
+  /* Scoped to V.review on purpose. The prototype's worked example runs
+     through the rest of the product and is the visual specification the
+     fidelity harness holds; hydrate() replaces it the moment an account has
+     data. THIS screen is different: it is the confirmation step before
+     something enters your ledger, so it must show the reader's answer or
+     nothing at all. */
+  const review = runtime.slice(runtime.indexOf('V.review='), runtime.indexOf('function reviewLine'));
+  for (const invented of ['Juventus v Cremonese', 'Arsenal, Leeds, Sinner', 'Kempton 19:45']) {
+    assert.ok(!review.includes(invented), 'the review list still hard codes "' + invented + '"');
+  }
+  assert.match(review, /cur\.readBets/, 'the review list is not reading the extraction result');
+});
+
+test('nothing is written before somebody presses save', () => {
+  const rt = runtime;
+  const readSlips = rt.slice(rt.indexOf('async function readSlips'), rt.indexOf('async function saveRead'));
+  assert.ok(!/'\/api\/bets'/.test(readSlips), 'reading a slip writes a bet without being asked');
+});
+
+/* Reader output goes into an HTML string. Unescaped, a bookmaker name off a
+   screenshot is a script tag. */
+test('anything read off a slip is escaped before it becomes HTML', () => {
+  const rt = runtime;
+  assert.match(rt, /const esc=/, 'there is no escaper');
+  for (const field of ['b.eventName', 'b.bookmaker', 'cur.readName']) {
+    const bare = new RegExp('\\$\\{' + field.replace('.', '\\.') + '\\b(?![^}]*\\))');
+    assert.ok(!bare.test(rt), field + ' reaches innerHTML unescaped');
+  }
+});
+
+test('a stake is formatted without a sign', () => {
+  const rt = runtime;
+  assert.match(rt, /const amount=/, 'stakes are going through the signed formatter');
+  assert.match(rt, /bits\.push\(amount\(b\.stakePence/, 'the review line signs the stake');
+});

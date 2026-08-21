@@ -38,5 +38,7 @@ export const LIMITS = {
   verify: { max: 8, window: 900 },
   linkCode: { max: 12, window: 600 },
   extract: { max: 30, window: 3600 },
+  /* Leaves the building and costs somebody else's inbox. */
+  exportEmail: { max: 3, window: 3600 },
   telegram: { max: 40, window: 3600 },
 };

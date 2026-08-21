@@ -52,10 +52,19 @@ test('env files are ignored before any of them can be committed', () => {
 /* A CLIENT-SET PRICE IS TRIVIALLY TAMPERED WITH. */
 test('the client sends a plan name and never an amount', () => {
   const route = read('app/api/stripe/checkout/route.ts');
-  assert.match(route, /STRIPE_PRICE_MONTHLY/);
-  assert.match(route, /STRIPE_PRICE_YEARLY/);
+  /* The route takes a plan NAME off the request and resolves the price
+     server side. Which mechanism resolves it — an environment variable or a
+     lookup key on the price itself — is an implementation choice; that the
+     figure never comes from the client is not. */
+  assert.match(route, /priceFor\(stripe, plan\)/, 'the price must be resolved on the server from the plan name');
   assert.doesNotMatch(route, /unit_amount/, 'an amount in the session is an amount the client could have set');
   assert.doesNotMatch(route, /price_data/, 'price_data builds a price at request time rather than using a fixed id');
+
+  const resolver = read('lib/server/stripe.ts');
+  assert.match(resolver, /lookup_keys/, 'the price is looked up by its stable key');
+  /* AND THE TWO PLACES THAT STATE THE PRICE MUST AGREE. One is what the
+     screens show, the other is what the card is charged. */
+  assert.match(resolver, /PRICES\[plan\]\.pence/, 'the resolver must check Stripe against the quoted figure');
 
   const client = read('lib/proto/runtime.js');
   assert.doesNotMatch(client, /unit_amount|amount:\s*\d/, 'the client is sending a number that looks like money');

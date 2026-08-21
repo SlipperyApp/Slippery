@@ -29,3 +29,13 @@ a linear explanation of the loop, for somebody who has not scrolled yet.
 There is no audio track, deliberately. The embed is muted, `playsinline`, with
 `preload="none"` and a click-to-play overlay, so it costs nothing until
 somebody asks for it.
+
+## Why this is not part of the app's build
+
+Remotion is a dev dependency of the video and of nothing else, and it is
+installed here rather than at the root. The app's `tsconfig.json` therefore
+excludes `video/`: without that, `next build` on a clean checkout type-checks
+`src/Explainer.tsx` against a `remotion` package that was never installed and
+fails, which is exactly how the first deployment of the video broke. The
+rendered files in `public/video/` are checked in, so the site needs nothing
+from this directory at build time.

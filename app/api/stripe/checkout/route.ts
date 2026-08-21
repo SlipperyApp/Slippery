@@ -1,11 +1,11 @@
 import { NextRequest } from 'next/server';
-import Stripe from 'stripe';
 import { eq } from 'drizzle-orm';
 import { getDb, schema, dbReady } from '@/lib/db';
 import { viewer } from '@/lib/server/session';
 import { env } from '@/lib/server/env';
 import { ok, fail, unauthorised, noDatabase, readJson } from '@/lib/server/http';
-import { PRICES, type PlanKey } from '@/lib/server/billing';
+import { type PlanKey } from '@/lib/server/billing';
+import { stripeClient, priceFor } from '@/lib/server/stripe';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -21,14 +21,16 @@ export async function POST(req: NextRequest) {
   const account = await viewer();
   if (!account) return unauthorised();
 
-  const key = env.stripeSecretKey();
-  if (!key) return fail(503, 'Payments are not set up on this deployment yet.');
+  const stripe = stripeClient();
+  if (!stripe) return fail(503, 'Payments are not set up on this deployment yet.');
 
   const body = await readJson<{ plan?: PlanKey; withTrial?: boolean }>(req);
   const plan: PlanKey = body.plan === 'monthly' ? 'monthly' : 'yearly';
 
-  const stripe = new Stripe(key);
-  const priceId = plan === 'monthly' ? process.env.STRIPE_PRICE_MONTHLY : process.env.STRIPE_PRICE_YEARLY;
+  /* Never an amount from the client: a client-set price is trivially
+     tampered with. The plan is a name, and the figure behind it comes from
+     Stripe. */
+  const priceId = await priceFor(stripe, plan);
   if (!priceId) return fail(503, 'That plan is not configured on this deployment yet.');
 
   let customerId = account.stripeCustomerId;

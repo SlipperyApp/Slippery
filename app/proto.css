@@ -1265,3 +1265,13 @@ p,.lsub,.dd,.note,.tdesc{text-wrap:pretty}
  transform:translateZ(0)}
 .vidcap{text-align:center;margin-top:9px}
 @media(max-width:640px){.vidwrap{margin:18px auto 2px}}
+
+/* A leg the reader has not returned yet. It holds the line's height so the
+ * plate does not resize when the answer arrives, and it shimmers only while
+ * motion is allowed. */
+.sk{display:block;min-width:74px;border-radius:5px;
+ background:color-mix(in srgb,var(--t4) 20%,transparent)}
+@media(prefers-reduced-motion:no-preference){
+ .sk{animation:skpulse 1.4s ease-in-out infinite}
+}
+@keyframes skpulse{0%,100%{opacity:.45}50%{opacity:.85}}
