@@ -8,3 +8,8 @@ node_modules
 *.tsbuildinfo
 next-env.d.ts
 test-results
+
+# The video project installs its own toolchain, which is large and only
+# needed to render. The rendered files in public/video/ ARE committed.
+video/node_modules
+video/out

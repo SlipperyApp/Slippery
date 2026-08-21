@@ -1,0 +1,20 @@
+{
+  "name": "slippery-video",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Build-time only. Renders the product explainer. Nothing here reaches the site bundle.",
+  "scripts": {
+    "studio": "remotion studio src/index.ts",
+    "render": "node render.mjs",
+    "render:mp4": "remotion render src/index.ts Explainer ../public/video/explainer.mp4 --codec=h264",
+    "render:webm": "remotion render src/index.ts Explainer ../public/video/explainer.webm --codec=vp8",
+    "render:social": "remotion render src/index.ts ExplainerVertical ../public/video/explainer-9x16.mp4 --codec=h264",
+    "render:poster": "remotion still src/index.ts Explainer ../public/video/explainer-poster.jpg --frame=90"
+  },
+  "dependencies": {
+    "@remotion/cli": "^4.0.240",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
+    "remotion": "^4.0.240"
+  }
+}
