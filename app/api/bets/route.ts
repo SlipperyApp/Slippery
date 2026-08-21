@@ -1,5 +1,5 @@
 import { NextRequest } from 'next/server';
-import { eq, and, desc, gte, lte, sql } from 'drizzle-orm';
+import { eq, and, desc, gte, lte, sql, inArray } from 'drizzle-orm';
 import { getDb, schema, dbReady } from '@/lib/db';
 import { viewer } from '@/lib/server/session';
 import { ok, fail, unauthorised, noDatabase, readJson } from '@/lib/server/http';
@@ -178,4 +178,31 @@ export async function POST(req: NextRequest) {
   });
 
   return ok({ id: created.id });
+}
+
+/* Deleting a selection from the ledger. One statement rather than a loop, and
+   scoped to the account in the same WHERE, so a crafted list of ids cannot
+   reach anybody else's bets. */
+export async function DELETE(req: NextRequest) {
+  if (!dbReady()) return noDatabase();
+  const account = await viewer();
+  if (!account) return unauthorised();
+
+  const body = await readJson<{ ids?: string[] }>(req);
+  const ids = Array.isArray(body.ids) ? body.ids.filter((i) => typeof i === 'string').slice(0, 500) : [];
+  if (!ids.length) return fail(400, 'Nothing selected.');
+
+  const db = getDb();
+  const gone = await db.delete(schema.bets)
+    .where(and(eq(schema.bets.accountId, account.id), inArray(schema.bets.id, ids)))
+    .returning({ id: schema.bets.id });
+
+  await db.insert(schema.auditLog).values({
+    accountId: account.id, entity: 'bet', entityId: null,
+    action: 'delete_many', source: 'user', after: { deleted: gone.length, asked: ids.length },
+  });
+
+  /* Both numbers. "3 deleted" when four were selected is how somebody
+     discovers a leftover row a week later. */
+  return ok({ deleted: gone.length, asked: ids.length });
 }
