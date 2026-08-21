@@ -82,7 +82,17 @@ async function seed(context) {
  * reach rather than a view function called directly. */
 const STATES = [
   { name: 'Social · Groups', path: ROUTES.social, click: '[data-soctab="groups"]' },
-  { name: 'Social · People', path: ROUTES.social, click: '[data-soctab="people"]' },
+  { name: 'Social · People · Connected', path: ROUTES.social, click: '[data-soctab="people"]' },
+  {
+    name: 'Social · People · Following', path: ROUTES.social,
+    click: '[data-soctab="people"]',
+    then: async (page) => {
+      /* The two are a segmented control, so the second is reached by
+         pressing it rather than by a route. */
+      const seg = page.locator('.seg button', { hasText: 'Following' }).first();
+      if (await seg.count()) await seg.click({ timeout: 4000 }).catch(() => {});
+    },
+  },
   { name: 'Add a bet · type it in', path: ROUTES.import, click: '[data-go="manual"]' },
   { name: 'Ledger · filters open', path: ROUTES.ledger, sheet: 'filters' },
   { name: 'Ledger · sort', path: ROUTES.ledger, sheet: 'lsort' },
@@ -214,30 +224,67 @@ function subsetFonts(text) {
   const chars = [...new Set(text)].filter((c) => c.codePointAt(0) > 31).join('');
   const dir = mkdtempSync(join(tmpdir(), 'slip-fonts-'));
   const faces = [
-    ['SourceSerif4-400-latin.woff2', 'Source Serif 4', 700],
-    ['SchibstedGrotesk-400-latin.woff2', 'Schibsted Grotesk', 400],
-    ['GeistMono-400-latin.woff2', 'Geist Mono', 400],
+    ['SourceSerif4-400-latin.woff2', 'Source Serif 4'],
+    ['SchibstedGrotesk-400-latin.woff2', 'Schibsted Grotesk'],
+    ['GeistMono-400-latin.woff2', 'Geist Mono'],
   ];
   const out = [];
   for (const [file, family] of faces) {
     const src = join('public/fonts', file);
     if (!existsSync(src)) { log('  ! missing', file, '— dropping it rather than leaving a broken URL'); continue; }
-    const dst = join(dir, file);
+
+    /* ALL THREE ARE VARIABLE FONTS, and a subset of a variable font keeps the
+     * whole design space: Source Serif came out at 67KB for about a hundred
+     * and twenty glyphs, because it carries a weight axis from 200 to 900 and
+     * an optical size axis from 8 to 60. Pinning optical size and narrowing
+     * the weight range to what the product actually uses takes the same
+     * glyphs to eighteen, with every weight on the page still correct. */
+    const pinned = join(dir, 'pin-' + file);
+    const subset = join(dir, file);
     try {
-      execFileSync('pyftsubset', [src,
-        '--output-file=' + dst, '--flavor=woff2',
-        '--text=' + chars, '--layout-features=*', '--no-hinting', '--desubroutinize',
+      execFileSync('python3', ['-c', `
+import sys
+from fontTools.ttLib import TTFont
+from fontTools.varLib import instancer
+t = TTFont(sys.argv[1])
+if 'fvar' in t:
+    axes = {a.axisTag: a for a in t['fvar'].axes}
+    limits = {}
+    for tag, a in axes.items():
+        if tag == 'wght':
+            limits[tag] = (max(a.minValue, 400), min(a.maxValue, 800))
+        else:
+            limits[tag] = a.defaultValue
+    t = instancer.instantiateVariableFont(t, limits, inplace=True, updateFontNames=False)
+t.flavor = 'woff2'
+t.save(sys.argv[2])
+`, src, pinned], { stdio: 'pipe' });
+    } catch {
+      log('  ! could not pin the axes on', file, '— subsetting it as it is');
+    }
+
+    const input = existsSync(pinned) ? pinned : src;
+    try {
+      execFileSync('pyftsubset', [input,
+        '--output-file=' + subset, '--flavor=woff2',
+        '--text=' + chars,
+        /* Kerning, ligatures and tabular figures are the only features a
+           snapshot needs; everything else is table weight. */
+        '--layout-features=kern,liga,tnum,lnum',
+        '--no-hinting', '--drop-tables+=DSIG,MVAR,STAT,HVAR',
       ], { stdio: 'pipe' });
-    } catch (err) {
+    } catch {
       log('  ! could not subset', file, '— using it whole');
-      out.push([family, readFileSync(src)]);
+      out.push([family, readFileSync(input)]);
       continue;
     }
-    out.push([family, readFileSync(dst)]);
+    out.push([family, readFileSync(subset)]);
   }
+  const total = out.reduce((t, [, b]) => t + b.length, 0);
+  log(`  ${(total / 1024).toFixed(1)}KB of woff2, carried by every capture`);
   return out.map(([family, buf]) => {
-    log(`  ${family}: ${(buf.length / 1024).toFixed(1)}KB`);
-    return `@font-face{font-family:'${family}';font-style:normal;font-weight:100 900;` +
+    log(`    ${family}: ${(buf.length / 1024).toFixed(1)}KB`);
+    return `@font-face{font-family:'${family}';font-style:normal;font-weight:400 800;` +
       `font-display:block;src:url(data:font/woff2;base64,${buf.toString('base64')}) format('woff2')}`;
   }).join('');
 }
@@ -260,8 +307,14 @@ function clean(html, spriteIds, css, fontFaces) {
   out = out.replace(/<symbol\b([^>]*)id="([^"]+)"([\s\S]*?)<\/symbol>/gi,
     (m, a, id) => (spriteIds.includes(id) ? m : ''));
 
-  /* The stylesheet goes in the head, after the faces. */
-  const style = `<style>${fontFaces}${css}</style>`;
+  /* THE SUBSET FACES REPLACE THE APP'S OWN.
+   * The pruner always keeps @font-face — it cannot test one against the DOM
+   * — so the original six rules survived, still pointing at /fonts/*.woff2,
+   * and the asset inliner then dutifully embedded all six full files in
+   * every capture on top of the three subsets. Six hundred and thirteen
+   * fonts in a forty megabyte sample. They go before the CSS is written. */
+  const stripped = css.replace(/@font-face\s*\{[^}]*\}/gi, '');
+  const style = `<style>${fontFaces}${stripped}</style>`;
   out = out.includes('</head>') ? out.replace('</head>', style + '</head>') : style + out;
   return out;
 }
@@ -271,8 +324,11 @@ function clean(html, spriteIds, css, fontFaces) {
    this whole script exists to avoid. */
 async function inlineAssets(html, fetchAsset) {
   const urls = new Set();
-  for (const m of html.matchAll(/(?:src|poster|href)="(\/[^"?#]+\.(?:png|jpe?g|gif|webp|avif|svg|ico|woff2?))"/gi)) urls.add(m[1]);
+  for (const m of html.matchAll(/(?:src|poster|href)="(\/[^"?#]+\.(?:png|jpe?g|gif|webp|avif|svg|ico))"/gi)) urls.add(m[1]);
   for (const m of html.matchAll(/url\((["']?)(\/[^)"']+)\1\)/gi)) urls.add(m[2]);
+  /* Fonts are embedded once as subsets; anything still pointing at
+     /fonts is a duplicate of one of them. */
+  for (const u of [...urls]) if (u.startsWith('/fonts/')) urls.delete(u);
   let out = html;
   for (const url of urls) {
     const data = await fetchAsset(url);
@@ -401,6 +457,7 @@ async function main() {
         const el = page.locator(st.click).first();
         if (await el.count()) { await el.click({ timeout: 4000 }).catch(() => {}); }
       }
+      if (st.then) await st.then(page);
       if (st.sheet) await page.evaluate((k) => window.__slippery.sheet(k), st.sheet).catch(() => {});
       await page.waitForTimeout(650);
       captures.push({ ...(await grab(page, { route: st.path, viewport: vp.label, state: st.name })), width: vp.width, rawCss, marketing: MARKETING.has(st.path) });
@@ -458,7 +515,7 @@ async function main() {
       if (res.ok()) {
         const buf = await res.body();
         /* Anything past a quarter megabyte is not worth carrying. */
-        if (buf.length <= 260_000) {
+        if (buf.length <= 120_000) {
           const type = res.headers()['content-type'] || 'application/octet-stream';
           value = `data:${type.split(';')[0]};base64,${buf.toString('base64')}`;
         }
