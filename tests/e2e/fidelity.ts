@@ -36,6 +36,16 @@ const ALLOWED: { view: string; because: string; expect: RegExp }[] = [
       'as on behaviour.',
     expect: /held by Stripe, never by Slippery/,
   },
+  {
+    view: 'landing',
+    because:
+      'The "How it works" section gains the explainer video, which the prototype ' +
+      'could not contain because it is a single file with no assets. The caption ' +
+      'states its length and that it is silent, so somebody on a metered ' +
+      'connection or in an open-plan office knows what pressing play costs them ' +
+      'before they press it. Nothing autoplays and the poster is what loads.',
+    expect: /Twenty four seconds, no sound/,
+  },
 ];
 
 import { chromium, type Browser, type Page } from 'playwright-core';

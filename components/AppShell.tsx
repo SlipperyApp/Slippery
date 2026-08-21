@@ -44,6 +44,7 @@ export function AppShell() {
             repaint: a.repaint,
             setTheme: a.setTheme,
             startTutorial: a.startTutorial,
+            tutorialSteps: a.tutorialSteps,
             setHeroAnim: a.setHeroAnim,
             /* The live state object, not a copy: the audit changes a setting
                and repaints, which is what the interface does, rather than

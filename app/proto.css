@@ -252,7 +252,7 @@ a{color:inherit;text-decoration:none}
 .btn.ghost{background:none;border:1px solid var(--line);color:var(--t1);box-shadow:none}
 .btn.ghost:hover{border-color:var(--p);box-shadow:none}
 .btn.danger{background:none;border:1px solid color-mix(in srgb,var(--neg) 40%,transparent);color:var(--neg);box-shadow:none}
-.btn.full{display:block;width:100%}
+.btn.full{display:block;width:100%;flex:1 1 0;min-width:0}
 .btn.sm{padding:8px 14px;font-size:13px;min-height:34px}
 .chips{display:flex;gap:7px;flex-wrap:wrap;margin:10px 0}
 .chip{font-size:11.5px;padding:6px 12px;border-radius:999px;border:1px solid var(--line);color:var(--t2);
@@ -1240,9 +1240,16 @@ p,.lsub,.dd,.note,.tdesc{text-wrap:pretty}
  * removed from the tab order is a control that has silently vanished for
  * them alone. */
 [data-notbuilt]{opacity:.55;cursor:not-allowed}
+/* The badge sits on its own line rather than beside the label. Inline, its
+ * nowrap width joined the control's min-content width, and three of these
+ * side by side in a flex row took the crop screen 32px wider than a 360px
+ * phone. On its own line it can never widen anything. */
 [data-notbuilt]::after{content:"Not built yet";font-size:9.5px;letter-spacing:.08em;
- text-transform:uppercase;margin-left:7px;padding:2px 6px;border-radius:5px;
+ text-transform:uppercase;padding:2px 6px;border-radius:5px;
+ display:block;width:max-content;max-width:100%;margin:3px 0 0;
  background:color-mix(in srgb,var(--t4) 22%,transparent);color:var(--t2);white-space:nowrap}
+/* Centred inside a control whose own label is centred. */
+.btn[data-notbuilt]::after,.chip[data-notbuilt]::after{margin-inline:auto}
 
 /* ═══ THE EXPLAINER VIDEO ═══
  *
