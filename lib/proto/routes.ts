@@ -1,10 +1,13 @@
 /* One URL per view.
  *
- * The prototype had no router: the harness swapped `cur.view` and nothing in
+ * The prototype had no router: a harness swapped `cur.view` and nothing in
  * the address bar moved, so no screen could be linked, shared or reloaded and
- * the back button left the app. Every view now owns a path, and `go()` pushes
- * it, which is also what makes the Playwright sweep able to visit every route
- * rather than clicking its way to one.
+ * the back button left the app. Every view owns a path, `go()` pushes it, and
+ * the audit can visit a route rather than clicking its way to one.
+ *
+ * Public pages sit at the root. Everything behind sign-in sits under /app, so
+ * the two halves of the product are legible from the address bar and a future
+ * middleware rule can protect one prefix rather than a list.
  */
 export const ROUTES: Record<string, string> = {
   landing: '/',
@@ -17,40 +20,52 @@ export const ROUTES: Record<string, string> = {
   su4: '/signup/unit',
   su5: '/signup/sports',
   su6: '/signup/plan',
-  login: '/sign-in',
+  login: '/login',
 
-  overview: '/dashboard',
-  ledger: '/ledger',
-  history: '/history',
+  overview: '/app',
+  ledger: '/app/ledger',
+  history: '/app/history',
 
-  social: '/social',
-  discover: '/social/discover',
-  groupdetail: '/social/group',
-  person: '/social/person',
+  social: '/app/social',
+  discover: '/app/social/discover',
+  groupdetail: '/app/social/group',
+  person: '/app/social/person',
 
-  import: '/add',
-  crop: '/add/crop',
-  reading: '/add/analysing',
-  review: '/add/review',
-  manual: '/add/manual',
-  importlinked: '/add/linked',
-  imphist: '/add/history',
-  imphistreview: '/add/history/review',
+  import: '/app/import',
+  crop: '/app/import/crop',
+  reading: '/app/import/analysing',
+  review: '/app/import/review',
+  manual: '/app/import/manual',
+  importlinked: '/app/import/linked',
+  imphist: '/app/import/history',
+  imphistreview: '/app/import/history/review',
 
-  settings: '/settings',
-  plan: '/settings/plan',
-  referrals: '/settings/referrals',
+  settings: '/app/settings',
+  plan: '/app/settings/plan',
+  referrals: '/app/settings/referrals',
 
-  bs_reminder: '/billing/trial',
-  bs_failed: '/billing/declined',
-  bs_readonly: '/billing/read-only',
+  bs_reminder: '/app/billing/trial',
+  bs_failed: '/app/billing/declined',
+  bs_readonly: '/app/billing/read-only',
 
-  fresh: '/states/new-dashboard',
-  freshledger: '/states/new-ledger',
-  freshsocial: '/states/new-social',
-  offline: '/states/offline',
-  saveerr: '/states/save-failed',
-  readererr: '/states/unreadable',
+  fresh: '/app/states/new-dashboard',
+  freshledger: '/app/states/new-ledger',
+  freshsocial: '/app/states/new-social',
+  offline: '/app/states/offline',
+  saveerr: '/app/states/save-failed',
+  readererr: '/app/states/unreadable',
+};
+
+/* Sections of the landing page, reachable by their own URL so a pricing link
+   in an email lands on pricing rather than at the top of the page. They are
+   not views: each scrolls the landing page to a `[data-sec]` anchor. */
+export const SECTIONS: Record<string, string> = {
+  '/how': 'how',
+  '/pricing': 'price',
+  '/themes': 'themes',
+  '/social': 'social',
+  '/import': 'import',
+  '/faq': 'faq',
 };
 
 export const PATH_TO_VIEW: Record<string, string> = Object.fromEntries(
@@ -58,7 +73,7 @@ export const PATH_TO_VIEW: Record<string, string> = Object.fromEntries(
 );
 
 export const ALL_VIEWS = Object.keys(ROUTES);
-export const ALL_PATHS = Object.values(ROUTES);
+export const ALL_PATHS = [...Object.values(ROUTES), ...Object.keys(SECTIONS)];
 
 export function pathForView(view: string): string {
   return ROUTES[view] || '/';
@@ -66,5 +81,11 @@ export function pathForView(view: string): string {
 
 export function viewForPath(path: string): string {
   const clean = path.replace(/\/+$/, '') || '/';
+  if (SECTIONS[clean]) return 'landing';
   return PATH_TO_VIEW[clean] || 'landing';
+}
+
+/** The landing section a path names, if it names one. */
+export function sectionForPath(path: string): string | null {
+  return SECTIONS[path.replace(/\/+$/, '') || '/'] ?? null;
 }

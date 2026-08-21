@@ -31,7 +31,7 @@ export const accounts = pgTable('accounts', {
   oddsFormat: text('odds_format').default('decimal').notNull(),
   showProfitIn: text('show_profit_in').default('currency').notNull(),
   calendarDates: boolean('calendar_dates').default(true).notNull(),
-  theme: text('theme').default('periwinkle').notNull(),
+  theme: text('theme').default('carbon').notNull(),
   bankrollStartPence: integer('bankroll_start_pence'),
   linkCode: text('link_code'),
   linkCodeExpiresAt: timestamp('link_code_expires_at', { withTimezone: true }),

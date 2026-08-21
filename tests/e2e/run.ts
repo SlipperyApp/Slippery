@@ -26,7 +26,10 @@ const VIEWPORTS = [
   { name: '1440', width: 1440, height: 900, touch: false },
 ];
 
-const THEMES = ['periwinkle', 'ink', 'graphite', 'slate', 'tide', 'bronze', 'light', 'linen'];
+/* The eight the redesign ships, darkest to lightest. Tide, Light and Linen
+   are gone; Carbon, Cinnabar and Liquid replace them, and Carbon is the
+   default. */
+const THEMES = ['carbon', 'periwinkle', 'ink', 'graphite', 'slate', 'bronze', 'cinnabar', 'liquid'];
 
 type Failure = { where: string; what: string };
 const failures: Failure[] = [];
@@ -111,11 +114,11 @@ async function sweepViewport(browser: Browser, vp: (typeof VIEWPORTS)[number]) {
   if (vp.name === '390' || vp.name === '1440') await assertTutorialCompletes(page, vp.name);
 
   /* axe, on the screens that carry the most of the interface. */
-  for (const path of ['/', '/dashboard', '/ledger', '/settings', '/signup', '/social']) {
+  for (const path of ['/', '/app', '/app/ledger', '/app/settings', '/signup', '/app/social']) {
     await auditAccessibility(page, path, vp.name);
   }
 
-  await page.goto(BASE + '/dashboard', { waitUntil: 'domcontentloaded' });
+  await page.goto(BASE + '/app', { waitUntil: 'domcontentloaded' });
   await page.waitForTimeout(600);
   await page.screenshot({ path: join(SHOTS, `dashboard-${vp.name}.png`) });
 
@@ -215,7 +218,7 @@ async function clickEverything(page: Page, vpName: string, errors: string[]) {
 }
 
 async function openEverySheet(page: Page, vpName: string, errors: string[]) {
-  await page.goto(BASE + '/dashboard', { waitUntil: 'domcontentloaded' });
+  await page.goto(BASE + '/app', { waitUntil: 'domcontentloaded' });
   await page.waitForTimeout(500);
 
   const keys: string[] = await page.evaluate(() => (window as any).__slippery?.sheetKeys ?? []);
@@ -244,7 +247,7 @@ async function openEverySheet(page: Page, vpName: string, errors: string[]) {
 }
 
 async function applyEveryTheme(page: Page, vpName: string, errors: string[]) {
-  await page.goto(BASE + '/dashboard', { waitUntil: 'domcontentloaded' });
+  await page.goto(BASE + '/app', { waitUntil: 'domcontentloaded' });
   await page.waitForTimeout(500);
 
   for (const theme of THEMES) {
@@ -297,7 +300,7 @@ async function applyEveryTheme(page: Page, vpName: string, errors: string[]) {
     if (errors.length) note(`${vpName} theme ${theme}`, [...new Set(errors)].join(' | '));
   }
 
-  await page.evaluate(() => (window as any).__slippery.setTheme('periwinkle'));
+  await page.evaluate(() => (window as any).__slippery.setTheme('carbon'));
 }
 
 
@@ -417,7 +420,7 @@ async function assertOffscreenMotionStops(page: Page, vpName: string) {
 async function assertTabBarIsAnchored(page: Page, vpName: string) {
   if (Number(vpName) >= 1000) return;   // it is a sidebar at that width
 
-  await page.goto(BASE + '/dashboard', { waitUntil: 'domcontentloaded' });
+  await page.goto(BASE + '/app', { waitUntil: 'domcontentloaded' });
   await page.waitForTimeout(600);
 
   const bar = await page.evaluate(() => {
@@ -469,7 +472,7 @@ async function assertTabBarIsAnchored(page: Page, vpName: string) {
  */
 
 async function assertOddsConvert(page: Page, vpName: string) {
-  await page.goto(BASE + '/ledger', { waitUntil: 'domcontentloaded' });
+  await page.goto(BASE + '/app/ledger', { waitUntil: 'domcontentloaded' });
   await page.waitForTimeout(500);
 
   const read = () => page.evaluate(() =>
@@ -503,7 +506,7 @@ async function assertOddsConvert(page: Page, vpName: string) {
 }
 
 async function assertProfitDisplaySwitches(page: Page, vpName: string) {
-  await page.goto(BASE + '/ledger', { waitUntil: 'domcontentloaded' });
+  await page.goto(BASE + '/app/ledger', { waitUntil: 'domcontentloaded' });
   await page.waitForTimeout(500);
 
   const set = async (mode: string) => {
@@ -527,7 +530,7 @@ async function assertProfitDisplaySwitches(page: Page, vpName: string) {
 }
 
 async function assertWeekStartReorders(page: Page, vpName: string) {
-  await page.goto(BASE + '/dashboard', { waitUntil: 'domcontentloaded' });
+  await page.goto(BASE + '/app', { waitUntil: 'domcontentloaded' });
   await page.waitForTimeout(600);
 
   const letters = async (start: number) => {
@@ -553,7 +556,7 @@ async function assertWeekStartReorders(page: Page, vpName: string) {
    A calendar square showing a profit for a day that has not happened is the
    single most damaging thing this product could draw. */
 async function assertCalendarIsHonest(page: Page, vpName: string) {
-  await page.goto(BASE + '/dashboard', { waitUntil: 'domcontentloaded' });
+  await page.goto(BASE + '/app', { waitUntil: 'domcontentloaded' });
   await page.waitForTimeout(600);
 
   await page.evaluate(() => {
@@ -579,7 +582,7 @@ async function assertCalendarIsHonest(page: Page, vpName: string) {
    Two consecutive half cash outs leave a quarter running. This is the rule
    the old data model could not represent at all. */
 async function assertEighthsSlider(page: Page, vpName: string) {
-  await page.goto(BASE + '/dashboard', { waitUntil: 'domcontentloaded' });
+  await page.goto(BASE + '/app', { waitUntil: 'domcontentloaded' });
   await page.waitForTimeout(500);
 
   const pull = async (eighths: number) => {
@@ -622,7 +625,7 @@ async function assertEighthsSlider(page: Page, vpName: string) {
    A step whose spotlight has no size is a step pointing at nothing, which is
    how a tour quietly becomes ten modals over a dimmed screen. */
 async function assertTutorialCompletes(page: Page, vpName: string) {
-  await page.goto(BASE + '/dashboard', { waitUntil: 'domcontentloaded' });
+  await page.goto(BASE + '/app', { waitUntil: 'domcontentloaded' });
   await page.waitForTimeout(500);
 
   const started = await page.evaluate(() => {

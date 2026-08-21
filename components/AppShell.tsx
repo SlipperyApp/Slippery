@@ -10,7 +10,7 @@
 
 import { useEffect, useRef } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
-import { pathForView, viewForPath } from '@/lib/proto/routes';
+import { pathForView, viewForPath, sectionForPath } from '@/lib/proto/routes';
 import type { ProtoApi } from '@/lib/proto/types';
 
 export function AppShell() {
@@ -54,6 +54,16 @@ export function AppShell() {
           };
           hydrateFromServer(a);
           a.go(viewForPath(window.location.pathname));
+          /* A path naming a landing section renders the landing page and
+             then scrolls to it, so a pricing link in an email arrives at
+             pricing rather than at the top. */
+          const section = sectionForPath(window.location.pathname);
+          if (section) {
+            requestAnimationFrame(() => {
+              const target = document.querySelector(`[data-sec="${section}"]`);
+              if (target) target.scrollIntoView({ behavior: 'auto', block: 'start' });
+            });
+          }
         },
         onView(view: string) {
           const next = pathForView(view);
@@ -97,7 +107,7 @@ export function AppShell() {
 
   return (
     <div className="stage">
-      <div className="ph" id="ph" data-t="periwinkle" ref={host} />
+      <div className="ph" id="ph" data-t="carbon" ref={host} />
     </div>
   );
 }
@@ -113,13 +123,13 @@ async function hydrateFromServer(a: ProtoApi) {
     if (!body.user) return;
     a.hydrate({
       signedIn: true,
-      theme: body.user.theme || 'periwinkle',
+      theme: body.user.theme || 'carbon',
       oddsFmt: body.user.oddsFormat || 'Decimal',
       showIn: body.user.showProfitIn || 'Currency',
       weekStart: body.user.weekStart ?? 1,
       calDates: body.user.calendarDates ?? true,
     });
-    a.setTheme(body.user.theme || 'periwinkle');
+    a.setTheme(body.user.theme || 'carbon');
   } catch {
     /* Offline is a state the product already draws, not an error to throw. */
   }

@@ -23,20 +23,7 @@
  * data and behaviour specification. Prototype wins on look, this document
  * wins on rules." Each entry is a place a rule wins, named here so it is a
  * decision on the record rather than a silent divergence. */
-const ALLOWED: { view: string; because: string; expect: RegExp }[] = [
-  {
-    view: 'ledger',
-    because:
-      'The prototype hardcodes Cashed 2 and Void 1 beside an All that counts the rows, ' +
-      'so the strip reads 6 + 6 + 2 + 1 against a total of 12. The spec requires that ' +
-      'every count derive from one query, that zero-count facets be hidden, and that the ' +
-      'facet total equal the row total. All twelve sample bets are won or lost, so the two ' +
-      'empty facets are not drawn and the figures above them are the prototype\'s exactly.',
-    /* What the app must show instead, so a later change cannot quietly turn
-       this allowance into cover for a different divergence. */
-    expect: /Select All 12 Won 6 Lost 6 ✓/,
-  },
-];
+const ALLOWED: { view: string; because: string; expect: RegExp }[] = [];
 
 import { chromium, type Browser, type Page } from 'playwright-core';
 import { createServer } from 'node:http';
@@ -84,9 +71,11 @@ async function main() {
 
 async function open(browser: Browser, url: string): Promise<Page> {
   const page = await browser.newPage({
-    viewport: { width: 390, height: 844 },
-    isMobile: true,
-    hasTouch: true,
+    /* Compared at a desktop width. The prototype's harness defaults to its
+       desktop layout and only simulates a phone through a class the port
+       does not have, so comparing at 390 would put the two sides in
+       different layouts and report every view as different. */
+    viewport: { width: 1280, height: 900 },
     /* Settled rather than mid-entrance: the prototype staggers its sections
        in, and comparing during the stagger compares two different frames. */
     reducedMotion: 'reduce',
@@ -136,7 +125,7 @@ async function compareViews(browser: Browser) {
 
 async function compareSheets(browser: Browser) {
   const spec = await open(browser, `http://localhost:${PORT}/`);
-  const app = await open(browser, APP + '/dashboard');
+  const app = await open(browser, APP + '/app');
 
   /* `const SH` at the top level of a classic script lives in the global
      lexical environment, so it is in scope here even though it is not a
@@ -175,11 +164,14 @@ async function compareSheets(browser: Browser) {
    the whole theme is a near miss that nobody can point at. */
 async function compareThemes(browser: Browser) {
   const spec = await open(browser, `http://localhost:${PORT}/`);
-  const app = await open(browser, APP + '/dashboard');
+  const app = await open(browser, APP + '/app');
 
   const TOKENS = ['--pos', '--neg', '--a', '--bg', '--p', '--s', '--card', '--line',
     '--t1', '--t2', '--t3', '--t4', '--elev', '--lg1', '--lg2'];
-  const THEMES = ['periwinkle', 'ink', 'graphite', 'slate', 'tide', 'bronze', 'light', 'linen'];
+  /* The eight the redesign ships, darkest to lightest. Tide, Light and Linen
+   are gone; Carbon, Cinnabar and Liquid replace them, and Carbon is the
+   default. */
+const THEMES = ['carbon', 'periwinkle', 'ink', 'graphite', 'slate', 'bronze', 'cinnabar', 'liquid'];
 
   for (const theme of THEMES) {
     const read = (page: Page, apply: string) =>

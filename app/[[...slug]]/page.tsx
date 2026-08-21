@@ -1,6 +1,6 @@
 import { notFound } from 'next/navigation';
 import { AppShell } from '@/components/AppShell';
-import { ALL_PATHS, PATH_TO_VIEW } from '@/lib/proto/routes';
+import { ALL_PATHS, PATH_TO_VIEW, SECTIONS } from '@/lib/proto/routes';
 
 /* Every view is prerendered as its own path, so each screen is a real URL
    that reloads, links and shares. The paint itself is client side, because
@@ -20,6 +20,8 @@ export const dynamicParams = false;
 export default async function Page({ params }: { params: Promise<{ slug?: string[] }> }) {
   const { slug } = await params;
   const path = '/' + (slug ?? []).join('/');
-  if (!PATH_TO_VIEW[path === '/' ? '/' : path]) notFound();
+  /* A section path renders the landing page and scrolls to an anchor, so it
+     is a real address even though it is not its own view. */
+  if (!PATH_TO_VIEW[path] && !SECTIONS[path]) notFound();
   return <AppShell />;
 }

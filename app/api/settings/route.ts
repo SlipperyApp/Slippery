@@ -16,7 +16,10 @@ export const dynamic = 'force-dynamic';
  * the unit they were logged with, and the overview order is persisted per
  * account so it survives a new device.
  */
-const THEMES = ['periwinkle', 'ink', 'graphite', 'slate', 'tide', 'bronze', 'light', 'linen'];
+/* The eight the prototype ships, darkest to lightest. Tide, Light and Linen
+   are gone; Carbon, Cinnabar and Liquid replace them, and Carbon is the
+   default. */
+const THEMES = ['carbon', 'periwinkle', 'ink', 'graphite', 'slate', 'bronze', 'cinnabar', 'liquid'];
 
 export async function PATCH(req: NextRequest) {
   if (!dbReady()) return noDatabase();

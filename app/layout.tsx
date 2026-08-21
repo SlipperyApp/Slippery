@@ -26,7 +26,7 @@ export const viewport: Viewport = {
   width: 'device-width',
   initialScale: 1,
   viewportFit: 'cover',
-  themeColor: '#0A0F1E',
+  themeColor: '#0A0C10',
 };
 
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
@@ -35,16 +35,17 @@ export default async function RootLayout({ children }: { children: React.ReactNo
   const nonce = (await headers()).get('x-nonce') ?? undefined;
 
   return (
-    <html lang="en-GB" data-t="periwinkle">
+    <html lang="en-GB" data-t="carbon">
       <head>
         {/* No third-party font host. The faces are served from this origin,
             so the policy does not have to allow one and a blocked CDN cannot
             drop the app into a fallback face, which is what stops the ledger's
             tabular figures lining up. */}
         <link rel="preload" href="/fonts/SchibstedGrotesk-400-latin.woff2" as="font" type="font/woff2" crossOrigin="" />
-        <link rel="preload" href="/fonts/SplineSansMono-400-latin.woff2" as="font" type="font/woff2" crossOrigin="" />
+        <link rel="preload" href="/fonts/SourceSerif4-400-latin.woff2" as="font" type="font/woff2" crossOrigin="" />
+        <link rel="preload" href="/fonts/GeistMono-400-latin.woff2" as="font" type="font/woff2" crossOrigin="" />
       </head>
-      <body data-t="periwinkle">
+      <body data-t="carbon">
         <IconSprite />
         {children}
         {/* The tombstone worker at /sw.js unregisters the cache-first worker
