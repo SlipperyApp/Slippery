@@ -75,6 +75,13 @@ const ALLOWED: { view: string; because: string; expect: RegExp }[] = [
       'differ on every platform. It is the sprite icon the tab bar already uses.',
     expect: /Screenshot, PDF or CSV/,
   },
+  {
+    /* The same screen with the bot already linked: it is built by string
+       replacement from V.import, so it inherits the change above. */
+    view: 'importlinked',
+    because: 'The same screen as `import`, drawn with the bot already linked.',
+    expect: /Screenshot, PDF or CSV/,
+  },
 ];
 
 import { chromium, type Browser, type Page } from 'playwright-core';

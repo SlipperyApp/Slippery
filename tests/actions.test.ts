@@ -121,3 +121,26 @@ test('a stake is formatted without a sign', () => {
   assert.match(rt, /const amount=/, 'stakes are going through the signed formatter');
   assert.match(rt, /bits\.push\(amount\(b\.stakePence/, 'the review line signs the stake');
 });
+
+/* ═══ THE FIGURES ON SCREEN ARE THE ACCOUNT'S OWN ═══ */
+
+test('a signed-in account replaces the worked example rather than adding to it', () => {
+  assert.match(runtime, /async function hydrateLedger/, 'nothing fetches the ledger');
+  assert.match(runtime, /'\/api\/bets\?period=all'/, 'the ledger route is never called');
+  /* If these stay `const` the hydration cannot replace them, and the
+     failure is silent: the screens keep drawing the example. */
+  for (const binding of ['bets', 'PERIODS', 'DAYVALS', 'BR_OPEN']) {
+    assert.ok(!new RegExp('^const ' + binding + '\\b', 'm').test(runtime),
+      binding + ' is const, so hydration cannot replace it');
+  }
+  const shell = readFileSync(new URL('../components/AppShell.tsx', import.meta.url), 'utf8');
+  assert.match(shell, /hydrateLedger\(\)/, 'the shell never asks for the real ledger');
+});
+
+/* An account with nothing in it is the first thing every new user sees. */
+test('no figure divides by zero on an empty account', () => {
+  assert.match(runtime, /function roiOf/, 'ROI has no zero-stake case');
+  assert.ok(!/net\/staked\*100/.test(runtime), 'the ledger still divides net by staked directly');
+  assert.ok(!/d\.net\/\(d\.to-d\.void\)\*100/.test(runtime), 'the period card still divides directly');
+  assert.match(runtime, /const b=bankroll\(\);return b>0/, 'exposure still divides by an unguarded bankroll');
+});

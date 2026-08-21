@@ -45,6 +45,7 @@ export function AppShell() {
             setTheme: a.setTheme,
             startTutorial: a.startTutorial,
             tutorialSteps: a.tutorialSteps,
+            hydrateLedger: a.hydrateLedger,
             setHeroAnim: a.setHeroAnim,
             /* The live state object, not a copy: the audit changes a setting
                and repaints, which is what the interface does, rather than
@@ -132,6 +133,14 @@ async function hydrateFromServer(a: ProtoApi) {
       calDates: body.user.calendarDates ?? true,
     });
     a.setTheme(body.user.theme || 'carbon');
+
+    /* THE WORKED EXAMPLE IS FOR SOMEBODY WHO IS NOT SIGNED IN.
+       Once there is an account, every figure has to be that account's,
+       including the empty answer. Preferences alone were being hydrated,
+       so a signed-in person saw the prototype's good month as their own
+       ledger. */
+    const replaced = await a.hydrateLedger();
+    if (replaced) a.repaint();
   } catch {
     /* Offline is a state the product already draws, not an error to throw. */
   }

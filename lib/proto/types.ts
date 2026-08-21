@@ -23,6 +23,7 @@ export type ProtoApi = {
   setTheme: (theme: string) => void;
   startTutorial: () => void;
   tutorialSteps: number;
+  hydrateLedger: () => Promise<boolean>;
   setHeroAnim: (name: string) => void;
   hydrate: (patch: Partial<ProtoCur>) => void;
 };
