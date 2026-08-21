@@ -1365,3 +1365,116 @@ input[type=range][data-cashslider]:focus-visible{outline:2px solid var(--s);outl
 @media (prefers-reduced-motion:reduce){
  input[type=range][data-cashslider]::-webkit-slider-thumb{transition:none}
 }
+
+/* ═══ THE HERO ════════════════════════════════════════════════════════════
+ *
+ * It was one narrow centred column at every width, with the headline capped
+ * at 44px and the product shot pushed into its own section underneath. On a
+ * 1440px laptop that is a third of the screen doing the work and two thirds
+ * of it empty, and the first thing anybody sees of the product arrives after
+ * a scroll.
+ *
+ * At 1000px it becomes two columns: the claim, and the thing itself. Below
+ * that it stays exactly as it was, because a phone has one column and
+ * arguing with that is how heroes end up unreadable.
+ * ═══════════════════════════════════════════════════════════════════════ */
+.lhero .inner{max-width:1180px;margin:0 auto}
+.herocol{display:flex;flex-direction:column;align-items:center}
+.heroshot{margin-top:26px}
+
+/* Three facts, not a feature list. Each is checkable and none of them is a
+   claim about winning. */
+.herofacts{display:flex;flex-wrap:wrap;gap:8px 20px;justify-content:center;
+ margin:20px 0 0;padding:0;list-style:none}
+.herofacts li{font-size:12.5px;color:var(--t3);display:flex;align-items:center;gap:7px;
+ letter-spacing:.01em}
+.herofacts li::before{content:"";width:5px;height:5px;border-radius:50%;flex:0 0 auto;
+ background:var(--pos)}
+
+@media(min-width:1000px){
+ .lhero{padding-top:64px;text-align:left}
+ .lhero .inner{display:grid;grid-template-columns:minmax(0,1.05fr) minmax(0,.95fr);
+  gap:56px;align-items:center;padding:0 40px 40px}
+ .herocol{align-items:flex-start;text-align:left}
+ .herofacts{justify-content:flex-start}
+ .herocta{justify-content:flex-start}
+ .storeb{justify-content:flex-start}
+ .heroshot{margin-top:0;display:flex;justify-content:flex-end}
+ /* A hero headline that stops at 44px on a 1440px screen reads as a
+    subheading. It is allowed to be a hero here. */
+ .lhero .lh1{font-size:clamp(44px,4.6vw,68px);margin-bottom:18px}
+ .lhero .lsub{font-size:17px;max-width:46ch;margin-left:0;margin-right:0}
+}
+@media(min-width:1280px){
+ .lhero .inner{gap:72px}
+}
+
+/* ═══ THE FILMS ═══════════════════════════════════════════════════════════
+ * One treatment for all six, so the page reads as one product rather than
+ * six things somebody assembled. */
+.filmwrap{margin:0 auto;max-width:760px;width:100%}
+.film{display:block;width:100%;height:auto;border-radius:var(--r);
+ border:1px solid var(--line);background:var(--elev);
+ /* The tall cut is a phone shape and must not become a wall of video. */
+ max-height:min(78svh,720px);object-fit:contain}
+.filmcap{margin-top:9px;text-align:center;font-size:12px}
+.film:focus-visible{outline:2px solid var(--s);outline-offset:3px}
+@media(min-width:1000px){
+ .filmwrap{max-width:860px}
+}
+
+/* ═══ SECTION RHYTHM ══════════════════════════════════════════════════════
+ * The sections were 32px apart at every width, which on a laptop reads as
+ * one continuous column with headings in it rather than as sections. */
+@media(min-width:760px){
+ .lsec{padding:56px 24px}
+}
+@media(min-width:1000px){
+ .lsec{padding:80px 40px}
+ .lh2{font-size:clamp(28px,2.6vw,38px)}
+ .lsub{font-size:16px}
+}
+/* One measure for every standfirst, so they do not each find their own. */
+.lsec .lsub{max-width:62ch;margin-left:auto;margin-right:auto}
+
+/* ═══ HERO RHYTHM ON A PHONE ═══
+ * Everything was correctly sized and much too far apart: the standfirst sat
+ * 40px off the CTA, the CTA 34px off the demo link, and the three facts
+ * wrapped onto two lines with a gap between them the size of a paragraph.
+ * A hero should be one thought, not five things stacked. */
+.lhero{padding-top:34px}
+.lhero .lsub{margin-bottom:22px}
+.herocta{gap:10px;margin:20px 0 0}
+.herofacts{margin-top:18px;gap:6px 16px;row-gap:6px}
+.storeb{margin-top:22px}
+.storenote{margin-top:8px}
+.heroshot{margin-top:30px}
+@media(max-width:560px){
+ .leyebrow{font-size:9.5px;padding:5px 12px;margin-bottom:14px}
+ .lhero .lsub{font-size:14.5px;line-height:1.5}
+ .herofacts li{font-size:12px}
+}
+
+/* Tabular figures already sit on one advance width. Letter-spacing on top of
+ * that pushes the comma and the decimal point away from the digits they
+ * belong to, which is how "+£1,184.00" came to read as "+£1 , 184 . 00". */
+.mono,.big,[class*=mono]{letter-spacing:normal}
+
+/* THE FILM IS ONE PALETTE AND THE PRODUCT HAS EIGHT.
+ *
+ * A rendered film cannot read a custom property, so all six are Carbon. In
+ * Bronze or Cinnabar the clip is visibly a different colour from the page
+ * around it, and the honest answer is to frame it as a film rather than
+ * pretend it is part of the layout. The frame takes the theme's own surface
+ * and border, and a hairline of the theme's accent sits under it, so the
+ * seam reads as an edge somebody drew rather than a rectangle that does not
+ * belong.
+ *
+ * The alternative was eighty renders. */
+.filmwrap{position:relative;padding:10px;border-radius:calc(var(--r) + 8px);
+ background:var(--elev);border:1px solid var(--line)}
+.filmwrap::after{content:"";position:absolute;left:14%;right:14%;bottom:-1px;height:2px;
+ border-radius:2px;pointer-events:none;
+ background:linear-gradient(90deg,transparent,color-mix(in srgb,var(--s) 55%,transparent),transparent)}
+.film{border:0;border-radius:var(--r);background:#0C0E13}
+.filmcap{margin-top:10px;margin-bottom:2px}

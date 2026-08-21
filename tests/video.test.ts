@@ -44,13 +44,57 @@ test('the video project is self-contained', () => {
   assert.equal(pkg.private, true);
 });
 
-/* THE STORYBOARD STAYS AS DOM.
-   Its six scenes are live and theme-reactive. Rendering them would freeze
-   them to one palette and break seven of the eight themes. */
-test('the landing storyboard was not turned into video', () => {
+/* THE STORYBOARDS ARE FILM NOW, on the owner's instruction, superseding the
+   earlier decision to keep them as live DOM.
+ *
+ * What that decision was protecting is real and has not gone away: a
+ * rendered film is one palette, and there are eight themes. The trade was
+ * made deliberately. Five separate storyboards with five separate timers,
+ * five sets of arrows and no two of them moving the same way, was the single
+ * largest thing making the landing page feel unfinished, and it was most of
+ * the infinite animation a phone was paying for. A film that is Carbon in a
+ * Bronze theme reads as a film; a carousel that stutters reads as broken.
+ *
+ * The films sit in a frame that takes the theme's own border and surface, so
+ * the seam is a deliberate edge rather than a foreign object dropped in. */
+test('the landing storyboards are films, in both shapes', () => {
   const client = read('lib/proto/runtime.js');
-  assert.match(client, /data-scene/, 'the live scenes are gone');
-  assert.match(client, /const FILM=/, 'the storyboard array is gone');
+  assert.doesNotMatch(client, /data-scene/, 'a live scene deck is still there');
+  assert.doesNotMatch(client, /const FILM=\[/, 'the storyboard array is still there');
+  assert.doesNotMatch(client, /data-deck="(bot|imp|soc)"/, 'a slide deck is still there');
+  for (const name of ['in-action', 'bot', 'import', 'social', 'settling']) {
+    assert.ok(client.includes(`film('${name}'`), name + ' has no film on the page');
+  }
+  /* The whole point of two cuts is that the page picks between them. */
+  assert.match(client, /const FILM_TALL = '\(max-width: 760px\)'/);
+  assert.match(client, /tall \? '-tall' : ''/, 'nothing chooses the shape');
+});
+
+test('every film exists in both cuts, with a poster for each', () => {
+  for (const name of ['in-action', 'bot', 'import', 'social', 'settling']) {
+    for (const f of [
+      `public/video/${name}.webm`, `public/video/${name}.mp4`,
+      `public/video/${name}-tall.webm`, `public/video/${name}-tall.mp4`,
+      `public/video/${name}-poster.jpg`, `public/video/${name}-tall-poster.jpg`,
+    ]) {
+      const p = new URL('../' + f, import.meta.url);
+      assert.ok(existsSync(p), f + ' has not been rendered');
+      assert.ok(statSync(p).size > 5_000, f + ' is suspiciously small');
+    }
+  }
+});
+
+/* A marketing page that ships 20MB of video to a phone is not a marketing
+   page, it is a download. Nothing autoplays and preload is none, so this is
+   a ceiling on what a visitor could ask for rather than what they get. */
+test('no single film is heavier than three megabytes', () => {
+  for (const name of ['in-action', 'bot', 'import', 'social', 'settling']) {
+    for (const shape of ['', '-tall']) {
+      const f = `public/video/${name}${shape}.webm`;
+      const size = statSync(new URL('../' + f, import.meta.url)).size;
+      assert.ok(size < 3_000_000, f + ' is ' + Math.round(size / 1024) + 'KB');
+    }
+  }
 });
 
 test('the embed asks for nothing until somebody wants it', () => {

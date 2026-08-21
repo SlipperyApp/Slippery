@@ -39,12 +39,17 @@ const ALLOWED: { view: string; because: string; expect: RegExp }[] = [
   {
     view: 'landing',
     because:
-      'The "How it works" section gains the explainer video, which the prototype ' +
-      'could not contain because it is a single file with no assets. The caption ' +
-      'states its length and that it is silent, so somebody on a metered ' +
-      'connection or in an open-plan office knows what pressing play costs them ' +
-      'before they press it. Nothing autoplays and the poster is what loads.',
-    expect: /Twenty four seconds, no sound/,
+      'The landing page is the one screen the prototype could not specify, ' +
+      'because a single HTML file cannot contain a video. Five storyboards — ' +
+      'the settlement carousel, the social deck, the import deck, the Telegram ' +
+      'preview and the six-scene autoplay film — are Remotion films now. They ' +
+      'were roughly 240 lines of absolutely positioned scenes with five ' +
+      'separate timers between them, and most of the page\'s infinite ' +
+      'animation. Each film ships in two cuts and the page picks the one that ' +
+      'fits the device, so a phone is not handed a letterbox. The hero becomes ' +
+      'two columns above 1000px so the product is visible without scrolling. ' +
+      'Every caption states the length and that there is no sound.',
+    expect: /no sound/,
   },
   {
     view: 'reading',
