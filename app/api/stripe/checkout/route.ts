@@ -54,7 +54,7 @@ export async function POST(req: NextRequest) {
        automatic start at trial end possible at all. */
     payment_method_collection: 'always',
     subscription_data: trialEnd ? { trial_end: trialEnd } : undefined,
-    success_url: env.appUrl() + '/dashboard',
+    success_url: env.appUrl() + '/app',
     cancel_url: env.appUrl() + '/signup/plan',
     metadata: { accountId: account.id, plan },
   });
