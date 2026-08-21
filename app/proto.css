@@ -1275,3 +1275,93 @@ p,.lsub,.dd,.note,.tdesc{text-wrap:pretty}
  .sk{animation:skpulse 1.4s ease-in-out infinite}
 }
 @keyframes skpulse{0%,100%{opacity:.45}50%{opacity:.85}}
+
+/* ═══ TOUCH TARGETS ═══════════════════════════════════════════════════════
+ *
+ * A hundred and seven controls measured under 44px on an iPhone: icon
+ * buttons at 19px, calendar squares at 28px, chips at 21px tall, the back
+ * caret at 40px. They are not broken — a tap that lands inside them works —
+ * but a 19px target on a 390px screen is a target most thumbs miss, and
+ * missing feels exactly like a button that does not work.
+ *
+ * The fix expands the HIT AREA and leaves the VISUAL BOX alone, so nothing
+ * on screen moves by a pixel. A transparent ::before is centred on the
+ * control and grown to 44px in whichever direction is short. It is
+ * ::before rather than ::after because ::after is already carrying the tab
+ * underline, the no-bets diagonal, the toggle knob and the not-built badge.
+ *
+ * Only on a coarse pointer. On a mouse a 19px target is fine and a 44px
+ * invisible one would swallow hovers meant for its neighbour.
+ * ═══════════════════════════════════════════════════════════════════════ */
+@media (pointer: coarse) {
+ /* Every control, rather than a list somebody has to remember to add to.
+  * The exclusions are the four places ::before is already load bearing —
+  * the play ring, the selected plan's border, the tutorial step's spine —
+  * and the calendar, which is handled below. */
+ button, a[href], [role=button], summary, label.tog,
+ input[type=checkbox], input[type=radio]{
+  position:relative;
+  /* No 300ms wait for a double tap that is never coming. */
+  touch-action:manipulation;
+ }
+ button:not(.play):not(.plan):not(.tgstep)::before,
+ a[href]::before,
+ [role=button]:not(.play):not(.plan)::before,
+ summary::before{
+  content:"";
+  position:absolute;
+  left:50%;
+  top:50%;
+  width:max(100%, 44px);
+  height:max(100%, 44px);
+  transform:translate(-50%, -50%);
+  /* Behind the label so it cannot cover an icon, and never painted. */
+  z-index:0;
+  pointer-events:auto;
+ }
+ /* Anything with its own ::before keeps it. */
+ .play::before, .plan.pick2::before, .tgstep::before,
+ .factlist .k::before, .impnote span::before, .plan li::before,
+ .aura::before, .newfeat::before{width:auto;height:auto;transform:none}
+
+ /* THE CALENDAR IS THE ONE PLACE A 44px TARGET WOULD MAKE THINGS WORSE.
+  * Seven columns five pixels apart inside a card: expanded hit areas would
+  * overlap their neighbours and open the wrong day, which is a worse
+  * failure than a small target. The squares are 28px at their tightest,
+  * which clears the 24px WCAG 2.5.8 minimum, and the day detail is also
+  * reachable from the ledger. */
+ .cal .c::before{display:none}
+ /* The knob is drawn with ::after; the track is already 42x24 and the row
+  * around it is tappable, so the expander only needs the height. */
+ .tog::before{width:100%;height:44px}
+}
+
+/* THE CASH OUT SLIDER. A native range input is sixteen pixels of track and
+ * a thumb you cannot see the edges of. The track keeps its height, the
+ * thumb becomes a 28px disc, and the input itself gets 44px of vertical room
+ * so the whole strip is grabbable rather than just the hairline. */
+input[type=range][data-cashslider]{
+ -webkit-appearance:none;appearance:none;
+ height:44px;background:transparent;touch-action:none;cursor:pointer;
+}
+input[type=range][data-cashslider]::-webkit-slider-runnable-track{
+ height:6px;border-radius:999px;background:color-mix(in srgb,var(--t4) 34%,transparent)
+}
+input[type=range][data-cashslider]::-moz-range-track{
+ height:6px;border-radius:999px;background:color-mix(in srgb,var(--t4) 34%,transparent)
+}
+input[type=range][data-cashslider]::-webkit-slider-thumb{
+ -webkit-appearance:none;appearance:none;
+ width:28px;height:28px;border-radius:50%;background:var(--p);border:2px solid var(--bg);
+ box-shadow:0 2px 8px color-mix(in srgb,#000 34%,transparent);
+ margin-top:-11px;transition:transform 140ms cubic-bezier(.23,1,.32,1)
+}
+input[type=range][data-cashslider]::-moz-range-thumb{
+ width:28px;height:28px;border-radius:50%;background:var(--p);border:2px solid var(--bg);
+ box-shadow:0 2px 8px color-mix(in srgb,#000 34%,transparent)
+}
+input[type=range][data-cashslider]:active::-webkit-slider-thumb{transform:scale(1.12)}
+input[type=range][data-cashslider]:focus-visible{outline:2px solid var(--s);outline-offset:3px}
+@media (prefers-reduced-motion:reduce){
+ input[type=range][data-cashslider]::-webkit-slider-thumb{transition:none}
+}

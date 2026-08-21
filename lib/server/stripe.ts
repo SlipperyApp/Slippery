@@ -44,7 +44,7 @@ export async function priceFor(stripe: Stripe, plan: PlanKey): Promise<string | 
   if (cached) return cached;
 
   const found = await stripe.prices.list({ lookup_keys: [LOOKUP[plan]], active: true, limit: 1 });
-  const price = found.data[0];
+  const price = found.data[0] ?? await createPrice(stripe, plan);
   if (!price) return null;
 
   /* THE PRODUCT AND THE PAYMENT PAGE MUST AGREE ON THE PRICE. Two places
@@ -114,4 +114,56 @@ export async function portalConfigurationId(stripe: Stripe): Promise<string | un
   });
   portalConfig = made.id;
   return portalConfig;
+}
+
+
+/* ═══ THE ACCOUNT PROVISIONS ITSELF, IN TEST MODE ONLY ═══
+ *
+ * Setting up Stripe by hand means somebody typing 3.49 into a dashboard and
+ * the product quoting £3.49 somewhere else, with nothing checking that the
+ * two agree. `billing.ts` already states the figures and every screen reads
+ * it, so the price is created FROM that rather than matched against it after
+ * the fact, and the lookup key makes it idempotent: the second call finds
+ * the first call's price.
+ *
+ * LIVE MODE DOES NOT DO THIS. Creating a price that will charge real cards
+ * is a money decision and it belongs to a person, so a live key with no
+ * price configured fails loudly and says what is missing. */
+async function createPrice(stripe: Stripe, plan: PlanKey): Promise<Stripe.Price | null> {
+  const key = env.stripeSecretKey() || '';
+  if (!key.startsWith('sk_test_') && !key.startsWith('rk_test_')) return null;
+
+  const product = await slipperyProduct(stripe);
+  if (!product) return null;
+
+  return stripe.prices.create({
+    product,
+    currency: 'gbp',
+    unit_amount: PRICES[plan].pence,
+    recurring: { interval: plan === 'monthly' ? 'month' : 'year' },
+    nickname: `Slippery ${plan}`,
+    lookup_key: LOOKUP[plan],
+  });
+}
+
+let productId: string | null = null;
+
+/** One product, found by its metadata marker so a rename cannot orphan it. */
+async function slipperyProduct(stripe: Stripe): Promise<string | null> {
+  if (productId) return productId;
+  const existing = await stripe.products.search({ query: `metadata['slippery']:'plan'`, limit: 1 })
+    .catch(() => null);
+  if (existing && existing.data[0]) {
+    productId = existing.data[0].id;
+    return productId;
+  }
+  const made = await stripe.products.create({
+    name: 'Slippery',
+    description:
+      'Bet slip tracker. Forward a slip when you place it; Slippery reads it, ' +
+      'tracks it live, settles it and shows real P/L.',
+    metadata: { slippery: 'plan' },
+  });
+  productId = made.id;
+  return productId;
 }
