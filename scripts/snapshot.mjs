@@ -472,10 +472,14 @@ ${sections}
 isolated in an iframe carrying only the CSS rules and icon symbols it uses.</footer>
 <script>
 /* Shared once: the three subset faces, every distinct pruned stylesheet, and
-   every asset that appears in more than one capture. */
+   every asset that appears in more than one capture.
+   NOTE the doubled backslash in the pattern below: this whole block is inside
+   a template literal in the generator, where a lone \\d is not an escape and
+   collapses to a bare d. The emitted regex then matched nothing and ninety
+   six placeholders went out as literal text. */
 const F=${jsonEmbed(fontFaces)},C=${jsonEmbed(cssTable)},A=${jsonEmbed(assetTable)},B=${jsonEmbed(bodies)};
 const build=(i)=>{const b=B[i];
-  return b.h.replace(/%%SNAPASSET(\d+)%%/g,(m,n)=>A[+n])
+  return b.h.replace(/%%SNAPASSET(\\d+)%%/g,(m,n)=>A[+n])
     .replace('</head>','<style>'+F+C[b.c]+'</style></head>');};
 const io=new IntersectionObserver((es)=>{for(const e of es){if(!e.isIntersecting)continue;
   const f=e.target;io.unobserve(f);f.srcdoc=build(+f.dataset.i);}},{rootMargin:'900px 0px'});

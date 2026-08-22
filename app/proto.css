@@ -1696,3 +1696,248 @@ ol.steps li:last-child .dot{background:var(--p)}
 .barline .h .hv{display:flex;align-items:center;gap:9px}
 .spark{flex:0 0 auto;display:block;opacity:.85}
 @media(max-width:360px){ .spark{display:none} }
+
+/* ══════════════════════════════════════════════════════════════════════════
+ * 01 · ONE CONTAINER RULE
+ *
+ * Measured at 1440×900, /app laid cards at 575, 1164 and 1200 — three widths
+ * on one screen — while social, import and settings used a centred 860px
+ * column that left 57%, 42% and 41% of the first screen empty. There was no
+ * rule to return to, so every pass invented a different one.
+ *
+ * One max width, twelve columns, one gap. Every screen spans against the
+ * same grid, so a group list and a dashboard are the same shape and neither
+ * needs a number of its own.
+ * ══════════════════════════════════════════════════════════════════════════ */
+@media(min-width:1000px){
+ :root{--shell:1280px;--gap:16px}
+
+ /* The single-purpose screens keep a narrow measure — a verification code
+    does not want twelve columns — but they measure from the same shell. */
+ .ph:not(:has(.navbar)) .pane{max-width:520px}
+
+ /* Everything behind the tab bar is the grid. */
+ .ph:has(.navbar) .pane,
+ .ph:has(.navbar) .pane.grid,
+ .ph:has(.navbar) .pane:not(.grid){
+  display:grid!important;
+  grid-template-columns:repeat(12,minmax(0,1fr));
+  gap:var(--gap);
+  align-items:start;
+  columns:auto;
+  max-width:var(--shell);
+  margin-inline:auto;
+  padding:20px 24px 28px;
+ }
+ /* Anything that is not a card runs the full width: headings, banners,
+    buttons, the tab strip. */
+ .ph:has(.navbar) .pane>*{grid-column:1/-1;margin-bottom:0}
+ .ph:has(.navbar) .pane>.card{grid-column:span 6}
+
+ /* DEFAULT SPANS. A calendar wants to be squarish, a ledger row wants to be
+    long, and a four-figure summary wants to be small. */
+ .ph:has(.navbar) .pane>[data-cardid=net]{grid-column:span 12}
+ .ph:has(.navbar) .pane>[data-cardid=cal]{grid-column:span 5}
+ .ph:has(.navbar) .pane>[data-cardid=recent]{grid-column:span 7}
+ .ph:has(.navbar) .pane>[data-cardid=alltime]{grid-column:span 5}
+ .ph:has(.navbar) .pane>[data-cardid=curve],
+ .ph:has(.navbar) .pane>[data-cardid=months]{grid-column:span 7}
+ .ph:has(.navbar) .pane>[data-cardid=running]{grid-column:span 5}
+ .ph:has(.navbar) .pane>[data-cardid=stake]{grid-column:span 6}
+ .ph:has(.navbar) .pane>[data-cardid=oddsband]{grid-column:span 6}
+ .ph:has(.navbar) .pane>[data-cardid=clv]{grid-column:span 6}
+ .ph:has(.navbar) .pane>[data-cardid=book],
+ .ph:has(.navbar) .pane>[data-cardid=market],
+ .ph:has(.navbar) .pane>[data-cardid=sport],
+ .ph:has(.navbar) .pane>[data-cardid=tips],
+ .ph:has(.navbar) .pane>[data-cardid=course],
+ .ph:has(.navbar) .pane>[data-cardid=odds],
+ .ph:has(.navbar) .pane>[data-cardid=dow]{grid-column:span 4}
+ .ph:has(.navbar) .pane>[data-cardid=lsum]{grid-column:span 12}
+ .ph:has(.navbar) .pane>[data-cardid=lrows]{grid-column:span 12}
+
+ /* The discover / breakdown drawer uses the same twelve. */
+ .ph:has(.navbar) .disc{grid-column:1/-1}
+ .ph:has(.navbar) .disc>div{display:grid;grid-template-columns:repeat(12,minmax(0,1fr));
+  gap:var(--gap);grid-auto-rows:auto;align-items:start}
+ .ph:has(.navbar) .disc>div>.card{grid-column:span 4;grid-row:auto!important;margin-bottom:0}
+ .ph:has(.navbar) .disc>div>.card.sz-w,
+ .ph:has(.navbar) .disc>div>.card.sz-f{grid-column:span 6}
+
+ /* `narrow` used to mean 560px of its own. It now means half the shell,
+    which is the same intent expressed in the grid. */
+ [data-narrow] .pane{grid-template-columns:repeat(12,minmax(0,1fr))}
+ [data-narrow] .pane>*{grid-column:3/11}
+
+ @media(max-width:1080px){
+  .ph:has(.navbar) .pane>.card,
+  .ph:has(.navbar) .disc>div>.card{grid-column:1/-1}
+ }
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+ * 03 · TYPE, BORDERS AND SURFACES
+ * ══════════════════════════════════════════════════════════════════════════ */
+
+/* TABULAR SANS FOR ROW FIGURES, MONO ONLY FOR HERO FIGURES AND CODES.
+ * Geist Mono has narrow counters, and at the 9 to 11px where most of these
+ * numbers live that costs real legibility. Tabular numerals on Schibsted
+ * keep the column alignment, which was the only reason mono was there. */
+.bet .v,.bet .d,.lrow .v,.barline .h b,.stat .v,.kv b,.oret,.ostake,
+.setrow .k .mono,.nbadge,.chip .mono,.pill .mono,.dd .mono{
+ font-family:var(--ui);font-variant-numeric:tabular-nums;letter-spacing:-.005em}
+/* The hero figure, odds and codes keep the mono face. */
+.big,.big.mono,[data-cardid=net] .big,.code,.linkcode,.odds{font-family:var(--mono)}
+
+/* FEWER BORDERS, MORE SURFACE. A #14171F card on #0C0E13 separates without a
+ * 1px line as well; the ledger, the densest screen, gets noticeably calmer. */
+.card .card.t,.card .setrow,.card .bet,.card .leg,.card .barline{border-color:transparent}
+.card .card.t{background:color-mix(in srgb,var(--t1) 3.5%,transparent);border:0}
+.bet,.lrow{border-bottom:1px solid var(--line);border-top:0;border-left:0;border-right:0;
+ border-radius:0}
+.bet:last-child,.lrow:last-child{border-bottom:0}
+
+/* A LIGHT SOURCE. One line, and the dark UI stops reading flat. */
+.card,.sheet,.planbox,.navbar{box-shadow:inset 0 1px 0 rgba(255,255,255,.04)}
+
+/* THREE RADII, NOT FIVE. Controls, cards, sheets. */
+:root{--r-ctl:8px;--r-card:12px;--r-sheet:20px}
+.btn,.chip,.field,.iconb,.seg,.tog,.src,.docbtn{border-radius:var(--r-ctl)}
+.btn,.chip,.pill,.runpill{border-radius:999px}
+.card,.tgbox,.grpbox,.faqbox,.plan{border-radius:var(--r-card)}
+.sheet{border-radius:var(--r-sheet) var(--r-sheet) 0 0}
+
+/* A FOCUS RING. There was none in any capture, and people tab through data
+ * apps. It is also a WCAG requirement. */
+:where(button,a,input,select,textarea,summary,[tabindex]):focus-visible{
+ outline:2px solid var(--s);outline-offset:2px;border-radius:var(--r-ctl)}
+
+/* ══════════════════════════════════════════════════════════════════════════
+ * 25 · SIZING AND COPY, SPECIFICALLY
+ * ══════════════════════════════════════════════════════════════════════════ */
+/* Decoration at 9px grey is either legible or it is gone. */
+.bet .u,.lrow .u,.oret{font-size:11px}
+/* The only navigation structure in the product, and it was the smallest text
+   on the screen. */
+.navsec{font-size:10.5px;padding-top:18px}
+/* The densest screen in the app was carrying the smallest type. */
+.bet .d,.lrow .d{font-size:11.5px}
+/* The calendar grows on its own now the grid gives it span 5. */
+@media(min-width:1000px){ .cal{max-width:none} .cal .c{max-height:none} }
+
+/* ═══ 02 · THE MODULE MENU ═══ */
+.hdctl{display:flex;align-items:center;gap:8px;flex:0 0 auto}
+.dots{position:relative}
+.dots>.iconb{width:28px;height:28px;min-height:28px;border-radius:var(--r-ctl);
+ display:grid;place-items:center;padding:0;line-height:1;font-size:14px}
+.menu{position:absolute;right:0;top:34px;z-index:40;min-width:214px;
+ background:color-mix(in srgb,var(--elev) 92%,var(--t1));
+ border:1px solid var(--line);border-radius:var(--r-card);padding:8px;
+ box-shadow:0 14px 38px color-mix(in srgb,#000 58%,transparent),inset 0 1px 0 rgba(255,255,255,.05);
+ display:none}
+.dots.open .menu{display:block}
+.menu .mh{font-size:9.5px;letter-spacing:.13em;text-transform:uppercase;color:var(--t4);
+ font-weight:700;padding:6px 8px 5px;word-spacing:-.04em}
+.menu .mi{display:flex;align-items:center;justify-content:space-between;gap:10px;
+ padding:8px;border-radius:7px;font-size:12.5px;color:var(--t2);cursor:pointer;min-height:36px}
+.menu .mi:hover{background:color-mix(in srgb,var(--t1) 7%,transparent);color:var(--t1)}
+.menu .mi[aria-checked=true]{color:var(--t1)}
+.menu .mi[aria-checked=true]::after{content:"✓";color:var(--s);font-size:12px}
+.menu hr{border:0;border-top:1px solid var(--line);margin:6px 4px}
+.menu .grp{display:flex;gap:4px;padding:4px 6px 6px;flex-wrap:wrap}
+.menu .grp button{flex:1;min-width:56px;background:var(--card);border:1px solid var(--line);
+ color:var(--t2);font:inherit;font-size:11px;font-weight:650;padding:7px 4px;
+ border-radius:6px;cursor:pointer;min-height:34px}
+.menu .grp button[aria-pressed=true]{background:var(--elev);color:var(--t1);border-color:var(--line2,var(--line))}
+
+/* ═══ 05 · STAKING DISCIPLINE ═══ */
+.stakeplot{display:flex;flex-direction:column;gap:8px;margin:14px 0 6px}
+.stakeaxis{position:relative;height:14px;margin-left:58px;margin-right:64px}
+.stakeaxis .sunit{position:absolute;transform:translateX(-50%);font-size:10px;font-weight:700;
+ color:var(--t1);white-space:nowrap}
+.stakerow{display:flex;align-items:center;gap:10px}
+.stakerow .sw2{flex:0 0 48px;font-size:11px;color:var(--t3);white-space:nowrap}
+.stakerow .strack{position:relative;flex:1;height:18px;min-width:0}
+.stakerow .sband{position:absolute;top:0;bottom:0;background:color-mix(in srgb,var(--pos) 13%,transparent);
+ border-left:1px dashed color-mix(in srgb,var(--pos) 34%,transparent);
+ border-right:1px dashed color-mix(in srgb,var(--pos) 34%,transparent)}
+.stakerow .sbase{position:absolute;top:-2px;bottom:-2px;width:1.5px;
+ background:var(--t2);transform:translateX(-50%)}
+.stakerow .sbar{position:absolute;top:3px;height:12px;border-radius:3px;transition:width .55s var(--e)}
+.stakerow .sbar.ok{background:var(--pos)}
+.stakerow .sbar.a{background:var(--a)}
+.stakerow .sbar.neg{background:var(--neg)}
+.stakerow .sdot{position:absolute;top:4.5px;width:9px;height:9px;border-radius:50%;
+ background:var(--pos);transform:translateX(-50%)}
+.stakerow .sval{flex:0 0 58px;text-align:right;font-size:11px;color:var(--t3);
+ font-variant-numeric:tabular-nums}
+.stakerow .sval.a{color:var(--a)} .stakerow .sval.neg{color:var(--neg)}
+.sw.a{background:var(--a)}
+
+/* ═══ 10 · THE CALENDAR ═══ */
+.cal .c{transition:background-color .3s var(--e),border-color .3s var(--e)}
+.cal .c .cv{font-size:9.5px;font-weight:700;font-variant-numeric:tabular-nums;line-height:1}
+/* A heavy fill cannot carry light text. */
+.cal .c.heavy .cv,.cal .c.heavy .dn{color:var(--bg)}
+.cal .c.heavy .cv{font-weight:800}
+.cal .c.heavy .dn{opacity:.62}
+/* THE WHOLE MONTH FITS AT 390px: seven 44px cells plus six 5px gaps is 338,
+   inside the 340 the grid is capped at. Under 44px the figure drops out and
+   date plus intensity carries the cell. */
+.cal .c{min-height:44px}
+@media(max-width:389px){ .cal .c .cv{display:none} .cal .c{min-height:40px} }
+.calwrap.open{max-height:none}
+.mobonly2{display:none!important}
+
+/* ═══ 07 · BREAKDOWNS ═══ */
+.barline .h .bn{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.barline .h .bn em{font-style:normal;font-size:10.5px;color:var(--t4);margin-left:7px;
+ font-variant-numeric:tabular-nums}
+.barline .track{position:relative}
+.barline .track .zeroline{position:absolute;top:-2px;bottom:-2px;width:1px;
+ background:var(--t3);opacity:.8;z-index:1}
+.barline .track .fill{position:absolute;top:0}
+
+/* ═══ 08 · A MODULE HELD BACK ═══ */
+.card.soon .soonbody{opacity:.42;filter:saturate(.35);pointer-events:none}
+.chip.soon{border-color:color-mix(in srgb,var(--a) 45%,transparent);
+ background:color-mix(in srgb,var(--a) 12%,transparent);color:var(--a)}
+
+/* ═══ 09 · RUNNING NOW ═══ */
+.card.run{background:linear-gradient(168deg,color-mix(in srgb,var(--p) 7%,var(--card)) 0%,var(--card) 46%)}
+.expobar{background:var(--bg);border:1px solid var(--line);border-radius:11px;padding:12px 13px;margin-bottom:8px}
+.ebrow{display:flex;justify-content:space-between;font-size:11.5px;color:var(--t2);gap:12px}
+.ebfig{color:var(--t1);font-weight:700;font-variant-numeric:tabular-nums;white-space:nowrap}
+.ebto{color:var(--t3);font-weight:400}
+.ebtrack{display:flex;gap:3px;height:7px;margin-top:9px}
+.ebtrack .ebrisk{background:var(--p);border-radius:3px 0 0 3px}
+.ebtrack .ebret{background:var(--pos);opacity:.42;border-radius:0 3px 3px 0}
+.orow{display:flex;align-items:center;gap:12px;padding:11px 2px;border-bottom:1px solid var(--line)}
+.orow:last-of-type{border-bottom:0}
+.bdot{width:9px;height:9px;border-radius:50%;flex:none;position:relative}
+.bdot.ex{border:2px solid currentColor}
+.bdot.livedot::after{content:"";position:absolute;inset:-4px;border-radius:50%;
+ border:1.5px solid currentColor;animation:runring 2s infinite}
+@keyframes runring{0%{transform:scale(.7);opacity:.9}100%{transform:scale(1.5);opacity:0}}
+.oinfo{flex:1;min-width:0;display:block}
+.oname{display:block;font-size:13.5px;font-weight:650}
+.osub{display:flex;align-items:center;gap:9px;font-size:11.5px;color:var(--t3);margin-top:3px;
+ font-variant-numeric:tabular-nums}
+.osep{width:3px;height:3px;border-radius:50%;background:var(--line);flex:none}
+.olive{color:var(--pos);font-weight:600}
+.oval{text-align:right;flex:none}
+.ostake{display:block;font-size:13px;font-weight:700;font-variant-numeric:tabular-nums}
+.oret{display:block;font-size:11px;color:var(--t3);margin-top:2px;font-variant-numeric:tabular-nums}
+.chip.live i{width:6px;height:6px;border-radius:50%;background:var(--pos);flex:none;
+ animation:livepulse 2.2s infinite}
+.chip.live{display:inline-flex;align-items:center;gap:7px}
+@keyframes livepulse{0%{box-shadow:0 0 0 0 color-mix(in srgb,var(--pos) 50%,transparent)}
+ 70%{box-shadow:0 0 0 7px transparent}100%{box-shadow:0 0 0 0 transparent}}
+@media(prefers-reduced-motion:reduce){.bdot.livedot::after,.chip.live i{animation:none}}
+
+/* ═══ 12 · THE GROWING STATE ═══ */
+.card.waiting{opacity:.62}
+.card.waiting .hd{margin:0}
+.card.waiting b{color:var(--t3)}
+.card.waiting .chip{font-size:10.5px;padding:4px 10px;color:var(--t3)}
+.partialnote{margin:10px 0 0;font-size:11.5px;color:var(--t4)}
