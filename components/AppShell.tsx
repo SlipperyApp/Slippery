@@ -110,7 +110,17 @@ export function AppShell() {
 
   return (
     <div className="stage">
-      <div className="ph" id="ph" data-t="carbon" ref={host} />
+      {/* 24 · `.ph` was an empty themed rectangle until the render layer
+          mounted, so the first frame was a blank box. A skeleton of the two
+          pieces of chrome that are on every screen — the bar and the nav —
+          costs nothing and means the frame appears immediately. The layer
+          replaces the whole subtree on mount, so this can never go stale. */}
+      <div className="ph" id="ph" data-t="carbon" ref={host}>
+        <div className="phskel" aria-hidden="true">
+          <div className="skbar" />
+          <div className="sknav" />
+        </div>
+      </div>
     </div>
   );
 }

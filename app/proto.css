@@ -981,11 +981,8 @@ details.q b{color:var(--t1)}
 /* ═══ desktop web layout ═══ */
 @media(min-width:1000px){
  /* single-purpose screens read as a centred column, not a stretched row */
- .ph:not(:has(.navbar)) .pane{max-width:470px;margin:0 auto;padding:26px 20px 34px}
  [data-centre] .body{display:flex;flex-direction:column}
  [data-centre] .pane{margin:auto;padding-top:0;padding-bottom:0}
- [data-narrow] .pane{display:block!important;max-width:560px;margin:0 auto}
- [data-narrow] .pane>*{grid-column:auto!important}
  /* pair short cards so columns stay level */
 
  .ph:has(.navbar) .pane>[data-cardid=lsum],
@@ -1041,38 +1038,17 @@ details.q b{color:var(--t1)}
  .navbar svg{width:18px;height:18px}
  .appbar{padding:14px 20px}
  .tabs{top:0;justify-content:flex-start;padding:11px 20px;gap:28px}
- .ph:has(.navbar) .pane{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:var(--gap);
-  grid-auto-rows:minmax(0,auto);align-items:start;padding:16px 18px}
- .ph:has(.navbar) .pane.grid{display:block;columns:2;column-gap:var(--gap);grid-template-columns:none}
- .ph:has(.navbar) .pane.grid>.card{break-inside:avoid;-webkit-column-break-inside:avoid;
-  margin:0 0 var(--gap);width:100%;display:block;height:auto}
- .ph:has(.navbar) .pane.grid>.card.sz-w{column-span:all}
- .ph:has(.navbar) .pane.grid>.disc,.ph:has(.navbar) .pane.grid>.btn{column-span:all}
  /* PROTOTYPE BUG, SECOND INSTANCE OF THE SAME ONE.
     Another orphaned declaration tail whose brace closed
     @media(min-width:1000px) early. Both are leftovers from a selector being
     replaced and its continuation line left behind. */
- .ph:has(.navbar) .pane:not(.grid){display:block;max-width:860px;margin:0 auto}
- .ph:has(.navbar) .pane:not(.grid)>.card{overflow:visible;grid-row:auto!important;margin-bottom:14px}
- .ph:has(.navbar) .pane:not(.grid)>*{grid-column:auto!important}
  .ph:has(.navbar) .pane>.card{margin-bottom:0;overflow:hidden;position:relative}
  .ph:has(.navbar) .rsz{display:none}
  .ph:has(.navbar) .card:hover .rsz{display:flex}
  .ph:has(.navbar) [data-cardid=net] .big{font-size:36px;margin:5px 0 6px}
  .ph:has(.navbar) [data-cardid=net] .row{font-size:12.5px}
  .ph:has(.navbar) [data-cardid=net] .tgt{margin-top:auto}
- .ph:has(.navbar) .disc>div{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:var(--gap);
-  grid-auto-rows:var(--row);align-items:stretch}
- .ph:has(.navbar) .disc>div>.card{margin-bottom:0;overflow:hidden}
- .ph:has(.navbar) .disc>div>.card.sz-c{grid-row:span 2}
- .ph:has(.navbar) .disc>div>.card.sz-s{grid-row:span 4}
- .ph:has(.navbar) .disc>div>.card.sz-w{grid-column:span 2;grid-row:span 2}
- .ph:has(.navbar) .disc>div>.card.sz-f{grid-column:span 2;grid-row:span 4}
  .ph:has(.navbar) .pane>.card{margin-bottom:0}
- .ph:has(.navbar) .pane>*{grid-column:1/-1}
- .ph:has(.navbar) .pane>.card{grid-column:auto}
- .ph:has(.navbar) .pane>.card.w2{grid-column:1/-1}
- .ph:has(.navbar) .pane>.card.w1{grid-column:auto}
  .ph:has(.navbar) .disc>div{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:var(--gap);grid-auto-rows:var(--row);align-items:stretch}
 /* below the two-column breakpoint the show-more section is a single stack, like the pane */
 @media(max-width:999px){.disc>div{display:block!important}
@@ -1941,3 +1917,235 @@ ol.steps li:last-child .dot{background:var(--p)}
 .card.waiting b{color:var(--t3)}
 .card.waiting .chip{font-size:10.5px;padding:4px 10px;color:var(--t3)}
 .partialnote{margin:10px 0 0;font-size:11.5px;color:var(--t4)}
+
+/* ═══ 13 · ADD A BET ═══ */
+.drop{display:block;width:100%;text-align:center;padding:24px 16px;border-radius:var(--r-card);
+ border:1px dashed color-mix(in srgb,var(--p) 60%,transparent);
+ background:linear-gradient(160deg,color-mix(in srgb,var(--p) 8%,transparent),transparent);
+ margin-bottom:10px;transition:border-color .2s var(--e),background-color .2s var(--e)}
+.drop:hover{border-color:var(--p)}
+.drop .dropi{display:block;color:var(--s);margin:0 auto 8px;width:22px}
+.drop b{font-size:14px;display:block}
+.drop .dropsub{display:block;color:var(--t2);font-size:12.5px;margin-top:3px}
+.ordiv{display:flex;align-items:center;gap:12px;margin:14px 0;color:var(--t4);font-size:11px;
+ letter-spacing:.14em;font-weight:700;word-spacing:-.04em}
+.ordiv::before,.ordiv::after{content:"";flex:1;border-top:1px dashed var(--line)}
+.bigdiv{margin:26px 0 18px;border-top:1px solid var(--line)}
+/* Amber asks for something. Blue reports a normal condition. */
+.tgcard{display:flex;align-items:center;gap:11px;padding:14px;border-radius:var(--r-card)}
+.tgcard.off{border:1px solid var(--a);background:linear-gradient(160deg,color-mix(in srgb,var(--a) 13%,transparent),transparent)}
+.tgcard.on{border:1px solid var(--p);background:linear-gradient(160deg,color-mix(in srgb,var(--p) 13%,transparent),transparent)}
+.tgcard .tgi{width:32px;height:32px;border-radius:50%;display:grid;place-items:center;flex:none;color:var(--bg)}
+.tgcard.off .tgi{background:var(--a)} .tgcard.on .tgi{background:var(--p)}
+.tgcard .tgtxt{flex:1;min-width:0}
+.tgcard .tgtxt b{display:block;font-size:13.5px;font-weight:700}
+.tgcard .tgtxt span{display:block;color:var(--t2);font-size:12px;margin-top:2px}
+.tgcard .btn.tgset{background:var(--a);color:#1B1206;flex:0 0 auto}
+.btn.txt{background:none;border:0;color:var(--s);text-decoration:underline;
+ text-underline-offset:3px;padding:8px 0;font-size:12.5px;font-weight:600}
+
+/* ═══ 14 · THE SLIP GALLERY ═══ */
+.scroller{display:flex;gap:10px;overflow-x:auto;padding:2px 2px 10px;scroll-snap-type:x proximity;
+ overscroll-behavior-x:contain}
+.scroller::-webkit-scrollbar{height:6px}
+.scroller::-webkit-scrollbar-thumb{background:var(--elev);border-radius:3px}
+.sliptile{flex:none;width:104px;scroll-snap-align:start;border-radius:10px;overflow:hidden;
+ border:1px solid var(--line);background:var(--card);text-align:left;padding:0;display:block}
+.sliptile .stop{display:block;height:2px}
+/* A fixed ratio so the row cannot shift as thumbnails fill in. */
+.sliptile .simg{display:block;aspect-ratio:3/4;position:relative;padding:9px}
+.sliptile .sfake{position:absolute;inset:9px;border-radius:5px;display:flex;flex-direction:column;
+ gap:3px;padding:7px;background:linear-gradient(180deg,var(--elev),var(--card))}
+.sliptile .sfake i{height:3px;border-radius:2px;background:color-mix(in srgb,var(--t1) 14%,transparent)}
+.sliptile .sfake i:first-child{width:68%;background:color-mix(in srgb,var(--t1) 26%,transparent)}
+.sliptile .scap{display:block;padding:6px 8px 8px;font-size:10px;line-height:1.35}
+.sliptile .scap b{display:block;font-size:10.5px;font-weight:650;overflow:hidden;
+ text-overflow:ellipsis;white-space:nowrap}
+.sliptile .scap span{color:var(--t4);font-variant-numeric:tabular-nums}
+.sliptile.fix{border-color:var(--a)}
+.sliptile .sbadge{position:absolute;top:7px;right:7px;font-style:normal;font-size:8.5px;
+ font-weight:800;letter-spacing:.06em;padding:2px 5px;border-radius:4px;background:var(--a);color:#1B1206}
+.sliptile.gone{display:grid;place-items:center;text-align:center;background:var(--elev);
+ aspect-ratio:auto;min-height:150px}
+.sliptile.gone p{margin:0;padding:0 10px;font-size:10px;color:var(--t4);line-height:1.5}
+
+/* ═══ 15 · THE IMPORT WIZARD ═══ */
+.wsteps{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;margin:0 0 18px;padding:0;list-style:none}
+@media(max-width:700px){.wsteps{grid-template-columns:1fr 1fr}}
+.wsteps li{border:1px solid var(--line);border-radius:9px;padding:9px 10px;background:var(--card)}
+.wsteps li.on{border-color:var(--p);background:color-mix(in srgb,var(--p) 10%,transparent)}
+.wsteps li b{display:block;font-size:11.5px;margin-bottom:2px}
+.wsteps li span{display:block;font-size:10px;color:var(--t4);line-height:1.4}
+.wq{font-size:15px;margin:0 0 10px;font-weight:700}
+.srcgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:8px}
+.src{border:1px solid var(--line);border-radius:10px;padding:13px;background:var(--elev);
+ text-align:left;transition:border-color .2s var(--e),background-color .2s var(--e)}
+.src:hover{border-color:color-mix(in srgb,var(--p) 60%,transparent)}
+.src.on{border-color:var(--p);background:color-mix(in srgb,var(--p) 12%,transparent)}
+.src b{display:block;font-size:12.5px;font-weight:650}
+.src span{display:block;font-size:10.5px;color:var(--t3);margin-top:3px;line-height:1.45}
+.src em{display:block;font-style:normal;font-size:9px;letter-spacing:.08em;text-transform:uppercase;
+ color:var(--pos);margin-top:5px;font-weight:700;word-spacing:-.04em}
+
+/* ═══ 18 · GROUPS AND PEOPLE ═══ */
+.av{display:grid;place-items:center;font-weight:800;letter-spacing:-.02em;line-height:1;
+ color:var(--bg);box-shadow:inset 0 0 0 1px rgba(255,255,255,.16);flex:none}
+.av.u{border-radius:50%} .av.g{border-radius:30%}
+.soc .tabs button[aria-current=true]{border-bottom-color:var(--s)}
+.soc.pe .tabs button[aria-current=true]{border-bottom-color:var(--pos)}
+.lbl.gr{color:var(--s)} .lbl.pe{color:var(--pos)}
+/* Groups: chunky, squircle, a rail in the group's colour, units as the figure. */
+.grow2{display:flex;align-items:center;gap:12px;width:100%;text-align:left;
+ padding:14px 15px;background:var(--card);border:1px solid var(--line);
+ border-radius:var(--r-card);margin-bottom:8px;position:relative;overflow:hidden;
+ transition:border-color .18s var(--e),background-color .18s var(--e)}
+.grow2:hover{border-color:color-mix(in srgb,var(--s) 45%,transparent)}
+.grail{position:absolute;left:0;top:0;bottom:0;width:3px}
+.gmeta{flex:1;min-width:0}
+.gname{display:block;font-weight:650;font-size:14px}
+.gname .pill{font-size:9px;padding:3px 6px;vertical-align:1px}
+.gsub{display:block;font-size:12px;color:var(--t3);margin-top:2px}
+.gstack{display:flex;flex:none}
+.gstack .av{box-shadow:inset 0 0 0 1px rgba(255,255,255,.16),0 0 0 2.5px var(--card)}
+.gstack .av+.av{margin-left:-7px}
+.gval{flex:none;font-weight:800;font-size:14.5px;min-width:62px;text-align:right;
+ font-variant-numeric:tabular-nums}
+.gval.pos2{color:var(--pos)} .gval.neg2{color:var(--neg)}
+/* People: tighter, circular, ranked, ROI promoted. */
+.prow{display:flex;align-items:center;gap:12px;width:100%;text-align:left;
+ padding:10px 14px;background:var(--card);border:1px solid var(--line);
+ border-radius:var(--r-card);margin-bottom:8px;
+ transition:border-color .18s var(--e),background-color .18s var(--e)}
+.prow:hover{border-color:color-mix(in srgb,var(--pos) 40%,transparent)}
+.prank{width:18px;text-align:right;color:var(--t4);font-weight:700;font-size:12.5px;flex:none;
+ font-variant-numeric:tabular-nums}
+.pmeta{flex:1;min-width:0}
+.pname{display:block;font-weight:650;font-size:13.5px}
+.psub{display:block;font-size:11.5px;color:var(--t3);margin-top:2px;font-variant-numeric:tabular-nums}
+.pval{text-align:right;flex:none}
+.pval b{display:block;font-weight:800;font-size:14.5px;color:var(--pos);font-variant-numeric:tabular-nums}
+.pval span{display:block;font-size:10px;color:var(--t4);letter-spacing:.08em}
+
+/* ═══ 16 · GHOST EMPTY STATES ═══ */
+.ghostwrap{position:relative;overflow:hidden;padding:0}
+.ghostbody{padding:16px;opacity:.5;filter:blur(.3px);pointer-events:none;user-select:none}
+.ghostcta{position:absolute;inset:0;display:grid;place-items:center;
+ background:radial-gradient(120% 70% at 50% 52%,
+  color-mix(in srgb,var(--bg) 92%,transparent) 30%,
+  color-mix(in srgb,var(--bg) 58%,transparent) 100%)}
+.ghostcta .gin{text-align:center;padding:0 18px;max-width:34ch}
+.ghostcta .gin b{display:block;font-weight:700;font-size:15px;margin-bottom:5px}
+.ghostcta .gin p{color:var(--t2);font-size:12.5px;margin:0 0 14px;line-height:1.55}
+.ghostcta .gtag{display:block;margin-top:12px;font-size:10.5px;color:var(--t4);
+ letter-spacing:.04em}
+
+/* ═══ 17 · THE UNIT PREVIEW ═══ */
+.unitprev .uprow{display:flex;align-items:center;gap:10px;padding:8px 0;
+ border-bottom:1px solid var(--line);font-size:12.5px}
+.unitprev .uprow:last-of-type{border-bottom:0}
+.unitprev .uo{width:16px;height:16px;border-radius:50%;flex:none;display:grid;place-items:center;
+ font-size:9px}
+.unitprev .uo.w{background:color-mix(in srgb,var(--pos) 18%,transparent);color:var(--pos)}
+.unitprev .uo.l{background:color-mix(in srgb,var(--neg) 18%,transparent);color:var(--neg)}
+.unitprev .un{flex:1;min-width:0;color:var(--t2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.unitprev .us{color:var(--s);font-size:11.5px;font-variant-numeric:tabular-nums;flex:none}
+.unitprev .uv{min-width:62px;text-align:right;font-weight:700;font-variant-numeric:tabular-nums;flex:none}
+.unitprev .upfoot{display:flex;justify-content:space-between;margin-top:11px;padding-top:10px;
+ border-top:1px solid var(--line);font-size:12.5px;color:var(--t2)}
+.unitprev .upfoot b{font-weight:800;font-variant-numeric:tabular-nums}
+.pos2{color:var(--pos)} .neg2{color:var(--neg)}
+
+/* ══════════════════════════════════════════════════════════════════════════
+ * 19 · DESKTOP SHEETS ARE MODALS
+ *
+ * Measured at 1440×900, a sheet rendered as a fixed 460px panel anchored to
+ * the bottom. Export sat at y 701 with a height of 376, ending at 1077 —
+ * so its primary action was 177px below the fold with nothing to say it was
+ * there. Cash out ended at 987. 460px is also narrow for something like
+ * Challenges, which holds three leaderboards on a 1440px screen.
+ *
+ * Centred, capped at 90vh, body scrolls, action row pinned. Three widths
+ * rather than one: a confirm, a form, and content. On a phone they stay
+ * bottom sheets, which is correct there.
+ * ══════════════════════════════════════════════════════════════════════════ */
+@media(min-width:1000px){
+ .sheet{
+  position:fixed;left:50%;top:50%;right:auto;bottom:auto;
+  transform:translate(-50%,-48%) scale(.98);
+  width:min(560px,calc(100vw - 48px));
+  max-height:90svh;
+  border-radius:var(--r-card);
+  border:1px solid var(--line);
+  box-shadow:0 24px 64px color-mix(in srgb,#000 62%,transparent),inset 0 1px 0 rgba(255,255,255,.05);
+  padding:20px 22px 22px;
+  display:flex;flex-direction:column;
+  opacity:0;
+  transition:transform .26s var(--ease-out),opacity .2s var(--ease-out);
+ }
+ .sheet.on{transform:translate(-50%,-50%) scale(1);opacity:1}
+ /* A confirm does not want a form's width, and Challenges does not want a
+    confirm's. */
+ .sheet[data-size=confirm]{width:min(420px,calc(100vw - 48px))}
+ .sheet[data-size=wide]{width:min(720px,calc(100vw - 48px))}
+ /* The grab handle is a touch affordance and means nothing with a mouse. */
+ .sheet .grab{display:none}
+ /* The body scrolls, so the action row cannot be pushed off the bottom. */
+ .sheet>.scrollbox,.sheet>.grow{overflow-y:auto;min-height:0}
+ .sheet .btn.full:last-child{flex:0 0 auto}
+}
+@media(min-width:1000px) and (prefers-reduced-motion:reduce){
+ .sheet{transition:opacity .01s} .sheet.on{transform:translate(-50%,-50%)}
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+ * 20 · ONE OFFLINE BANNER, NOT TWO
+ * Two banners saying the same thing cost two rows of the viewport and pushed
+ * the figures down 78px.
+ * ══════════════════════════════════════════════════════════════════════════ */
+.offbar{display:flex;gap:11px;align-items:flex-start;padding:11px 13px;font-size:12.5px;
+ border-radius:var(--r-card);border:1px solid color-mix(in srgb,var(--a) 40%,transparent);
+ background:color-mix(in srgb,var(--a) 9%,transparent);margin-bottom:12px}
+.offbar .oi{color:var(--a);font-size:14px;line-height:1.2;flex:none}
+.offbar b{display:block;font-weight:650}
+.offbar span{color:var(--t2)}
+
+/* ══════════════════════════════════════════════════════════════════════════
+ * 21 · PRICING: THREE TIERS, THREE WEIGHTS
+ * The buttons were tall because they stretched to bottom-align three cards
+ * with unequal feature lists. Equalise the LIST, not the button. And free
+ * and monthly looked equally important, which buried the one being
+ * recommended.
+ * ══════════════════════════════════════════════════════════════════════════ */
+.plans2 .plan ul{min-height:66px}
+.plans2 .plan .btn{padding:14px 20px;min-height:52px}
+/* Text for free, outline for monthly, filled for annual. */
+.plans2 .plan:first-child .btn{background:none;border:0;color:var(--s);
+ text-decoration:underline;text-underline-offset:4px;box-shadow:none}
+.plans2 .plan:first-child .btn:hover{color:var(--t1);transform:none;box-shadow:none}
+
+/* ═══ 22 · LANDING ═══ */
+.herocta{flex-direction:row;flex-wrap:wrap;justify-content:center;gap:10px}
+.herocta .btn{width:auto;min-width:0;flex:0 1 auto}
+@media(max-width:520px){ .herocta{flex-direction:column} .herocta .btn{width:100%} }
+.herotrust{font-size:12.5px;color:var(--t3);margin:14px 0 0;line-height:1.6;max-width:44ch}
+.herotrust b{color:var(--t2);font-weight:650}
+@media(min-width:1000px){ .herotrust{margin-inline:0} }
+.outcomes{list-style:none;padding:0;margin:18px auto 0;max-width:520px;
+ display:grid;grid-template-columns:1fr 1fr;gap:8px;text-align:left}
+@media(max-width:560px){.outcomes{grid-template-columns:1fr}}
+.outcomes li{background:var(--card);border-radius:var(--r-ctl);padding:10px 12px}
+.outcomes b{display:block;font-size:12.5px;font-weight:650}
+.outcomes b.pos{color:var(--pos)} .outcomes b.neg{color:var(--neg)}
+.outcomes span{display:block;font-size:11.5px;color:var(--t3);margin-top:2px}
+
+/* ═══ 24 · THE FIRST FRAME ═══ */
+.phskel{position:absolute;inset:0;pointer-events:none}
+.skbar{position:absolute;left:0;right:0;top:0;height:56px;background:var(--elev);
+ border-bottom:1px solid var(--line)}
+.sknav{position:absolute;left:0;right:0;bottom:0;height:76px;background:var(--elev);
+ border-top:1px solid var(--line)}
+@media(min-width:1000px){
+ .sknav{top:0;bottom:0;right:auto;width:238px;height:auto;border-top:0;
+  border-right:1px solid var(--line)}
+ .skbar{left:238px}
+}
