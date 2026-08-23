@@ -94,9 +94,16 @@ a{color:inherit;text-decoration:none}
 .mark svg{width:100%;height:100%;display:block}
 .wordmark{display:inline-flex;align-items:center;color:var(--t1);line-height:0}
 .wordmark svg{height:24px;width:auto;display:block}
-.appbar .wordmark svg{height:25px}
+/* 29 · The wordmark was 24, 25, 26 and 30 in four places, which is four
+   sizes that all read as "about the same" and none of which is a decision.
+   Three now, each earning its size: the in-app bar is chrome beside a live
+   figure and gets out of the way at 20; the landing bar is the first thing
+   on the page at 26, dropping to 22 where the row would otherwise wrap; the
+   footer is the sign-off and can be 34. */
+.appbar .wordmark svg{height:20px}
 .topbar .wordmark svg{height:26px}
-.lfoot .wordmark svg{height:30px}
+@media(max-width:640px){.topbar .wordmark svg{height:22px}}
+.lfoot .wordmark svg{height:34px}
 .lfoot .mark{width:38px;height:38px;border-radius:11px}
 .sglyph{font-family:var(--ui);font-weight:800;font-size:58px;letter-spacing:-.045em}
 .sglyph.pale{fill:var(--t1)}
@@ -2338,3 +2345,25 @@ html[data-force=mobile] .recent5>.bet:nth-child(n+6){display:none}
 html[data-force=mobile] .rcount{display:block;font-size:11.5px;color:var(--t3);
  font-variant-numeric:tabular-nums;padding:8px 0 0}
 html[data-force=mobile] .runpill .rplab{font-size:9.5px}
+
+/* ══════════════════════════════════════════════════════════════════════════
+ * 32 · SOCIAL IS A LIST AND THE THING IT SELECTS
+ *
+ * Two group rows and two buttons left 57% of a 1440px window empty, because
+ * the page was drawn as a phone list and then handed a 1154px column. The
+ * list keeps five columns; the group it selects fills the other seven. The
+ * detail markup is always in the DOM and hidden below 1000px, so the phone
+ * still routes to the group's own page and nothing renders twice.
+ * ══════════════════════════════════════════════════════════════════════════ */
+.socdetail{display:none}
+@media(min-width:1000px){
+ .ph:has(.navbar) .pane.soc.gr{align-items:start}
+ .ph:has(.navbar) .pane.soc.gr>.soclist{grid-column:span 5;display:flex;flex-direction:column;gap:10px}
+ .ph:has(.navbar) .pane.soc.gr>.socdetail{grid-column:span 7;display:block}
+ /* The header row still runs the full width above both columns. */
+ .ph:has(.navbar) .pane.soc.gr>.hd{grid-column:1/-1}
+ /* A group row is now a choice, so it has to look chosen. */
+ .grow2[aria-current=true]{background:color-mix(in srgb,var(--s) 9%,transparent);
+  border-color:color-mix(in srgb,var(--s) 34%,transparent)}
+}
+html[data-force=mobile] .socdetail{display:none}

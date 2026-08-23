@@ -65,15 +65,6 @@ const ALLOWED: { view: string; because: string; expect: RegExp }[] = [
     expect: /Nothing is saved until you have checked it/,
   },
   {
-    view: 'review',
-    because:
-      'Three invented bets were hard coded into the review list. It now renders ' +
-      'what the reader returned, and says so plainly when nothing has been read. ' +
-      'Same rule: the one screen where you confirm what will enter your ledger ' +
-      'cannot be showing somebody else\'s bets.',
-    expect: /Nothing to check|bets? found/,
-  },
-  {
     view: 'import',
     because:
       'The dropzone navigated to a demo crop screen. It is a real file picker ' +
@@ -103,6 +94,26 @@ const PORT = 3101;
 
 const problems: string[] = [];
 const note = (where: string, what: string) => problems.push(`${where}\n    ${what}`);
+
+/* Where two normalised strings part company, with a window either side.
+ *
+ * A whole-page diff is unreadable and a bare "these differ" is useless, so
+ * this reports the first character that disagrees and forty characters of
+ * context from each side. That is almost always enough to name the change:
+ * a renamed label, a dropped figure, a reordered row.
+ *
+ * (Lost along with `main()`'s invocation when the ALLOWED block was pasted
+ * over the end of this file, which is why the harness could not run.) */
+function firstDifference(want: string, got: string): string {
+  const n = Math.min(want.length, got.length);
+  let i = 0;
+  while (i < n && want[i] === got[i]) i++;
+  if (i === n && want.length === got.length) return 'no difference';
+  const from = Math.max(0, i - 40);
+  const win = (s: string) =>
+    (from ? '…' : '') + s.slice(from, i + 40).replace(/\s+/g, ' ') + (i + 40 < s.length ? '…' : '');
+  return `at character ${i}\n      prototype: ${win(want)}\n      port:      ${win(got)}`;
+}
 
 /* Collapse the things that are not copy: runs of whitespace, and the count-up
    animation's intermediate values, which are a different number every frame. */
@@ -280,7 +291,15 @@ function sheetKeysFromSource(): string[] {
   /* A sheet is a property at the top level of the Object.assign block, which
      is the only place in the file indented by exactly one space. */
   for (const m of block.matchAll(/^ ([a-zA-Z][a-zA-Z0-9_]*)\s*[:(]/gm)) keys.add(m[1]);
-  return [...keys  {
+  return [...keys];
+}
+
+/* The remaining declared divergences. These were appended in a later pass and
+   landed inside `sheetKeysFromSource` above, which left the file unparseable
+   and the harness unrunnable — it is only split from the ALLOWED literal by
+   where it was written, so it is pushed onto the same list. */
+ALLOWED.push(
+  {
     view: 'demo',
     because:
       'The demo is the dashboard, so it carries the reworked staking chart below.',
@@ -353,4 +372,82 @@ function sheetKeysFromSource(): string[] {
     because: 'The same document sheet as `legalDoc`.',
     expect: /Scroll to the end/,
   },
-];
+  {
+    view: 'su4',
+    because:
+      'The worked example the prototype showed is kept, on the owner\'s ' +
+      'instruction, and the live preview of a sample month at the chosen unit ' +
+      'is added beside it rather than in place of it. Two ways of answering ' +
+      '"what is a unit" for the price of one screen.',
+    expect: /SAMPLE MONTH/,
+  },
+  {
+    view: 'ledger',
+    because:
+      'The exposure chip is labelled. A pound figure beside a percentage with ' +
+      'no label read as a balance to more than one person who saw it.',
+    expect: /OPEN EXPOSURE/,
+  },
+  {
+    view: 'history',
+    because: 'The same labelled exposure chip as `ledger`.',
+    expect: /OPEN EXPOSURE/,
+  },
+  {
+    view: 'offline',
+    because: 'The same labelled exposure chip as `ledger`.',
+    expect: /OPEN EXPOSURE/,
+  },
+  {
+    view: 'social',
+    because:
+      'A group row carries a stack of member avatars, so the row says who is ' +
+      'in the group and not only how many. Above 1000px the page is also a ' +
+      'list beside the group it selects: two rows and two buttons left 57% of ' +
+      'a desktop window empty, because the page was drawn as a phone list and ' +
+      'then handed a 1154px column.',
+    expect: /Sunday League/,
+  },
+  {
+    view: 'imphist',
+    because:
+      'Importing history is source-first now. The prototype opened with a ' +
+      'paragraph about who needs this; the port opens with the five steps and ' +
+      'the six sources, because somebody on this screen has already decided ' +
+      'they need it and wants to know whether their bookmaker is listed.',
+    expect: /1 · Source/,
+  },
+  {
+    view: 'fresh',
+    because:
+      'An empty dashboard said "No bets yet" in an empty box, which shows what ' +
+      'is missing and not what it is for. It now ghosts the real module at .52 ' +
+      'opacity behind a radial fade, so the shape of the answer is visible ' +
+      'before there is any data to put in it.',
+    expect: /This fills in as you go/,
+  },
+  {
+    view: 'freshledger',
+    because: 'The same ghosted empty state as `fresh`.',
+    expect: /./,
+  },
+  {
+    view: 'freshsocial',
+    because: 'The same ghosted empty state as `fresh`.',
+    expect: /./,
+  },
+  {
+    view: 'sheet:editov',
+    because:
+      'The bulk control reads "Turn all off" when everything is already on, ' +
+      'which is what the button will do. The prototype always said "Turn all ' +
+      'on", including when there was nothing left to turn on.',
+    expect: /Turn all o(n|ff)/,
+  },
+);
+
+/* The call that runs all of the above. It was lost along with the closing
+   brace of `sheetKeysFromSource` when the block above was pasted in, which
+   made the harness exit 0 having compared nothing — a green result that
+   meant only that the file had loaded. */
+await main();
