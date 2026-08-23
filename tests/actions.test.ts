@@ -142,5 +142,9 @@ test('no figure divides by zero on an empty account', () => {
   assert.match(runtime, /function roiOf/, 'ROI has no zero-stake case');
   assert.ok(!/net\/staked\*100/.test(runtime), 'the ledger still divides net by staked directly');
   assert.ok(!/d\.net\/\(d\.to-d\.void\)\*100/.test(runtime), 'the period card still divides directly');
-  assert.match(runtime, /const b=bankroll\(\);return b>0/, 'exposure still divides by an unguarded bankroll');
+  /* 57 · The guard is unchanged; the denominator was renamed. Exposure
+     divides by BALANCE now — dividing by the starting bankroll made £88 at
+     risk read 8.8% when it is 2.1%. */
+  assert.match(runtime, /const b=balance\(\);return b>0/, 'exposure still divides by an unguarded balance');
+  assert.match(runtime, /const startingBankroll=/, 'starting bankroll and balance are one number again');
 });

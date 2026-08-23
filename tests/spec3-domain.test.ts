@@ -42,18 +42,36 @@ test('the two halves of an each-way stake always sum to the total', () => {
   }
 });
 
-test('the York 16:10 case from the spec settles to minus four pounds', () => {
-  /* £20 each way, 6.00, 1/5, places 1-3, finished 3rd. The old model called
-     this LOST at −£20.00 when it actually returned £16.00. */
+test('the York 16:10 case settles to minus four pounds, not minus twenty', () => {
+  /* £20 each way, 1/5, places 1-3, finished 3rd. The old model called this
+     LOST at −£20.00 when it returned £16.00.
+
+     The brief's own panel is not self-consistent: it gives a 6.00 win price,
+     a 2.00 place price and a +£6.00 place profit, and no two of those three
+     agree — £10 at 2.00 profits £10, and 6.00 with 1/5 terms leaves the whole
+     bet level rather than down £4. The headline figures the item leads with,
+     £16.00 returned and −£4.00 net, require a 4.00 win price. Those are the
+     ones asserted here, because they are the point it is making. */
   const { winPence, placePence } = splitStake(2000);
-  const win = recomputeState({ stakePence: winPence, odds: 6.0 }, [{ seq: 1, type: 'lost' }]);
-  const pp = placePrice(6.0, { numerator: 1, denominator: 5, placesPaid: 3 });
+  const win = recomputeState({ stakePence: winPence, odds: 4.0 }, [{ seq: 1, type: 'lost' }]);
+  const pp = placePrice(4.0, { numerator: 1, denominator: 5, placesPaid: 3 });
+  assert.equal(pp, 1.6);
   const place = recomputeState({ stakePence: placePence, odds: pp }, [{ seq: 1, type: 'won' }]);
   assert.equal(win.realisedPlPence, -1000);
-  assert.equal(place.realisedPlPence, 1000);          // £10 at 2.00 returns £20
-  assert.equal(win.realisedPlPence + place.realisedPlPence, 0);
-  assert.equal(win.returnedPence + place.returnedPence, 2000);
+  assert.equal(place.realisedPlPence, 600);           // £10 at 1.60 returns £16
+  assert.equal(win.realisedPlPence + place.realisedPlPence, -400);
+  assert.equal(win.returnedPence + place.returnedPence, 1600);
   assert.equal(eachWayLabel('lost', 'won'), 'placed');
+});
+
+test('at 6.00 with the same terms the bet is level, which is how the panel was caught', () => {
+  /* Kept so the arithmetic that exposed the inconsistency is recorded rather
+     than remembered. */
+  assert.equal(placePrice(6.0, { numerator: 1, denominator: 5, placesPaid: 3 }), 2.0);
+  const { winPence, placePence } = splitStake(2000);
+  const win = recomputeState({ stakePence: winPence, odds: 6.0 }, [{ seq: 1, type: 'lost' }]);
+  const place = recomputeState({ stakePence: placePence, odds: 2.0 }, [{ seq: 1, type: 'won' }]);
+  assert.equal(win.realisedPlPence + place.realisedPlPence, 0);
 });
 
 /* ── 56 · COMMISSION ───────────────────────────────────────────────────── */

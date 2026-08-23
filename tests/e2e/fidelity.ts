@@ -215,7 +215,17 @@ async function compareSheets(browser: Browser) {
     const appKeys: string[] = await app.evaluate(() => (window as any).__slippery.sheetKeys);
     const specKeys = keys.length ? keys : sheetKeysFromSource();
     const missing = specKeys.filter((k) => !appKeys.includes(k));
-    const extra = appKeys.filter((k) => !specKeys.includes(k));
+    /* A sheet the port adds on purpose is declared here rather than in
+       ALLOWED, because this check compares the key list rather than the
+       rendered text and never looks a key up. Each one still needs its own
+       ALLOWED entry for its content. */
+    const ADDED_ON_PURPOSE = new Set([
+      /* 57 · Deposits and withdrawals. The prototype had no way to record
+         money in or out that is not a bet, so a balance was wrong for anyone
+         who ever topped up. */
+      'adjust',
+    ]);
+    const extra = appKeys.filter((k) => !specKeys.includes(k) && !ADDED_ON_PURPOSE.has(k));
     if (missing.length) note('sheets', 'the app is missing: ' + missing.join(', '));
     if (extra.length) note('sheets', 'the app has sheets the prototype does not: ' + extra.join(', '));
 
@@ -444,10 +454,41 @@ ALLOWED.push(
       'on", including when there was nothing left to turn on.',
     expect: /Turn all o(n|ff)/,
   },
+  {
+    view: 'settings',
+    because:
+      '57 · The row said "Bankroll · Starting balance, so growth shows as a ' +
+      'percentage" while the sidebar said "Bankroll £4,171" — one word for two ' +
+      'numbers four times apart. Settings now says Starting bankroll and the ' +
+      'sidebar says Balance, because one is set and the other is derived.',
+    expect: /Starting bankroll/,
+  },
+  {
+    view: 'sheet:bankroll',
+    because:
+      '57 · The sheet sets one figure and explains the other, and gained a ' +
+      'deposits and withdrawals ledger. Without one, anyone who tops up has a ' +
+      'balance that is permanently wrong and "% of bankroll" is measured ' +
+      'against a number that stopped being true the day they added to it.',
+    expect: /Deposits and withdrawals/,
+  },
+  {
+    view: 'sheet:adjust',
+    because:
+      '57 · New. Recording money in or out that is not a bet. It moves the ' +
+      'balance and never the net, because it is not a result.',
+    expect: /Money in or out/,
+  },
 );
 
 /* The call that runs all of the above. It was lost along with the closing
    brace of `sheetKeysFromSource` when the block above was pasted in, which
    made the harness exit 0 having compared nothing — a green result that
    meant only that the file had loaded. */
+/* Runs everything above. Kept as the last statement in the file and marked,
+   because an ALLOWED block has now twice been appended onto this call's
+   argument list instead of onto the push above it — the file used to end in
+   `);` either way, so a search for the last one found the wrong paren.
+   ── NOTHING GOES BELOW THIS LINE. New entries go in ALLOWED.push(...). ── */
 await main();
+

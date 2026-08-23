@@ -116,9 +116,41 @@ export function AppShell() {
           costs nothing and means the frame appears immediately. The layer
           replaces the whole subtree on mount, so this can never go stale. */}
       <div className="ph" id="ph" data-t="carbon" ref={host}>
+        {/* 60 · A SKELETON WITH THE SAME BOX MODEL AS WHAT IT REPLACES.
+            This was the two pieces of chrome and one empty themed box for
+            everything between them, so every module appeared at once and the
+            page jumped when data landed. The shapes below are the dashboard's
+            first two cards at their real heights and gaps, so the layout it
+            hands over to is the layout that was already there.
+
+            It never flickers: `.skel` holds opacity 0 for its first 200ms, so
+            a render that beats the delay paints no skeleton at all. The whole
+            subtree is replaced on mount, so it cannot go stale. */}
         <div className="phskel" aria-hidden="true">
           <div className="skbar" />
           <div className="sknav" />
+          <div className="skbody">
+            <div className="skcard">
+              <div className="skel skel-lbl" />
+              <div className="skel skel-fig" />
+              <div className="skel skel-sub" />
+              <div className="skel skel-bar" />
+            </div>
+            <div className="skpair">
+              <div className="skcard skcal">
+                <div className="skel skel-lbl" />
+                <div className="skgrid">
+                  {Array.from({ length: 28 }, (_, i) => <div className="skel skcell" key={i} />)}
+                </div>
+              </div>
+              <div className="skcard">
+                <div className="skel skel-lbl" />
+                <div className="skelrows">
+                  {Array.from({ length: 4 }, (_, i) => <div className="skel skel-row" key={i} />)}
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
       <ViewportToggle />

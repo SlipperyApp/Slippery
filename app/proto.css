@@ -2457,3 +2457,110 @@ html[data-force=mobile] .runpill .rplab{font-size:10px}
   border-color:color-mix(in srgb,var(--s) 34%,transparent)}
 }
 html[data-force=mobile] .socdetail{display:none}
+
+/* ══════════════════════════════════════════════════════════════════════════
+ * 59 · FIVE STATES, NOT TWO
+ *
+ * Twenty-eight of 1,141 controls had any disabled representation, and none
+ * had a loading one. Every async action in the product — reading a slip,
+ * saving a bet, running an import, paying — looked unresponsive for exactly
+ * as long as it was working, which is the moment a person is most likely to
+ * press it again.
+ *
+ * Rest, hover, active, loading, disabled, plus the focus-visible ring that
+ * already exists. Loading is the one that was missing everywhere.
+ * ══════════════════════════════════════════════════════════════════════════ */
+
+/* LOADING. The width is held so the row does not reflow when a label of one
+   length is swapped for a verb of another — a button that resizes under the
+   cursor is how you get a mis-click on whatever moved into its place. */
+.btn[aria-busy="true"],
+button[aria-busy="true"]{
+ position:relative;
+ cursor:progress;
+ pointer-events:none;          /* the double-submit guard, not decoration */
+}
+.btn[aria-busy="true"]>*,
+button[aria-busy="true"]>.lbl-swap{opacity:0}
+.spin{display:inline-block;width:12px;height:12px;flex:0 0 auto;
+ border:2px solid color-mix(in srgb,currentColor 28%,transparent);
+ border-top-color:currentColor;border-radius:var(--r-round);
+ animation:spin var(--dur-pulse) linear infinite;vertical-align:-2px;
+ margin-right:var(--sp-2)}
+@keyframes spin{to{transform:rotate(360deg)}}
+/* A spinner that does not spin is a dot, so under reduced motion it becomes
+   a pulsing bar instead of vanishing into a meaningless ring. */
+@media(prefers-reduced-motion:reduce){
+ .spin{animation:none;border-top-color:color-mix(in srgb,currentColor 28%,transparent);
+  border-radius:var(--r-bar)}
+}
+
+/* DISABLED. It must say why, or it reads as broken — a greyed Save with no
+   reason is indistinguishable from a bug, and people file it as one. */
+.btn[disabled],.btn[aria-disabled="true"],
+button[disabled]{opacity:.42;cursor:not-allowed}
+.btn[disabled]:hover,button[disabled]:hover{filter:none;transform:none;box-shadow:none}
+.whydis{display:block;font-size:var(--fs-micro);line-height:var(--lh-micro);
+ color:var(--t3);margin-top:var(--sp-1);text-align:center}
+
+/* HOVER and ACTIVE, once, for every control rather than per component. */
+.btn:hover:not([disabled]):not([aria-busy="true"]){filter:brightness(1.1)}
+.btn:active:not([disabled]):not([aria-busy="true"]){transform:scale(.98)}
+.chip:hover:not([disabled]),.pill:hover:not([disabled]){
+ border-color:color-mix(in srgb,var(--s) 40%,transparent)}
+.chip:active:not([disabled]),.pill:active:not([disabled]){transform:scale(.97)}
+
+/* ══════════════════════════════════════════════════════════════════════════
+ * 60 · SKELETONS WITH THE SAME BOX MODEL AS WHAT THEY REPLACE
+ *
+ * `.ph` was one empty themed box for the whole app, so every module appeared
+ * at once and the page jumped. A skeleton that is not the same shape as the
+ * loaded state swaps a blank screen for a jumping one, which is worse.
+ *
+ * TIMING IS THE HALF PEOPLE GET WRONG. A flash of skeleton is worse than a
+ * short wait, so nothing shows one for the first 200ms; and once shown it
+ * stays for at least 400ms, so a response landing at 210ms does not produce
+ * a 10ms flicker. Both numbers are in the animation below rather than in
+ * JavaScript, so there is no timer to get out of step.
+ * ══════════════════════════════════════════════════════════════════════════ */
+.skel{position:relative;overflow:hidden;border-radius:var(--r-bar);
+ background:var(--elev);
+ /* opacity 0 for 200ms, then in. A response that beats the delay never
+    paints a skeleton at all. */
+ animation:skel-in var(--dur-base) var(--ease-out) 200ms both}
+.skel::after{content:"";position:absolute;inset:0;
+ background:linear-gradient(90deg,transparent,color-mix(in srgb,var(--t1) 7%,transparent),transparent);
+ animation:skel-sweep 1.4s ease-in-out infinite}
+@keyframes skel-in{from{opacity:0}to{opacity:1}}
+@keyframes skel-sweep{from{transform:translateX(-100%)}to{transform:translateX(100%)}}
+@media(prefers-reduced-motion:reduce){
+ /* A static fill is fine here. A sweeping highlight is decoration, and this
+    one runs for as long as the wait does. */
+ .skel::after{animation:none;background:none}
+ .skel{animation:none}
+}
+/* The pieces, sized to the things they stand in for. */
+.skel-lbl{height:9px;width:36%;margin-bottom:var(--sp-2)}
+.skel-fig{height:26px;width:56%;margin-bottom:var(--sp-2)}
+.skel-sub{height:8px;width:44%;margin-bottom:var(--sp-3)}
+.skel-bar{height:6px;width:100%}
+.skel-row{height:14px;width:100%;margin-bottom:var(--sp-3)}
+.skel-row:last-child{margin-bottom:0}
+.skelrows{display:flex;flex-direction:column;gap:var(--sp-3)}
+
+/* 60 · The first-frame skeleton's own geometry, matched to the dashboard it
+   stands in for: one full-width card, then the calendar beside Running now.
+   The measurements are the grid's, so nothing moves when the real thing
+   arrives. */
+.skbody{position:absolute;left:0;right:0;top:56px;bottom:76px;
+ padding:var(--sp-4);display:flex;flex-direction:column;gap:var(--sp-4);overflow:hidden}
+.skcard{background:var(--card);border:1px solid var(--line);border-radius:var(--r-card);
+ padding:var(--sp-4);box-shadow:var(--lift)}
+.skpair{display:flex;flex-direction:column;gap:var(--sp-4)}
+.skgrid{display:grid;grid-template-columns:repeat(7,1fr);gap:5px;max-width:340px;margin:0 auto}
+.skcell{aspect-ratio:1;border-radius:var(--r-bar)}
+@media(min-width:1000px){
+ .skbody{left:238px;top:56px;bottom:0;max-width:1280px;margin-inline:auto;
+  padding:var(--sp-5) var(--sp-6) var(--sp-8)}
+ .skpair{display:grid;grid-template-columns:5fr 7fr;gap:var(--sp-4)}
+}
