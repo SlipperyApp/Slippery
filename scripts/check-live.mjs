@@ -46,7 +46,41 @@ const shots = [
   ['app2', '/app', { viewport: { width: 1440, height: 980 } }, 1600],
   ['app-m', '/app', { ...devices['iPhone 13'] }, 0],
   ['imp', '/app/import', { viewport: { width: 1440, height: 980 } }, 0],
+  ['soc', '/app/social', { viewport: { width: 1440, height: 980 } }, 0],
+  ['soc-m', '/app/social', { ...devices['iPhone 13'] }, 0],
+  ['perf', '/app', { viewport: { width: 1440, height: 980 } }, 2600],
 ];
+
+/* Markers for the things this pass changed, checked against the deployed
+   bytes rather than a local build at the same commit. A screenshot proves
+   the page rendered; these prove it rendered the current design. */
+const MARKERS = {
+  land: [['the hero trust line', () => !!document.querySelector('.herotrust')?.textContent.includes('does not take them')],
+         ['no em dashes left on the page', () => !/—/.test(document.body.innerText)]],
+  app:  [['the exposure chip is labelled', () => !!document.querySelector('.runpill .rplab')],
+         ['the period is stated once', () => document.querySelector('[data-netlab]')?.textContent.trim() === 'Net'],
+         ['the viewport toggle is present', () => !!document.querySelector('.vptoggle')]],
+  perf: [['the performance chart fills its card', () => {
+           const s = document.querySelector('[data-cardid=curve] svg');
+           if (!s) return false;
+           const c = s.closest('.card');
+           return s.getBoundingClientRect().width / c.getBoundingClientRect().width > 0.9;
+         }]],
+  soc:  [['group detail sits beside the list', () => {
+           const d = document.querySelector('.socdetail');
+           return !!d && getComputedStyle(d).display !== 'none';
+         }]],
+  'soc-m': [['and is not painted on a phone', () => {
+           const d = document.querySelector('.socdetail');
+           return !d || getComputedStyle(d).display === 'none';
+         }]],
+  'app-m': [['recent bets stops at five', () => {
+           const rows = document.querySelectorAll('.recent5>.bet');
+           if (!rows.length) return true;
+           return [...rows].filter(r => getComputedStyle(r).display !== 'none').length <= 5;
+         }]],
+};
+const failed = [];
 for (const [name, path, opts, y] of shots) {
   const ctx = await b.newContext({ ...opts, ignoreHTTPSErrors: true });
   const errs = [], missing = [];
@@ -71,6 +105,16 @@ for (const [name, path, opts, y] of shots) {
   console.log(name.padEnd(6), 'scrollW', await p.evaluate(() => document.documentElement.scrollWidth),
     '| errs', errs.length ? errs.slice(0, 2) : 'none',
     '| missing', missing.length ? missing.slice(0, 3) : 'none');
+  for (const [label, fn] of MARKERS[name] || []) {
+    const ok = await p.evaluate(`(${fn.toString()})()`).catch(() => false);
+    console.log('        ', ok ? '✓' : '✗', label);
+    if (!ok) failed.push(`${name}: ${label}`);
+  }
   await ctx.close();
 }
 await b.close();
+if (failed.length) {
+  console.error('\nTHE DEPLOYED SITE IS MISSING:\n  ' + failed.join('\n  '));
+  process.exit(1);
+}
+console.log('\nEverything this pass changed is live and behaving.');
