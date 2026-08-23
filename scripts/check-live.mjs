@@ -105,8 +105,23 @@ for (const [name, path, opts, y] of shots) {
   console.log(name.padEnd(6), 'scrollW', await p.evaluate(() => document.documentElement.scrollWidth),
     '| errs', errs.length ? errs.slice(0, 2) : 'none',
     '| missing', missing.length ? missing.slice(0, 3) : 'none');
+  /* POLLED, NOT SAMPLED ONCE.
+     Every screen here is drawn client-side, and this harness fulfils each
+     request by shelling out to curl one at a time, so how long the render
+     layer takes to mount varies by tens of seconds under load. A single
+     evaluate at a fixed 2800ms races that: a different assertion lost the
+     race on each run, which reads exactly like a partial deployment and is
+     not one. Each marker now gets its own patience. */
+  /* 45s, not 25. The landing page pulls the film posters, the wave SVG and
+     the store badges, and this harness fetches every one of them by shelling
+     out to curl one at a time — so it mounts far later than /app does. At 25s
+     the hero marker failed every run while the page itself was correct, which
+     is the most misleading possible result: it reads as a partial deployment.
+     Confirmed by loading the same deployed bytes with a longer wait and
+     finding the line present and right. */
   for (const [label, fn] of MARKERS[name] || []) {
-    const ok = await p.evaluate(`(${fn.toString()})()`).catch(() => false);
+    const ok = await p.waitForFunction(`(${fn.toString()})()`, null, { timeout: 45000 })
+      .then(() => true).catch(() => false);
     console.log('        ', ok ? '✓' : '✗', label);
     if (!ok) failed.push(`${name}: ${label}`);
   }
