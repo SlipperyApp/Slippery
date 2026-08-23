@@ -161,8 +161,30 @@ export const bets = pgTable('bets', {
   placedAt: timestamp('placed_at', { withTimezone: true }).notNull(),
   expectedSettleAt: timestamp('expected_settle_at', { withTimezone: true }),
   isFreeBet: boolean('is_free_bet').default(false).notNull(),
+
+  /* 58 · THE UNIT FREEZES AT PLACEMENT.
+     Without this column, raising your unit from £25 to £50 halves every unit
+     figure in your history overnight — January's +10.0u silently becomes
+     +5.0u. The bet keeps the unit it was placed at, so a curve never rewrites
+     itself. This cannot be backfilled truthfully once bets exist without it,
+     which is why it is here and not later. */
+  unitAtPlacementPence: integer('unit_at_placement_pence'),
+
+  /* 56 · EXCHANGE COMMISSION.
+     Resolved at placement from the bookmaker's rate so a later change to the
+     bookmaker default does not retroactively move settled P&L, and editable
+     per bet because Betfair's rate varies by market and by discount rate.
+     Applied to net winnings only — never the stake, never on a loser. */
+  commissionPct: numeric('commission_pct', { precision: 5, scale: 2 }),
+
+  /* 55 · EACH WAY IS TWO LINKED PARTS.
+     The win part and the place part settle independently through the same six
+     outcomes, which is what gets Rule 4, dead heats and partial voids right
+     without a seventh "half won" enum needing a special case for each. The
+     terms live here; the parts live in bet_legs with kind = win | place. */
   isEachWay: boolean('is_each_way').default(false).notNull(),
-  ewPlaceFraction: text('ew_place_fraction'),
+  ewPlaceFraction: text('ew_place_fraction'),          // "1/5", "1/4"
+  ewPlacesPaid: smallint('ew_places_paid'),            // 3 for places 1-3
   rule4Deduction: numeric('rule4_deduction', { precision: 5, scale: 2 }),
   isAntepost: boolean('is_antepost').default(false).notNull(),
   slipBacked: boolean('slip_backed').default(false).notNull(),
@@ -187,6 +209,11 @@ export const betLegs = pgTable('bet_legs', {
   eventName: text('event_name'),
   legOdds: numeric('leg_odds', { precision: 10, scale: 3 }),
   legResult: text('leg_result'),
+  /* 55 · null for an ordinary leg of a multiple; 'win' or 'place' for the two
+     parts of an each-way bet, which carry their own stake and their own
+     price rather than sharing the parent's. */
+  kind: text('kind'),
+  legStakePence: integer('leg_stake_pence'),
 }, (t) => [uniqueIndex('bet_legs_seq_key').on(t.betId, t.seq)]);
 
 export const betTags = pgTable('bet_tags', {
@@ -224,6 +251,42 @@ export const betState = pgTable('bet_state', {
   countsInStats: boolean('counts_in_stats').default(true).notNull(),
   updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
 });
+
+/* 57 · BANKROLL MEANT TWO DIFFERENT NUMBERS.
+ *
+ * Settings called £1,000 "Bankroll" and the sidebar called £4,171 "Bankroll",
+ * one being the starting balance and the other starting plus all-time net.
+ * They are now two words: `bankroll_start_pence` on the account is the one a
+ * person sets, and balance is derived and never stored.
+ *
+ *   balance = starting bankroll + net + deposits − withdrawals
+ *
+ * The deposits and withdrawals half is this table. Without it, anyone who
+ * tops up has a balance that is permanently wrong, and "% of bankroll" is
+ * measuring against a number that stopped being true the day they added to
+ * it. Date, amount and note is the whole of it — a signed amount rather than
+ * a type column, because a withdrawal is a negative deposit and two columns
+ * that must agree is one more thing to get wrong.
+ */
+export const bankrollAdjustments = pgTable('bankroll_adjustments', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  accountId: uuid('account_id').notNull().references(() => accounts.id, { onDelete: 'cascade' }),
+  adjustedAt: timestamp('adjusted_at', { withTimezone: true }).defaultNow().notNull(),
+  /* Positive is money in, negative is money out. Never zero. */
+  amountPence: integer('amount_pence').notNull(),
+  note: text('note'),
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+}, (t) => [index('bankroll_adjustments_account_idx').on(t.accountId, t.adjustedAt)]);
+
+/* 58 · Every change a person makes to their unit, so an imported bet can be
+   given the unit that was in force on its own date rather than today's. */
+export const unitHistory = pgTable('unit_history', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  accountId: uuid('account_id').notNull().references(() => accounts.id, { onDelete: 'cascade' }),
+  effectiveFrom: timestamp('effective_from', { withTimezone: true }).defaultNow().notNull(),
+  unitPence: integer('unit_pence').notNull(),
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+}, (t) => [index('unit_history_account_idx').on(t.accountId, t.effectiveFrom)]);
 
 /* Figures with no slip behind them: a month's total typed in from another
    tracker. They move net, turnover and the calendar, and they are excluded
