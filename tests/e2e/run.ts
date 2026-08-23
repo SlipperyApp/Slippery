@@ -37,6 +37,37 @@ const note = (where: string, what: string) => { failures.push({ where, what }); 
 
 const axeSource = readFileSync('node_modules/axe-core/axe.min.js', 'utf8');
 
+/* THE STALE-BUILD TRAP, NAMED.
+ *
+ * This audit takes about an hour. Running `next build` while it is in flight
+ * rewrites the chunk hashes under the server it is driving, so every script
+ * 404s, the render layer never mounts, and `window.__slippery` is undefined.
+ * What you then see is "Cannot read properties of undefined (reading
+ * 'setTheme')" three quarters of the way through a long run, which names the
+ * property and not the cause, and looks like a product bug.
+ *
+ * Checked before each page's assertions so the run stops early and says what
+ * actually happened. Do not rebuild while the audit is running. */
+async function requireMounted(page: Page, where: string): Promise<boolean> {
+  const ok = await page
+    .waitForFunction(() => !!(window as any).__slippery, null, { timeout: 20000 })
+    .then(() => true)
+    .catch(() => false);
+  if (!ok) {
+    const failed = await page.evaluate(() =>
+      performance.getEntriesByType('resource')
+        .filter((r) => (r as PerformanceResourceTiming).responseStatus >= 400)
+        .map((r) => r.name.split('/').pop())
+        .slice(0, 3));
+    note(where, 'the render layer never mounted'
+      + (failed.length ? ` — these 404ed: ${failed.join(', ')}. `
+        + 'That is the signature of a rebuild landing under a running server; '
+        + 'restart it and do not build again until the audit finishes.'
+        : ''));
+  }
+  return ok;
+}
+
 async function main() {
   mkdirSync(SHOTS, { recursive: true });
   const browser = await chromium.launch({ executablePath: CHROME });
@@ -234,6 +265,8 @@ async function openEverySheet(page: Page, vpName: string, errors: string[]) {
   await page.goto(BASE + '/app', { waitUntil: 'domcontentloaded' });
   await page.waitForTimeout(500);
 
+  if (!(await requireMounted(page, vpName + ' sheets'))) return;
+
   const keys: string[] = await page.evaluate(() => (window as any).__slippery?.sheetKeys ?? []);
   if (!keys.length) { note(vpName + ' sheets', 'no sheet registry exposed to the test'); return; }
 
@@ -262,6 +295,8 @@ async function openEverySheet(page: Page, vpName: string, errors: string[]) {
 async function applyEveryTheme(page: Page, vpName: string, errors: string[]) {
   await page.goto(BASE + '/app', { waitUntil: 'domcontentloaded' });
   await page.waitForTimeout(500);
+
+  if (!(await requireMounted(page, vpName + ' themes'))) return;
 
   for (const theme of THEMES) {
     errors.length = 0;
