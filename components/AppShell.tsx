@@ -8,7 +8,7 @@
  * screen has an address. Everything the layer draws is unchanged.
  */
 
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import { pathForView, viewForPath, sectionForPath } from '@/lib/proto/routes';
 import type { ProtoApi } from '@/lib/proto/types';
@@ -121,6 +121,37 @@ export function AppShell() {
           <div className="sknav" />
         </div>
       </div>
+      <ViewportToggle />
+    </div>
+  );
+}
+
+/* 31 · TEMPORARY — DELETE BEFORE LAUNCH.
+ *
+ * Forces the phone layout inside a desktop window so both can be reviewed
+ * side by side without a device. It sets one attribute on <html>; the whole
+ * behaviour lives in the `[data-force=mobile]` block in proto.css. It hides
+ * itself below 1000px, where the real phone layout is already what you get.
+ * There is no persistence on purpose: a reload returns to the true layout,
+ * so nobody can leave it switched on and mistake it for a bug. */
+function ViewportToggle() {
+  const [mode, setMode] = useState<'desktop' | 'mobile'>('desktop');
+  useEffect(() => {
+    const r = document.documentElement;
+    if (mode === 'mobile') r.setAttribute('data-force', 'mobile');
+    else r.removeAttribute('data-force');
+    /* The render layer measures the nav and the snap track off real widths,
+       so it has to be told the box changed. */
+    window.dispatchEvent(new Event('resize'));
+  }, [mode]);
+  return (
+    <div className="vptoggle" role="group" aria-label="Preview width">
+      <button type="button" aria-pressed={mode === 'desktop'} onClick={() => setMode('desktop')}>
+        Desktop
+      </button>
+      <button type="button" aria-pressed={mode === 'mobile'} onClick={() => setMode('mobile')}>
+        Mobile
+      </button>
     </div>
   );
 }

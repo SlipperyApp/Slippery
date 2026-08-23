@@ -397,7 +397,19 @@ button.setrow:hover{padding-left:3px}
 .hrow{display:flex;gap:9px;overflow-x:auto;padding-bottom:4px;margin:0 -15px;padding-left:15px;padding-right:15px}
 .hrow::-webkit-scrollbar{height:0}
 .hrow>*{flex:0 0 auto}
-[data-cardid=curve] svg{max-height:120px}
+/* 06 · THIS RULE WAS THE BUG, AND IT DID NOT LOOK LIKE ONE.
+ *
+ * `max-height:120px` was left over from when the curve card was a strip.
+ * An SVG with `width:100%`, a 720x366 viewBox and the default
+ * `preserveAspectRatio: xMidYMid meet` fits inside whichever axis binds
+ * first — so a 120px ceiling on a 1124px-wide box made it draw
+ * 120 * 720/366 = 236px of chart, centred, with 79% of the card empty.
+ * Nothing was mis-measured; the SVG simply obeyed the height it was given.
+ *
+ * Height now comes from the aspect ratio, and the rule is scoped to the
+ * chart wrapper. A global `svg{width:100%}` would resize every icon in the
+ * product, which is the other half of this trap. */
+.card .chartwrap>svg{width:100%;height:auto;display:block}
 .lnk{color:var(--s);text-decoration:underline;text-underline-offset:3px;font-weight:600;font-size:inherit}
 .lnk[data-read=1]::after{content:" ✓";color:var(--pos)}
 .rules{display:grid;gap:4px;margin-top:8px}
@@ -2149,3 +2161,180 @@ ol.steps li:last-child .dot{background:var(--p)}
   border-right:1px solid var(--line)}
  .skbar{left:238px}
 }
+
+/* ══════════════════════════════════════════════════════════════════════════
+ * 26 · ONE CONTAINER, EVERY ROUTE
+ *
+ * The shell was only ever applied behind the tab bar, so /signup/name sat
+ * about 490px from the left of a 1440px window, /app/billing/declined about
+ * 560, /app/settings/referrals about 690. Three different left edges on
+ * three pages of one product. They were not centred — they were simply the
+ * natural width of their content, starting at the padding edge.
+ *
+ * The measure below is the same 1280 everywhere. A single-column screen
+ * still keeps a narrow measure, because a verification code does not want
+ * twelve columns, but it is now centred inside the shell rather than
+ * abandoned at the left edge.
+ * ══════════════════════════════════════════════════════════════════════════ */
+@media(min-width:1000px){
+ .ph .body{--shell:1280px}
+
+ /* Every route, tab bar or not. */
+ .ph:not(:has(.navbar)) .pane,
+ .ph:not(:has(.navbar)) .authpane,
+ .ph:not(:has(.navbar)) .wizpane{
+  max-width:520px;
+  margin-inline:auto;
+  padding-inline:24px;
+ }
+
+ /* Signup and billing are a form beside a preview when there is room for
+    both, and a single centred column when there is not. */
+ .ph:not(:has(.navbar)) .pane:has(>.wizpreview){
+  max-width:var(--shell);
+  display:grid;
+  grid-template-columns:repeat(12,minmax(0,1fr));
+  gap:var(--gap,16px);
+  align-items:start;
+ }
+ .ph:not(:has(.navbar)) .pane:has(>.wizpreview)>*{grid-column:span 5}
+ .ph:not(:has(.navbar)) .pane:has(>.wizpreview)>.wizpreview{grid-column:span 7}
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+ * 27 · THE SPANS, REASSIGNED SO EVERY ROW ADDS TO TWELVE
+ *
+ * The previous spans left three ragged rows. These are chosen against the
+ * default order so the grid packs flush: see the comment on DEFAULT_ORDER.
+ * `align-items:stretch` plus `.mfoot{margin-top:auto}` is what stops two
+ * cards on the same row ending at different heights — the footer button
+ * takes up the slack rather than the card ending early.
+ * ══════════════════════════════════════════════════════════════════════════ */
+@media(min-width:1000px){
+ .ph:has(.navbar) .pane{align-items:stretch}
+ .ph:has(.navbar) .pane>.card{display:flex;flex-direction:column}
+ .mfoot{margin-top:auto}
+
+ .ph:has(.navbar) .pane>[data-cardid=running]{grid-column:span 7}
+ .ph:has(.navbar) .pane>[data-cardid=recent]{grid-column:span 7;grid-row:span 2}
+ .ph:has(.navbar) .pane>[data-cardid=oddsband]{grid-column:span 5}
+ .ph:has(.navbar) .pane>[data-cardid=curve],
+ .ph:has(.navbar) .pane>[data-cardid=months]{grid-column:span 12}
+ .ph:has(.navbar) .pane>[data-cardid=market]{grid-column:span 6}
+ .ph:has(.navbar) .pane>[data-cardid=clv]{grid-column:span 12}
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+ * 28 · RECENT BETS STOPS AT FIVE ON A PHONE
+ *
+ * Eight rows is roughly 380px, which is one 390px screen, so whatever module
+ * came next was never seen by anyone who did not scroll past a list they had
+ * already read. The rows stay in the DOM for the desktop grid; the phone
+ * hides the tail and the count line says what is hidden.
+ * ══════════════════════════════════════════════════════════════════════════ */
+.rcount{display:none}
+@media(max-width:999px){
+ .recent5>.bet:nth-child(n+6){display:none}
+ .rcount{display:block;font-size:11.5px;color:var(--t3);
+  font-variant-numeric:tabular-nums;padding:8px 0 0}
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+ * 29 · TAP TARGETS
+ *
+ * The audit counted 1,391 controls under 40px on a phone, and 997 of them
+ * were one file: the shared sheet component, which every one of the sixty
+ * sheets renders through. The dominant size was 28x28, 326 of them.
+ *
+ * The fix is not to grow the controls — a 44px pencil beside a 26px avatar
+ * looks wrong and the visual size is deliberate. It is to grow the *hit
+ * area* with a transparent pseudo-element, which costs no layout and no
+ * pixels. 8px on each side takes 28 to 44.
+ *
+ * Enumerating the class names missed most of them: only four of seventeen
+ * controls on the phone dashboard were covered, because half the buttons in
+ * this product carry no class at all. So the rule is scoped by *position in
+ * the interface* rather than by name, with three deliberate exclusions:
+ *
+ *  - `.navbar button` is already 44px and its neighbours are touching, so a
+ *    halo would only steal from the tab next to it.
+ *  - `.seg button` and `.tabs button` are the same: a segmented control is
+ *    adjacent by design, and an 8px halo makes the far edge of each segment
+ *    belong to its neighbour, which is worse than a small target.
+ *  - a full-width button has no width pressure at all, so it gets real
+ *    height instead of a halo (below).
+ * ══════════════════════════════════════════════════════════════════════════ */
+.ph :where(button,[role=button],.icon-btn,.ck .box,.tog):not(.navbar *):not(.seg *):not(.tabs *):not(.full){
+ position:relative;
+}
+.ph :where(button,[role=button],.icon-btn,.ck .box,.tog):not(.navbar *):not(.seg *):not(.tabs *):not(.full)::after{
+ /* A fixed -8px inset was the spec's number, and it is right for the 28px
+    control it was measured against: 28 + 16 = 44. It is not right for the
+    24px rows that turned up in the ledger and the group list, which land at
+    40. Centring the halo and giving it a 44px floor gets every control to
+    44 whatever its height, and collapses to the same -8px wherever the
+    control is already 28. */
+ content:"";position:absolute;left:50%;top:50%;
+ width:calc(100% + 16px);height:calc(100% + 16px);
+ min-width:44px;min-height:44px;
+ transform:translate(-50%,-50%);
+ border-radius:inherit;
+ /* An absolutely positioned pseudo-element with no z-index paints in DOM
+    order, so the next sibling in the row covers the half of the halo that
+    overlaps it and the control stays hard to hit on exactly the side you
+    reach from. One layer is enough to lift it clear. */
+ z-index:1;
+}
+
+/* A full-width button is only short because 34px looked neat on a desktop
+   mock. On a phone there is nothing competing for the space. */
+@media(max-width:999px){
+ .ph .btn.full,.ph .btn.sm{min-height:44px}
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+ * 30 · THE EXPOSURE CHIP SAYS WHAT IT IS
+ *
+ * A pound figure and a percentage beside each other, with no label, read as
+ * a balance to more than one person who saw it. The label stays on mobile —
+ * that is where it was most often misread — at 9.5px.
+ * ══════════════════════════════════════════════════════════════════════════ */
+ /* `.runpill` sets `gap:0!important` and spaces its parts with padding
+    instead, so a new part with no padding butts straight into the figure:
+    it read "OPEN EXPOSURE£88". */
+.runpill .rplab{font-size:10.5px;letter-spacing:.04em;text-transform:uppercase;
+ color:var(--t3);white-space:nowrap;padding-right:8px}
+@media(max-width:520px){.runpill .rplab{font-size:9.5px}}
+
+/* ══════════════════════════════════════════════════════════════════════════
+ * 31 · THE VIEWPORT TOGGLE  ·  TEMPORARY, DELETE BEFORE LAUNCH
+ *
+ * A floating control that forces the phone layout inside a desktop window so
+ * both can be reviewed without a device. It works by clamping the shell to
+ * 390px and telling the media queries to behave as though they were narrow —
+ * which they cannot be told directly, so the rules that matter are repeated
+ * here under [data-force=mobile]. That duplication is the reason this is
+ * temporary: it is a second copy of the layout, and a second copy drifts.
+ * ══════════════════════════════════════════════════════════════════════════ */
+.vptoggle{position:fixed;right:14px;bottom:14px;z-index:9000;display:none;
+ gap:2px;padding:3px;border-radius:999px;background:var(--elev);
+ border:1px solid var(--line);box-shadow:0 8px 30px rgba(0,0,0,.45)}
+@media(min-width:1000px){.vptoggle{display:flex}}
+.vptoggle button{font-size:12px;padding:7px 13px;border-radius:999px;
+ color:var(--t2);background:none;border:0;cursor:pointer;font-family:var(--ui);
+ min-height:36px}
+.vptoggle button[aria-pressed=true]{background:var(--s);color:var(--bg);font-weight:600}
+
+html[data-force=mobile] .ph{max-width:390px;margin-inline:auto;
+ border-inline:1px solid var(--line)}
+html[data-force=mobile] .ph .body{--shell:390px}
+html[data-force=mobile] .ph:has(.navbar) .pane,
+html[data-force=mobile] .ph:has(.navbar) .pane.grid,
+html[data-force=mobile] .ph:has(.navbar) .pane:not(.grid){
+ display:block!important;max-width:none;padding:14px 14px 24px}
+html[data-force=mobile] .ph:has(.navbar) .pane>.card{margin-bottom:12px}
+html[data-force=mobile] .ph:not(:has(.navbar)) .pane{max-width:none;padding-inline:16px}
+html[data-force=mobile] .recent5>.bet:nth-child(n+6){display:none}
+html[data-force=mobile] .rcount{display:block;font-size:11.5px;color:var(--t3);
+ font-variant-numeric:tabular-nums;padding:8px 0 0}
+html[data-force=mobile] .runpill .rplab{font-size:9.5px}
