@@ -57,17 +57,50 @@ test('the video project is self-contained', () => {
  *
  * The films sit in a frame that takes the theme's own border and surface, so
  * the seam is a deliberate edge rather than a foreign object dropped in. */
-test('the landing storyboards are films, in both shapes', () => {
+/* THE FILMS ARE OFF THE PAGE, and this test now says so.
+ *
+ * It used to assert the opposite, because the films were the answer to a live
+ * scene deck that was costing a phone an infinite animation. The brief that
+ * followed takes the videos out until they are redone — all forty-eight
+ * shipped with controls and no autoplay, so every one of them was a still
+ * frame with a play bar under it, which is a worse advert than nothing.
+ *
+ * What the test protects now is that they came out cleanly: no film on the
+ * landing page, the scene deck did not creep back in its place, and the
+ * two-cut machinery is still intact for when they return. */
+test('the landing page ships no film, and the deck did not come back', () => {
   const client = read('lib/proto/runtime.js');
   assert.doesNotMatch(client, /data-scene/, 'a live scene deck is still there');
   assert.doesNotMatch(client, /const FILM=\[/, 'the storyboard array is still there');
   assert.doesNotMatch(client, /data-deck="(bot|imp|soc)"/, 'a slide deck is still there');
   for (const name of ['in-action', 'bot', 'import', 'social', 'settling']) {
-    assert.ok(client.includes(`film('${name}'`), name + ' has no film on the page');
+    assert.ok(!client.includes(`film('${name}'`), name + ' is still on the page');
   }
-  /* The whole point of two cuts is that the page picks between them. */
+  /* The helper and both cuts survive, so bringing them back is a one-line
+     change rather than a rebuild. */
+  assert.match(client, /function film\(name, label\)/, 'the helper was deleted, not just unused');
   assert.match(client, /const FILM_TALL = '\(max-width: 760px\)'/);
   assert.match(client, /tall \? '-tall' : ''/, 'nothing chooses the shape');
+});
+
+/* What replaced the settling film: state-driven, ~2KB, all tokens, so it
+   follows every theme and cannot show a frame of a bet mid-settlement on the
+   section whose whole claim is that settlement finishes. */
+test('the settle demo covers all six outcomes and is reachable by keyboard', () => {
+  const client = read('lib/proto/runtime.js');
+  assert.match(client, /const SETTLE_CASES=\[/);
+  for (const k of ['won', 'lost', 'void', 'cashp', 'cashl', 'cashf']) {
+    assert.ok(client.includes(`k:'${k}'`), 'no ' + k + ' outcome');
+  }
+  assert.match(client, /data-settlego=/, 'the dots are not controls');
+  assert.match(client, /role="tab"/);
+  /* `data-settle` was already the settle-a-bet action and swallowed every
+     click inside the demo, so the attribute had to be its own. */
+  assert.match(client, /data-settledemo/);
+  const css = read('app/proto.css');
+  assert.match(css, /@keyframes settle-sweep/);
+  assert.match(css, /prefers-reduced-motion:reduce\)\{\n \.scan\{display:none\}/,
+    'the sweep does not stop under reduced motion');
 });
 
 test('every film exists in both cuts, with a poster for each', () => {

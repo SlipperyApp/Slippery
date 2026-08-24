@@ -144,6 +144,7 @@ async function sweepViewport(browser: Browser, vp: (typeof VIEWPORTS)[number]) {
   await openEverySheet(page, vp.name, errors);
 
   /* All eight themes, in sequence, on this viewport. */
+  await assertTabularFigures(page, vp.name);
   await applyEveryTheme(page, vp.name, errors);
 
   await assertReducedMotionKeepsContent(page, vp.name);
@@ -167,6 +168,51 @@ async function sweepViewport(browser: Browser, vp: (typeof VIEWPORTS)[number]) {
   await page.screenshot({ path: join(SHOTS, `dashboard-${vp.name}.png`) });
 
   await context.close();
+}
+
+/* 10 · T1 · DOES THE UI FONT ACTUALLY SHIP TABULAR FIGURES?
+ *
+ * `font-variant-numeric: tabular-nums` fails silently. If the face has no
+ * tnum feature the declaration does nothing, no warning is raised, and every
+ * money column in the product is quietly ragged — which is exactly the defect
+ * CLAUDE.md says tabular figures exist to prevent.
+ *
+ * Measured rather than assumed: render four strings of repeated digits and
+ * compare their widths. Schibsted Grotesk's proportional "1" is 28.8px
+ * against 52.9 for "0", and with tabular-nums all four land on 53.33 — so it
+ * does ship them. Asserted here so a font swap cannot take the whole figure
+ * system with it unnoticed.
+ */
+async function assertTabularFigures(page: Page, vpName: string) {
+  await page.goto(BASE + '/app', { waitUntil: 'domcontentloaded' });
+  await page.waitForTimeout(600);
+  const result = await page.evaluate(() => {
+    const measure = (text: string, css: string) => {
+      const s = document.createElement('span');
+      s.style.cssText = 'position:absolute;visibility:hidden;white-space:pre;font-size:14px;' + css;
+      s.textContent = text;
+      document.body.appendChild(s);
+      const w = s.getBoundingClientRect().width;
+      s.remove();
+      return w;
+    };
+    const out: Record<string, { equal: boolean; widths: number[] }> = {};
+    for (const [name, family] of [['ui', 'var(--ui)'], ['mono', 'var(--mono)']]) {
+      const widths = ['111111', '000000', '999999', '444444']
+        .map((t) => measure(t, `font-family:${family};font-variant-numeric:tabular-nums;`));
+      out[name] = { equal: Math.max(...widths) - Math.min(...widths) < 0.5, widths };
+    }
+    return out;
+  });
+  for (const [family, r] of Object.entries(result)) {
+    if (!r.equal) {
+      note(`${vpName} tabular figures`,
+        `the ${family} face does not honour tabular-nums — digit widths ${r.widths.join(', ')}. `
+        + 'Every money column in the product is ragged. Set font-feature-settings:"tnum" 1, and '
+        + 'if that does not fix it the face has no tnum table and column figures must use the '
+        + 'mono face instead.');
+    }
+  }
 }
 
 async function assertNoOverflow(page: Page, where: string) {

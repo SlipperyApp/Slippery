@@ -521,6 +521,14 @@ ALLOWED.push(
     expect: /Slippers you follow back/,
   },
   {
+    view: 'sheet:day',
+    because:
+      '11 · Money is always two decimals, totals included. The prototype '
+      + 'showed "Staked £90" beside "+£112.00", which is the ragged column '
+      + 'tabular figures exist to prevent.',
+    expect: /Staked/,
+  },
+  {
     view: 'sheet:currency',
     because:
       '11 · New. One currency per account, set at onboarding from the '
