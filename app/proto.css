@@ -2824,3 +2824,86 @@ h1,h2,.big,.lh1,.hero{letter-spacing:-.022em}
  .sleg,.sverdict{opacity:1;animation:none;transform:none}
  .slipcard::after{animation:none}
 }
+
+/* ══════════════════════════════════════════════════════════════════════════
+ * 16 · THE LEAGUE TABLE
+ *
+ * A football table, because every UK bettor can already read one. Points from
+ * the head to head, units as goal difference, green edge on the promotion
+ * places and red on the relegation ones — all of it borrowed rather than
+ * invented, so nothing here needs explaining.
+ * ══════════════════════════════════════════════════════════════════════════ */
+.ltab{width:100%;border-collapse:collapse;font-size:var(--fs-meta)}
+.ltab th{text-align:left;font-size:var(--fs-micro);letter-spacing:.1em;
+ text-transform:uppercase;color:var(--t3);font-weight:var(--fw-mid);
+ padding:0 var(--sp-2) var(--sp-2) 0}
+.ltab td{padding:var(--sp-2) var(--sp-2) var(--sp-2) 0;border-top:1px solid var(--line);
+ vertical-align:middle}
+.ltab .n{text-align:right;font-variant-numeric:tabular-nums;width:38px}
+.ltab .pts{font-weight:var(--fw-bold);color:var(--t1)}
+.ltab .lpos{width:22px;color:var(--t3);font-variant-numeric:tabular-nums;
+ padding-left:var(--sp-2)}
+.ltab .lname{display:flex;align-items:center;gap:var(--sp-2);min-width:0}
+.ltab .lname b{font-weight:var(--fw-mid);white-space:nowrap;overflow:hidden;
+ text-overflow:ellipsis}
+.ltab .fm{width:56px;text-align:right}
+.ltab tr.you{background:color-mix(in srgb,var(--s) 8%,transparent)}
+.ltab tr.you b{color:var(--t1);font-weight:var(--fw-bold)}
+/* The zone edges. Inset rather than a border, so the row height does not
+   change between a zone row and an ordinary one. */
+.ltab tr.zup td:first-child{box-shadow:inset 2px 0 0 var(--pos)}
+.ltab tr.zdn td:first-child{box-shadow:inset 2px 0 0 var(--neg)}
+/* Resting takes NEITHER edge, because it is protected in both directions. */
+.ltab tr.resting{opacity:.62}
+.ltab tr.resting td:first-child{box-shadow:none}
+.restpill{font-size:var(--fs-micro);color:var(--t3);border:1px solid var(--line2);
+ border-radius:var(--r-pill);padding:1px 6px;flex:none}
+
+/* Form. Five marks, and a void is grey — a non-runner is not a loss, so it
+   must not read as one. */
+.form{display:inline-flex;gap:2px}
+.form i{width:7px;height:7px;border-radius:var(--r-round);display:block}
+.form .fw{background:var(--pos)}
+.form .fl{background:var(--neg)}
+.form .fv{background:var(--t4)}
+
+.lkey{display:flex;flex-wrap:wrap;gap:var(--sp-3);margin-top:var(--sp-3);
+ font-size:var(--fs-micro);color:var(--t3)}
+.lkey i{display:inline-block;width:2px;height:10px;margin-right:var(--sp-1);
+ vertical-align:-1px;border-radius:1px}
+.lkey .kup{background:var(--pos)}
+.lkey .kdn{background:var(--neg)}
+
+/* The week's head to head. */
+.h2h{display:grid;grid-template-columns:1fr auto 1fr;align-items:center;
+ gap:var(--sp-3);background:var(--raise,var(--elev));border:1px solid var(--line);
+ border-radius:var(--r-ctl);padding:var(--sp-3)}
+.h2hside{display:flex;flex-direction:column;gap:2px;text-align:center;min-width:0}
+.h2hside b{font-size:var(--fs-meta)}
+.h2hside .mono{font-size:var(--fs-title);font-weight:var(--fw-bold);
+ font-variant-numeric:tabular-nums}
+.h2hvs{font-size:var(--fs-micro);letter-spacing:.1em;color:var(--t3)}
+.capline{display:flex;justify-content:space-between;align-items:baseline;
+ margin-top:var(--sp-2);font-size:var(--fs-meta);color:var(--t3)}
+.capline b{color:var(--a);font-variant-numeric:tabular-nums}
+
+.ladder{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:var(--sp-1)}
+.ladder li{display:flex;justify-content:space-between;align-items:center;
+ padding:var(--sp-2) var(--sp-3);border-radius:var(--r-ctl);
+ border:1px solid var(--line);font-size:var(--fs-meta);color:var(--t2)}
+.ladder li.on{border-color:var(--p);background:color-mix(in srgb,var(--p) 12%,transparent);
+ color:var(--t1)}
+
+@media(max-width:520px){
+ /* Wins, draws and losses are recoverable from points and games played, so
+    they are the columns to lose first on a narrow screen. Units and points
+    are the two that carry the table. */
+ .ltab th:nth-child(3),.ltab td:nth-child(3),
+ .ltab th:nth-child(4),.ltab td:nth-child(4),
+ .ltab th:nth-child(5),.ltab td:nth-child(5){display:none}
+}
+@media(min-width:1000px){
+ .ph:has(.navbar) .pane>[data-cardid=league]{grid-column:span 7}
+ .ph:has(.navbar) .pane>[data-cardid=fixture]{grid-column:span 5}
+ .ph:has(.navbar) .pane>[data-cardid=ladder]{grid-column:span 5}
+}
