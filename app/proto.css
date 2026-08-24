@@ -431,17 +431,17 @@ button.setrow:hover{padding-left:4px}
 .field:focus{outline:none;border-color:var(--p);background:rgba(255,255,255,.07)}
 .flabel{font-size:12px;letter-spacing:.11em;text-transform:uppercase;color:var(--t3);margin-top:16px;display:block}
 .cal{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;max-width:340px;margin:0 auto}
-.cal .dow{font-size:10px;color:var(--t4);text-align:center}
+.cal .dow{font-size:10px;color:var(--t3);text-align:center}
 .cal .c{aspect-ratio:1;max-height:56px;border-radius:8px;border:1px solid var(--line);display:flex;flex-direction:column;
  align-items:center;justify-content:center;gap:var(--bw-hair);font-size:12px;font-weight:600;opacity:0;transform:scale(.86);position:relative;overflow:hidden}
-.cal .c .dn{font-size:10px;color:var(--t4)}
+.cal .c .dn{font-size:10px;color:var(--t3)}
 .cal .c.in{opacity:1;transform:none;transition:opacity .34s var(--e),transform .34s var(--e)}
 .cal .c.p{background:color-mix(in srgb,var(--pos) 16%,transparent);border-color:color-mix(in srgb,var(--pos) 32%,transparent);color:var(--pos);font-weight:600}
 .cal .c.n{background:color-mix(in srgb,var(--neg) 14%,transparent);border-color:color-mix(in srgb,var(--neg) 30%,transparent);color:var(--neg);font-weight:600}
 .cal .c.none{background:rgba(255,255,255,.022)}
 .cal .c.none::after{content:"";position:absolute;left:-12%;right:-12%;top:50%;height:1px;background:var(--line);transform:rotate(-38deg)}
-.cal .c.fut{border-style:dashed;border-color:rgba(255,255,255,.055);background:none}
-.cal .c.fut .dn{color:rgba(255,255,255,.16)}
+.cal .c.fut{border-style:dashed;border-color:var(--t3);background:none}
+.cal .c.fut .dn{color:var(--t3)}
 .cal .c.today{outline:1.5px solid var(--s);outline-offset:-1px}
 .cal .c.pad{border:0;background:none}
 .callegend i{width:8px;height:8px;border-radius:4px;display:inline-block;flex:0 0 auto}
@@ -525,7 +525,7 @@ button.setrow:hover{padding-left:4px}
 .sstat{background:color-mix(in srgb,var(--t1) 6%,transparent);border-radius:8px;padding:8px 8px}
 .sstat span{display:block;font-size:10px;letter-spacing:.09em;text-transform:uppercase;color:var(--t3)}
 .sstat b{font-size:14px;font-variant-numeric:tabular-nums}
-.sfoot{margin-top:16px;font-size:12px;color:var(--t4);letter-spacing:.1em;text-transform:uppercase}
+.sfoot{margin-top:16px;font-size:12px;color:var(--t3);letter-spacing:.1em;text-transform:uppercase}
 .sblock{margin-top:16px;padding-top:16px;border-top:1px solid color-mix(in srgb,var(--t1) 10%,transparent)}
 .sharecard .cal{max-width:300px;margin:0 auto}
 .sharecard .cal .c{max-height:34px;font-size:10px}
@@ -533,7 +533,7 @@ button.setrow:hover{padding-left:4px}
 .netctl .iconb{width:32px;height:32px;min-height:32px;border-radius:8px;display:grid;place-items:center;flex:0 0 auto}
 .netctl .pill{min-height:32px;display:inline-flex;align-items:center;white-space:nowrap}
 .joinrow{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:8px;padding-top:8px;border-top:1px solid var(--line)}
-.joinwhy{font-size:12px;color:var(--t4)}
+.joinwhy{font-size:12px;color:var(--t3)}
 .acwrap{position:relative}
 .aclist{position:absolute;left:0;right:0;top:calc(100% + 4px);z-index:var(--z-sticky);background:var(--elev);
  border:1px solid var(--line);border-radius:12px;overflow:hidden;box-shadow:0 12px 34px rgba(0,0,0,.5);max-height:232px;overflow-y:auto}
@@ -560,7 +560,7 @@ button.setrow:hover{padding-left:4px}
 .chal{border:1px solid var(--line);border-radius:12px;padding:12px;margin-bottom:8px;background:var(--card)}
 .chalhd{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
 .chalrow{display:grid;grid-template-columns:18px 1fr 68px auto;gap:8px;align-items:center;padding:4px 0;font-size:14px}
-.chalrow .rk{font-size:12px;color:var(--t4);text-align:center;font-variant-numeric:tabular-nums}
+.chalrow .rk{font-size:12px;color:var(--t3);text-align:center;font-variant-numeric:tabular-nums}
 .chalrow .rk.gold{color:var(--a);font-weight:600}
 .chalrow .nm{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .chalbar{height:5px;border-radius:4px;background:color-mix(in srgb,var(--t1) 9%,transparent);overflow:hidden}
@@ -569,7 +569,7 @@ button.setrow:hover{padding-left:4px}
 .factlist{padding:4px var(--sp-hair) var(--sp-hair);margin-top:12px}
 .factlist .setrow{border:0;padding:8px 0;pointer-events:none;min-height:0}
 .factlist .pill{pointer-events:none}
-.factlist .k::before{content:"· ";color:var(--t4)}
+.factlist .k::before{content:"· ";color:var(--t3)}
 .stakefoot{display:flex;justify-content:space-between;gap:12px;margin-top:12px;font-size:12px;color:var(--t3)}
 .stakefoot b{color:var(--t1);font-variant-numeric:tabular-nums;margin-left:4px}
 .unitline{position:absolute;left:0;right:70px;height:0;border-top:2px solid var(--s);opacity:.85}
@@ -815,7 +815,7 @@ ol.steps p,ul.steps p{margin:0;font-size:14px;color:var(--t2)}
  transition:color .22s var(--e);padding:8px 4px}
 .herolink:hover{color:var(--t1)}
 .storeb{margin-top:24px}
-.storenote{font-size:12px;color:var(--t4);margin-top:8px}
+.storenote{font-size:12px;color:var(--t3);margin-top:8px}
 .storeb{display:flex;gap:12px;justify-content:center;flex-wrap:wrap;align-items:center}
 .badgelink{display:inline-block;line-height:0;border-radius:8px;color:var(--t2);padding:0;
  transition:transform .26s var(--e),color .26s var(--e)}
@@ -912,7 +912,7 @@ ol.steps p,ul.steps p{margin:0;font-size:14px;color:var(--t2)}
 .tgt2 td:last-child{text-align:right;font-weight:600;font-family:var(--mono)}
 .tgconf{display:inline-flex;align-items:center;gap:4px;font-size:10px;padding:4px 8px;border-radius:var(--r-pill);
  background:color-mix(in srgb,var(--pos) 15%,transparent);color:var(--pos);margin-top:8px}
-.tgfoot{font-size:12px;color:var(--t4);margin-top:8px;font-style:normal}
+.tgfoot{font-size:12px;color:var(--t3);margin-top:8px;font-style:normal}
 .tgtime{font-size:10px;opacity:.6;margin-top:4px;text-align:right}
 .impgrid{display:grid;gap:8px;text-align:left}
 @media(min-width:720px){.impgrid{grid-template-columns:1fr 1fr}}
@@ -921,7 +921,7 @@ ol.steps p,ul.steps p{margin:0;font-size:14px;color:var(--t2)}
  background:color-mix(in srgb,var(--p) 18%,transparent);color:var(--s)}
 .impstep b{display:block;font-size:14px;line-height:1.3}
 .impstep span:last-child{display:block;font-size:12px;color:var(--t3);margin-top:var(--sp-hair)}
-.impnote{display:flex;gap:16px;justify-content:center;flex-wrap:wrap;margin-top:16px;font-size:12px;color:var(--t4)}
+.impnote{display:flex;gap:16px;justify-content:center;flex-wrap:wrap;margin-top:16px;font-size:12px;color:var(--t3)}
 .impnote span::before{content:"✓ ";color:var(--pos)}
 .themerow{display:flex;gap:8px;justify-content:center;flex-wrap:wrap}
 .swatch{display:flex;flex-direction:column;align-items:center;gap:8px;padding:8px 8px;border-radius:12px;
@@ -956,7 +956,7 @@ ol.steps p,ul.steps p{margin:0;font-size:14px;color:var(--t2)}
 .grprow:last-of-type{border-bottom:0}
 .grprow .rk{font-size:12px;text-align:center;font-variant-numeric:tabular-nums}
 .grprow .nm{font-weight:600}
-.grprow .sb{font-size:12px;color:var(--t4)}
+.grprow .sb{font-size:12px;color:var(--t3)}
 .grpfoot{padding:12px 16px;font-size:12px;color:var(--t3);background:color-mix(in srgb,var(--t1) 3%,transparent)}
 @media(max-width:520px){.grprow{grid-template-columns:20px 1fr auto}.grprow .sb{display:none}}
 .statband{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
@@ -1011,7 +1011,7 @@ details.q b{color:var(--t1)}
 .wkbar{flex:1;display:flex;flex-direction:column;justify-content:flex-end;align-items:center;gap:4px;height:100%}
 .wkbar i{width:100%;height:var(--h);border-radius:4px;display:block;min-height:4px}
 .wkbar i.p{background:var(--pos)}.wkbar i.n{background:var(--neg)}
-.wkbar span{font-size:10px;color:var(--t4)}
+.wkbar span{font-size:10px;color:var(--t3)}
 .wkfoot{font-size:12px;color:var(--t2);margin:0}
 .promoline{display:flex;align-items:center;justify-content:space-between;gap:8px;
  border:1px solid color-mix(in srgb,var(--pos) 34%,transparent);background:color-mix(in srgb,var(--pos) 11%,transparent);
@@ -1035,7 +1035,7 @@ details.q b{color:var(--t1)}
 .plan h3{margin:0 0 4px;font-size:14px;color:var(--t2);font-weight:600}
 .price{font-family:var(--ui);font-variant-numeric:tabular-nums;font-weight:600;letter-spacing:-.03em}
 .price span{font-size:14px;color:var(--t3);font-weight:400}
-.was{font-size:14px;color:var(--t4);text-decoration:line-through;margin-left:8px;font-weight:400}
+.was{font-size:14px;color:var(--t3);text-decoration:line-through;margin-left:8px;font-weight:400}
 .plan .pn{font-size:12px;color:var(--t2);margin:8px 0 12px}
 .plan ul{list-style:none;padding:0;margin:0 0 12px}
 .plan li{font-size:14px;padding:4px 0;color:var(--t2);display:flex;gap:8px}
@@ -1060,10 +1060,10 @@ details.q b{color:var(--t1)}
 .rsz{display:none;position:absolute;top:9px;right:9px;gap:4px;z-index:var(--z-raised)}
 .card:hover .rsz,.card:focus-within .rsz{display:flex}
 .rsz button{width:24px;height:24px;border-radius:8px;border:1px solid var(--line);background:var(--card);
- font-size:10px;color:var(--t4);transition:color .2s var(--e),border-color .2s var(--e)}
+ font-size:10px;color:var(--t3);transition:color .2s var(--e),border-color .2s var(--e)}
 .rsz button:hover{color:var(--t2);border-color:var(--p)}
 .rsz button[aria-pressed=true]{border-color:var(--p);color:var(--s)}
-.szb{width:26px;height:26px;border-radius:8px;border:1px solid var(--line);font-size:10px;color:var(--t4);transition:.2s var(--e)}
+.szb{width:26px;height:26px;border-radius:8px;border:1px solid var(--line);font-size:10px;color:var(--t3);transition:.2s var(--e)}
 .szb:hover{color:var(--t2)}
 .szb.on{border-color:var(--p);color:var(--s);background:color-mix(in srgb,var(--p) 14%,transparent)}
 .editrow .nm2{flex:1;font-size:14px}
@@ -1133,7 +1133,7 @@ details.q b{color:var(--t1)}
  .navcta svg{stroke:var(--bg)}
  .navbar>.navcta:hover{filter:brightness(1.07)}
  .navbar>.navcta[aria-hidden]{aria-hidden:false}
- .navsec{font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--t4);padding:12px 12px 4px}
+ .navsec{font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--t3);padding:12px 12px 4px}
  .navsub{display:flex!important;align-items:center;gap:8px;width:100%;padding:8px 12px!important;font-size:14px!important;
   color:var(--t2)!important;border-radius:8px;flex-direction:row!important}
  .navsub:hover{background:color-mix(in srgb,var(--t1) 6%,transparent);color:var(--t1)!important}
@@ -1641,7 +1641,7 @@ ol.steps li:last-child .dot{background:var(--p)}
 .authsocial svg{flex:0 0 auto}
 
 .authdiv{display:flex;align-items:center;gap:12px;margin:16px 0 16px;
- font-size:12px;color:var(--t4);letter-spacing:.06em;text-transform:uppercase;
+ font-size:12px;color:var(--t3);letter-spacing:.06em;text-transform:uppercase;
  word-spacing:-.03em}
 .authdiv::before,.authdiv::after{content:"";flex:1;height:1px;background:var(--line)}
 
@@ -1670,7 +1670,7 @@ ol.steps li:last-child .dot{background:var(--p)}
 .docbtn .dtxt b{font-size:14px;font-weight:600;color:var(--t1)}
 .docbtn .dtxt i{font-style:normal;font-size:12px;color:var(--t3)}
 .docbtn.done .dtxt i{color:var(--pos)}
-.docbtn .caret{color:var(--t4);flex:0 0 auto}
+.docbtn .caret{color:var(--t3);flex:0 0 auto}
 
 .authgo{min-height:54px;font-size:16px;border-radius:12px}
 .authgo[disabled]{opacity:.42;cursor:not-allowed;transform:none;box-shadow:none}
@@ -1757,7 +1757,7 @@ ol.steps li:last-child .dot{background:var(--p)}
 
 /* ═══ STAKING DISCIPLINE ═══ */
 .stakeplot{display:flex;flex-direction:column;gap:8px;margin:8px 0 4px}
-.stakescale{display:flex;justify-content:space-between;font-size:10px;color:var(--t4);
+.stakescale{display:flex;justify-content:space-between;font-size:10px;color:var(--t3);
  letter-spacing:.05em;text-transform:uppercase;word-spacing:-.04em;padding:0 0 var(--sp-hair) 64px}
 .stakerow{display:flex;align-items:center;gap:8px}
 .stakerow .sw2{flex:0 0 53px;font-size:12px;color:var(--t3);white-space:nowrap}
@@ -1830,7 +1830,6 @@ ol.steps li:last-child .dot{background:var(--p)}
  .ph:has(.navbar) .pane>[data-cardid=running]{grid-column:span 5}
  .ph:has(.navbar) .pane>[data-cardid=stake]{grid-column:span 6}
  .ph:has(.navbar) .pane>[data-cardid=oddsband]{grid-column:span 6}
- .ph:has(.navbar) .pane>[data-cardid=clv]{grid-column:span 6}
  .ph:has(.navbar) .pane>[data-cardid=book],
  .ph:has(.navbar) .pane>[data-cardid=market],
  .ph:has(.navbar) .pane>[data-cardid=sport],
@@ -1921,7 +1920,7 @@ ol.steps li:last-child .dot{background:var(--p)}
  box-shadow:0 14px 38px color-mix(in srgb,#000 58%,transparent),inset 0 1px 0 rgba(255,255,255,.05);
  display:none}
 .dots.open .menu{display:block}
-.menu .mh{font-size:10px;letter-spacing:.13em;text-transform:uppercase;color:var(--t4);
+.menu .mh{font-size:10px;letter-spacing:.13em;text-transform:uppercase;color:var(--t3);
  font-weight:600;padding:8px 8px 4px;word-spacing:-.04em}
 .menu .mi{display:flex;align-items:center;justify-content:space-between;gap:8px;
  padding:8px;border-radius:8px;font-size:12px;color:var(--t2);cursor:pointer;min-height:36px}
@@ -1963,9 +1962,17 @@ ol.steps li:last-child .dot{background:var(--p)}
 .cal .c{transition:background-color .3s var(--e),border-color .3s var(--e)}
 .cal .c .cv{font-size:10px;font-weight:600;font-variant-numeric:tabular-nums;line-height:1}
 /* A heavy fill cannot carry light text. */
-.cal .c.heavy .cv,.cal .c.heavy .dn{color:var(--bg)}
+/* 01 · ONE EXPRESSION FOR THE DATE, BOTH CHILDREN.
+   The figure flips to the background colour on a heavy fill, because #7FE3A6
+   at 76% will not carry light text. The date was doing something else again —
+   --t2 with bets, --t3 without — so on a mid-intensity cell it disappeared
+   into the fill. Both children now follow the same one test:
+     heavy ? rgba(12,14,19,.66) : var(--t3)
+   .66 rather than the figure's full opacity, because a date is a label. */
+.cal .c.heavy .cv{color:var(--bg)}
+.cal .c.heavy .dn{color:rgba(12,14,19,.66)}
 .cal .c.heavy .cv{font-weight:800}
-.cal .c.heavy .dn{opacity:.62}
+
 /* THE WHOLE MONTH FITS AT 390px: seven 44px cells plus six 5px gaps is 338,
    inside the 340 the grid is capped at. Under 44px the figure drops out and
    date plus intensity carries the cell. */
@@ -1976,7 +1983,7 @@ ol.steps li:last-child .dot{background:var(--p)}
 
 /* ═══ 07 · BREAKDOWNS ═══ */
 .barline .h .bn{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.barline .h .bn em{font-style:normal;font-size:12px;color:var(--t4);margin-left:8px;
+.barline .h .bn em{font-style:normal;font-size:12px;color:var(--t3);margin-left:8px;
  font-variant-numeric:tabular-nums}
 .barline .track{position:relative}
 .barline .track .zeroline{position:absolute;top:-2px;bottom:-2px;width:1px;
@@ -2025,7 +2032,7 @@ ol.steps li:last-child .dot{background:var(--p)}
 .card.waiting .hd{margin:0}
 .card.waiting b{color:var(--t3)}
 .card.waiting .chip{font-size:12px;padding:4px 8px;color:var(--t3)}
-.partialnote{margin:8px 0 0;font-size:12px;color:var(--t4)}
+.partialnote{margin:8px 0 0;font-size:12px;color:var(--t3)}
 
 /* ═══ 13 · ADD A BET ═══ */
 .drop{display:block;width:100%;text-align:center;padding:24px 16px;border-radius:var(--r-card);
@@ -2036,7 +2043,7 @@ ol.steps li:last-child .dot{background:var(--p)}
 .drop .dropi{display:block;color:var(--s);margin:0 auto 8px;width:22px}
 .drop b{font-size:14px;display:block}
 .drop .dropsub{display:block;color:var(--t2);font-size:12px;margin-top:4px}
-.ordiv{display:flex;align-items:center;gap:12px;margin:16px 0;color:var(--t4);font-size:12px;
+.ordiv{display:flex;align-items:center;gap:12px;margin:16px 0;color:var(--t3);font-size:12px;
  letter-spacing:.14em;font-weight:600;word-spacing:-.04em}
 .ordiv::before,.ordiv::after{content:"";flex:1;border-top:1px dashed var(--line)}
 .bigdiv{margin:24px 0 16px;border-top:1px solid var(--line)}
@@ -2070,13 +2077,13 @@ ol.steps li:last-child .dot{background:var(--p)}
 .sliptile .scap{display:block;padding:8px 8px 8px;font-size:10px;line-height:1.35}
 .sliptile .scap b{display:block;font-size:12px;font-weight:600;overflow:hidden;
  text-overflow:ellipsis;white-space:nowrap}
-.sliptile .scap span{color:var(--t4);font-variant-numeric:tabular-nums}
+.sliptile .scap span{color:var(--t3);font-variant-numeric:tabular-nums}
 .sliptile.fix{border-color:var(--a)}
 .sliptile .sbadge{position:absolute;top:7px;right:7px;font-style:normal;font-size:10px;
  font-weight:800;letter-spacing:.06em;padding:var(--sp-hair) 4px;border-radius:4px;background:var(--a);color:#1B1206}
 .sliptile.gone{display:grid;place-items:center;text-align:center;background:var(--elev);
  aspect-ratio:auto;min-height:150px}
-.sliptile.gone p{margin:0;padding:0 8px;font-size:10px;color:var(--t4);line-height:1.5}
+.sliptile.gone p{margin:0;padding:0 8px;font-size:10px;color:var(--t3);line-height:1.5}
 
 /* ═══ 15 · THE IMPORT WIZARD ═══ */
 .wsteps{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;margin:0 0 16px;padding:0;list-style:none}
@@ -2084,7 +2091,7 @@ ol.steps li:last-child .dot{background:var(--p)}
 .wsteps li{border:1px solid var(--line);border-radius:8px;padding:8px 8px;background:var(--card)}
 .wsteps li.on{border-color:var(--p);background:color-mix(in srgb,var(--p) 10%,transparent)}
 .wsteps li b{display:block;font-size:12px;margin-bottom:var(--sp-hair)}
-.wsteps li span{display:block;font-size:10px;color:var(--t4);line-height:1.4}
+.wsteps li span{display:block;font-size:10px;color:var(--t3);line-height:1.4}
 .wq{font-size:16px;margin:0 0 8px;font-weight:600}
 .srcgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:8px}
 .src{border:1px solid var(--line);border-radius:8px;padding:12px;background:var(--elev);
@@ -2126,14 +2133,14 @@ ol.steps li:last-child .dot{background:var(--p)}
  border-radius:var(--r-card);margin-bottom:8px;
  transition:border-color .18s var(--e),background-color .18s var(--e)}
 .prow:hover{border-color:color-mix(in srgb,var(--pos) 40%,transparent)}
-.prank{width:18px;text-align:right;color:var(--t4);font-weight:600;font-size:12px;flex:none;
+.prank{width:18px;text-align:right;color:var(--t3);font-weight:600;font-size:12px;flex:none;
  font-variant-numeric:tabular-nums}
 .pmeta{flex:1;min-width:0}
 .pname{display:block;font-weight:600;font-size:14px}
 .psub{display:block;font-size:12px;color:var(--t3);margin-top:var(--sp-hair);font-variant-numeric:tabular-nums}
 .pval{text-align:right;flex:none}
 .pval b{display:block;font-weight:800;font-size:14px;color:var(--pos);font-variant-numeric:tabular-nums}
-.pval span{display:block;font-size:10px;color:var(--t4);letter-spacing:.08em}
+.pval span{display:block;font-size:10px;color:var(--t3);letter-spacing:.08em}
 
 /* ═══ 16 · GHOST EMPTY STATES ═══ */
 .ghostwrap{position:relative;overflow:hidden;padding:0}
@@ -2145,7 +2152,7 @@ ol.steps li:last-child .dot{background:var(--p)}
 .ghostcta .gin{text-align:center;padding:0 16px;max-width:34ch}
 .ghostcta .gin b{display:block;font-weight:600;font-size:16px;margin-bottom:4px}
 .ghostcta .gin p{color:var(--t2);font-size:12px;margin:0 0 16px;line-height:1.55}
-.ghostcta .gtag{display:block;margin-top:12px;font-size:12px;color:var(--t4);
+.ghostcta .gtag{display:block;margin-top:12px;font-size:12px;color:var(--t3);
  letter-spacing:.04em}
 
 /* ═══ 17 · THE UNIT PREVIEW ═══ */
@@ -2315,10 +2322,15 @@ ol.steps li:last-child .dot{background:var(--p)}
  .ph:has(.navbar) .pane>[data-cardid=running]{grid-column:span 7}
  .ph:has(.navbar) .pane>[data-cardid=recent]{grid-column:span 7;grid-row:span 2}
  .ph:has(.navbar) .pane>[data-cardid=oddsband]{grid-column:span 5}
+ /* 03 · Performance is span 8, not 12. At 12 the chart is 1,154px wide for
+    eight bars, which is mostly whitespace. Span 8 gives 731px and lets
+    By sport sit beside it, closing the row at exactly twelve. */
  .ph:has(.navbar) .pane>[data-cardid=curve],
- .ph:has(.navbar) .pane>[data-cardid=months]{grid-column:span 12}
+ .ph:has(.navbar) .pane>[data-cardid=months]{grid-column:span 8}
  .ph:has(.navbar) .pane>[data-cardid=market]{grid-column:span 6}
- .ph:has(.navbar) .pane>[data-cardid=clv]{grid-column:span 12}
+ .ph:has(.navbar) .pane>[data-cardid=tips],
+ .ph:has(.navbar) .pane>[data-cardid=book]{grid-column:span 6}
+ .ph:has(.navbar) .pane>[data-cardid=sport]{grid-column:span 4}
 }
 
 /* ══════════════════════════════════════════════════════════════════════════
@@ -2564,3 +2576,33 @@ button[disabled]{opacity:.42;cursor:not-allowed}
   padding:var(--sp-5) var(--sp-6) var(--sp-8)}
  .skpair{display:grid;grid-template-columns:5fr 7fr;gap:var(--sp-4)}
 }
+
+/* ══════════════════════════════════════════════════════════════════════════
+ * 02 · THE SKIP LINK
+ *
+ * Invisible until focused, then a real target at the top left. It must be
+ * the first focusable thing in the document, which is why the render layer
+ * emits it before <main> rather than styling something already there.
+ * ══════════════════════════════════════════════════════════════════════════ */
+.skiplink{position:absolute;left:var(--sp-2);top:calc(var(--sp-2) * -8);
+ z-index:var(--z-tooltip);background:var(--s);color:var(--bg);
+ font-size:var(--fs-meta);font-weight:var(--fw-mid);
+ padding:var(--sp-2) var(--sp-3);border-radius:var(--r-ctl);
+ text-decoration:none;transition:top var(--dur-fast) var(--ease-out)}
+.skiplink:focus{top:var(--sp-2)}
+/* <main> takes focus when the link is used, and must not then draw a ring
+   around the whole page. */
+#main:focus{outline:none}
+
+/* 02 · The module menu items are buttons now, not divs with a role. A button
+   brings its own font and alignment, which the div did not need to reset. */
+.menu .mi{width:100%;font:inherit;text-align:left;background:none;border:0;
+ font-family:var(--ui)}
+
+/* 02 · THE HALO NEEDS ROOM. With inset:-8px each control's hit area reaches
+   8px toward its neighbour, so two controls 12px apart have haloes that
+   overlap by 4px and the wrong one fires — worse than the small target it
+   was meant to fix. Rows of adjacent controls get 16px. The nav, segmented
+   controls and the tab strip are excluded from the halo already, because
+   their items touch by design. */
+.hdctl,.netctl,.chips{gap:var(--sp-4)}

@@ -89,3 +89,54 @@ export function viewForPath(path: string): string {
 export function sectionForPath(path: string): string | null {
   return SECTIONS[path.replace(/\/+$/, '') || '/'] ?? null;
 }
+
+/* 02/04 · A TITLE AND A DESCRIPTION PER ROUTE.
+ *
+ * Every one of the 173 captures carried the same `<title>Slippery</title>`,
+ * which makes a browser's tab strip, a bookmark list and a set of search
+ * results all unreadable. The specific part goes first — "Ledger · Slippery",
+ * not "Slippery · Ledger" — because a tab is truncated from the right and the
+ * shared half is the half you can afford to lose.
+ *
+ * The descriptions are per route rather than one repeated line, since a
+ * repeated meta description is the same defect as a repeated title.
+ */
+export const PAGE_META: Record<string, { title: string; description: string }> = {
+  '/': { title: 'Slippery, a bet tracker for UK and Irish bettors',
+    description: 'Forward a bet slip when you place it. Slippery reads it, settles it and keeps the record — so your history is what happened, not what you remembered.' },
+  '/how': { title: 'How it works',
+    description: 'Forward a slip to the bot, in play or after it settled. Slippery reads the stake, price and selection, then grades it against the 90-minute score.' },
+  '/pricing': { title: 'Pricing',
+    description: 'Free while you try it, then £3.49 a month or £29.99 a year. No commission, no bookmaker links, no affiliate deals.' },
+  '/faq': { title: 'Questions',
+    description: 'What Slippery reads, how it settles, what happens to your slip images, and what it will not do.' },
+  '/social': { title: 'Groups and leagues',
+    description: 'Monthly leagues ranked in units, weekly head to heads, and groups where every figure has a bookmaker slip behind it.' },
+  '/themes': { title: 'Themes',
+    description: 'Eight themes, all dark, all with the same semantic profit and loss colours so a green figure means the same thing in every one.' },
+  '/import': { title: 'Bringing your history in',
+    description: 'Spreadsheets, bookmaker statements, Betfair P&L or screenshots. Nothing is written until you have seen the dry run.' },
+  '/demo': { title: 'Demo',
+    description: 'A worked example month. Every figure is illustrative and labelled as such.' },
+  '/app': { title: 'Dashboard', description: 'Your net, your calendar and what is still running.' },
+  '/app/ledger': { title: 'Ledger', description: 'Every bet you have logged, newest first.' },
+  '/app/history': { title: 'Imported history', description: 'Bets brought in from elsewhere, kept apart from your slip-backed record.' },
+  '/app/social': { title: 'Social', description: 'Your groups, your league table and the Slippers you follow.' },
+  '/app/settings': { title: 'Settings', description: 'Your unit, your bankroll, your bookmakers and what Slippery is allowed to do.' },
+  '/app/import': { title: 'Add a bet', description: 'Forward a slip, drop a screenshot, or type one in.' },
+  '/signup': { title: 'Create an account', description: 'One screen. Email and a password, or continue with Google.' },
+  '/login': { title: 'Sign in', description: 'Sign in to Slippery.' },
+};
+
+export function metaForPath(path: string): { title: string; description: string } {
+  const hit = PAGE_META[path];
+  if (hit) return hit;
+  /* Anything without its own entry falls back to the view's own heading,
+     which is still specific, rather than to the bare product name. */
+  const view = PATH_TO_VIEW[path];
+  const name = view ? view.replace(/([a-z])([A-Z])/g, '$1 $2') : 'Slippery';
+  return {
+    title: name.charAt(0).toUpperCase() + name.slice(1),
+    description: 'Slippery is a bet tracker. It records bets. It does not take them.',
+  };
+}
