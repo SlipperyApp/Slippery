@@ -2939,3 +2939,25 @@ h1,h2,.big,.lh1,.hero{letter-spacing:-.022em}
 .working li.last{border-top:1px solid var(--line2);margin-top:var(--sp-1);
  padding-top:var(--sp-3);color:var(--t1)}
 .working li.last b{color:var(--t1);font-weight:var(--fw-bold);font-size:var(--fs-body)}
+
+/* ══════════════════════════════════════════════════════════════════════════
+ * 18 · WHAT HAS NOT UNLOCKED YET
+ *
+ * One dashed strip at the bottom rather than a greyed card in each module's
+ * own place. A new account's dashboard used to be half placeholder, which
+ * teaches somebody in their first minute that most of this does not work.
+ * The strip says the opposite: there is more, and here is how to get it.
+ * ══════════════════════════════════════════════════════════════════════════ */
+.lockstrip{border:1px dashed var(--line2);border-radius:var(--r-card);
+ padding:var(--sp-3);margin-bottom:var(--sp-3)}
+.lockitems{display:flex;flex-wrap:wrap;gap:var(--sp-2) var(--sp-4);
+ margin-top:var(--sp-2)}
+.lockitem{font-size:var(--fs-meta);color:var(--t3)}
+.lockitem b{color:var(--t2);font-weight:var(--fw-mid)}
+
+/* The three presets on the last signup step. */
+.presets{margin-top:var(--sp-5);padding-top:var(--sp-4);border-top:1px solid var(--line)}
+
+@media(min-width:1000px){
+ .ph:has(.navbar) .pane>[data-cardid=locked]{grid-column:1/-1}
+}

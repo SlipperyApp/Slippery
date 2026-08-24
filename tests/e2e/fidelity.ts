@@ -523,6 +523,17 @@ ALLOWED.push(
     expect: /Slippers you follow back/,
   },
   {
+    view: 'su6',
+    because:
+      '18 · The last signup step also chooses what the dashboard opens with. '
+      + 'A new account has zero bets, so an eight-module preset renders four '
+      + 'real cards and four greyed ones — which teaches somebody in their '
+      + 'first minute that most of the product does not work. The default, '
+      + '"Keep it simple", is four modules all of which render on the first '
+      + 'bet.',
+    expect: /Keep it simple/,
+  },
+  {
     view: 'groupdetail',
     because:
       '16 · The group page was 42% empty with a member list on it. The '
