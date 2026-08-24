@@ -80,6 +80,19 @@ const MARKERS = {
            return [...rows].filter(r => getComputedStyle(r).display !== 'none').length <= 5;
          }]],
 };
+/* WARM THE ORIGIN FIRST.
+ *
+ * A cold serverless container answers the first request slowly enough that
+ * the render layer misses even a 45s window, and the run then reports three
+ * markers missing on a deployment that is perfectly healthy — which is the
+ * worst thing this script can do, because it is indistinguishable from a
+ * broken release. One throwaway fetch of each route beforehand costs a few
+ * seconds and removes the failure mode entirely.
+ */
+for (const path of [...new Set(shots.map((s) => s[1]))]) {
+  await liveWithType(B + path).catch(() => {});
+}
+
 const failed = [];
 for (const [name, path, opts, y] of shots) {
   const ctx = await b.newContext({ ...opts, ignoreHTTPSErrors: true });
