@@ -2606,3 +2606,48 @@ button[disabled]{opacity:.42;cursor:not-allowed}
    controls and the tab strip are excluded from the halo already, because
    their items touch by design. */
 .hdctl,.netctl,.chips{gap:var(--sp-4)}
+
+/* ══════════════════════════════════════════════════════════════════════════
+ * 06 · GROUPS AND SLIPPERS ARE DIFFERENT THINGS
+ *
+ * The two tabs rendered near-identical rows, so the only thing telling them
+ * apart was the word at the top. A group is a place with a shape and members;
+ * a Slipper is a person with a rank and a record. They get different
+ * geometry, different headline figures and different underlines.
+ * ══════════════════════════════════════════════════════════════════════════ */
+.socTabs button:first-child::after{background:var(--s)}
+.socTabs button:last-child::after{background:var(--pos)}
+
+/* THE HEADLINE FIGURE IS ROI, NOT UNITS.
+   Ranking Slippers on units rewards whoever stakes biggest, which is a
+   measure of appetite rather than skill and is trivially gamed. ROI with the
+   bet count beside it says both how well and over how much, and it matches
+   the product's own line: ranked in units, not pounds — the units are the
+   stake scale, the ROI is the result. */
+.prow .pval b{font-size:var(--fs-title);font-weight:var(--fw-bold);
+ font-variant-numeric:tabular-nums;display:block;line-height:var(--lh-title)}
+.prow .pval span{font-size:var(--fs-micro);letter-spacing:.1em;color:var(--t3);
+ text-transform:uppercase}
+.prow{padding:var(--sp-3) var(--sp-4)}
+
+/* ══════════════════════════════════════════════════════════════════════════
+ * 07 · THE LEGS OF A MULTIPLE
+ *
+ * A row per leg: number, selection and price side by side, and a remove
+ * button that only appears once there is more than one — a single-leg bet
+ * has nothing to remove and the button would just be a dead control again.
+ * ══════════════════════════════════════════════════════════════════════════ */
+.legs{display:flex;flex-direction:column;gap:var(--sp-2)}
+.legrow{display:flex;align-items:center;gap:var(--sp-2)}
+.legn{width:14px;flex:none;font-size:var(--fs-micro);color:var(--t3);
+ font-variant-numeric:tabular-nums;text-align:right}
+.legf{flex:1;min-width:0;display:flex;gap:var(--sp-2)}
+.legf .field{margin:0}
+.legf .legodds{flex:0 0 84px}
+.legdel{flex:none}
+.legpad{width:26px;flex:none}
+.combodds{margin-top:var(--sp-2)}
+@media(max-width:420px){
+ .legf{flex-direction:column;gap:var(--sp-1)}
+ .legf .legodds{flex:none;width:100%}
+}
