@@ -2907,3 +2907,35 @@ h1,h2,.big,.lh1,.hero{letter-spacing:-.022em}
  .ph:has(.navbar) .pane>[data-cardid=fixture]{grid-column:span 5}
  .ph:has(.navbar) .pane>[data-cardid=ladder]{grid-column:span 5}
 }
+
+/* ══════════════════════════════════════════════════════════════════════════
+ * 15 · WHAT IS YOURS AND WHAT WAS THE OFFER
+ *
+ * The bar is amber rather than green or red: offer money is neither a win nor
+ * a loss, it is a different kind of money, and colouring it with either of
+ * the two semantic colours would make a claim the number does not support.
+ * ══════════════════════════════════════════════════════════════════════════ */
+.bonussplit{margin-top:var(--sp-3);padding-top:var(--sp-3);border-top:1px solid var(--line)}
+.bsrow{display:flex;justify-content:space-between;align-items:baseline;
+ font-size:var(--fs-meta);color:var(--t3);padding:var(--sp-1) 0}
+.bsrow b{font-variant-numeric:tabular-nums;color:var(--t2)}
+.bsrow.own{color:var(--t1)}
+.bsrow.own b{font-weight:var(--fw-bold)}
+.bstrack{height:6px;border-radius:var(--r-bar);background:var(--elev);
+ overflow:hidden;margin-top:var(--sp-2)}
+.bstrack i{display:block;height:100%;background:var(--a);opacity:.55;
+ border-radius:var(--r-bar)}
+
+/* 13 · THE WORKING. A numbered list, because it is a sequence and the order
+   is the argument — each line uses the figure the line above produced. The
+   last row is the answer and is weighted as one. */
+.working{list-style:none;counter-reset:w;margin:0;padding:0}
+.working li{counter-increment:w;display:flex;justify-content:space-between;
+ align-items:baseline;gap:var(--sp-3);padding:var(--sp-2) 0;
+ border-top:1px solid var(--line);font-size:var(--fs-meta);color:var(--t3)}
+.working li::before{content:counter(w);position:absolute;margin-left:-16px;
+ font-size:var(--fs-micro);color:var(--t4)}
+.working li b{color:var(--t2);font-variant-numeric:tabular-nums;text-align:right}
+.working li.last{border-top:1px solid var(--line2);margin-top:var(--sp-1);
+ padding-top:var(--sp-3);color:var(--t1)}
+.working li.last b{color:var(--t1);font-weight:var(--fw-bold);font-size:var(--fs-body)}

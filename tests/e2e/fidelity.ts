@@ -227,6 +227,8 @@ async function compareSheets(browser: Browser) {
       /* 11 · Currency. The euro symbol appeared zero times in the product
          while "Irish" appeared nine times on the marketing site. */
       'currency',
+      /* 13 · The settlement working. */
+      'working',
     ]);
     const extra = appKeys.filter((k) => !specKeys.includes(k) && !ADDED_ON_PURPOSE.has(k));
     if (missing.length) note('sheets', 'the app is missing: ' + missing.join(', '));
@@ -519,6 +521,33 @@ ALLOWED.push(
       + '"Members" is kept for people inside a specific group, because that '
       + 'is a role rather than an identity.',
     expect: /Slippers you follow back/,
+  },
+  {
+    view: 'groupdetail',
+    because:
+      '16 · The group page was 42% empty with a member list on it. The '
+      + 'monthly league is what a group is for, so the table leads and the '
+      + 'members follow: points from the head to head, units as goal '
+      + 'difference, and the three rules that stop it being gamed — a ±3u cap '
+      + 'shown rather than applied quietly, resting that protects rather than '
+      + 'relegates, and slip-backed only in global divisions.',
+    expect: /League One/,
+  },
+  {
+    view: 'sheet:betdetail',
+    because:
+      '13 · A settled bet shows its working. Rule 4, dead heats, place terms '
+      + 'and commission are unglamorous and are exactly why people abandon '
+      + 'trackers — and one that shows how it reached a number is trusted on '
+      + 'every other number it prints.',
+    expect: /How this settled/,
+  },
+  {
+    view: 'sheet:working',
+    because:
+      '13 · New. The arithmetic, step by step, built from the same fields the '
+      + 'grader used so it cannot describe a calculation that did not happen.',
+    expect: /How this settled/,
   },
   {
     view: 'sheet:day',
