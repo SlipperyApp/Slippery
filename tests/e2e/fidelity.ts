@@ -224,6 +224,9 @@ async function compareSheets(browser: Browser) {
          money in or out that is not a bet, so a balance was wrong for anyone
          who ever topped up. */
       'adjust',
+      /* 11 · Currency. The euro symbol appeared zero times in the product
+         while "Irish" appeared nine times on the marketing site. */
+      'currency',
     ]);
     const extra = appKeys.filter((k) => !specKeys.includes(k) && !ADDED_ON_PURPOSE.has(k));
     if (missing.length) note('sheets', 'the app is missing: ' + missing.join(', '));
@@ -478,6 +481,53 @@ ALLOWED.push(
       '57 · New. Recording money in or out that is not a bet. It moves the ' +
       'balance and never the net, because it is not a result.',
     expect: /Money in or out/,
+  },
+  {
+    view: 'su3',
+    because:
+      '02 · The display-name field had no label at all, so a screen reader '
+      + 'announced an unlabelled text box on the one screen where you name '
+      + 'yourself. Labelled, with autocomplete="nickname"; the promo field '
+      + 'beside it got the same treatment.',
+    expect: /Display name/i,
+  },
+  {
+    view: 'person',
+    because:
+      '07 · The "Following" button only ever raised a toast. Removed rather '
+      + 'than faked: following means nothing until there is a feed to follow '
+      + 'into, and a dead control reads as a broken app. It returns with the '
+      + 'feed.',
+    expect: /Units/,
+  },
+  {
+    view: 'bs_failed',
+    because:
+      '07 · A failed payment is the most valuable moment you get with a '
+      + 'paying customer, and this was a narrow column with a dead "Try again '
+      + 'now" in it. It now names the card, the amount, the reason and the '
+      + 'deadline, says what read-only actually means — you keep reading and '
+      + 'exporting, nothing is deleted for non-payment — and retries through '
+      + "Stripe's portal, which is where a payment can genuinely be "
+      + 're-attempted.',
+    expect: /Card on file/,
+  },
+  {
+    view: 'sheet:privacy',
+    because:
+      '06 · Other Slippery users are Slippers throughout the product. '
+      + '"Members" is kept for people inside a specific group, because that '
+      + 'is a role rather than an identity.',
+    expect: /Slippers you follow back/,
+  },
+  {
+    view: 'sheet:currency',
+    because:
+      '11 · New. One currency per account, set at onboarding from the '
+      + 'country. Figures are never summed across two, so there is no "both" '
+      + 'and no conversion — a Net that adds pounds and euros together is not '
+      + 'a number of anything.',
+    expect: /Pounds sterling/,
   },
 );
 
