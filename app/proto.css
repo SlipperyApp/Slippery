@@ -2230,8 +2230,8 @@ ol.steps li:last-child .dot{background:var(--p)}
  .sheet.on{transform:translate(-50%,-50%) scale(1);opacity:1}
  /* A confirm does not want a form's width, and Challenges does not want a
     confirm's. */
- .sheet[data-size=confirm]{width:min(420px,calc(100vw - 48px))}
- .sheet[data-size=wide]{width:min(720px,calc(100vw - 48px))}
+ .sheet[data-sheetsize=confirm]{width:min(420px,calc(100vw - 48px))}
+ .sheet[data-sheetsize=wide]{width:min(720px,calc(100vw - 48px))}
  /* The grab handle is a touch affordance and means nothing with a mouse. */
  .sheet .grab{display:none}
  /* The body scrolls, so the action row cannot be pushed off the bottom. */

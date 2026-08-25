@@ -525,6 +525,15 @@ ALLOWED.push(
     expect: /Slippers you follow back/,
   },
   {
+    view: 'discover',
+    because:
+      '08 · Ordered by bets logged this month, then members. Ranking by size '
+      + 'alone put Weekend Multis first — 54 members and four bets all month — '
+      + 'so the first thing anybody looking for a group saw was a dead one. '
+      + 'The row says the figure it is ordered on, and "members" is "Slippers".',
+    expect: /bets this month/,
+  },
+  {
     view: 'imphistreview',
     because:
       '05 · Step 2 of five, and it says so. It used to end with "Import 16 '
