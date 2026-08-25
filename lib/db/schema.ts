@@ -46,6 +46,12 @@ export const accounts = pgTable('accounts', {
   ageConfirmedAt: timestamp('age_confirmed_at', { withTimezone: true }),
   referredBy: uuid('referred_by'),
   targetPence: integer('target_pence'),
+  /* 17 · WHICH MESSAGES THIS ACCOUNT WANTS.
+     Off by default except `settled` and `overtaken`, per the spec. Stored as
+     jsonb rather than a column per switch, because the list will change and a
+     migration per notification is not a trade anybody should take. A missing
+     key means the default, so adding one never needs a backfill. */
+  notificationPrefs: jsonb('notification_prefs'),
   cardOrder: jsonb('card_order'),
   cardsAbove: jsonb('cards_above'),
   isTester: boolean('is_tester').default(false).notNull(),

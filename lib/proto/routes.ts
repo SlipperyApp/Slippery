@@ -30,6 +30,7 @@ export const ROUTES: Record<string, string> = {
   discover: '/app/social/discover',
   groupdetail: '/app/social/group',
   person: '/app/social/person',
+  feed: '/app/social/feed',
 
   import: '/app/import',
   crop: '/app/import/crop',

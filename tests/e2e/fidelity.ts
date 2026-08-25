@@ -523,6 +523,36 @@ ALLOWED.push(
     expect: /Slippers you follow back/,
   },
   {
+    view: 'feed',
+    because:
+      '17 · New. A settled bet authors itself — subject, stake, outcome, '
+      + 'number — which is the only reason a feed in a product this size '
+      + 'stays full; nobody composes a post about a 1.90 shot. Public to your '
+      + 'groups and private globally by default, units shown and money hidden, '
+      + 'which is the rule /api/follows already enforces server-side. There is '
+      + 'deliberately no tail control on it.',
+    expect: /Bets you settle appear here automatically/,
+  },
+  {
+    view: 'person',
+    because:
+      '17 · The profile was hardcoded to BlueSlip: two entry points led here '
+      + 'and both showed the same person whichever row you pressed. It now '
+      + 'follows the row, leads on ROI with units and bet count beneath — '
+      + 'ranking on units rewards whoever stakes biggest — and the Follow '
+      + 'button is back and real, because there is a feed to follow into.',
+    expect: /slippery\.app\/r\//,
+  },
+  {
+    view: 'sheet:notifs',
+    because:
+      '17 · Seven switches that persisted nothing: every one was the generic '
+      + 'data-tog, which flips aria-pressed and forgets, so the product asked '
+      + 'what somebody wanted and did not record it. The spec\'s six now, off '
+      + 'by default except a bet settling and being overtaken, and they save.',
+    expect: /Someone passed you/,
+  },
+  {
     view: 'su6',
     because:
       '18 · The last signup step also chooses what the dashboard opens with. '

@@ -4,6 +4,7 @@ import { getDb, schema, dbReady } from '@/lib/db';
 import { viewer } from '@/lib/server/session';
 import { ok, fail, unauthorised, noDatabase, readJson } from '@/lib/server/http';
 import { appendEvent, cashOutPortion } from '@/lib/server/bets';
+import { queueSettledPush, todayNetPence } from '@/lib/server/settled-push';
 import { EVENT_TYPES } from '@/lib/db/recompute';
 
 export const runtime = 'nodejs';
@@ -64,5 +65,21 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   }
 
   const state = await db.transaction((tx) => appendEvent(tx, id, event));
+
+  /* 17 · AFTER THE COMMIT, NEVER INSIDE IT. A bet finishing is the highest
+     attention moment this product has and it used to happen in silence —
+     `settledLine()` has been written since the bot was built and nothing ever
+     called it. The send is deliberately not awaited into the response: the
+     settlement is already durable, and a slow Telegram must not make saving a
+     result feel slow. */
+  if (state.justSettled) {
+    void queueSettledPush({
+      accountId: state.accountId,
+      betName: state.betName,
+      realisedPlPence: state.realisedPlPence,
+      todayPlPence: await todayNetPence(state.accountId).catch(() => 0),
+    }).catch(() => {});
+  }
+
   return ok({ state });
 }

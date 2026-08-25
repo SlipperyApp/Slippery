@@ -50,9 +50,30 @@ test('interpolated labels collapse to one entry rather than never matching', () 
 });
 
 test('what is genuinely not built says so rather than being missing', () => {
-  for (const c of ['coming soon to the app store', 'choose a picture', 'image saved']) {
+  /* The store-badge entries went when the badges did — both stores require a
+     live listing before their badge may be shown at all, so the control was
+     removed rather than left admitting it could not work. */
+  for (const c of ['choose a picture', 'image saved', 'challenge set']) {
     assert.equal(ACTIONS[c], NOT_BUILT, c + ' should be explicitly marked, not left to fall through');
   }
+});
+
+test('tailing is declared not built, and the reason is a decision not a gap', () => {
+  /* The distinction matters. Everything else in this list is waiting on a
+     table or a hook. Tailing is waiting on an answer: it exists to make
+     somebody place a bet they otherwise would not, and CLAUDE.md locks the
+     line that nothing here may nudge toward more volume. If it is ever
+     shipped, that should be a decision somebody took, not a gap somebody
+     closed. */
+  assert.equal(ACTIONS['tailing'], NOT_BUILT);
+  assert.equal(ACTIONS['tailed'], NOT_BUILT);
+  const src = readFileSync('lib/proto/actions.js', 'utf8');
+  /* Line-break tolerant: the reason is a paragraph in a block comment, so
+     both the wrapping AND the leading asterisks have to come out before
+     matching. Rewrapping a comment must not fail a test. */
+  const prose = src.replace(/^\s*\*/gm, '').replace(/\s+/g, ' ');
+  assert.match(prose, /nudge toward more volume/,
+    'the reason is not written down beside the declaration');
 });
 
 test('nothing in the table is left as a bare truthy placeholder', () => {

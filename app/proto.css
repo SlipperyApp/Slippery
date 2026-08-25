@@ -2961,3 +2961,44 @@ h1,h2,.big,.lh1,.hero{letter-spacing:-.022em}
 @media(min-width:1000px){
  .ph:has(.navbar) .pane>[data-cardid=locked]{grid-column:1/-1}
 }
+
+/* ══════════════════════════════════════════════════════════════════════════
+ * 17 · THE FEED
+ *
+ * A settled bet authors itself, so the rows are short and the figure is the
+ * only thing that needs to carry. Units, never stakes — money does not leave
+ * a group, which is the same rule the follows API enforces server-side.
+ * ══════════════════════════════════════════════════════════════════════════ */
+.feedrow{display:flex;gap:var(--sp-3);padding:var(--sp-3) 0;
+ border-top:1px solid var(--line)}
+.feedrow:first-child{border-top:0}
+.feedwho{flex:none;background:none;border:0;padding:0;line-height:0}
+.feedbody{flex:1;min-width:0}
+.feedline{font-size:var(--fs-meta);line-height:var(--lh-meta);color:var(--t2)}
+.feedline b{color:var(--t1);font-weight:var(--fw-mid)}
+.feedline b.mono{font-variant-numeric:tabular-nums}
+.feedline span{color:var(--t3)}
+.feedmeta{font-size:var(--fs-micro);color:var(--t3);margin-top:var(--sp-hair)}
+/* Reactions stay quiet until the row is hovered or something in it has focus,
+   so six rows are not eighteen buttons shouting at once.
+
+   THEY SIT TO THE RIGHT, NOT BELOW. Hiding them with opacity alone still
+   reserved their height, which made every row 96px tall for one line of
+   text — a feed of six entries filled the screen and said almost nothing. */
+.feedrow{align-items:flex-start}
+.feedacts{display:flex;gap:var(--sp-1);flex:none;align-self:center;
+ opacity:0;transition:opacity var(--dur-fast) var(--ease-out)}
+.feedrow:hover .feedacts,.feedrow:focus-within .feedacts{opacity:1}
+@media(hover:none){.feedacts{opacity:1}}
+.react{width:28px;height:28px;border-radius:var(--r-ctl);border:1px solid var(--line);
+ background:none;font-size:13px;line-height:1;display:grid;place-items:center}
+.react:hover{border-color:color-mix(in srgb,var(--s) 40%,transparent)}
+
+/* The link code, while it is being fetched. */
+.linkcode{min-height:32px;display:flex;align-items:center;justify-content:center}
+
+@media(min-width:1000px){
+ /* The feed is a column of short lines. Eight of twelve keeps the measure
+    readable without leaving half the window empty beside it. */
+ .ph:has(.navbar) .pane>[data-cardid=feed]{grid-column:span 8}
+}

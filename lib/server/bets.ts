@@ -2,6 +2,7 @@ import 'server-only';
 import { eq, and, desc, asc, gte, lte, sql } from 'drizzle-orm';
 import { schema } from '@/lib/db';
 import { recomputeState, turnoverPence } from '@/lib/db/recompute';
+import { isTransitionToSettled } from '../settled-rule';
 import type { EventInput } from '@/lib/db/recompute';
 
 /* Writing an event and its derived state, together, always.
@@ -44,8 +45,22 @@ export async function appendEvent(
   const [account] = await tx.select({ unitPence: schema.accounts.unitPence })
     .from(schema.accounts).where(eq(schema.accounts.id, bet.accountId)).limit(1);
 
-  let commissionPct: number | null = null;
-  if (bet.bookmakerId) {
+  /* 17 · Read before the fold overwrites it. A recompute over an already
+     settled bet also returns 'settled', so without the previous value there is
+     no way to tell a settlement from a re-fold — and the bot would announce
+     the same bet every time anything touched it. */
+  const [priorState] = await tx.select({ status: schema.betState.status })
+    .from(schema.betState).where(eq(schema.betState.betId, betId)).limit(1);
+  const previousStatus: string | null = priorState?.status ?? null;
+
+  /* THE RATE THE BET WAS PLACED AT, not the bookmaker's rate today.
+     `bets.commission_pct` is resolved once at placement precisely so that
+     editing a bookmaker's rate later cannot walk back through settled P&L and
+     change it. The bookmaker is a fallback only for bets written before that
+     column existed. */
+  let commissionPct: number | null =
+    bet.commissionPct != null ? Number(bet.commissionPct) : null;
+  if (commissionPct == null && bet.bookmakerId) {
     const [book] = await tx.select({ pct: schema.bookmakers.commissionPct })
       .from(schema.bookmakers).where(eq(schema.bookmakers.id, bet.bookmakerId)).limit(1);
     commissionPct = book?.pct != null ? Number(book.pct) : null;
@@ -66,7 +81,15 @@ export async function appendEvent(
     side: bet.side,
     odds: bet.odds != null ? Number(bet.odds) : null,
     isFreeBet: bet.isFreeBet,
-    unitPence: account?.unitPence ?? null,
+    /* THE UNIT FREEZE, HONOURED.
+       `bets.unit_at_placement_pence` was added and backfilled so that raising
+       your unit from £25 to £50 cannot halve every figure in your history —
+       January's +10.0u silently becoming +5.0u. The column was being written
+       and then ignored right here, so the bug it exists to prevent was still
+       live: this fold ran on the account's CURRENT unit and rewrote the past
+       on every recompute. The account value is a fallback only, for bets that
+       predate the column. */
+    unitPence: bet.unitAtPlacementPence ?? account?.unitPence ?? null,
     commissionPct,
     arbGroupId: bet.arbGroupId,
     source: bet.source,
@@ -106,7 +129,14 @@ export async function appendEvent(
     afterResultKnown: event.afterResultKnown ?? false,
   });
 
-  return state;
+  /* 17 · Announce it, but never from inside the transaction. Telegram being
+     slow or down must not be able to roll back a settlement, so the caller is
+     handed the fact and the send happens after the commit. */
+  return Object.assign(state, {
+    justSettled: isTransitionToSettled(previousStatus, state.status),
+    accountId: bet.accountId as string,
+    betName: (bet.eventName ?? bet.selection ?? 'Your bet') as string,
+  });
 }
 
 /* Cash out is a slider in eighths OF REMAINING STAKE, relabelled after each
