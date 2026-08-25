@@ -1,47 +1,72 @@
-import {chromium} from 'playwright-core';
-import {ROUTES} from './lib/proto/routes.ts';
-const B='http://127.0.0.1:3903';
-const b=await chromium.launch({executablePath:'/opt/pw-browsers/chromium-1194/chrome-linux/chrome'});
-const p=await (await b.newContext({viewport:{width:1440,height:900}})).newPage();
-const errs=[]; p.on('pageerror',e=>errs.push(e.message));
-const dead=[], threw=[]; let tested=0;
+/* EVERY BUTTON ON EVERY ROUTE, CLICKED.
+ *
+ *   node tools/dead-buttons.mjs [base] [width]
+ *
+ * Defaults to a local server. Pass a deployment URL to sweep what is actually
+ * live — a control can be wired in the tree and still dead on the domain the
+ * owner visits, which is exactly how the five this found stayed dead: the fix
+ * was on a branch Vercel does not deploy.
+ *
+ * A button counts as dead when the path, `cur`, the rendered subtree, an open
+ * sheet and an open toast are all unchanged after clicking it. That detector is
+ * blind to an attribute-only change — an aria-pressed flip on a reaction button
+ * is invisible to it — so tools/probe-controls.mjs checks those by state.
+ */
+import { chromium } from 'playwright-core';
+import { ROUTES } from '../lib/proto/routes.ts';
+import { contextFor, isRemote } from './live-origin.mjs';
 
-const snap=()=>p.evaluate(()=>({
-  url:location.pathname,
-  cur:JSON.stringify(window.__slippery?.cur||{}),
-  dom:(document.querySelector('#ph')?.innerHTML||'').length,
-  sheet:!!document.querySelector('.sheet'),
-  toast:!!document.querySelector('.toast'),
+const B = (process.argv[2] || 'http://127.0.0.1:3903').replace(/\/$/, '');
+const WIDTH = Number(process.argv[3] || 1440);
+/* A remote origin is fetched through curl one request at a time, so the page
+   needs longer to settle than a local server does. */
+const SETTLE = isRemote(B) ? 6500 : 420;
+const AFTER = isRemote(B) ? 500 : 220;
+
+const b = await chromium.launch({ executablePath: '/opt/pw-browsers/chromium-1194/chrome-linux/chrome' });
+const ctx = await contextFor(b, B, { viewport: { width: WIDTH, height: 900 } });
+const p = await ctx.newPage();
+const errs = []; p.on('pageerror', (e) => errs.push(e.message));
+const dead = [], threw = []; let tested = 0;
+
+const snap = () => p.evaluate(() => ({
+  url: location.pathname,
+  cur: JSON.stringify(window.__slippery?.cur || {}),
+  dom: (document.querySelector('#ph')?.innerHTML || '').length,
+  sheet: !!document.querySelector('.sheet'),
+  toast: !!document.querySelector('.toast'),
 }));
 
-for(const path of [...new Set(Object.values(ROUTES))]){
-  await p.goto(B+path,{waitUntil:'domcontentloaded'}).catch(()=>{});
-  await p.waitForTimeout(420);
-  const n=await p.locator('.ph button:visible').count();
-  for(let i=0;i<Math.min(n,22);i++){
-    const el=p.locator('.ph button:visible').nth(i);
-    let label='',attrs='';
-    try{
-      label=((await el.getAttribute('aria-label'))||(await el.innerText())||'').trim().replace(/\s+/g,' ').slice(0,38);
-      attrs=await el.evaluate(e=>Object.keys(e.dataset).join(','));
-    }catch{ continue }
-    const before=await snap();
-    const e0=errs.length;
-    try{ await el.click({timeout:700}) }catch{ continue }
+const routes = [...new Set(Object.values(ROUTES))];
+for (const path of routes) {
+  await p.goto(B + path, { waitUntil: 'domcontentloaded' }).catch(() => {});
+  await p.waitForTimeout(SETTLE);
+  const n = await p.locator('.ph button:visible').count();
+  for (let i = 0; i < Math.min(n, 22); i++) {
+    const el = p.locator('.ph button:visible').nth(i);
+    let label = '', attrs = '';
+    try {
+      label = ((await el.getAttribute('aria-label')) || (await el.innerText()) || '').trim().replace(/\s+/g, ' ').slice(0, 38);
+      attrs = await el.evaluate((e) => Object.keys(e.dataset).join(','));
+    } catch { continue }
+    const before = await snap();
+    const e0 = errs.length;
+    try { await el.click({ timeout: 1500 }) } catch { continue }
     tested++;
-    await p.waitForTimeout(220);
-    const after=await snap();
-    if(errs.length>e0) threw.push(`${path} · "${label}" [${attrs}] · ${errs[errs.length-1].slice(0,60)}`);
-    const changed = before.url!==after.url || before.cur!==after.cur
-      || before.dom!==after.dom || before.sheet!==after.sheet || before.toast!==after.toast;
-    if(!changed) dead.push(`${path} · "${label}" [${attrs||'NO data-*'}]`);
-    // return to the page only if we left it or opened something
-    await p.evaluate(()=>{try{window.__slippery.closeSheet()}catch{}});
-    if(after.url!==path){ await p.goto(B+path,{waitUntil:'domcontentloaded'}).catch(()=>{}); await p.waitForTimeout(300); }
-    else await p.waitForTimeout(80);
+    await p.waitForTimeout(AFTER);
+    const after = await snap();
+    if (errs.length > e0) threw.push(`${path} · "${label}" [${attrs}] · ${errs[errs.length - 1].slice(0, 60)}`);
+    const changed = before.url !== after.url || before.cur !== after.cur
+      || before.dom !== after.dom || before.sheet !== after.sheet || before.toast !== after.toast;
+    if (!changed) dead.push(`${path} · "${label}" [${attrs || 'NO data-*'}]`);
+    await p.evaluate(() => { try { window.__slippery.closeSheet() } catch {} });
+    if (after.url !== path) {
+      await p.goto(B + path, { waitUntil: 'domcontentloaded' }).catch(() => {});
+      await p.waitForTimeout(Math.min(SETTLE, 1200));
+    } else await p.waitForTimeout(80);
   }
 }
 await b.close();
-console.log(`tested ${tested} buttons across ${new Set(Object.values(ROUTES)).size} routes`);
-console.log(`\nTHREW (${threw.length}):`); [...new Set(threw)].slice(0,15).forEach(x=>console.log('  '+x));
-console.log(`\nNO OBSERVABLE EFFECT (${dead.length}):`); [...new Set(dead)].slice(0,45).forEach(x=>console.log('  '+x));
+console.log(`\n${B} at ${WIDTH}: tested ${tested} buttons across ${routes.length} routes`);
+console.log(`\nTHREW (${threw.length}):`); [...new Set(threw)].slice(0, 15).forEach((x) => console.log('  ' + x));
+console.log(`\nNO OBSERVABLE EFFECT (${dead.length}):`); [...new Set(dead)].slice(0, 45).forEach((x) => console.log('  ' + x));
