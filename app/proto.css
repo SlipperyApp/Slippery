@@ -3055,3 +3055,10 @@ h1,h2,.big,.lh1,.hero{letter-spacing:-.022em}
 .wsteps li.done b{color:var(--t2)}
 .wsteps li.done{opacity:.8}
 .wsteps li.done b::after{content:" ✓";color:var(--pos)}
+
+/* A reaction you have given reads as given. It was a button with no handler
+   and no state at all. */
+.react.on{border-color:color-mix(in srgb,var(--s) 55%,transparent);
+ background:color-mix(in srgb,var(--s) 12%,transparent)}
+/* "You" is not a link to your own profile, so it is not a button. */
+span.feedwho{display:block;line-height:0}
