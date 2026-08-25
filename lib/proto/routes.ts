@@ -40,6 +40,9 @@ export const ROUTES: Record<string, string> = {
   importlinked: '/app/import/linked',
   imphist: '/app/import/history',
   imphistreview: '/app/import/history/review',
+  impdry: '/app/import/history/dry-run',
+  impfix: '/app/import/history/resolve',
+  impcommit: '/app/import/history/done',
 
   settings: '/app/settings',
   plan: '/app/settings/plan',

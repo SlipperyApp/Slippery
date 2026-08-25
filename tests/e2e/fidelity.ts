@@ -229,6 +229,8 @@ async function compareSheets(browser: Browser) {
       'currency',
       /* 13 · The settlement working. */
       'working',
+      /* 05 · The fix queue's preview. */
+      'fixone',
     ]);
     const extra = appKeys.filter((k) => !specKeys.includes(k) && !ADDED_ON_PURPOSE.has(k));
     if (missing.length) note('sheets', 'the app is missing: ' + missing.join(', '));
@@ -521,6 +523,61 @@ ALLOWED.push(
       + '"Members" is kept for people inside a specific group, because that '
       + 'is a role rather than an identity.',
     expect: /Slippers you follow back/,
+  },
+  {
+    view: 'imphistreview',
+    because:
+      '05 · Step 2 of five, and it says so. It used to end with "Import 16 '
+      + 'rows", which wrote nothing and skipped the three steps in between.',
+    expect: /Continue to the dry run/,
+  },
+  {
+    view: 'impdry',
+    because:
+      '05 · New. The wizard declared five steps and had two — dry run, resolve '
+      + 'and commit did not exist, so the strip along the top promised a '
+      + 'process the product could not perform. Nothing is written until '
+      + 'commit, which is the whole reason for a dry run and the promise the '
+      + 'resolve step depends on.',
+    expect: /Nothing has been written/,
+  },
+  {
+    view: 'impfix',
+    because:
+      '05 · New, and it is where step 4 was already pointing. "Fix problem '
+      + 'bets" was a sheet with three toast rows under a note promising "Each '
+      + 'one previews before it changes anything" — a preview that did not '
+      + 'exist. The gallery\'s FIX tile has somewhere to land now too.',
+    expect: /need a decision/,
+  },
+  {
+    view: 'impcommit',
+    because:
+      '05 · New. The undo window the step name has always promised.',
+    expect: /Undo is available/,
+  },
+  {
+    view: 'sheet:slipimg',
+    because:
+      '05 · Slip left, parsed bet right. It was one column showing a redrawn '
+      + 'slip with nothing to compare it against — but the pairing IS the '
+      + 'trust proposition: what the bookmaker printed beside what Slippery '
+      + 'read from it, checkable in a second rather than taken on faith.',
+    expect: /What Slippery read/i,
+  },
+  {
+    view: 'sheet:fixone',
+    because:
+      '05 · New. The preview the fix queue always claimed to have, showing '
+      + 'the combined line as read and the three legs it would become.',
+    expect: /After splitting/i,
+  },
+  {
+    view: 'sheet:fix',
+    because:
+      '05 · The three rows open the preview instead of raising a toast, and '
+      + 'there is a way through to the full queue.',
+    expect: /Open the full queue/,
   },
   {
     view: 'feed',

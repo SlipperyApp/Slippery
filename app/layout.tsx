@@ -16,9 +16,15 @@ export const metadata: Metadata = {
   applicationName: 'Slippery',
   manifest: '/manifest.webmanifest',
   icons: {
+    /* 19 · The 16px cut is a different drawing of the same idea — three
+       columns rather than seven, because sub-2px cells are mud in a tab
+       strip. Browsers pick by size, so both are declared.
+       No favicon.ico: the old one was a PNG wearing a .ico name and nothing
+       in the product referenced it. */
     icon: [
       { url: '/icon.svg', type: 'image/svg+xml' },
       { url: '/favicon-32.png', sizes: '32x32', type: 'image/png' },
+      { url: '/favicon-16.png', sizes: '16x16', type: 'image/png' },
     ],
     apple: '/apple-touch-icon.png',
   },

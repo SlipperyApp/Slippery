@@ -98,7 +98,36 @@
  --row:92px;--gap:12px;--serif:"Source Serif 4","Tinos","Times New Roman",Times,serif;
  --ui:"Schibsted Grotesk",-apple-system,BlinkMacSystemFont,"Segoe UI",system-ui,sans-serif;
  --mono:"Geist Mono",ui-monospace,SFMono-Regular,Menlo,monospace;
- --gold:#E8C87A;--silver:#C8D2DE;--bronzem:#D69A6A}
+ --gold:#E8C87A;--silver:#C8D2DE;--bronzem:#D69A6A;
+ /* ═══════════════════════════════════════════════════════════════════════
+  * 20 · THE BOOKMAKER PALETTE
+  *
+  * These were literals inside the render layer, so the dots, the gallery
+  * tints and anything drawn later each carried their own copy of bet365's
+  * green. One source now.
+  *
+  * A FILLED DOT IS A SPORTSBOOK; A 2px RING IS AN EXCHANGE. The shape carries
+  * the distinction, not the colour, because the two are different kinds of
+  * account and somebody scanning a ledger should not have to remember which
+  * green is which.
+  *
+  * Ten is the ceiling. The worst pair here separates by 0.088 in oklab, and
+  * below roughly 0.08 two dots read as the same dot — so an eleventh named
+  * colour would make the whole scheme less useful, not more. Everything else
+  * hashes into the tier-two ramp.
+  * ═══════════════════════════════════════════════════════════════════════ */
+ --bk-bet365:#2BC48E;      --bk-skybet:#5FB8FF;      --bk-paddypower:#A8D84A;
+ --bk-betfair:#F0B429;     --bk-ladbrokes:#EF5F6B;   --bk-coral:#FF9E7A;
+ --bk-betfred:#8E8CF0;     --bk-williamhill:#46C9D6; --bk-boylesports:#E88ACF;
+ --bk-unibet:#7FB2E8;      --bk-other:#7A8496;
+ /* Exchanges: the same hue, drawn as a ring. */
+ --bk-betfairex:#F0B429;   --bk-smarkets:#7EE0C8;    --bk-matchbook:#C79BEB;
+ /* The tier-two ramp, for everything not named above. Deliberately duller
+    than tier one so a named bookmaker still stands out in a mixed ledger. */
+ --bk-h1:#B37B7A; --bk-h2:#AC8261; --bk-h3:#968D5B;
+ --bk-h4:#76976E; --bk-h5:#599A8E; --bk-h6:#5996AA;
+ --bk-h7:#738DB7; --bk-h8:#9283B1; --bk-h9:#AA7C9A;
+}
 *{box-sizing:border-box}
 html{color-scheme:dark}
 ::selection{background:color-mix(in srgb,var(--s) 34%,transparent);color:var(--t1)}
@@ -3002,3 +3031,27 @@ h1,h2,.big,.lh1,.hero{letter-spacing:-.022em}
     readable without leaving half the window empty beside it. */
  .ph:has(.navbar) .pane>[data-cardid=feed]{grid-column:span 8}
 }
+
+/* ══════════════════════════════════════════════════════════════════════════
+ * 05 · THE LIGHTBOX, AND THE THREE WIZARD STEPS THAT DID NOT EXIST
+ * ══════════════════════════════════════════════════════════════════════════ */
+
+/* Slip left, parsed bet right. The pairing is the trust proposition — what
+   the bookmaker printed beside what Slippery read from it — so on anything
+   narrower than a tablet they stack with the slip first, rather than
+   shrinking both until neither is readable. */
+.lbox{display:grid;gap:var(--sp-3)}
+@media(min-width:720px){.lbox{grid-template-columns:1fr 1fr;align-items:start}}
+.lbside{min-width:0}
+/* Two `.btn.full` in a flex row: `width:100%` alone lets them size to their
+   own text, so "Download image" wrapped to two lines beside a wider
+   neighbour. They share the row. */
+.sheet div:has(> .btn.full + .btn.full){display:flex;gap:var(--sp-2)}
+.sheet div:has(> .btn.full + .btn.full) > .btn.full{flex:1;min-width:0}
+
+/* The step strip. A finished step is not the same as the one you are on, and
+   both differ from one you have not reached — three states, because two makes
+   "done" and "next" look identical. */
+.wsteps li.done b{color:var(--t2)}
+.wsteps li.done{opacity:.8}
+.wsteps li.done b::after{content:" ✓";color:var(--pos)}
