@@ -147,6 +147,22 @@ async function settle(page) {
 
 async function grab(page, { route, viewport, state }) {
   await settle(page);
+
+  /* RE-SETTLE IF THE PAGE HAS NOT PAINTED YET.
+     `repaint()` replaces the whole of `.body`, so a capture taken in the
+     frame between the old subtree going and the new one arriving measures a
+     height of nothing and records a blank iframe. It showed up as two empty
+     `/app/social` captures at 390 — the two that follow a tab click — on a
+     page that is perfectly fine when you load it. One retry is enough,
+     because the race is a single frame wide. */
+  for (let i = 0; i < 3; i++) {
+    const painted = await page.evaluate(() =>
+      (document.querySelector('.body')?.innerText || '').trim().length > 0);
+    if (painted) break;
+    await page.waitForTimeout(250);
+    await settle(page);
+  }
+
   const { html, height, sprite } = await page.evaluate(() => {
     const doc = document.documentElement;
     /* Measured here because a static iframe cannot size itself. */
