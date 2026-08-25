@@ -18,10 +18,12 @@ import { contextFor, isRemote } from './live-origin.mjs';
 
 const B = (process.argv[2] || 'http://127.0.0.1:3903').replace(/\/$/, '');
 const WIDTH = Number(process.argv[3] || 1440);
-/* A remote origin is fetched through curl one request at a time, so the page
-   needs longer to settle than a local server does. */
-const SETTLE = isRemote(B) ? 6500 : 420;
 const AFTER = isRemote(B) ? 500 : 220;
+/* A remote origin is fulfilled one curl at a time, so how long a route takes
+   to mount varies. A fixed sleep called a route's whole button list dead
+   whenever it happened to be slow; wait for the app to exist instead, and
+   retry a navigation that loses a request at the curl boundary. */
+const MOUNT_MS = isRemote(B) ? 45000 : 8000;
 
 const b = await chromium.launch({ executablePath: '/opt/pw-browsers/chromium-1194/chrome-linux/chrome' });
 const ctx = await contextFor(b, B, { viewport: { width: WIDTH, height: 900 } });
@@ -37,10 +39,20 @@ const snap = () => p.evaluate(() => ({
   toast: !!document.querySelector('.toast'),
 }));
 
+const open = async (path, attempt = 1) => {
+  await p.goto(B + path, { waitUntil: 'domcontentloaded' }).catch(() => {});
+  const ok = await p.waitForFunction(() => Boolean(window.__slippery), null, { timeout: MOUNT_MS })
+    .then(() => true).catch(() => false);
+  if (!ok && attempt < 3) return open(path, attempt + 1);
+  if (!ok) unmounted.push(path);
+  await p.waitForTimeout(AFTER);
+  return ok;
+};
+
+const unmounted = [];
 const routes = [...new Set(Object.values(ROUTES))];
 for (const path of routes) {
-  await p.goto(B + path, { waitUntil: 'domcontentloaded' }).catch(() => {});
-  await p.waitForTimeout(SETTLE);
+  if (!await open(path)) continue;
   const n = await p.locator('.ph button:visible').count();
   for (let i = 0; i < Math.min(n, 22); i++) {
     const el = p.locator('.ph button:visible').nth(i);
@@ -60,13 +72,17 @@ for (const path of routes) {
       || before.dom !== after.dom || before.sheet !== after.sheet || before.toast !== after.toast;
     if (!changed) dead.push(`${path} · "${label}" [${attrs || 'NO data-*'}]`);
     await p.evaluate(() => { try { window.__slippery.closeSheet() } catch {} });
-    if (after.url !== path) {
-      await p.goto(B + path, { waitUntil: 'domcontentloaded' }).catch(() => {});
-      await p.waitForTimeout(Math.min(SETTLE, 1200));
-    } else await p.waitForTimeout(80);
+    if (after.url !== path) await open(path);
+    else await p.waitForTimeout(80);
   }
 }
 await b.close();
 console.log(`\n${B} at ${WIDTH}: tested ${tested} buttons across ${routes.length} routes`);
 console.log(`\nTHREW (${threw.length}):`); [...new Set(threw)].slice(0, 15).forEach((x) => console.log('  ' + x));
 console.log(`\nNO OBSERVABLE EFFECT (${dead.length}):`); [...new Set(dead)].slice(0, 45).forEach((x) => console.log('  ' + x));
+if (unmounted.length) {
+  /* Named rather than silently skipped: a route the sweep could not open is
+     not a route with no dead buttons. */
+  console.log(`\nNEVER MOUNTED, so not swept (${unmounted.length}):`);
+  unmounted.forEach((x) => console.log('  ' + x));
+}
