@@ -176,15 +176,18 @@ function ViewportToggle() {
        so it has to be told the box changed. */
     window.dispatchEvent(new Event('resize'));
   }, [mode]);
+  /* An <aside> rather than a <div>, so the control sits inside a landmark.
+     axe's `region` rule counts focusable content outside one as a violation,
+     and this floats above the page at desktop widths. */
   return (
-    <div className="vptoggle" role="group" aria-label="Preview width">
+    <aside className="vptoggle" aria-label="Preview width">
       <button type="button" aria-pressed={mode === 'desktop'} onClick={() => setMode('desktop')}>
         Desktop
       </button>
       <button type="button" aria-pressed={mode === 'mobile'} onClick={() => setMode('mobile')}>
         Mobile
       </button>
-    </div>
+    </aside>
   );
 }
 
