@@ -26,14 +26,19 @@ const ctx = await contextFor(b, B, { viewport: { width: WIDTH, height: 900 } });
 const p = await ctx.newPage();
 p.on('pageerror', (e) => console.log('ERR:', e.message.slice(0, 120)));
 
-const go = async (path, expect) => {
+/* Two attempts, because one navigation in a run still loses a request to the
+   curl boundary and mounts nothing. The asset cache makes the second attempt
+   nearly free, and a control is only reported dead once both have failed. */
+const go = async (path, expect, attempt = 1) => {
   await p.goto(B + path, { waitUntil: 'domcontentloaded' }).catch(() => {});
-  await p.waitForFunction(() => Boolean(window.__slippery), null, { timeout: MOUNT_MS })
-    .catch(() => console.log(`  (${path} never mounted)`));
-  if (expect) {
-    await p.locator(expect).first().waitFor({ state: 'attached', timeout: MOUNT_MS })
-      .catch(() => console.log(`  (${path}: ${expect} never appeared)`));
-  }
+  const ok = await p.waitForFunction(() => Boolean(window.__slippery), null, { timeout: MOUNT_MS })
+    .then(() => true).catch(() => false);
+  const there = ok && expect
+    ? await p.locator(expect).first().waitFor({ state: 'attached', timeout: MOUNT_MS })
+        .then(() => true).catch(() => false)
+    : ok;
+  if (!there && attempt < 3) return go(path, expect, attempt + 1);
+  if (!there) console.log(`  (${path} did not mount ${expect || ''} in ${attempt} attempts)`);
   await p.waitForTimeout(AFTER);
 };
 const click = async (sel) => {

@@ -14,6 +14,13 @@
  * exactly like a broken deployment.
  *
  * A localhost base needs none of this, so it is passed straight through.
+ *
+ * WHY IT CACHES. curl runs one request at a time and the render bundle is
+ * 274KB, so a sweep that visits forty one routes re-fetches it forty one
+ * times and pages start timing out before they mount. Everything except the
+ * API is held in memory for the run: /_next/static is content-hashed and so
+ * is immutable by construction, and a document fetched twice in one sweep is
+ * the same deployment either way.
  */
 import { execFile } from 'node:child_process';
 import { promisify } from 'node:util';
@@ -24,7 +31,11 @@ export function isRemote(base) {
   return /^https?:\/\/(?!localhost|127\.0\.0\.1)/.test(base);
 }
 
+const cache = new Map();
+
 async function fetchWithType(url) {
+  const cacheable = !url.includes('/api/');
+  if (cacheable && cache.has(url)) return cache.get(url);
   try {
     const { stdout } = await run('bash', ['-c',
       `curl -sS --max-time 25 -w '\\n@@CT@@%{content_type}@@%{http_code}' ${JSON.stringify(url)} | base64 -w0`],
@@ -35,7 +46,9 @@ async function fetchWithType(url) {
     if (i < 0) return { body: raw, type: 'application/octet-stream', status: 200 };
     /* not [, type, code]: the marker is already stripped */
     const [type, code] = s.slice(i + 7).split('@@');
-    return { body: raw.subarray(0, i), type: (type || '').split(';')[0], status: Number(code) || 200 };
+    const got = { body: raw.subarray(0, i), type: (type || '').split(';')[0], status: Number(code) || 200 };
+    if (cacheable) cache.set(url, got);
+    return got;
   } catch {
     return null;
   }
