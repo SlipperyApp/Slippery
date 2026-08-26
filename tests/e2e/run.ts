@@ -68,6 +68,31 @@ async function requireMounted(page: Page, where: string): Promise<boolean> {
   return ok;
 }
 
+/* MOUNTED IS NOT THE SAME AS RENDERED.
+ *
+ * The render layer writes the whole interface — <main id="main">, the heading,
+ * every control — into #ph from the client. `window.__slippery` exists a beat
+ * before any of that lands, so a check that stops there can still hand axe a
+ * page with no main landmark and no h1, and axe will faithfully report both.
+ *
+ * That is exactly what this audit was doing: it slept a fixed 600ms and ran.
+ * Depending on how the machine felt, the same commit reported colour-contrast
+ * on real content one run and `landmark-one-main` the next, which is why its
+ * findings could not be reproduced by hand. Two tools were fixed for this same
+ * reason today; this is the third and the only one that gates the build.
+ */
+async function requireRendered(page: Page, where: string): Promise<boolean> {
+  if (!(await requireMounted(page, where))) return false;
+  const ok = await page
+    .waitForFunction(
+      () => ((document.querySelector('#main') as HTMLElement)?.innerText?.trim().length ?? 0) > 40,
+      null, { timeout: 20000 })
+    .then(() => true)
+    .catch(() => false);
+  if (!ok) note(where, 'the app mounted but #main never rendered, so nothing here was audited');
+  return ok;
+}
+
 async function main() {
   mkdirSync(SHOTS, { recursive: true });
   const browser = await chromium.launch({ executablePath: CHROME });
@@ -427,6 +452,19 @@ const ACCEPTED_CONTRAST: { selector: RegExp; ratio: string; fix: string }[] = [
   },
 ];
 
+type ContrastData = {
+  contrastRatio?: number; fgColor?: string; bgColor?: string;
+  fontSize?: string; fontWeight?: string; expectedContrastRatio?: string;
+};
+
+/** One failing node as something you can act on without measuring it again. */
+function contrastLine(n: { target: string[]; any?: { data?: ContrastData }[] }): string {
+  const d = n.any?.find((c) => c.data?.contrastRatio !== undefined)?.data;
+  if (!d) return `${n.target.join(' ')} — axe reported no measurement`;
+  return `${n.target.join(' ')}  ${d.contrastRatio}:1 (needs ${d.expectedContrastRatio ?? '4.5:1'})`
+    + `  fg ${d.fgColor} on ${d.bgColor}  ${d.fontSize ?? ''} ${d.fontWeight ?? ''}`.trimEnd();
+}
+
 const acceptedSeen = new Set<string>();
 
 /** True when every node of a violation is one the prototype puts there. */
@@ -781,17 +819,31 @@ async function assertTutorialCompletes(page: Page, vpName: string) {
 async function auditAccessibility(page: Page, path: string, vpName: string) {
   await page.emulateMedia({ reducedMotion: 'reduce' });
   await page.goto(BASE + path, { waitUntil: 'domcontentloaded' });
-  await page.waitForTimeout(600);
+  /* Two attempts: one navigation in a long run loses a script and renders
+     nothing, and an empty page passes an accessibility audit for the worst
+     possible reason. */
+  if (!(await requireRendered(page, `${vpName} axe ${path}`))) {
+    await page.goto(BASE + path, { waitUntil: 'domcontentloaded' });
+    if (!(await requireRendered(page, `${vpName} axe ${path}`))) {
+      await page.emulateMedia({ reducedMotion: 'no-preference' });
+      return;
+    }
+  }
   await page.addScriptTag({ content: axeSource });
   const result = await page.evaluate(async () => {
     // @ts-expect-error injected
     return await window.axe.run(document, { resultTypes: ['violations'] });
   });
-  const violations = (result as { violations: { id: string; impact: string; nodes: { html: string; target: string[] }[] }[] }).violations
+  type Node = { html: string; target: string[]; any?: { data?: ContrastData }[] };
+  const violations = (result as { violations: { id: string; impact: string; nodes: Node[] }[] }).violations
     .filter((v) => !isAcceptedContrast(v));
   if (violations.length) {
-    note(`${vpName} axe ${path}`, violations
-      .map((v) => `${v.id} (${v.impact}, ${v.nodes.length}) first: ${v.nodes[0]?.html.slice(0, 70)}`)
+    note(`${vpName} axe ${path}`, violations.map((v) => v.id === 'color-contrast'
+      /* The ratio and the two colours, per node. The old line named the rule
+         and an HTML snippet, so acting on it meant measuring every element
+         again by hand — which is how this class of finding sat unfixed. */
+      ? `${v.id} (${v.impact}, ${v.nodes.length})\n      ${v.nodes.map(contrastLine).join('\n      ')}`
+      : `${v.id} (${v.impact}, ${v.nodes.length}) first: ${v.nodes[0]?.html.slice(0, 70)}`)
       .join(' | '));
   }
   await page.emulateMedia({ reducedMotion: 'no-preference' });
