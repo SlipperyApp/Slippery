@@ -434,23 +434,20 @@ async function applyEveryTheme(page: Page, vpName: string, errors: string[]) {
  * All three are text at 10.5px and under, which is where a token that reads
  * comfortably at 14px stops clearing 4.5 to 1.
  */
-const ACCEPTED_CONTRAST: { selector: RegExp; ratio: string; fix: string }[] = [
-  {
-    selector: /\.dn$/,
-    ratio: '2.15 to 1 on a day with a figure, 1.62 to 1 on a future day',
-    fix: 'app/proto.css: .cal .c .dn takes --t2 instead of --t4, and .cal .c.fut .dn takes --t3',
-  },
-  {
-    selector: /\.tgtime$/,
-    ratio: '2.96 to 1 against the accent bubble',
-    fix: 'app/proto.css: .tgtime opacity .85 instead of .6',
-  },
-  {
-    selector: /\.tgfoot$/,
-    ratio: '2.99 to 1',
-    fix: 'app/proto.css: .tgfoot takes --t2 instead of --t4',
-  },
-];
+/* EMPTY, AND IT SHOULD STAY THAT WAY.
+ *
+ * This list used to hold .dn, .tgtime and .tgfoot as "the prototype draws
+ * them this way". All three are now fixed to clear 4.5:1, measured across
+ * all eight themes rather than argued about, so the entries are gone.
+ *
+ * Two things this list taught, worth keeping in mind before adding to it.
+ * Its recorded fix for .dn named a token the stylesheet had already stopped
+ * using, so the guidance and the code had quietly diverged; and its recorded
+ * fix for .tgtime, opacity .85, only reaches 4.12:1 and would not have
+ * worked. An accepted finding stops being re-measured, and stale advice is
+ * worse than none. Prefer fixing to accepting.
+ */
+const ACCEPTED_CONTRAST: { selector: RegExp; ratio: string; fix: string }[] = [];
 
 type ContrastData = {
   contrastRatio?: number; fgColor?: string; bgColor?: string;

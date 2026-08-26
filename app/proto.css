@@ -438,7 +438,10 @@ a{color:inherit;text-decoration:none}
 .g2{display:grid;grid-template-columns:1fr 1fr;gap:8px}
 .g3{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
 .stat{background:rgba(255,255,255,.04);border:1px solid var(--line);border-radius:12px;padding:8px}
-.stat .k{font-size:12px;color:var(--t3)}
+/* --t3 measured 4.37:1 here against the card, three per cent short of the
+   4.5:1 a 12px label needs. It is a figure's label and there are four of
+   them on the dashboard and four more on the ledger. */
+.stat .k{font-size:12px;color:var(--t2)}
 .stat .v{font-size:20px;font-weight:600;margin-top:4px;font-variant-numeric:tabular-nums;letter-spacing:-.02em}
 .hd{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:8px}
 .hd b{font-size:16px;letter-spacing:-.012em}
@@ -463,14 +466,18 @@ button.setrow:hover{padding-left:4px}
 .cal .dow{font-size:10px;color:var(--t3);text-align:center}
 .cal .c{aspect-ratio:1;max-height:56px;border-radius:8px;border:1px solid var(--line);display:flex;flex-direction:column;
  align-items:center;justify-content:center;gap:var(--bw-hair);font-size:12px;font-weight:600;opacity:0;transform:scale(.86);position:relative;overflow:hidden}
-.cal .c .dn{font-size:10px;color:var(--t3)}
+/* --t1 on a day that has a figure, --t2 on a quiet one. --t3 measured 2.4:1
+   against a tinted cell and 1.67:1 against today. A day with betting on it
+   gets a legible date; the rest recede, which is the reading order anyway. */
+.cal .c .dn{font-size:10px;color:var(--t1)}
+.cal .c.none .dn,.cal .c.pad .dn{color:var(--t2)}
 .cal .c.in{opacity:1;transform:none;transition:opacity .34s var(--e),transform .34s var(--e)}
 .cal .c.p{background:color-mix(in srgb,var(--pos) 16%,transparent);border-color:color-mix(in srgb,var(--pos) 32%,transparent);color:var(--pos);font-weight:600}
 .cal .c.n{background:color-mix(in srgb,var(--neg) 14%,transparent);border-color:color-mix(in srgb,var(--neg) 30%,transparent);color:var(--neg);font-weight:600}
 .cal .c.none{background:rgba(255,255,255,.022)}
 .cal .c.none::after{content:"";position:absolute;left:-12%;right:-12%;top:50%;height:1px;background:var(--line);transform:rotate(-38deg)}
 .cal .c.fut{border-style:dashed;border-color:var(--t3);background:none}
-.cal .c.fut .dn{color:var(--t3)}
+.cal .c.fut .dn{color:var(--t2)}
 .cal .c.today{outline:1.5px solid var(--s);outline-offset:-1px}
 .cal .c.pad{border:0;background:none}
 .callegend i{width:8px;height:8px;border-radius:4px;display:inline-block;flex:0 0 auto}
@@ -931,7 +938,7 @@ ol.steps p,ul.steps p{margin:0;font-size:14px;color:var(--t2)}
 .tgb.out{margin-left:auto;background:var(--p);color:var(--bg);border-bottom-right-radius:4px}
 .tgb.in{background:color-mix(in srgb,var(--t1) 7%,transparent);border-bottom-left-radius:4px;border:1px solid var(--line)}
 .tgb.in,.tgb.in *{color:var(--t1)!important}
-.tgb.in .tgtime,.tgb.in .tgfoot{color:var(--t3)!important}
+.tgb.in .tgtime,.tgb.in .tgfoot{color:var(--t2)!important}
 .tgb.in .who2{color:var(--t2)!important}
 .tgb.in s{opacity:.6}
 .tgb .who2{font-size:12px;font-weight:600;color:var(--s);margin-bottom:4px}
@@ -941,8 +948,13 @@ ol.steps p,ul.steps p{margin:0;font-size:14px;color:var(--t2)}
 .tgt2 td:last-child{text-align:right;font-weight:600;font-family:var(--mono)}
 .tgconf{display:inline-flex;align-items:center;gap:4px;font-size:10px;padding:4px 8px;border-radius:var(--r-pill);
  background:color-mix(in srgb,var(--pos) 15%,transparent);color:var(--pos);margin-top:8px}
-.tgfoot{font-size:12px;color:var(--t3);margin-top:8px;font-style:normal}
-.tgtime{font-size:10px;opacity:.6;margin-top:4px;text-align:right}
+/* Both of these sit on the accent bubble in an outgoing message, so they
+   inherit its --bg text rather than setting a dim colour of their own.
+   --t3 measured 2.99:1 there. The dimming on the timestamp goes for the same
+   reason: at .6 it was 2.79:1, and even the .85 this harness used to
+   recommend only reaches 4.12:1. Full opacity is 4.81:1 in the worst theme. */
+.tgfoot{font-size:12px;margin-top:8px;font-style:normal}
+.tgtime{font-size:10px;margin-top:4px;text-align:right}
 .impgrid{display:grid;gap:8px;text-align:left}
 @media(min-width:720px){.impgrid{grid-template-columns:1fr 1fr}}
 .impstep{display:flex;gap:12px;align-items:flex-start;padding:12px 16px;border:1px solid var(--line);border-radius:12px;background:var(--card)}
@@ -1990,17 +2002,7 @@ ol.steps li:last-child .dot{background:var(--p)}
 /* ═══ 10 · THE CALENDAR ═══ */
 .cal .c{transition:background-color .3s var(--e),border-color .3s var(--e)}
 .cal .c .cv{font-size:10px;font-weight:600;font-variant-numeric:tabular-nums;line-height:1}
-/* A heavy fill cannot carry light text. */
-/* 01 · ONE EXPRESSION FOR THE DATE, BOTH CHILDREN.
-   The figure flips to the background colour on a heavy fill, because #7FE3A6
-   at 76% will not carry light text. The date was doing something else again —
-   --t2 with bets, --t3 without — so on a mid-intensity cell it disappeared
-   into the fill. Both children now follow the same one test:
-     heavy ? rgba(12,14,19,.66) : var(--t3)
-   .66 rather than the figure's full opacity, because a date is a label. */
-.cal .c.heavy .cv{color:var(--bg)}
-.cal .c.heavy .dn{color:rgba(12,14,19,.66)}
-.cal .c.heavy .cv{font-weight:800}
+
 
 /* THE WHOLE MONTH FITS AT 390px: seven 44px cells plus six 5px gaps is 338,
    inside the 340 the grid is capped at. Under 44px the figure drops out and
