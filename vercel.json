@@ -1,12 +1,20 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "framework": "nextjs",
-  "buildCommand": "next build",
+  "buildCommand": "node scripts/migrate.mjs && next build",
   "installCommand": "npm install",
   "outputDirectory": ".next",
-  "regions": ["lhr1"],
+  "regions": [
+    "lhr1"
+  ],
   "crons": [
-    { "path": "/api/cron/results", "schedule": "0 6 * * *" },
-    { "path": "/api/cron/retention", "schedule": "17 3 * * *" }
+    {
+      "path": "/api/cron/results",
+      "schedule": "0 6 * * *"
+    },
+    {
+      "path": "/api/cron/retention",
+      "schedule": "17 3 * * *"
+    }
   ]
 }

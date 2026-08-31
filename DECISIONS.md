@@ -121,3 +121,19 @@ check, and makes the whole deployment disappear with nothing to read.
   `list_deployments` with `state: ERROR` and has logs. This appears as
   nothing at all. If a push to `main` produces no new deployment within a
   couple of minutes, suspect `vercel.json` before suspecting the webhook.
+
+## /404 and /500
+
+`app/404/page.tsx` and `app/500/page.tsx` cannot exist: Next reserves both at
+export time and the build dies renaming `500.html`. Both pages therefore live
+under `/error-pages/` and are reachable at 200 there.
+
+`/500` is aliased back to its public path by middleware and answers 200.
+**`/404` answers 404**, and it is the only route in the map that does. Next
+short circuits that exact path in its own server before a rewrite, a redirect
+or middleware can reach it. What it serves is the real designed page, not a
+skeleton: the same pane `app/not-found.tsx` renders, with the "Nothing in your
+ledger has changed" copy and the four onward links. A 404 status on the page
+whose entire content is "this page does not exist" is also the honest answer,
+so this is left rather than worked around further. To preview it at 200, use
+`/error-pages/not-found`.
