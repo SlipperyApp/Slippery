@@ -64,7 +64,7 @@ export default async function Dashboard({
         <Module
           title="Net"
           span={4}
-          size="m"
+          size="l"
           id="mod-net"
           footer={
             <p className="small dim">
@@ -91,7 +91,7 @@ export default async function Dashboard({
         <Module
           title="Running now"
           span={4}
-          size="m"
+          size="l"
           note="Live, so it ignores the scope"
           id="mod-running"
           footer={<ModuleLink href="/app/ledger">Open the ledger</ModuleLink>}
@@ -111,7 +111,7 @@ export default async function Dashboard({
                     {running.length} open · {money(s.openStakePence, account.currency)} exposure
                   </p>
                   <ul>
-                    {running.slice(0, 4).map((b) => <BetRow key={b.id} bet={b} currency={account.currency} />)}
+                    {running.slice(0, 5).map((b) => <BetRow key={b.id} bet={b} currency={account.currency} />)}
                   </ul>
                 </>
               ) : null}
@@ -131,7 +131,7 @@ export default async function Dashboard({
         <Module
           title={`${MONTH_LONG[p.month - 1]} ${p.year}`}
           span={4}
-          size="m"
+          size="l"
           note="Always the month shown"
           id="mod-calendar"
           footer={<p className="small dim">Days are Europe/London, so a 23:00 bet lands on the right one.</p>}

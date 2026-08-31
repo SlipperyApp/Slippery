@@ -68,3 +68,16 @@ export async function pingDatabase(): Promise<boolean> {
     return false;
   }
 }
+
+/** Which checked in migrations this database has actually had applied.
+ *  Reported by /api/sources, because "configured" and "migrated" are two
+ *  different things and only one of them makes a write work. */
+export async function schemaReady(): Promise<{ ready: boolean; applied: string[]; reason?: string }> {
+  if (!hasDatabase()) return { ready: false, applied: [], reason: 'DATABASE_URL is not set' };
+  try {
+    const rows = await query<{ name: string }>('select name from schema_migrations order by name');
+    return { ready: rows.length > 0, applied: rows.map((r) => r.name) };
+  } catch (err) {
+    return { ready: false, applied: [], reason: err instanceof Error ? err.message : 'unreadable' };
+  }
+}

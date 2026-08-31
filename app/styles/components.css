@@ -422,7 +422,7 @@
 .cal__cell {
   position: relative;
   aspect-ratio: 1;
-  max-height: 52px;
+  max-height: 46px;
   border-radius: var(--r-sm);
   background: var(--surface-2);
   display: grid;
@@ -453,3 +453,10 @@
 .center { text-align: center; }
 .hide-sm { display: none; }
 @media (min-width: 700px) { .hide-sm { display: revert; } }
+
+/* A place in a field. Gold, silver and bronze as classes, so they theme, and
+   none of the three sits near the profit or loss colour. */
+.medal--1 { color: #E8C35A; }
+.medal--2 { color: #C7CBD1; }
+.medal--3 { color: #C08552; }
+.medal--none { color: var(--ink-3); }

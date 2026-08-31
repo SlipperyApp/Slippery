@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { ENV_NAMES, has, capabilities } from '@/lib/server/env';
-import { pingDatabase } from '@/lib/server/db';
+import { pingDatabase, schemaReady } from '@/lib/server/db';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -16,6 +16,7 @@ export async function GET() {
 
   const caps = capabilities();
   const databaseReachable = await pingDatabase();
+  const schema = await schemaReady();
 
   return NextResponse.json(
     {
@@ -31,6 +32,7 @@ export async function GET() {
       })),
       // Configured is not the same as reachable, so both are reported.
       databaseReachable,
+      schema,
       note: 'Names and booleans only. No value from process.env is ever returned by this route.',
     },
     { headers: { 'cache-control': 'no-store' } },
