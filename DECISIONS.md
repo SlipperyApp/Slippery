@@ -128,12 +128,32 @@ check, and makes the whole deployment disappear with nothing to read.
 export time and the build dies renaming `500.html`. Both pages therefore live
 under `/error-pages/` and are reachable at 200 there.
 
-`/500` is aliased back to its public path by middleware and answers 200.
-**`/404` answers 404**, and it is the only route in the map that does. Next
-short circuits that exact path in its own server before a rewrite, a redirect
-or middleware can reach it. What it serves is the real designed page, not a
-skeleton: the same pane `app/not-found.tsx` renders, with the "Nothing in your
-ledger has changed" copy and the four onward links. A 404 status on the page
-whose entire content is "this page does not exist" is also the honest answer,
-so this is left rather than worked around further. To preview it at 200, use
-`/error-pages/not-found`.
+Both are aliased back to their public paths by `middleware.ts`, as 308
+redirects rather than rewrites: Next answers a bare `/404` with its own 404
+status whatever a *rewrite* serves, at both the config and the middleware
+layer. As redirects they land on the real page at 200.
+
+A genuinely missing route still gets a real 404 from `app/not-found.tsx`,
+which renders the same pane. That is the difference between looking at the
+404 page and hitting one.
+
+**A note on how that looked while it was broken:** for a while `/404` kept
+answering 404 with the right content and no explanation. The cause was not
+the routing at all: a Next server left running from an earlier launch was
+still serving a stale build, so it had no idea the middleware existed. See
+the next entry.
+
+## A stale server looks exactly like a hydration bug
+
+Every chart on the dashboard rendered blank, and the console showed 400s on
+`/_next/static/chunks/*.js`. Nothing was wrong with the charts: a Next server
+from an earlier launch still held port 3100, the new one failed to bind, and
+the old one kept serving HTML that referenced chunk hashes no longer on disk.
+
+`pkill -f "next start"` is not the fix, and it is actively dangerous here: the
+calling shell's own command line contains the pattern, so the pattern kill
+takes the shell with it and the command exits 144 with nothing done.
+`tools/serve.mjs` reads `/proc/*/cmdline` and kills only processes whose
+command line BEGINS with the server, then waits for the port to answer before
+returning. If a rendered page ever looks unhydrated again, check the chunk
+hashes in the HTML against `.next/static/chunks` before suspecting the code.
