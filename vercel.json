@@ -6,7 +6,7 @@
   "outputDirectory": ".next",
   "regions": ["lhr1"],
   "crons": [
-    { "path": "/api/cron/results", "schedule": "*/20 * * * *" },
+    { "path": "/api/cron/results", "schedule": "0 6 * * *" },
     { "path": "/api/cron/retention", "schedule": "17 3 * * *" }
   ]
 }

@@ -91,3 +91,33 @@ reading.
   dismissible banner and with `@tester123` in the top bar. The alternative was
   a wall of sign in redirects, which would have made every product route
   unviewable and unverifiable.
+
+## Two ways to make a deployment vanish without a build log
+
+Both have the same shape: a config file that is valid JSON, passes every local
+check, and makes the whole deployment disappear with nothing to read.
+
+- **`vercel.json` must stay schema clean.** Vercel rejects any top level key
+  outside its schema and fails the deployment in about fifteen seconds, before
+  a build starts, pointing at the project configuration docs rather than
+  naming the key. A `$comment` key is enough to do it. `$schema` is the only
+  non setting key it allows.
+- **A Hobby account is limited to one cron run per day per expression.**
+  `*/20 * * * *` is rejected at deployment *creation* time with
+  `cron_jobs_limits_reached`. The failure is silent from the git side: **no
+  deployment is created at all**, nothing appears in the dashboard, and there
+  is no build log, so a green local build and a successful `git push` both
+  look completely normal. Two pushes to `main` produced zero deployments
+  before the owner read the reason out of the Vercel API.
+
+  The results sweep is therefore **`0 6 * * *`**, once daily, which is what
+  the previous build used and is known good. Retention stays at `17 3 * * *`,
+  already daily. Anything that needs settling sooner than the next morning
+  goes through the on demand refresh path rather than a second cron: a daily
+  sweep plus a refresh a Slipper can trigger catches up on everything a
+  twenty minute sweep would have caught, a few hours later.
+
+  **How to tell this apart from a failed build:** a failed build appears in
+  `list_deployments` with `state: ERROR` and has logs. This appears as
+  nothing at all. If a push to `main` produces no new deployment within a
+  couple of minutes, suspect `vercel.json` before suspecting the webhook.
