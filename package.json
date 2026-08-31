@@ -1,0 +1,33 @@
+{
+  "name": "slippery",
+  "version": "2.0.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev -p 3000",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint",
+    "test": "node --experimental-strip-types --import ./tests/register.mjs --test \"tests/*.test.ts\"",
+    "db:migrate": "node --experimental-strip-types scripts/migrate.ts",
+    "audit": "node --experimental-strip-types tools/audit.ts",
+    "verify": "npm run build && npm test"
+  },
+  "dependencies": {
+    "next": "15.5.24",
+    "react": "19.2.0",
+    "react-dom": "19.2.0",
+    "pg": "8.16.3"
+  },
+  "devDependencies": {
+    "@types/node": "22.13.10",
+    "@types/pg": "8.11.11",
+    "@types/react": "19.2.0",
+    "@types/react-dom": "19.2.0",
+    "axe-core": "4.13.0",
+    "playwright-core": "1.62.1",
+    "typescript": "5.7.3"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}

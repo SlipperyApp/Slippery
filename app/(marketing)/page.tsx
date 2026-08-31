@@ -1,0 +1,310 @@
+import Link from 'next/link';
+import type { Metadata } from 'next';
+import { Icon } from '@/components/Icon';
+import { SettleDemo } from '@/components/SettleDemo';
+import { SectionHead, Checks, RowList } from '@/components/MarketingChrome';
+import { BetTypeWall } from '@/components/marketing/BetTypeWall';
+import { SplitHeadline } from '@/components/marketing/SplitHeadline';
+import { ThemeStrip } from '@/components/marketing/ThemeStrip';
+import { money } from '@/lib/format';
+
+export const metadata: Metadata = {
+  title: { absolute: 'Slippery, a bet tracker that captures at placement' },
+  description:
+    'Forward a bookmaker slip the moment you place it. Slippery reads it, settles it and reports what your record actually says. Built for UK and Irish bet types, from a single to a Lucky 63.',
+  alternates: { canonical: '/' },
+  openGraph: {
+    title: 'Slippery, a bet tracker that captures at placement',
+    description: 'Forward a slip the moment you place it. Slippery reads it, settles it and reports what your record actually says.',
+    url: '/',
+    images: [{ url: '/og?title=It+all+starts+with+a+slip.&sub=A+bet+tracker+that+captures+at+placement', width: 1200, height: 630, alt: 'Slippery' }],
+  },
+};
+
+export default function Landing() {
+  return (
+    <>
+      {/* ------------------------------------------------------------ hero */}
+      <section className="hero">
+        <div className="wrap">
+          <div className="two two--wide-right">
+            <div>
+              <span className="pill rise">
+                <span className="dot" style={{ background: 'var(--accent)' }} />
+                For UK and Irish bettors
+              </span>
+              <h1 className="hero__h rise rise-1" style={{ marginTop: 'var(--s4)' }}>
+                It all starts with a{' '}
+                <span className="slipword">
+                  <span className="slipword__glow" aria-hidden="true">slip.</span>
+                  <span className="slipword__text">slip.</span>
+                  <span className="slipword__sheen" aria-hidden="true" />
+                </span>
+              </h1>
+              <p className="hero__sub rise rise-2">
+                Screenshot the bookmaker slip when you place it, forward it, and it is in your
+                ledger before you know how it went. The bets you quietly forget to log are the
+                ones that cost you.
+              </p>
+              <div className="hero__cta rise rise-3">
+                <Link href="/signup" className="btn btn--primary">Start free for 14 days</Link>
+                <Link href="/demo" className="btn btn--link">See a real account</Link>
+              </div>
+              <p className="small dim rise rise-4" style={{ marginTop: 'var(--s4)' }}>
+                Card required. 14 days or 35 slips, whichever runs out first. Cancel in one tap.
+              </p>
+            </div>
+
+            <div className="rise rise-2">
+              <SettleDemo />
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* --------------------------------------------------------- capture */}
+      <section className="sect" id="capture">
+        <div className="wrap">
+          <div className="two">
+            <SectionHead
+              badge="The whole idea"
+              setup="A record you make afterwards"
+              claim="is a record of your best days."
+            >
+              Capture happens at placement, not at settlement. A ledger written before you know
+              how it went cannot quietly become only the bets you wanted to remember.
+            </SectionHead>
+            <RowList
+              rows={[
+                { title: 'Forward the slip', sub: 'Telegram, straight from the bookmaker app. No typing.', icon: 'telegram', on: true },
+                { title: 'Upload the screenshot', sub: 'Drag it in, or point a camera at a shop slip.', icon: 'camera' },
+                { title: 'Type it in', sub: 'Singles through to a Lucky 63, legs and all.', icon: 'edit' },
+                { title: 'Import the history', sub: 'A CSV from wherever you kept it, dry run first.', icon: 'upload' },
+              ]}
+            />
+          </div>
+          <Checks
+            items={[
+              'Confirmed by you before anything is written',
+              'The price is read, never guessed',
+              'Duplicate slips are caught before they double count',
+              'Manual and shop bets are first class, and marked as such',
+            ]}
+          />
+        </div>
+      </section>
+
+      {/* ------------------------------------------------------ the bet zoo */}
+      <section className="sect" id="reader">
+        <div className="wrap">
+          <SectionHead
+            badge="The reader"
+            setup="Most trackers read a single."
+            claim="This one reads a Lucky 15."
+          >
+            The bookmaker template is detected first and the slip is parsed second, because
+            generic text recognition falls over on a permed bet. Confidence is scored per field,
+            not per slip.
+          </SectionHead>
+          <BetTypeWall />
+          <div className="two" style={{ marginTop: 'var(--s7)' }}>
+            <RowList
+              rows={[
+                { title: 'High confidence', sub: 'Saves silently. Nothing to confirm.', icon: 'check', on: true },
+                { title: 'Medium confidence', sub: 'One targeted question. Never a whole form again.', icon: 'help' },
+                { title: 'Low confidence', sub: 'Held out of the aggregates until you settle it.', icon: 'alert' },
+              ]}
+            />
+            <div className="card">
+              <p className="label">Flag a misread</p>
+              <p style={{ marginTop: 'var(--s3)' }}>
+                Every read carries a flag button. Press it and the slip goes back for a human
+                look and the credit returns to your allowance.
+              </p>
+              <p className="small muted" style={{ marginTop: 'var(--s3)' }}>
+                A missing price is visible. A wrong one is not. That is why Slippery asks rather
+                than guesses, and why a wrong grade is treated as worse than no grade.
+              </p>
+              <div className="card__foot">
+                <Link href="/how" className="btn btn--ghost btn--sm">
+                  How the reader works <Icon name="arrowRight" size={16} />
+                </Link>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ------------------------------------------------- bonus vs real */}
+      <section className="sect" id="offers">
+        <div className="wrap">
+          <div className="two">
+            <SectionHead
+              badge="Money you won, money they gave you"
+              setup="Nobody separates the two."
+              claim="Your headline is two numbers."
+            >
+              Free bets, bonus funds and boosts are flagged at ingestion. Up {money(118400)} means
+              something different when {money(89000)} of it came from sign-up offers, and for most
+              UK bettors it did.
+            </SectionHead>
+            <SplitHeadline />
+          </div>
+        </div>
+      </section>
+
+      {/* ------------------------------------------------------ settlement */}
+      <section className="sect" id="settlement">
+        <div className="wrap">
+          <SectionHead
+            badge="Settlement"
+            setup="Six outcomes, and a slider."
+            claim="Cash out included, twice if you like."
+          >
+            A bet is a container with a settlement ledger, not a row with a result. That is what
+            makes a repeated partial cash out, exchange commission, a Rule 4 deduction and a promo
+            refund landing a week later all representable.
+          </SectionHead>
+          <div className="grid" style={{ marginTop: 'var(--s6)' }}>
+            {[
+              { t: 'Won and lost', s: '90 minutes only. Extra time and penalties never count.', i: 'check' as const },
+              { t: 'Void', s: 'Postponed and cancelled. Stake back, excluded from turnover and from ROI.', i: 'minus' as const },
+              { t: 'Push and split', s: 'Whole lines push. Quarter lines split the stake.', i: 'split' as const },
+              { t: 'Cash out, in eighths', s: 'Of the remaining stake, relabelled after each pull, repeatable.', i: 'cash' as const },
+            ].map((c) => (
+              <div className="card col-6" key={c.t} style={{ gridColumn: 'span 4' }}>
+                <Icon name={c.i} size={22} style={{ color: 'var(--accent)' }} />
+                <p className="card__title" style={{ marginTop: 'var(--s3)' }}>{c.t}</p>
+                <p className="small muted" style={{ marginTop: 'var(--s2)' }}>{c.s}</p>
+              </div>
+            ))}
+          </div>
+          <p className="small dim" style={{ marginTop: 'var(--s4)', maxWidth: '62ch' }}>
+            Anything uncertain resolves to a question rather than a guess: player props, anytime
+            scorer, cards, corners, bet builders, same game multis and next goal always ask.
+          </p>
+        </div>
+      </section>
+
+      {/* ---------------------------------------------------------- social */}
+      <section className="sect" id="groups">
+        <div className="wrap">
+          <div className="two">
+            <div>
+              <SectionHead
+                badge="Slippers"
+                setup="Ranked in units."
+                claim="Never in pounds."
+              >
+                Groups rank on units so a bigger bankroll is not a bigger score. Positions read
+                as a place out of a field, and a division moves quietly at the end of a month.
+              </SectionHead>
+              <Checks
+                items={[
+                  'Slip backed percentage on every member',
+                  'Units only outside a group, never stakes',
+                  'Late edits are visible where a group asks for it',
+                  'Nothing tells you to bet more',
+                ]}
+              />
+              <Link href="/social" className="btn btn--ghost" style={{ marginTop: 'var(--s5)' }}>
+                Groups and monthly leagues <Icon name="arrowRight" size={16} />
+              </Link>
+            </div>
+            <div className="card">
+              <div className="card__head">
+                <p className="card__title">Thursday Coupon</p>
+                <span className="pill">12 Slippers</span>
+              </div>
+              <ul>
+                {[
+                  { n: 'Rowan', u: '+18.4', s: '94%', p: 1 },
+                  { n: 'Priya', u: '+11.2', s: '100%', p: 2 },
+                  { n: 'You', u: '+6.9', s: '88%', p: 3 },
+                  { n: 'Dev', u: '-2.1', s: '71%', p: 4 },
+                ].map((r) => (
+                  <li key={r.n} className="brow" style={{ gridTemplateColumns: '26px minmax(0,1fr) auto auto', gap: 'var(--s3)' }}>
+                    <span className="small dim tnum">{r.p}</span>
+                    <span className="brow__title">{r.n}</span>
+                    <span className="small dim">{r.s} slip backed</span>
+                    <span className={`fig fig--s tnum ${r.u.startsWith('-') ? 'neg' : 'pos'}`}>{r.u}u</span>
+                  </li>
+                ))}
+              </ul>
+              <p className="small dim card__foot">Units to 1dp on a league, because a league is a comparison rather than a record.</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ---------------------------------------------------------- themes */}
+      <section className="sect" id="themes">
+        <div className="wrap">
+          <SectionHead
+            badge="Eight themes"
+            setup="All of them dark."
+            claim="Profit green has to survive the ground."
+          >
+            There is no light mode. Profit green measures 1.07 to 1 on beige, which is invisible.
+            The two result colours are fixed and never theme dependent, which is why there is no
+            green theme and no red theme.
+          </SectionHead>
+          <ThemeStrip />
+        </div>
+      </section>
+
+      {/* --------------------------------------------------------- pricing */}
+      <section className="sect" id="price">
+        <div className="wrap">
+          <div className="two">
+            <SectionHead
+              badge="Pricing"
+              setup="One price, both platforms."
+              claim="£3.49 a month, £29.99 a year."
+            >
+              Free for 14 days or 35 slips, whichever runs out first. The yearly plan starts
+              automatically when the trial ends, and your ledger and export stay live even if the
+              card does not.
+            </SectionHead>
+            <div className="rows">
+              <div className="rowcard rowcard--on">
+                <Icon name="check" size={20} className="rowcard__i" />
+                <div className="grow">
+                  <p className="rowcard__t">Yearly, £29.99</p>
+                  <p className="rowcard__s">Struck through £34.99. Save £11.89 a year.</p>
+                </div>
+                <span className="pill pill--accent">Recommended</span>
+              </div>
+              <div className="rowcard">
+                <Icon name="check" size={20} className="rowcard__i" />
+                <div className="grow">
+                  <p className="rowcard__t">Monthly, £3.49</p>
+                  <p className="rowcard__s">Same product. Cancel any month.</p>
+                </div>
+              </div>
+              <Link href="/pricing" className="btn btn--ghost btn--wide" style={{ marginTop: 'var(--s2)' }}>
+                What is in it <Icon name="arrowRight" size={16} />
+              </Link>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ------------------------------------------------------- apps line */}
+      <section className="sect" style={{ paddingTop: 0 }}>
+        <div className="wrap">
+          <div className="card" style={{ textAlign: 'center', alignItems: 'center' }}>
+            <p className="card__title">iOS and Android coming soon. The web app works today.</p>
+            <p className="small muted" style={{ marginTop: 'var(--s2)', maxWidth: '52ch' }}>
+              Add it to your home screen and it behaves like an app. When the listings are live
+              the real store badges go here, unmodified, as both companies require.
+            </p>
+            <Link href="/waiting-list" className="btn btn--ghost btn--sm" style={{ marginTop: 'var(--s4)' }}>
+              Join the waiting list
+            </Link>
+          </div>
+        </div>
+      </section>
+    </>
+  );
+}

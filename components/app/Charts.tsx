@@ -1,0 +1,141 @@
+'use client';
+
+import { useId } from 'react';
+import { useMeasure } from './useMeasure';
+import { axisMoney, axisMonth } from '@/lib/format';
+
+/** Every chart here measures its own container before it draws. */
+
+const PAD = { l: 4, r: 4, t: 8, b: 18 };
+
+export function ProfitCurve({
+  points, height = 168, currency = 'GBP',
+}: {
+  points: { day: string; netPence: number }[];
+  height?: number;
+  currency?: 'GBP' | 'EUR';
+}) {
+  const { ref, width } = useMeasure<HTMLDivElement>();
+  const id = useId().replace(/[^a-zA-Z0-9]/g, '');
+
+  if (points.length < 2) {
+    return (
+      <div ref={ref} className="chartbox" style={{ minHeight: height, display: 'grid', placeItems: 'center' }}>
+        <p className="small dim">Two settled days draws a curve. There is one so far.</p>
+      </div>
+    );
+  }
+
+  const w = Math.max(120, width || 0);
+  const innerW = w - PAD.l - PAD.r;
+  const innerH = height - PAD.t - PAD.b;
+
+  const vals = points.map((p) => p.netPence);
+  const min = Math.min(0, ...vals);
+  const max = Math.max(0, ...vals);
+  const span = max - min || 1;
+
+  const x = (i: number) => PAD.l + (i / (points.length - 1)) * innerW;
+  const y = (v: number) => PAD.t + innerH - ((v - min) / span) * innerH;
+
+  const line = points.map((p, i) => `${i === 0 ? 'M' : 'L'}${x(i).toFixed(2)},${y(p.netPence).toFixed(2)}`).join(' ');
+  const area = `${line} L${x(points.length - 1).toFixed(2)},${y(0).toFixed(2)} L${x(0).toFixed(2)},${y(0).toFixed(2)} Z`;
+  const last = points[points.length - 1].netPence;
+  const tone = last >= 0 ? 'var(--pos)' : 'var(--neg)';
+
+  const ticks = [0, Math.floor((points.length - 1) / 2), points.length - 1];
+
+  return (
+    <div ref={ref} className="chartbox">
+      {width > 0 ? (
+        <svg viewBox={`0 0 ${w} ${height}`} width={w} height={height} role="img"
+          aria-label={`Profit curve, ending at ${axisMoney(last, currency)}`}>
+          <defs>
+            <linearGradient id={`g${id}`} x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stopColor={tone} stopOpacity="0.28" />
+              <stop offset="100%" stopColor={tone} stopOpacity="0" />
+            </linearGradient>
+          </defs>
+          <line x1={PAD.l} x2={w - PAD.r} y1={y(0)} y2={y(0)} stroke="var(--line-2)" strokeWidth="1" strokeDasharray="3 3" />
+          <path d={area} fill={`url(#g${id})`} />
+          <path d={line} fill="none" stroke={tone} strokeWidth="2" strokeLinejoin="round" strokeLinecap="round" />
+          <circle cx={x(points.length - 1)} cy={y(last)} r="3.5" fill={tone} />
+          {ticks.map((i) => (
+            <text key={i} className="axis" x={x(i)} y={height - 4}
+              textAnchor={i === 0 ? 'start' : i === points.length - 1 ? 'end' : 'middle'}>
+              {axisMonth(points[i].day + 'T12:00:00Z')}
+            </text>
+          ))}
+        </svg>
+      ) : null}
+    </div>
+  );
+}
+
+export function Sparkline({ values, height = 34 }: { values: number[]; height?: number }) {
+  const { ref, width } = useMeasure<HTMLDivElement>();
+  if (values.length < 2) return <div ref={ref} className="chartbox" style={{ height }} />;
+  const w = Math.max(60, width || 0);
+  const min = Math.min(...values);
+  const max = Math.max(...values);
+  const span = max - min || 1;
+  const d = values.map((v, i) =>
+    `${i === 0 ? 'M' : 'L'}${((i / (values.length - 1)) * w).toFixed(1)},${(height - ((v - min) / span) * (height - 4) - 2).toFixed(1)}`).join(' ');
+  const tone = values[values.length - 1] >= values[0] ? 'var(--pos)' : 'var(--neg)';
+  return (
+    <div ref={ref} className="chartbox" style={{ height }}>
+      {width > 0 ? (
+        <svg viewBox={`0 0 ${w} ${height}`} width={w} height={height} aria-hidden="true">
+          <path d={d} fill="none" stroke={tone} strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
+        </svg>
+      ) : null}
+    </div>
+  );
+}
+
+export function MonthBars({
+  months, height = 150, currency = 'GBP',
+}: {
+  months: { key: string; label: string; netPence: number; count: number }[];
+  height?: number;
+  currency?: 'GBP' | 'EUR';
+}) {
+  const { ref, width } = useMeasure<HTMLDivElement>();
+  if (!months.length) return <div ref={ref} className="chartbox" style={{ height }} />;
+
+  const w = Math.max(120, width || 0);
+  const innerH = height - 26;
+  const max = Math.max(1, ...months.map((m) => Math.abs(m.netPence)));
+  const gap = 6;
+  const bw = Math.max(6, (w - gap * (months.length - 1)) / months.length);
+  const zero = innerH / 2 + 6;
+
+  return (
+    <div ref={ref} className="chartbox">
+      {width > 0 ? (
+        <svg viewBox={`0 0 ${w} ${height}`} width={w} height={height} role="img"
+          aria-label={`Month by month, ${months.length} months`}>
+          <line x1="0" x2={w} y1={zero} y2={zero} stroke="var(--line-2)" strokeWidth="1" />
+          {months.map((m, i) => {
+            const h = (Math.abs(m.netPence) / max) * (innerH / 2 - 4);
+            const up = m.netPence >= 0;
+            return (
+              <g key={m.key}>
+                <rect
+                  x={i * (bw + gap)} width={bw}
+                  y={up ? zero - h : zero} height={Math.max(1.5, h)}
+                  rx="2"
+                  fill={up ? 'var(--pos)' : 'var(--neg)'}
+                  opacity={m.count < 5 ? 0.4 : 0.92}
+                >
+                  <title>{`${m.label}: ${axisMoney(m.netPence, currency)} from ${m.count} bets`}</title>
+                </rect>
+                <text className="axis" x={i * (bw + gap) + bw / 2} y={height - 4} textAnchor="middle">{m.label}</text>
+              </g>
+            );
+          })}
+        </svg>
+      ) : null}
+    </div>
+  );
+}

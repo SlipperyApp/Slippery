@@ -1,0 +1,109 @@
+/* Marketing page furniture.
+
+   The section pattern, taken from the benchmark and made ours: a small pill
+   badge, a two line headline where the first line is setup and the second
+   carries the claim, one paragraph of at most two sentences, stacked rows
+   with exactly one highlighted, four check marks in a two by two, and a live
+   demo that is never a screenshot. */
+
+.sect { padding-block: var(--s9); position: relative; }
+@media (min-width: 700px) { .sect { padding-block: var(--s10); } }
+.sect__head { max-width: 620px; }
+.sect__badge { margin-bottom: var(--s4); }
+.sect__h {
+  font-size: clamp(26px, 5.2vw, 40px);
+  line-height: 1.08;
+  letter-spacing: var(--tr-tight);
+  font-weight: var(--w-label);
+}
+.sect__h span { display: block; }
+.sect__h .setup { color: var(--ink-3); }
+.sect__p { margin-top: var(--s4); color: var(--ink-2); font-size: 16px; line-height: 1.6; max-width: 56ch; }
+
+.hero {
+  padding-block: var(--s9) var(--s8);
+  position: relative;
+}
+@media (min-width: 700px) { .hero { padding-block: var(--s10) var(--s9); } }
+.hero__h {
+  font-size: clamp(38px, 9vw, 76px);
+  line-height: 1.02;
+  letter-spacing: -0.035em;
+  font-weight: var(--w-label);
+  max-width: 15ch;
+}
+.hero__sub { margin-top: var(--s5); font-size: clamp(16px, 2.4vw, 19px); line-height: 1.55; color: var(--ink-2); max-width: 48ch; }
+.hero__cta { margin-top: var(--s6); display: flex; align-items: center; gap: var(--s4); flex-wrap: wrap; }
+
+.two { display: grid; gap: var(--s6); align-items: start; }
+@media (min-width: 900px) { .two { grid-template-columns: 1fr 1fr; gap: var(--s8); align-items: center; } }
+@media (min-width: 900px) { .two--wide-right { grid-template-columns: 0.85fr 1.15fr; } }
+
+.rows { display: flex; flex-direction: column; gap: var(--s2); }
+.rowcard {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--s3);
+  padding: var(--s4);
+  border-radius: var(--r-ctl);
+  border: 1px solid var(--line);
+  background: color-mix(in oklab, var(--surface) 62%, transparent);
+}
+.rowcard--on {
+  border-color: color-mix(in oklab, var(--accent) 42%, transparent);
+  background: color-mix(in oklab, var(--accent) 8%, var(--surface));
+}
+.rowcard__t { font-weight: var(--w-label); font-size: var(--t-small); }
+.rowcard__s { font-size: var(--t-small); color: var(--ink-3); margin-top: 2px; }
+.rowcard__i { width: 20px; height: 20px; flex: none; margin-top: 1px; color: var(--ink-3); }
+.rowcard--on .rowcard__i { color: var(--accent); }
+
+.checks { display: grid; grid-template-columns: 1fr; gap: var(--s3) var(--s5); margin-top: var(--s5); }
+@media (min-width: 520px) { .checks { grid-template-columns: 1fr 1fr; } }
+.checkitem { display: flex; gap: var(--s2); align-items: flex-start; font-size: var(--t-small); color: var(--ink-2); }
+.checkitem svg { width: 16px; height: 16px; flex: none; margin-top: 2px; color: var(--pos); }
+
+.pricegrid { display: grid; gap: var(--s4); }
+@media (min-width: 760px) { .pricegrid { grid-template-columns: 1fr 1fr; } }
+.plan { position: relative; display: flex; flex-direction: column; }
+.plan--rec { border-color: color-mix(in oklab, var(--accent) 46%, transparent); }
+.plan__price { display: flex; align-items: baseline; gap: var(--s2); margin-block: var(--s3) var(--s1); }
+.plan__was { color: var(--ink-3); text-decoration: line-through; font-size: 17px; font-variant-numeric: tabular-nums; }
+
+.faq__q { width: 100%; text-align: left; display: flex; align-items: center; justify-content: space-between; gap: var(--s4); min-height: var(--tap); padding: var(--s3) 0; cursor: pointer; font-weight: var(--w-label); }
+.faq__a { padding-bottom: var(--s4); color: var(--ink-2); font-size: var(--t-small); line-height: 1.6; max-width: 64ch; }
+.faq__i { width: 18px; height: 18px; flex: none; color: var(--ink-3); transition: transform var(--dur) var(--ease); }
+.faq__q[aria-expanded='true'] .faq__i { transform: rotate(45deg); }
+
+.quote { border-left: 2px solid var(--line-2); padding-left: var(--s4); }
+.quote__t { font-size: var(--t-body); line-height: 1.6; }
+.quote__w { font-size: var(--t-small); color: var(--ink-3); margin-top: var(--s2); }
+
+.logstrip { display: flex; flex-wrap: wrap; gap: var(--s2); }
+
+.themecard { cursor: pointer; text-align: left; width: 100%; }
+.themecard__swatches { display: flex; gap: 5px; margin-top: var(--s3); }
+.themecard__sw { width: 26px; height: 26px; border-radius: 7px; border: 1px solid color-mix(in oklab, #fff 12%, transparent); }
+
+.marks { display: flex; flex-wrap: wrap; gap: var(--s2) var(--s4); align-items: center; }
+
+/* The bet type wall: dense, because the point is how many there are. */
+.wall { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--s2); }
+@media (min-width: 560px) { .wall { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+@media (min-width: 900px) { .wall { grid-template-columns: repeat(5, minmax(0, 1fr)); } }
+.wall__btn {
+  width: 100%;
+  text-align: left;
+  cursor: pointer;
+  padding: var(--s3);
+  border-radius: var(--r-ctl);
+  border: 1px solid var(--line);
+  background: color-mix(in oklab, var(--surface) 62%, transparent);
+  min-height: var(--tap);
+  transition: border-color var(--dur-fast) var(--ease), background var(--dur-fast) var(--ease);
+}
+.wall__btn:hover { border-color: var(--line-2); background: var(--surface); }
+.wall__btn[aria-expanded='true'] { border-color: color-mix(in oklab, var(--accent) 46%, transparent); background: color-mix(in oklab, var(--accent) 7%, var(--surface)); }
+.wall__n { font-weight: var(--w-label); font-size: var(--t-small); display: block; }
+.wall__l { display: block; font-size: var(--t-micro); letter-spacing: 0.04em; text-transform: uppercase; color: var(--ink-3); margin-top: 3px; }
+.wall__w { display: block; font-size: var(--t-small); color: var(--ink-2); margin-top: var(--s2); line-height: 1.45; }

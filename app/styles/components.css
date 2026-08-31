@@ -1,0 +1,455 @@
+/* Components. */
+
+/* -------------------------------------------------------------------- card */
+.card {
+  display: flex;
+  flex-direction: column;
+  background: color-mix(in oklab, var(--surface) 88%, transparent);
+  border: 1px solid var(--line);
+  border-radius: var(--r-card);
+  padding: var(--s4);
+  position: relative;
+  overflow: hidden;
+  box-shadow: inset 0 1px 0 color-mix(in oklab, var(--ink) 6%, transparent);
+}
+@media (min-width: 700px) { .card { padding: var(--s5); } }
+.card__foot { margin-top: auto; padding-top: var(--s4); }
+
+/* Fixed height tokens, so rows match by construction rather than by
+   stretching. Only applied from the two-column breakpoint up: on a phone a
+   single column should be as tall as its content. */
+@media (min-width: 700px) {
+  .h-s { height: var(--h-mod-s); }
+  .h-m { height: var(--h-mod-m); }
+  .h-l { height: var(--h-mod-l); }
+}
+
+.card__head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--s3);
+  margin-bottom: var(--s3);
+}
+.card__title {
+  font-size: var(--t-h3);
+  line-height: var(--lh-h3);
+  font-weight: var(--w-label);
+  letter-spacing: var(--tr-tight);
+}
+.card__note { font-size: var(--t-micro); line-height: var(--lh-micro); color: var(--ink-3); font-weight: var(--w-label); letter-spacing: 0.02em; }
+
+/* The slip motif: a torn lower edge, used wherever a bet is shown as an
+   object rather than a row. */
+.slipcard {
+  --sc: 9px;
+  -webkit-mask-image:
+    radial-gradient(circle var(--sc) at 50% 0, transparent 97%, #000 100%),
+    linear-gradient(#000 0 0);
+  -webkit-mask-size: calc(var(--sc) * 2) calc(var(--sc) * 2), 100% calc(100% - var(--sc));
+  -webkit-mask-repeat: repeat-x, no-repeat;
+  -webkit-mask-position: bottom left, top left;
+  mask-image:
+    radial-gradient(circle var(--sc) at 50% 0, transparent 97%, #000 100%),
+    linear-gradient(#000 0 0);
+  mask-size: calc(var(--sc) * 2) calc(var(--sc) * 2), 100% calc(100% - var(--sc));
+  mask-repeat: repeat-x, no-repeat;
+  mask-position: bottom left, top left;
+  border-bottom: 0;
+  border-radius: var(--r-card) var(--r-card) 0 0;
+  padding-bottom: calc(var(--s5) + var(--sc));
+}
+
+/* ------------------------------------------------------------------ button */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--s2);
+  min-height: var(--tap);
+  padding: 0 var(--s5);
+  border-radius: var(--r-ctl);
+  font-size: var(--t-small);
+  font-weight: var(--w-label);
+  letter-spacing: 0.005em;
+  text-decoration: none;
+  cursor: pointer;
+  border: 1px solid transparent;
+  transition: transform var(--dur-fast) var(--ease), background var(--dur-fast) var(--ease),
+              border-color var(--dur-fast) var(--ease), opacity var(--dur-fast) var(--ease);
+  white-space: nowrap;
+}
+.btn:active { transform: translateY(1px); }
+.btn[disabled], .btn[aria-disabled='true'] { opacity: 0.45; cursor: not-allowed; }
+.btn[disabled]:active, .btn[aria-disabled='true']:active { transform: none; }
+
+.btn--primary { background: var(--accent); color: var(--accent-ink); }
+.btn--primary:hover { background: var(--accent-2); }
+
+.btn--ghost { background: var(--surface-2); color: var(--ink); border-color: var(--line-2); }
+.btn--ghost:hover { background: var(--surface-3); }
+
+.btn--quiet { background: transparent; color: var(--ink-2); }
+.btn--quiet:hover { background: var(--surface); color: var(--ink); }
+
+.btn--link {
+  background: none;
+  min-height: var(--tap);
+  padding: 0 var(--s2);
+  color: var(--ink);
+  text-decoration: underline;
+  text-underline-offset: 4px;
+  text-decoration-color: color-mix(in oklab, var(--ink) 45%, transparent);
+}
+.btn--danger { background: color-mix(in oklab, var(--neg) 16%, var(--surface)); color: var(--neg); border-color: var(--neg-line); }
+.btn--danger:hover { background: color-mix(in oklab, var(--neg) 24%, var(--surface)); }
+
+.btn--sm { min-height: 36px; padding: 0 var(--s3); font-size: var(--t-small); }
+.btn--wide { width: 100%; }
+
+/* An icon-only control still has to clear 44px. Where the hit area is grown
+   with an inset pseudo-element, neighbours need a 16px gap or the wrong one
+   fires. */
+.iconbtn {
+  position: relative;
+  display: inline-grid;
+  place-items: center;
+  width: 38px; height: 38px;
+  border-radius: var(--r-ctl);
+  color: var(--ink-2);
+  cursor: pointer;
+  transition: background var(--dur-fast) var(--ease), color var(--dur-fast) var(--ease);
+}
+.iconbtn::after { content: ''; position: absolute; inset: -3px; }
+.iconbtn:hover { background: var(--surface-2); color: var(--ink); }
+.iconbtn svg { width: 18px; height: 18px; }
+.iconbtn + .iconbtn { margin-left: var(--s4); }
+
+/* -------------------------------------------------------------------- pill */
+.pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 24px;
+  padding: 0 10px;
+  border-radius: var(--r-pill);
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+  color: var(--ink-2);
+  font-size: var(--t-micro);
+  line-height: 1;
+  font-weight: var(--w-label);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+.pill--accent { background: color-mix(in oklab, var(--accent) 15%, transparent); border-color: color-mix(in oklab, var(--accent) 34%, transparent); color: var(--accent); }
+.pill--pos { background: var(--pos-wash); border-color: var(--pos-line); color: var(--pos); }
+.pill--neg { background: var(--neg-wash); border-color: var(--neg-line); color: var(--neg); }
+.pill--lg { height: 28px; font-size: var(--t-small); text-transform: none; letter-spacing: 0; }
+
+.dot { width: 7px; height: 7px; border-radius: var(--r-pill); background: currentColor; flex: none; }
+
+/* ------------------------------------------------------------- segmented */
+.seg {
+  display: inline-flex;
+  padding: 3px;
+  gap: 2px;
+  border-radius: var(--r-ctl);
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+  overflow-x: auto;
+  max-width: 100%;
+  scrollbar-width: none;
+}
+.seg::-webkit-scrollbar { display: none; }
+.seg__btn {
+  min-height: 34px;
+  padding: 0 12px;
+  border-radius: 7px;
+  font-size: var(--t-small);
+  font-weight: var(--w-label);
+  color: var(--ink-2);
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background var(--dur-fast) var(--ease), color var(--dur-fast) var(--ease);
+}
+.seg__btn:hover { color: var(--ink); }
+.seg__btn[aria-pressed='true'], .seg__btn[aria-selected='true'] { background: var(--surface-3); color: var(--ink); }
+
+/* --------------------------------------------------------------- scope bar */
+.scopebar {
+  display: flex;
+  align-items: center;
+  gap: var(--s2);
+  flex-wrap: wrap;
+  padding: var(--s3);
+  border: 1px solid var(--line);
+  border-radius: var(--r-card);
+  background: color-mix(in oklab, var(--surface) 70%, transparent);
+  margin-bottom: var(--s4);
+}
+
+/* ------------------------------------------------------------------ fields */
+.field { display: block; }
+.field + .field { margin-top: var(--s4); }
+.field__label {
+  display: block;
+  font-size: var(--t-small);
+  font-weight: var(--w-label);
+  color: var(--ink-2);
+  margin-bottom: 6px;
+}
+.field__hint { display: block; font-size: var(--t-small); color: var(--ink-3); margin-top: 6px; }
+.field__err { display: block; font-size: var(--t-small); color: var(--neg); margin-top: 6px; font-weight: var(--w-label); }
+
+.input, .select, .textarea {
+  width: 100%;
+  min-height: var(--tap);
+  padding: 10px var(--s3);
+  border-radius: var(--r-ctl);
+  background: var(--bg-2);
+  border: 1px solid var(--line-2);
+  color: var(--ink);
+  font-size: 16px;                     /* iOS zooms below 16px and never back */
+  transition: border-color var(--dur-fast) var(--ease), background var(--dur-fast) var(--ease);
+}
+.input::placeholder, .textarea::placeholder { color: var(--ink-3); }
+.input:hover, .select:hover, .textarea:hover { border-color: var(--line-2); background: var(--surface); }
+.input:focus, .select:focus, .textarea:focus { border-color: var(--accent); background: var(--surface); }
+.textarea { min-height: 96px; resize: vertical; }
+.select {
+  appearance: none;
+  -webkit-appearance: none;
+  padding-right: 38px;
+  background-image: linear-gradient(45deg, transparent 50%, currentColor 50%), linear-gradient(135deg, currentColor 50%, transparent 50%);
+  background-position: calc(100% - 20px) calc(50% + 2px), calc(100% - 14px) calc(50% + 2px);
+  background-size: 6px 6px, 6px 6px;
+  background-repeat: no-repeat;
+}
+.input--money { font-variant-numeric: tabular-nums; }
+
+.check {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--s3);
+  min-height: var(--tap);
+  padding: 10px 0;
+  cursor: pointer;
+}
+.check input { width: 20px; height: 20px; flex: none; margin-top: 1px; accent-color: var(--accent); }
+
+.switch {
+  position: relative;
+  width: 44px; height: 26px;
+  border-radius: var(--r-pill);
+  background: var(--surface-3);
+  border: 1px solid var(--line-2);
+  cursor: pointer;
+  flex: none;
+  transition: background var(--dur-fast) var(--ease), border-color var(--dur-fast) var(--ease);
+}
+.switch::after {
+  content: '';
+  position: absolute;
+  top: 2px; left: 2px;
+  width: 20px; height: 20px;
+  border-radius: var(--r-pill);
+  background: var(--ink-2);
+  transition: transform var(--dur) var(--ease), background var(--dur-fast) var(--ease);
+}
+.switch[aria-pressed='true'] { background: color-mix(in oklab, var(--accent) 42%, var(--surface-3)); border-color: color-mix(in oklab, var(--accent) 55%, transparent); }
+.switch[aria-pressed='true']::after { transform: translateX(18px); background: var(--accent); }
+.switchrow { display: flex; align-items: center; justify-content: space-between; gap: var(--s4); min-height: var(--tap); padding: var(--s2) 0; }
+
+/* ------------------------------------------------------------------- table */
+.tbl { width: 100%; border-collapse: collapse; font-size: var(--t-small); }
+.tbl th {
+  text-align: left;
+  font-size: var(--t-micro);
+  letter-spacing: var(--tr-micro);
+  text-transform: uppercase;
+  color: var(--ink-3);
+  font-weight: var(--w-label);
+  padding: 0 var(--s3) var(--s2);
+  white-space: nowrap;
+}
+.tbl td { padding: var(--s3); border-top: 1px solid var(--line); vertical-align: middle; }
+.tbl .num { text-align: right; font-variant-numeric: tabular-nums; }
+.scroller { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+
+/* -------------------------------------------------------------------- rows */
+.brow {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: var(--s2) var(--s3);
+  padding: var(--s3) 0;
+  border-top: 1px solid var(--line);
+  align-items: center;
+}
+.brow:first-child { border-top: 0; }
+.brow__title { font-weight: var(--w-label); font-size: var(--t-small); }
+.brow__sub { font-size: var(--t-small); color: var(--ink-3); }
+.brow--faded { opacity: 0.5; }
+
+/* ------------------------------------------------------------------ meters */
+.meter {
+  height: 6px;
+  border-radius: var(--r-pill);
+  background: var(--surface-3);
+  overflow: hidden;
+}
+.meter__fill {
+  height: 100%;
+  border-radius: var(--r-pill);
+  background: var(--accent);
+  transform-origin: left center;
+  animation: bar-grow 620ms var(--ease-out) both;
+}
+.meter__fill--pos { background: var(--pos); }
+.meter__fill--neg { background: var(--neg); }
+
+/* ------------------------------------------------------------------- sheet */
+.sheet__scrim {
+  position: fixed;
+  inset: 0;
+  z-index: 90;
+  background: color-mix(in oklab, #000 62%, transparent);
+  animation: fade-in var(--dur) var(--ease) both;
+}
+@keyframes fade-in { from { opacity: 0; } to { opacity: 1; } }
+@keyframes sheet-up { from { transform: translate3d(0, 18px, 0); opacity: 0; } to { transform: none; opacity: 1; } }
+.sheet {
+  position: fixed;
+  z-index: 91;
+  left: 0; right: 0; bottom: 0;
+  max-height: 86svh;
+  overflow-y: auto;
+  background: var(--bg-2);
+  border-top: 1px solid var(--line-2);
+  border-radius: var(--r-card) var(--r-card) 0 0;
+  padding: var(--s5) var(--s4) calc(var(--s7) + env(safe-area-inset-bottom));
+  animation: sheet-up var(--dur) var(--ease-out) both;
+}
+@media (min-width: 700px) {
+  .sheet {
+    left: 50%; right: auto; bottom: auto; top: 50%;
+    transform: translate(-50%, -50%);
+    width: min(560px, calc(100vw - 48px));
+    border-radius: var(--r-card);
+    border: 1px solid var(--line-2);
+    animation: fade-in var(--dur) var(--ease) both;
+  }
+}
+.sheet__head { display: flex; align-items: flex-start; justify-content: space-between; gap: var(--s3); margin-bottom: var(--s4); }
+
+/* ------------------------------------------------------------------- toast */
+.toast {
+  position: fixed;
+  left: 50%;
+  bottom: calc(var(--bottombar-h) + env(safe-area-inset-bottom) + var(--s4));
+  transform: translateX(-50%);
+  z-index: 95;
+  display: flex;
+  align-items: center;
+  gap: var(--s3);
+  max-width: min(520px, calc(100vw - 32px));
+  padding: var(--s3) var(--s4);
+  border-radius: var(--r-ctl);
+  background: var(--surface-3);
+  border: 1px solid var(--line-2);
+  box-shadow: 0 12px 32px -12px #000;
+  font-size: var(--t-small);
+  animation: sheet-up var(--dur) var(--ease-out) both;
+}
+@media (min-width: 1000px) { .toast { bottom: var(--s6); } }
+
+/* ------------------------------------------------------------------ banner */
+.banner {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--s3);
+  padding: var(--s3) var(--s4);
+  border-radius: var(--r-ctl);
+  border: 1px solid var(--line-2);
+  background: var(--surface);
+  font-size: var(--t-small);
+}
+.banner--accent { border-color: color-mix(in oklab, var(--accent) 34%, transparent); background: color-mix(in oklab, var(--accent) 9%, var(--surface)); }
+.banner--neg { border-color: var(--neg-line); background: color-mix(in oklab, var(--neg) 9%, var(--surface)); }
+.banner__icon { width: 18px; height: 18px; flex: none; margin-top: 1px; }
+
+/* ------------------------------------------------------------------- empty */
+/* Show the thing ghosted with the action on top, never apologise. */
+.empty { position: relative; border-radius: var(--r-card); overflow: hidden; }
+.empty__ghost { opacity: 0.24; filter: saturate(0.4); pointer-events: none; user-select: none; }
+.empty__over {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-content: center;
+  justify-items: center;
+  gap: var(--s3);
+  text-align: center;
+  padding: var(--s5);
+  background: linear-gradient(to bottom, color-mix(in oklab, var(--bg) 40%, transparent), color-mix(in oklab, var(--bg) 88%, transparent));
+}
+
+/* ------------------------------------------------------------------- steps */
+.steps { display: flex; gap: 6px; align-items: center; }
+.steps__pip { height: 3px; flex: 1 1 0; border-radius: var(--r-pill); background: var(--surface-3); }
+.steps__pip--on { background: var(--accent); }
+
+/* ------------------------------------------------------------------ avatar */
+.avatar {
+  width: 30px; height: 30px;
+  border-radius: var(--r-pill);
+  display: grid;
+  place-items: center;
+  background: var(--surface-3);
+  border: 1px solid var(--line-2);
+  font-size: 12px;
+  font-weight: var(--w-fig);
+  color: var(--ink-2);
+  flex: none;
+  text-transform: uppercase;
+}
+.avatar--lg { width: 56px; height: 56px; font-size: 20px; }
+
+/* ---------------------------------------------------------------- calendar */
+.cal { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 3px; }
+.cal__dow { font-size: 10px; text-align: center; color: var(--ink-3); font-weight: var(--w-label); padding-bottom: 4px; }
+.cal__cell {
+  position: relative;
+  aspect-ratio: 1;
+  max-height: 52px;
+  border-radius: var(--r-sm);
+  background: var(--surface-2);
+  display: grid;
+  place-items: center;
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+  color: var(--ink-3);
+  overflow: hidden;
+}
+.cal__fill { position: absolute; inset: 0; border-radius: inherit; }
+.cal__n { position: relative; z-index: 1; font-weight: var(--w-label); }
+.cal__cell--out { opacity: 0.3; }
+.cal__cell--future { background: color-mix(in oklab, var(--surface-2) 50%, transparent); }
+.cal__cell--today { box-shadow: inset 0 0 0 1px var(--accent); }
+
+/* ----------------------------------------------------------------- charts */
+.chartbox { width: 100%; position: relative; }
+.chartbox svg { width: 100%; height: auto; display: block; overflow: visible; }
+.axis { font-size: 10px; fill: var(--ink-3); font-variant-numeric: tabular-nums; }
+
+/* -------------------------------------------------------------------- misc */
+.hr { height: 1px; background: var(--line); border: 0; margin: var(--s5) 0; }
+.hr--strong { background: var(--line-2); }
+.kicker { font-size: var(--t-small); color: var(--ink-2); }
+.lead { font-size: 17px; line-height: 1.6; color: var(--ink-2); }
+@media (min-width: 700px) { .lead { font-size: 18px; } }
+.nowrap { white-space: nowrap; }
+.center { text-align: center; }
+.hide-sm { display: none; }
+@media (min-width: 700px) { .hide-sm { display: revert; } }

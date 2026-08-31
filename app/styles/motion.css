@@ -1,0 +1,250 @@
+/* Baked gaussian assets. feGaussianBlur is rasterised once into these
+   data URIs and used as a mask, so no live filter: blur() runs in the
+   background layer. */
+:root {
+  --blob-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 200 200'%3E%3Cdefs%3E%3Cfilter id='b' x='-60%25' y='-60%25' width='220%25' height='220%25' color-interpolation-filters='sRGB'%3E%3CfeGaussianBlur stdDeviation='26'/%3E%3C/filter%3E%3C/defs%3E%3Cellipse cx='100' cy='96' rx='56' ry='44' fill='%23ffffff' filter='url(%23b)'/%3E%3Cellipse cx='128' cy='120' rx='34' ry='30' fill='%23ffffff' filter='url(%23b)'/%3E%3C/svg%3E");
+  --grain-img: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n' x='0' y='0'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.82' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='160' height='160' filter='url(%23n)' opacity='0.55'/%3E%3C/svg%3E");
+}
+
+/* Motion.
+
+   Rules that are not negotiable and are asserted in tools/audit.ts:
+   - transform and opacity only. Never width, height, top or left.
+   - decorative layers live inside overflow:hidden, because uncontained blobs
+     previously caused 47px of horizontal scroll on a phone.
+   - a live filter: blur() is banned in the background layer. It re-evaluates
+     every scroll frame whether or not anything moves: measured 49.9ms p95
+     with it against 16.8ms without. The gaussian is baked into an SVG with
+     feGaussianBlur and used as a mask instead, so theme colour still flows
+     through the mask's background-color.
+   - everything collapses under prefers-reduced-motion. */
+
+.bgfield {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  overflow: hidden;
+  pointer-events: none;
+  contain: strict;
+}
+
+.bgfield__blob {
+  position: absolute;
+  will-change: transform;
+  -webkit-mask-image: var(--blob-mask);
+          mask-image: var(--blob-mask);
+  -webkit-mask-size: 100% 100%;
+          mask-size: 100% 100%;
+  -webkit-mask-repeat: no-repeat;
+          mask-repeat: no-repeat;
+  opacity: 0.85;
+}
+
+.bgfield__blob--a {
+  width: 78vmax; height: 62vmax;
+  left: -22vmax; top: -18vmax;
+  background: var(--glow-a);
+  animation: drift-a 46s var(--ease) infinite alternate;
+}
+.bgfield__blob--b {
+  width: 66vmax; height: 58vmax;
+  right: -20vmax; top: 12vmax;
+  background: var(--glow-b);
+  animation: drift-b 61s var(--ease) infinite alternate;
+}
+.bgfield__blob--c {
+  width: 88vmax; height: 54vmax;
+  left: 8vmax; bottom: -26vmax;
+  background: var(--glow-c);
+  animation: drift-c 73s var(--ease) infinite alternate;
+}
+
+@keyframes drift-a {
+  from { transform: translate3d(0, 0, 0) scale(1); }
+  to   { transform: translate3d(7vmax, 5vmax, 0) scale(1.14); }
+}
+@keyframes drift-b {
+  from { transform: translate3d(0, 0, 0) scale(1.06); }
+  to   { transform: translate3d(-9vmax, 8vmax, 0) scale(0.94); }
+}
+@keyframes drift-c {
+  from { transform: translate3d(0, 0, 0) scale(0.98); }
+  to   { transform: translate3d(6vmax, -6vmax, 0) scale(1.12); }
+}
+
+/* Slow parallax, scroll linked where the browser supports it. Transform only,
+   and purely decorative, so browsers without it simply keep the drift. */
+@supports (animation-timeline: scroll()) {
+  @media (prefers-reduced-motion: no-preference) {
+    .bgfield__parallax {
+      animation: bg-parallax linear both;
+      animation-timeline: scroll();
+      will-change: transform;
+    }
+  }
+}
+@keyframes bg-parallax {
+  from { transform: translate3d(0, 0, 0); }
+  to   { transform: translate3d(0, -7vmax, 0); }
+}
+
+/* Grain, and a veil that keeps text legible over the brightest part of a
+   blob. Both are painted, neither animates. */
+.bgfield__grain {
+  position: absolute;
+  inset: -50%;
+  background-image: var(--grain-img);
+  background-repeat: repeat;
+  opacity: var(--grain);
+  mix-blend-mode: overlay;
+}
+.bgfield__veil {
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(120% 80% at 50% -10%, transparent 0%, color-mix(in oklab, var(--bg) 62%, transparent) 68%, var(--bg) 100%),
+    linear-gradient(to bottom, color-mix(in oklab, var(--bg) 30%, transparent), color-mix(in oklab, var(--bg) 86%, transparent));
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .bgfield__blob { animation: none; }
+}
+
+/* ------------------------------------------------------- settlement moment */
+/* Settlement is the emotional peak of the product. 320ms, once, never
+   repeated on scroll. */
+
+@keyframes settle-lift {
+  0%   { transform: translate3d(0, 6px, 0); opacity: 0.55; }
+  55%  { transform: translate3d(0, -3px, 0); opacity: 1; }
+  100% { transform: translate3d(0, 0, 0); opacity: 1; }
+}
+@keyframes settle-fill {
+  from { transform: scale(0.55); opacity: 0; }
+  to   { transform: scale(1); opacity: 1; }
+}
+.is-settling {
+  animation: settle-lift var(--dur-settle) var(--ease-out) both;
+}
+.is-settling .cal__fill,
+.settle-fill {
+  animation: settle-fill var(--dur-settle) var(--ease-out) both;
+}
+
+/* --------------------------------------------------------- landing sequence */
+/* Scroll jacking, kept, with the five properties that separate it from the
+   version that was rejected: a real tall track, a sticky stage rather than
+   fixed, proximity snap, no intercepted wheel or touch events, and a full
+   collapse under prefers-reduced-motion. */
+
+.jack {
+  position: relative;
+  height: 260svh;
+}
+.jack__stage {
+  position: sticky;
+  top: 0;
+  height: 100svh;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+}
+@media (prefers-reduced-motion: no-preference) and (min-width: 700px) {
+  .jack { scroll-snap-type: y proximity; }
+  .jack__snap { scroll-snap-align: start; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .jack { height: auto; }
+  .jack__stage { position: static; height: auto; overflow: visible; }
+}
+
+/* ------------------------------------------------------------ the wordmark */
+/* The treatment goes on the last word of the headline, never on the wordmark:
+   a wordmark has to survive as a favicon, an app icon, an OG image and a
+   share card, and conditional on an animation it stops being one stable mark. */
+
+.slipword {
+  position: relative;
+  display: inline-block;
+  isolation: isolate;
+}
+/* The glow is a real duplicate span carrying aria-hidden, not a ::before with
+   generated content, so a screen reader cannot read the word twice. It is
+   user-select:none, so selection and copy still return one copy. */
+.slipword__glow {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  color: var(--accent);
+  opacity: 0.36;
+  filter: blur(22px);
+  pointer-events: none;
+  user-select: none;
+  -webkit-user-select: none;
+}
+.slipword__text {
+  position: relative;
+  background-image: linear-gradient(100deg,
+    var(--accent-2) 0%, var(--accent) 32%,
+    color-mix(in oklab, var(--accent) 58%, var(--ink)) 60%, var(--accent-2) 100%);
+  -webkit-background-clip: text;
+          background-clip: text;
+  color: transparent;
+  -webkit-text-fill-color: transparent;
+}
+.slipword__sheen {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;          /* the sweep is clipped to the word's own box */
+  pointer-events: none;
+  z-index: 1;
+}
+.slipword__sheen::after {
+  content: '';
+  position: absolute;
+  top: -30%; bottom: -30%;
+  left: 0;
+  width: 55%;
+  background: linear-gradient(100deg,
+    transparent 0%,
+    color-mix(in oklab, var(--ink) 62%, transparent) 50%,
+    transparent 100%);
+  mix-blend-mode: overlay;
+  transform: translate3d(-140%, 0, 0);
+  animation: sheen 1300ms var(--ease-out) 520ms 1 both;
+}
+@keyframes sheen {
+  0%   { transform: translate3d(-140%, 0, 0); opacity: 0; }
+  12%  { opacity: 1; }
+  88%  { opacity: 1; }
+  100% { transform: translate3d(300%, 0, 0); opacity: 0; }
+}
+@media (prefers-reduced-motion: reduce) {
+  /* The gradient and the glow stay. The sheen does not run. */
+  .slipword__sheen::after { animation: none; opacity: 0; }
+}
+
+/* --------------------------------------------------------------- entrances */
+@keyframes rise {
+  from { transform: translate3d(0, 14px, 0); opacity: 0; }
+  to   { transform: translate3d(0, 0, 0); opacity: 1; }
+}
+.rise { animation: rise 520ms var(--ease-out) both; }
+.rise-1 { animation-delay: 60ms; }
+.rise-2 { animation-delay: 120ms; }
+.rise-3 { animation-delay: 180ms; }
+.rise-4 { animation-delay: 240ms; }
+
+@keyframes pulse-dot {
+  0%, 100% { transform: scale(1); opacity: 1; }
+  50% { transform: scale(1.45); opacity: 0.4; }
+}
+.live-dot { animation: pulse-dot 2.4s var(--ease) infinite; }
+
+@keyframes spin { to { transform: rotate(360deg); } }
+.spin { animation: spin 900ms linear infinite; }
+
+@keyframes bar-grow {
+  from { transform: scaleX(0); }
+  to   { transform: scaleX(1); }
+}
