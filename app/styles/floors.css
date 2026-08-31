@@ -1,0 +1,55 @@
+/* The accessibility floors.
+ *
+ *  LAST in the import order on purpose. A target rule written in
+ *  components.css loses to `.mfoot a` and `.seg__btn` declared later in
+ *  marketing.css, so a floor placed anywhere but the end is not a floor, it is
+ *  a suggestion with a specificity problem.
+ *
+ *  Inline styles still beat everything here, which is why
+ *  tests/floors.test.ts greps the components for an inline minHeight under
+ *  44: a floor written in CSS can never raise one of those. */
+
+/* 44px minimum on anything that is pressed. */
+.btn,
+.btn--sm,
+.seg__btn,
+.iconbtn,
+.tab,
+.navrow,
+.check,
+.switchrow,
+.faq__q,
+.wall__btn,
+.rowcard,
+.pill--lg {
+  min-height: 44px;
+}
+
+/* A standalone text link is measured on height only. Padding a four letter
+   link out to 44px wide makes the layout worse without making the target
+   easier to hit, and a link inside a sentence is exempt entirely. */
+a.btn--link,
+button.btn--link {
+  min-height: 44px;
+}
+
+/* Where a hit area is grown with an inset pseudo-element, neighbours need a
+   16px gap or the wrong one fires. */
+.iconbtn + .iconbtn { margin-left: var(--s4); }
+
+/* Focus is visible on everything, with no radius, because an outline follows
+   the element's own border-radius and a pill would give a pill-shaped ring. */
+:where(a, button, input, select, textarea, [tabindex]):focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+  border-radius: 0;
+}
+
+/* A scrollable region has to be reachable by keyboard, or its contents are
+   unreadable without a mouse. */
+.scroller { }
+
+/* The two result colours, last, so nothing can override them by being
+   declared later. They are semantic and never theme dependent. */
+.pos { color: var(--pos); }
+.neg { color: var(--neg); }

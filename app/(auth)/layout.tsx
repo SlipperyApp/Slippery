@@ -1,5 +1,10 @@
+import type { Metadata } from 'next';
 import Link from 'next/link';
 import { Wordmark } from '@/components/Wordmark';
+
+export const metadata: Metadata = {
+  title: { default: 'Sign in', template: '%s · Slippery' },
+};
 
 export default function AuthLayout({ children }: { children: React.ReactNode }) {
   return (

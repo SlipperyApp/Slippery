@@ -9,7 +9,7 @@ import { Breakdown } from '@/components/app/Breakdown';
 import { ScopeBar } from '@/components/app/ScopeBar';
 import { Module, ModuleLink, Figure } from '@/components/app/Module';
 import { MonthCalendar } from '@/components/app/Calendar';
-import { ProfitCurve, MonthBars } from '@/components/app/Charts';
+import { ProfitCurve, MonthBars, Sparkline } from '@/components/app/Charts';
 import { BetRow, EmptyState } from '@/components/app/BetRow';
 import { Icon } from '@/components/Icon';
 import { money, pct, units as fmtUnits, count, MONTH_LONG, londonParts, TZ_LABEL } from '@/lib/format';
@@ -80,11 +80,17 @@ export default async function Dashboard({
             tone={s.netPence > 0 ? 'pos' : s.netPence < 0 ? 'neg' : ''}
             sub={`${fmtUnits(s.units, { sign: true })} on a ${money(account.unitPence, account.currency)} unit`}
           />
-          <div className="row" style={{ marginTop: 'var(--s4)', gap: 'var(--s5)' }}>
+          <div className="row row--wrap" style={{ marginTop: 'var(--s4)', gap: 'var(--s5)' }}>
             <Figure value={pct(s.roi, { sign: true })} label="Return" size="sm" tone={s.roi > 0 ? 'pos' : s.roi < 0 ? 'neg' : ''} />
             <Figure value={money(s.turnoverPence, account.currency)} label="Turnover" size="sm" />
             <Figure value={count(s.count)} label="Bets" size="sm" />
           </div>
+          {curve.length > 2 ? (
+            <div style={{ marginTop: 'auto', paddingTop: 'var(--s5)' }}>
+              <p className="label" style={{ marginBottom: 6 }}>The last {Math.min(14, curve.length)} settled days</p>
+              <Sparkline values={curve.slice(-14).map((c) => c.netPence)} height={44} />
+            </div>
+          ) : null}
         </Module>
 
         {/* ------------------------------------------------ running now */}
@@ -140,7 +146,7 @@ export default async function Dashboard({
             days={monthDays}
             now={now}
             weekStart={account.weekStart}
-            showDates={account.calendarDates}
+            show={account.calendarDates ? 'both' : 'amount'}
             currency={account.currency}
           />
         </Module>

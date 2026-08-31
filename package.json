@@ -9,8 +9,9 @@
     "lint": "next lint",
     "test": "node --experimental-strip-types --import ./tests/register.mjs --test \"tests/*.test.ts\"",
     "db:migrate": "node scripts/migrate.mjs",
-    "audit": "node --experimental-strip-types tools/audit.ts",
-    "verify": "npm run build && npm test"
+    "audit": "node tools/audit.mjs",
+    "verify": "npm run build && npm test && npm run audit",
+    "check": "node tools/check.mjs"
   },
   "dependencies": {
     "next": "15.5.24",

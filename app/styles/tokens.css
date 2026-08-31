@@ -10,6 +10,11 @@
 
    Everything else flows through custom properties and color-mix(). There is
    no hardcoded hex outside the theme blocks in this file.
+
+   --ink-3 is a BORDER and disabled-icon token. It is never a text colour: it
+   fails 4.5:1 against every ground in every one of the eight themes, which is
+   exactly how --t4 went wrong in the build before this one. Text uses --ink
+   or --ink-2, and tests/contrast.test.ts measures both against every ground.
 --------------------------------------------------------------------------- */
 
 @font-face {

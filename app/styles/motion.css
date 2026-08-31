@@ -114,10 +114,13 @@
 /* Settlement is the emotional peak of the product. 320ms, once, never
    repeated on scroll. */
 
+/* Transform only. It used to start at opacity 0.55, and with fill mode both
+   that is where the row SITS before the animation runs: text measured 3.18:1
+   waiting to move. The colour change already carries the moment. */
 @keyframes settle-lift {
-  0%   { transform: translate3d(0, 6px, 0); opacity: 0.55; }
-  55%  { transform: translate3d(0, -3px, 0); opacity: 1; }
-  100% { transform: translate3d(0, 0, 0); opacity: 1; }
+  0%   { transform: translate3d(0, 7px, 0); }
+  55%  { transform: translate3d(0, -3px, 0); }
+  100% { transform: translate3d(0, 0, 0); }
 }
 @keyframes settle-fill {
   from { transform: scale(0.55); opacity: 0; }

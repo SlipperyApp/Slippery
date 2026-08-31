@@ -68,6 +68,28 @@ export function axisMoney(minor: number, currency: Currency = 'GBP'): string {
   return `${v < 0 ? '-' : ''}${sym}${Math.abs(v)}`;
 }
 
+/** A calendar cell is about 45px wide, so no pence, and thousands abbreviate.
+ *
+ *  The figure is always SIGNED rather than left to the colour: at the bottom
+ *  of the ramp the tint is deliberately faint, and a faint red and a faint
+ *  green are precisely the two things a red-green colour blind reader cannot
+ *  separate. The minus is a real one (U+2212), not a hyphen.
+ *
+ *  A day that was bet on and came out level shows the currency and a zero,
+ *  rather than looking like a day that was sat out. */
+export function cellFigure(minor: number, currency: Currency = 'GBP'): string {
+  const sym = CURRENCY_SYMBOL[currency];
+  const pounds = minor / 100;
+  if (Math.round(pounds) === 0) return `${sym}0`;
+  const sign = pounds < 0 ? '\u2212' : '+';
+  const abs = Math.abs(pounds);
+  if (abs >= 1000) {
+    const k = abs >= 10000 ? Math.round(abs / 1000) : Math.round(abs / 100) / 10;
+    return `${sign}${sym}${k}k`;
+  }
+  return `${sign}${sym}${Math.round(abs)}`;
+}
+
 export function count(n: number): string {
   return new Intl.NumberFormat('en-GB').format(n);
 }

@@ -87,10 +87,10 @@ input, select, textarea { font-size: 16px; line-height: 1.4; }
   font-weight: var(--w-label);
   letter-spacing: var(--tr-micro);
   text-transform: uppercase;
-  color: var(--ink-3);
+  color: var(--ink-2);
 }
 .muted { color: var(--ink-2); }
-.dim { color: var(--ink-3); }
+.dim { color: var(--ink-2); }
 .small { font-size: var(--t-small); line-height: var(--lh-small); }
 
 /* Focus ring: no radius, because outline follows the element's own

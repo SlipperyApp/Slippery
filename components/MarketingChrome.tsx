@@ -79,7 +79,7 @@ export function MarketingFooter() {
               <ul className="stack" style={{ ['--gap' as string]: '2px' }}>
                 {col.links.map((l) => (
                   <li key={l.href}>
-                    <Link href={l.href} className="small muted" style={{ textDecoration: 'none', display: 'inline-flex', minHeight: '32px', alignItems: 'center' }}>
+                    <Link href={l.href} className="small muted" style={{ textDecoration: 'none', display: 'inline-flex', minHeight: '44px', alignItems: 'center' }}>
                       {l.label}
                     </Link>
                   </li>

@@ -159,7 +159,7 @@
   border: 1px solid var(--line);
   background: var(--surface);
 }
-.balance__k { font-size: 9px; letter-spacing: var(--tr-micro); text-transform: uppercase; color: var(--ink-3); font-weight: var(--w-label); }
+.balance__k { font-size: 9px; letter-spacing: var(--tr-micro); text-transform: uppercase; color: var(--ink-2); font-weight: var(--w-label); }
 .balance__v { font-size: 14px; font-weight: var(--w-fig); font-variant-numeric: tabular-nums; }
 
 .main {
@@ -193,7 +193,7 @@
   gap: 3px;
   min-height: var(--tap);
   height: 100%;
-  color: var(--ink-3);
+  color: var(--ink-2);
   text-decoration: none;
   font-size: 10px;
   font-weight: var(--w-label);

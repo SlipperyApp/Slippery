@@ -4,7 +4,10 @@ import { getViewer } from '@/lib/data/session';
 import { DemoNote } from '@/components/app/DemoNote';
 
 export const metadata: Metadata = {
-  title: 'Your ledger',
+  // A string here REPLACES the root template for the whole subtree, so every
+  // page under /app rendered a bare title with no product name in it. A
+  // default plus its own template keeps both.
+  title: { default: 'Your ledger', template: '%s · Slippery' },
   robots: { index: false, follow: false },
 };
 

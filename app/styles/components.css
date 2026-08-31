@@ -37,7 +37,7 @@
   font-weight: var(--w-label);
   letter-spacing: var(--tr-tight);
 }
-.card__note { font-size: var(--t-micro); line-height: var(--lh-micro); color: var(--ink-3); font-weight: var(--w-label); letter-spacing: 0.02em; }
+.card__note { font-size: var(--t-micro); line-height: var(--lh-micro); color: var(--ink-2); font-weight: var(--w-label); letter-spacing: 0.02em; }
 
 /* The slip motif: a torn lower edge, used wherever a bet is shown as an
    object rather than a row. */
@@ -200,7 +200,7 @@
   color: var(--ink-2);
   margin-bottom: 6px;
 }
-.field__hint { display: block; font-size: var(--t-small); color: var(--ink-3); margin-top: 6px; }
+.field__hint { display: block; font-size: var(--t-small); color: var(--ink-2); margin-top: 6px; }
 .field__err { display: block; font-size: var(--t-small); color: var(--neg); margin-top: 6px; font-weight: var(--w-label); }
 
 .input, .select, .textarea {
@@ -214,7 +214,7 @@
   font-size: 16px;                     /* iOS zooms below 16px and never back */
   transition: border-color var(--dur-fast) var(--ease), background var(--dur-fast) var(--ease);
 }
-.input::placeholder, .textarea::placeholder { color: var(--ink-3); }
+.input::placeholder, .textarea::placeholder { color: var(--ink-2); }
 .input:hover, .select:hover, .textarea:hover { border-color: var(--line-2); background: var(--surface); }
 .input:focus, .select:focus, .textarea:focus { border-color: var(--accent); background: var(--surface); }
 .textarea { min-height: 96px; resize: vertical; }
@@ -269,7 +269,7 @@
   font-size: var(--t-micro);
   letter-spacing: var(--tr-micro);
   text-transform: uppercase;
-  color: var(--ink-3);
+  color: var(--ink-2);
   font-weight: var(--w-label);
   padding: 0 var(--s3) var(--s2);
   white-space: nowrap;
@@ -289,8 +289,18 @@
 }
 .brow:first-child { border-top: 0; }
 .brow__title { font-weight: var(--w-label); font-size: var(--t-small); }
-.brow__sub { font-size: var(--t-small); color: var(--ink-3); }
-.brow--faded { opacity: 0.5; }
+.brow__sub { font-size: var(--t-small); color: var(--ink-2); }
+/* Too few bets to rank. The bet count beside the name already says so, and
+   fading the row would take the figure to about 2.9:1, so the signal is a
+   rule down the left edge and a dimmed meter, which carries no text.
+   Never fade anything that has to be read. */
+.brow--faded {
+  border-left: 2px solid var(--line-2);
+  padding-left: var(--s3);
+  margin-left: -2px;
+}
+.brow--faded .meter__fill { opacity: 0.45; }
+.brow--faded .brow__title { color: var(--ink-2); }
 
 /* ------------------------------------------------------------------ meters */
 .meter {
@@ -417,31 +427,124 @@
 .avatar--lg { width: 56px; height: 56px; font-size: 20px; }
 
 /* ---------------------------------------------------------------- calendar */
-.cal { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 3px; }
-.cal__dow { font-size: 10px; text-align: center; color: var(--ink-3); font-weight: var(--w-label); padding-bottom: 4px; }
+/*  Height driven, not width driven. Sizing cells from their width puts a six
+    row month past the bottom of the card, and overflow:hidden on .card eats
+    the last row of it without saying anything. Six rows always, and the cell
+    size follows from the height the module was given. */
+.cal {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  grid-template-rows: auto repeat(6, minmax(0, 1fr));
+  gap: 3px;
+  flex: 1 1 auto;
+  min-height: 0;
+}
+.cal__ctl { display: flex; justify-content: flex-end; margin-bottom: var(--s3); }
+.cal__dow {
+  font-size: 10px;
+  text-align: center;
+  color: var(--ink-2);
+  font-weight: var(--w-label);
+  padding-bottom: 4px;
+}
 .cal__cell {
   position: relative;
-  aspect-ratio: 1;
-  max-height: 46px;
+  min-height: 0;
+  max-height: 52px;
   border-radius: var(--r-sm);
   background: var(--surface-2);
   display: grid;
   place-items: center;
-  font-size: 11px;
   font-variant-numeric: tabular-nums;
-  color: var(--ink-3);
   overflow: hidden;
 }
 .cal__fill { position: absolute; inset: 0; border-radius: inherit; }
-.cal__n { position: relative; z-index: 1; font-weight: var(--w-label); }
-.cal__cell--out { opacity: 0.3; }
-.cal__cell--future { background: color-mix(in oklab, var(--surface-2) 50%, transparent); }
-.cal__cell--today { box-shadow: inset 0 0 0 1px var(--accent); }
+
+/*  The dark saturated anchors the ramp fades in. Mixing the semantic colour
+    45% into the ground keeps lightness almost still while chroma climbs, so
+    one text colour is readable at every step. Any higher and --ink drops
+    under 4.5:1 at the top; any lower and the strongest day stops looking
+    like a fill. */
+:root {
+  --cal-pos: color-mix(in srgb, var(--pos) 45%, var(--bg));
+  --cal-neg: color-mix(in srgb, var(--neg) 45%, var(--bg));
+}
+
+/*  Text on a filled cell is --ink and never --ink-2, which measures 2.25:1
+    against the top of the ramp. */
+.cal__n, .cal__v { position: relative; z-index: 1; color: var(--ink); line-height: 1; }
+.cal__n { font-size: 11px; font-weight: var(--w-label); }
+.cal__v { font-size: 11px; font-weight: var(--w-fig); letter-spacing: -0.01em; }
+
+/*  With both on the cell is two rows, not a centred figure with a date
+    floated over it. Absolute positioning put "16" through the middle of
+    "892" the moment a four figure day appeared. The date gets its own row
+    and the figure gets the rest, so they cannot collide at any width. */
+.cal__cell--stack {
+  display: grid;
+  grid-template-rows: auto 1fr;
+  place-items: stretch;
+  padding: 2px 4px 3px;
+}
+.cal__cell--stack .cal__n {
+  font-size: 10px;
+  justify-self: start;
+  align-self: start;
+  /* No opacity. A smaller size is the difference; fading it costs contrast
+     the ramp has already spent. */
+}
+.cal__cell--stack .cal__v {
+  align-self: center;
+  justify-self: center;
+  font-size: 11px;
+}
+/* A day that netted nothing is stated, not shouted. */
+.cal__v--flat { color: var(--ink-2); font-weight: var(--w-label); }
+
+/*  A day you did not bet on, struck out. The sr-only sentence says "no bets"
+    as well, so the line is never the only way to know. */
+.cal__cell--blank .cal__n { color: var(--ink-2); }
+.cal__n--none {
+  text-decoration: line-through;
+  text-decoration-thickness: 1px;
+  text-decoration-color: color-mix(in srgb, var(--ink-2) 62%, transparent);
+}
+
+/*  A day that has not happened is recessed rather than struck out. No opacity
+    on the date: the recessed ground is the difference. */
+.cal__cell--future {
+  background: color-mix(in srgb, var(--surface-2) 45%, var(--bg));
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--line) 60%, transparent);
+}
+.cal__cell--future .cal__n { color: var(--ink-2); }
+
+.cal__cell--out { background: none; }
+.cal__cell--today { box-shadow: inset 0 0 0 1.5px var(--accent); }
+
+.cal__key {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: var(--s3);
+  font-size: var(--t-micro);
+  line-height: var(--lh-micro);
+  color: var(--ink-2);
+}
+.cal__keyswatch { width: 10px; height: 10px; border-radius: 3px; flex: none; }
+.cal__keyswatch--pos { background: var(--cal-pos); }
+.cal__keyswatch--neg { background: var(--cal-neg); }
+
+.seg--xs .seg__btn { font-size: var(--t-micro); padding: 0 8px; min-height: 34px; }
+@media (max-width: 699px), (pointer: coarse) {
+  /* Both axes. A four letter label makes a 40px wide button, which is a
+     comfortable click and a poor tap. */
+  .seg--xs .seg__btn { min-height: var(--tap); min-width: var(--tap); }
+}
 
 /* ----------------------------------------------------------------- charts */
 .chartbox { width: 100%; position: relative; }
 .chartbox svg { width: 100%; height: auto; display: block; overflow: visible; }
-.axis { font-size: 10px; fill: var(--ink-3); font-variant-numeric: tabular-nums; }
+.axis { font-size: 10px; fill: var(--ink-2); font-variant-numeric: tabular-nums; }
 
 /* -------------------------------------------------------------------- misc */
 .hr { height: 1px; background: var(--line); border: 0; margin: var(--s5) 0; }
@@ -459,4 +562,4 @@
 .medal--1 { color: #E8C35A; }
 .medal--2 { color: #C7CBD1; }
 .medal--3 { color: #C08552; }
-.medal--none { color: var(--ink-3); }
+.medal--none { color: var(--ink-2); }

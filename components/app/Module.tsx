@@ -34,7 +34,7 @@ export function Module({
 
 export function ModuleLink({ href, children }: { href: string; children: React.ReactNode }) {
   return (
-    <Link href={href} className="small" style={{ display: 'inline-flex', alignItems: 'center', gap: 6, minHeight: 32, textDecoration: 'none', color: 'var(--accent)' }}>
+    <Link href={href} className="small" style={{ display: 'inline-flex', alignItems: 'center', gap: 6, minHeight: 44, textDecoration: 'none', color: 'var(--accent)' }}>
       {children} <Icon name="arrowRight" size={14} />
     </Link>
   );
