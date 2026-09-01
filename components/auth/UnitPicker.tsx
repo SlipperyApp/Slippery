@@ -48,7 +48,7 @@ export function UnitPicker() {
           ))}
         </div>
         <p className="field__hint">
-          One currency per account. Pounds and euros are never summed into one net figure.
+          One per account. Pounds and euros are never summed into one figure.
         </p>
       </fieldset>
 
@@ -108,8 +108,7 @@ export function UnitPicker() {
           ))}
         </ul>
         <p className="small dim card__foot">
-          You can change this later. Bets already logged keep the unit they were logged with, so
-          your history never rewrites itself.
+          You can change this later. Bets already logged keep the unit they had.
         </p>
       </div>
 

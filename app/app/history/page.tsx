@@ -41,7 +41,8 @@ export default async function History() {
 
       <div className="card" style={{ marginBottom: 'var(--s4)' }}>
         <p className="small muted">
-          <code>settlement_events</code> is append only: a correction is a new event, never an edit. Events entered <strong>after a result was known</strong> are flagged.
+          Append only: a correction is a new event, never an edit. Anything entered{' '}
+          <strong>after a result was known</strong> is flagged.
         </p>
         <div className="row row--wrap" style={{ gap: 'var(--s6)', marginTop: 'var(--s4)' }}>
           <div><p className="label">Events shown</p><p className="fig fig--s tnum">{rows.length}</p></div>

@@ -45,10 +45,10 @@ export default async function GroupPage({
       <div className="banner banner--accent" style={{ marginBottom: 'var(--s4)' }}>
         <Icon name="shield" size={18} className="banner__icon" />
         <span>
-          {verified}% of the bets on this leaderboard came from a slip captured at placement.
+          {verified}% of the bets here came from a slip captured at placement.
           {summary.slipBackedOnly
-            ? ' This group only counts slip backed bets, so a typed-in winner cannot move a position.'
-            : ' Typed-in bets count here and are marked on each row.'}
+            ? ' This group counts slip backed bets only, so a typed-in winner cannot move a position.'
+            : ' Typed-in bets count, and are marked.'}
         </span>
       </div>
 

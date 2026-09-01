@@ -36,7 +36,10 @@ export function League({
             <span className="avatar" aria-hidden="true">{initials(r.name)}</span>
             <span style={{ minWidth: 0 }}>
               <Link href={`/app/social/person?handle=${r.handle}`} className="brow__title" style={{ textDecoration: 'none' }}>
-                {r.name}{mine ? <span className="dim"> (you)</span> : null}
+                {/*  A margin, not a leading space. a.brow__title is inline-flex
+                     for the tap-target floor, and a flex item's leading
+                     whitespace is trimmed, so the row read "Tester(you)". */}
+                {r.name}{mine ? <span className="dim league__you">(you)</span> : null}
               </Link>
               <span className="brow__sub" style={{ display: 'block' }}>
                 <span className="mono">@{r.handle}</span>

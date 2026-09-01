@@ -360,6 +360,7 @@
     1fr column collapsed under the width of one word. 88px is four or five
     characters, which is enough for the value beside it to wrap first. */
 .brow--field { grid-template-columns: 20px minmax(88px, 1fr) auto; gap: var(--s3); }
+.league__you { margin-left: 4px; }
 /*  Under 400 there is no width for three columns. "Saw: Each line priced
     separately, which is what a Lucky 15 does" in a 78px mono column is eight
     lines of two words. The value drops under the label instead, still in the
