@@ -102,3 +102,22 @@ test('the fonts are the two the product uses, and no others', () => {
     assert.ok(!css.includes(banned), `${banned} is in tokens.css`);
   }
 });
+
+test('the product says return, never ROI, in anything a reader sees', () => {
+  /*  Both words were in use: the dashboard and the facets said RETURN, and
+   *  four screens said ROI, including the two next to each other on the
+   *  ledger. One product, one word for one number.
+   *
+   *  ROI is precise, and it stays in the code comments and the type names
+   *  where the precision is the point. It is jargon on a page. */
+  const found: string[] = [];
+  for (const f of FILES.filter((x) => x.endsWith('.tsx'))) {
+    const src = readFileSync(f, 'utf8')
+      .replace(/\/\*[\s\S]*?\*\//g, ' ')     // block comments, JSX comments included
+      .replace(/^\s*\/\/.*$/gm, ' ');        // line comments
+    src.split('\n').forEach((line, i) => {
+      if (/\bROI\b/.test(line)) found.push(`${f}:${i + 1} ${line.trim().slice(0, 70)}`);
+    });
+  }
+  assert.deepEqual(found, [], found.join('\n'));
+});

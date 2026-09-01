@@ -80,13 +80,16 @@ export function SettingsPanes({ groups, account }: { groups: SettingsGroup[]; ac
         ))}
       </div>
 
+      {/*  The idle pane is titled for what it holds, not for what to do next.
+           "Pick a group" was an instruction aimed at the list beside it on a
+           desktop. On a phone the list is stacked above, so the card read as a
+           group picker showing a unit size and a theme, and "group" already
+           means a social group everywhere else in this product. */}
       <div className="col-8" id="settings-pane" aria-live="polite">
         {open === null ? (
           <div className="card">
-            <p className="card__title">Pick a group</p>
-            <div className="hr" />
-            <p className="label">Right now</p>
-            <ul style={{ marginTop: 'var(--s3)' }}>
+            <p className="card__title">Right now</p>
+            <ul style={{ marginTop: 'var(--s4)' }}>
               <li className="brow"><span className="brow__title">Unit</span><span className="fig fig--s tnum">{money(unitPence, currency)}</span></li>
               <li className="brow"><span className="brow__title">A profit of {money(sampleProfit, currency)} reads as</span><span className="fig fig--s tnum">{profitPreview}</span></li>
               <li className="brow"><span className="brow__title">A price of 1.90 reads as</span><span className="fig fig--s mono">{formatOdds(1.9, oddsFormat)}</span></li>

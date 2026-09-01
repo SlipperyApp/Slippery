@@ -127,8 +127,8 @@ export function ManualEntry({
           </div>
           {side === 'lay' ? (
             <p className="small dim" style={{ marginTop: 'var(--s2)' }}>
-              A lay risks its liability, and its liability is the ROI denominator. It is never
-              averaged into your back-bet price statistics.
+              A lay risks its liability, and the liability is what the return is measured
+              against. It is never averaged into your back-bet prices.
             </p>
           ) : null}
         </section>

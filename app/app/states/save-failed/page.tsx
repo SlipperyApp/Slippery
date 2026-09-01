@@ -14,8 +14,8 @@ export default function SaveFailed() {
       <span className="pill pill--neg">Nothing was written</span>
       <h1 style={{ marginTop: 'var(--s4)' }}>The arithmetic did not add up, so nothing was saved</h1>
       <p className="lead" style={{ marginTop: 'var(--s3)' }}>
-        A cash out cannot return more than the bet could ever have returned. Rather than store a
-        figure that would quietly corrupt your ROI, the write was refused whole.
+        A cash out cannot return more than the bet could ever have returned, so rather than store
+        a figure that would corrupt your return, nothing was written.
       </p>
 
       <div className="card" style={{ marginTop: 'var(--s6)' }}>

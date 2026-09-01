@@ -71,7 +71,7 @@ export default async function Ledger({
         </div>
         {s.voidedStakePence > 0 ? (
           <p className="small dim card__foot">
-            Turnover and ROI exclude {money(s.voidedStakePence, account.currency)} of voided stakes.
+            Turnover and return exclude {money(s.voidedStakePence, account.currency)} of voided stakes.
           </p>
         ) : (
           <p className="small dim card__foot">{scopeLabel(scope)}.</p>

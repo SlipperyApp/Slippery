@@ -55,11 +55,8 @@ export default async function Social() {
               </li>
             ))}
           </ul>
-          <div className="card__foot row" style={{ gap: 'var(--s3)' }}>
+          <div className="card__foot">
             <Link href="/app/social/discover" className="btn btn--ghost btn--sm">Find a group</Link>
-            <p className="small dim">
-              Groups cannot be renamed once created.
-            </p>
           </div>
         </section>
 
@@ -73,9 +70,6 @@ export default async function Social() {
             {fmtUnits(you.unitsMonth, { league: true, sign: true })}
           </p>
           <p className="small dim" style={{ marginTop: 4 }}>{you.slipBackedPct}% of them slip backed</p>
-          <p className="small muted card__foot">
-            Units to 1dp here, 2dp everywhere else. Outside a group, only units are visible.
-          </p>
         </section>
 
         <section className="card col-6">
