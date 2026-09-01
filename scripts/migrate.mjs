@@ -54,6 +54,7 @@ try {
 
   const files = readdirSync(DIR).filter((f) => f.endsWith('.sql')).sort();
   let ran = 0;
+  let failed = 0;
 
   for (const file of files) {
     if (applied.has(file)) continue;
@@ -69,15 +70,24 @@ try {
     } catch (err) {
       await client.query('rollback').catch(() => {});
       // Loud, and still not fatal: a red deployment helps nobody at 4am.
+      failed += 1;
       console.error(`[migrate] FAILED on ${file}. Nothing from that file was applied.`);
       console.error(`[migrate] ${err && err.message ? err.message : String(err)}`);
+      console.error('[migrate] GET /api/sources will report schema.applied without it.');
       break;
     } finally {
       client.release();
     }
   }
 
-  console.log(`[migrate] ${ran} applied, ${files.length - ran} already present.`);
+  // Counted honestly. The old line said "already present" for a file that had
+  // just failed, which is the opposite of what happened.
+  const alreadyPresent = files.filter((f) => applied.has(f)).length;
+  const notReached = files.length - ran - failed - alreadyPresent;
+  console.log(
+    `[migrate] ${ran} applied, ${alreadyPresent} already present, `
+    + `${failed} failed, ${notReached} not reached.`,
+  );
 } catch (err) {
   console.error('[migrate] could not reach the database:', err && err.message ? err.message : String(err));
   console.error('[migrate] the deployment continues; GET /api/sources reports what it can reach.');

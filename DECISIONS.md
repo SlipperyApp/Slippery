@@ -248,6 +248,33 @@ class that is not deciding on an outcome, a money figure, the sign of a number,
 the calendar ramp, or one of the two places the brief explicitly specifies a
 result colour: the "Save £11.89 a year" pill and the destructive block.
 
+## The migration that ran, failed, and looked fine
+
+`0001_init.sql` uses `create table if not exists`, which is correct for a file
+that may be re-run. Against a database that already held the previous build's
+tables, with the same NAMES and different SHAPES, "if not exists" quietly kept
+the old ones, and the first `create index ... (email, ...)` then failed with
+`column "email" does not exist`. The whole file rolled back.
+
+Nothing looked wrong. The build was green, because the runner is deliberately
+not fatal: a deployment that cannot reach its database should still deploy and
+say so rather than leaving nothing at all. Every route answered 200, because
+the read path renders from the example account. The only thing that knew was
+`GET /api/sources`, reporting `schema.applied: []`, and it took three
+deployments before anybody read it.
+
+Two fixes. `0000_drop_legacy.sql` drops the previous build's tables by name,
+which the brief explicitly permits, and it names only the tables this schema
+owns: dropping one nobody asked about is not a migration, it is a guess. And
+the runner's summary line said "1 already present" for a file that had just
+failed, which is the opposite of what happened; it now counts applied, already
+present, failed and not reached separately.
+
+**The lesson worth keeping:** a build that goes green is not a deployment that
+works, and the honest-degradation design that keeps the site up is exactly
+what hides a failure like this. `/api/sources` exists for that, and it is only
+useful if somebody looks at it after every deploy that touches the schema.
+
 ## What is not finished, and what I would do next
 
 Written last, and honestly. Everything in the route map is live and every
@@ -279,7 +306,7 @@ account", and several things below are the difference.
 ### Real gaps I would close first
 
 1. **The app renders from the example account, not from Postgres.** The schema
-   is applied, `appendEvent` and the fold write through it, and every write
+   is applied (see the entry above for the two deploys where it was not), `appendEvent` and the fold write through it, and every write
    route refuses honestly without a session. But the read path on every page
    still goes to `lib/data/demo.ts`. The next commit is a repository behind
    `getViewer()` that returns the signed-in account's rows when there is a
