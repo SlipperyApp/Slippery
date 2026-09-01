@@ -55,14 +55,23 @@ export type RampStep = {
  *
  *  Worst case is now 4.55:1, at periwinkle, on a loss figure at the top of
  *  the low band. Every other theme is 4.58 or better. The dead zone the ramp
- *  skips is wider than the one specified, 0.20 to 0.66 rather than 0.30 to
- *  0.66, which is the safer direction. */
+ *  skips is wider than the one specified, 0.20 to 0.72 rather than 0.30 to
+ *  0.66, which is the safer direction.
+ *
+ *  HIGH_FROM MOVED AGAIN, 0.66 to 0.72, when the eight palettes were replaced
+ *  with the prototype's own. The high band puts --bg on the composite, so a
+ *  theme with a light page ground has the least room here, and prototype
+ *  slate is drawn as "the lightest dark": at 0.66 its high band date measured
+ *  4.37:1. Scanning the whole band across all eight themes, 0.70 is the first
+ *  value that clears 4.5 and the limit stops being the high band at all; 0.72
+ *  takes it with a little margin. Nothing else in the ramp changed, and the
+ *  worst case is still where it was, in the low band. */
 export const RAMP = {
   /** Where the low band ends and the high band begins. */
   SPLIT: 0.5,
   LOW_FROM: 0.14,
   LOW_TO: 0.20,
-  HIGH_FROM: 0.66,
+  HIGH_FROM: 0.72,
   HIGH_TO: 1.0,
   /** The date on a high band cell, as a proportion of the page ground. */
   DATE_ON_HIGH: 0.9,

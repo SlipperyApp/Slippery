@@ -40,6 +40,9 @@
 .brand {
   display: inline-flex;
   align-items: center;
+  /*  The gap is set inline by components/Brand.tsx, derived from the mark's
+      size so the lockup keeps the brand pack's proportions at every size.
+      This is only the fallback for a .brand that carries no lockup. */
   gap: var(--s2);
   text-decoration: none;
   position: relative;
@@ -49,7 +52,12 @@
   margin-inline: calc(var(--s1h) * -1);
   padding-inline: var(--s1h);
 }
-.brand__mark { width: 26px; height: 26px; flex: none; }
+/*  NO SIZE HERE. This pinned the mark to 26px and won against the width and
+    height attributes the component sets, so every caller that asked for a
+    larger mark got 26 and the lockup's measured proportions came out at
+    cap/glyph 1.000 against a true 0.619: the word rendered exactly as tall
+    as the S. components/Brand.tsx is the one place a size is chosen. */
+.brand__mark { flex: none; }
 .brand__word {
   font-size: 18px;
   line-height: 1;

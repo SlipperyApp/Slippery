@@ -11,7 +11,7 @@ export const metadata: Metadata = {
 export default function FourOhFour() {
   return (
     <div className="page">
-      <MarketingHeader id="wm-404" />
+      <MarketingHeader />
       <main id="main"><div className="wrap"><NotFoundPane /></div></main>
       <MarketingFooter />
     </div>

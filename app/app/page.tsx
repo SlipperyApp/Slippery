@@ -2,15 +2,14 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { getViewer } from '@/lib/data/session';
 import {
-  select, summarise, byDay, cumulative, runningNow, settledToday,
+  select, summarise, byDay, cumulative,
   offerSplit, scopeFromParams, scopeLabel, buildBreakdowns,
 } from '@/lib/data/analytics';
 import { Breakdown } from '@/components/app/Breakdown';
 import { NetHero } from '@/components/app/NetHero';
-import { Module, ModuleLink, Figure } from '@/components/app/Module';
+import { Module, Figure } from '@/components/app/Module';
 import { MonthCalendar } from '@/components/app/Calendar';
 import { ProfitCurve } from '@/components/app/Charts';
-import { BetRow, EmptyState } from '@/components/app/BetRow';
 import { Icon } from '@/components/Icon';
 import { money, pct, count } from '@/lib/format';
 
@@ -41,8 +40,6 @@ export default async function Dashboard({
   const wideCurve = cumulative(allDays);
   const curveIsWide = curve.length < 2 && wideCurve.length > 1;
   const shownCurve = curveIsWide ? wideCurve : curve;
-  const running = runningNow(bets);
-  const today = settledToday(bets, now);
   const offers = offerSplit(bets);
   /*  Six dimensions in one module. Odds and stake used to be two more cards
       beside it, drawing the same row with the same bar. */
@@ -105,50 +102,28 @@ export default async function Dashboard({
         </Module>
 
 
-        {/* ------------------------------------------------ running now */}
-        <Module
-          title="Running now"
-          span={5}
-          size="xl"
-          note="Ignores the scope"
-          id="mod-running"
-          footer={<ModuleLink href="/app/ledger">Open the ledger</ModuleLink>}
-        >
-          {running.length === 0 && today.length === 0 ? (
-            <EmptyState
-              title="Nothing running. Forward a slip and it lands here."
-              action="Add a bet"
-              href="/app/import"
-              ghost={<ul><li className="brow"><span className="brow__title">Arsenal to win</span><span className="fig fig--s">£38.25</span></li></ul>}
-            />
-          ) : (
-            <div
-              className="grow"
-              style={{ overflowY: 'auto', minHeight: 0 }}
-              tabIndex={0}
-              role="region"
-              aria-label="Running now and settled today, scrollable"
-            >
-              {running.length > 0 ? (
-                <>
-                  <p className="label" style={{ marginBottom: 4 }}>
-                    {running.length} open · {money(s.openStakePence, account.currency)} exposure
-                  </p>
-                  <ul>
-                    {running.slice(0, 5).map((b) => <BetRow key={b.id} bet={b} currency={account.currency} />)}
-                  </ul>
-                </>
-              ) : null}
-              {today.length > 0 ? (
-                <>
-                  <p className="label" style={{ marginTop: 'var(--s4)', marginBottom: 4 }}>Settled today</p>
-                  <ul>
-                    {today.slice(0, 3).map((b) => <BetRow key={b.id} bet={b} currency={account.currency} settling />)}
-                  </ul>
-                </>
-              ) : null}
-            </div>
-          )}
+        {/*  THE SECOND HALF OF THE FOLD IS A STATISTIC, NOT A BET.
+             What was here was "Running now": two open slips and whatever
+             settled today, by name, by price, by bookmaker. Every one of
+             those is a question about a particular bet, and a particular bet
+             has a page that is entirely about particular bets. It moved to
+             the ledger, above the rows, where the open positions sit at the
+             top of the list they belong to.
+
+             The record took the slot because it is the same shape of thing
+             as the calendar beside it: six numbers that describe the whole
+             account and change slowly. It was at the very bottom of the page
+             before, under three analysis modules, which is a strange place
+             for the six figures somebody would most like at a glance. */}
+        <Module title="The record" span={5} size="xl" id="mod-record" note="All time">
+          <div className="record">
+            <Figure value={pct(s.winRate)} label="Win rate" size="md" sub={`${s.wins} won, ${s.losses} lost`} />
+            <Figure value={s.avgOdds.toFixed(2)} label="Average price" size="md" sub={`across ${count(s.count)} bets`} />
+            <Figure value={money(s.avgStakePence, account.currency)} label="Average stake" size="md" sub={`${money(account.unitPence, account.currency)} a unit`} />
+            <Figure value={money(s.turnoverPence, account.currency)} label="Turnover" size="md" sub="Void stakes excluded" />
+            <Figure value={String(s.longestWin)} label="Longest winning run" size="md" sub={`${s.longestLoss} is the longest losing one`} />
+            <Figure value={count(s.voids)} label="Void" size="md" sub="Neither won nor lost" />
+          </div>
         </Module>
 
         {/*  Below the fold on purpose, and labelled so it reads as a
@@ -210,17 +185,6 @@ export default async function Dashboard({
           <Breakdown rowsByDim={breakdowns} currency={account.currency} />
         </Module>
 
-        {/* -------------------------------------------------- all time */}
-        <Module title="The record" span={12} size="s" id="mod-record">
-          <div className="row row--wrap" style={{ gap: 'var(--s7)' }}>
-            <Figure value={pct(s.winRate)} label="Win rate" size="sm" sub={`${s.wins} won, ${s.losses} lost`} />
-            <Figure value={s.avgOdds.toFixed(2)} label="Average price" size="sm" />
-            <Figure value={money(s.avgStakePence, account.currency)} label="Average stake" size="sm" />
-            <Figure value={String(s.longestWin)} label="Longest winning run" size="sm" />
-            <Figure value={String(s.longestLoss)} label="Longest losing run" size="sm" />
-            <Figure value={count(s.voids)} label="Void" size="sm" sub="Excluded from turnover" />
-          </div>
-        </Module>
       </div>
     </>
   );

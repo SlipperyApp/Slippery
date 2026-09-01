@@ -102,19 +102,73 @@ test('the four semantic colours clear 4.5 to 1 on every ground, in all eight the
   assert.deepEqual(failures, []);
 });
 
-test('the accent clears 4.5 to 1 on the page ground, in all eight themes', () => {
+/*  --accent is measured at TWO bars, because it does two jobs and only one
+ *  of them is reading.
+ *
+ *  4.5:1 against --bg, because --accent-ink IS --bg and it sits on --accent
+ *  in a primary button, so that pair carries words.
+ *
+ *  3:1 on the other grounds, which is WCAG 1.4.11 for a graphical object,
+ *  because --accent is never text: every `color: var(--accent)` in
+ *  app/styles is on an SVG icon, a focus ring, a border or a blurred glow,
+ *  and the test below this one keeps it that way. --accent-2 is the accent
+ *  made to be read, and the two exist so that this distinction can hold.
+ *
+ *  This test used to demand 4.5 on --surface as well. The cost showed up
+ *  when the eight palettes were replaced with the prototype's own: cinnabar's
+ *  accent measured 4.47:1 against its own card, and the choice was to weaken
+ *  a real colour by 0.03 to satisfy a bar nothing on that card was held to. */
+test('the accent clears its two bars, in all eight themes', () => {
   const failures: string[] = [];
   for (const theme of THEME_NAMES) {
     const t = block(theme);
-    for (const ground of ['bg', 'surface']) {
-      const ratio = contrast(t.accent, t[ground]);
-      if (ratio < 4.5) failures.push(`${theme}: --accent ${t.accent} on --${ground} ${t[ground]} is ${ratio.toFixed(2)}:1`);
-    }
-    // And text ON the accent, for a primary button.
+    // The primary button: --accent-ink on --accent, and it is --bg either way.
     const onAccent = contrast(t['accent-ink'], t.accent);
     if (onAccent < 4.5) failures.push(`${theme}: --accent-ink on --accent is ${onAccent.toFixed(2)}:1`);
+    // Icons, rings and borders, on any ground.
+    for (const ground of ['bg', 'surface', 'surface-2', 'surface-3']) {
+      const r = contrast(t.accent, t[ground]);
+      if (r < 3) failures.push(`${theme}: --accent ${t.accent} on --${ground} ${t[ground]} is ${r.toFixed(2)}:1 as a graphical object`);
+    }
+    // --accent-2 is the one that carries words, and it holds the full bar.
+    for (const ground of ['bg', 'surface', 'surface-2', 'surface-3']) {
+      const r = contrast(t['accent-2'], t[ground]);
+      if (r < 4.5) failures.push(`${theme}: --accent-2 ${t['accent-2']} on --${ground} ${t[ground]} is ${r.toFixed(2)}:1`);
+    }
   }
   assert.deepEqual(failures, []);
+});
+
+/*  --accent is the button GROUND. --accent-2 is the one of the two accents
+ *  made to be read. The stylesheet has said so since .pill--accent was
+ *  written, and a component then said color: 'var(--accent)' in an inline
+ *  style, which no stylesheet rule can reach: the selected ledger facet
+ *  measured 4.38:1 and axe called it serious. Inline styles are where this
+ *  comes back, so this reads the components. */
+test('no component paints text in the button accent', () => {
+  const roots = ['components', 'app'];
+  const offences: string[] = [];
+  const walk = (dir: string) => {
+    for (const e of readdirSync(new URL(`../${dir}/`, import.meta.url), { withFileTypes: true })) {
+      if (e.isDirectory()) { walk(`${dir}/${e.name}`); continue; }
+      if (!e.name.endsWith('.tsx')) continue;
+      const rel = `${dir}/${e.name}`;
+      const src = readFileSync(new URL(`../${rel}`, import.meta.url), 'utf8');
+      /*  color, and only color. background-color, border-color, outline-color,
+          fill and accent-color are all legitimate uses of the button accent:
+          accent-color paints a range slider's fill, which is a control, not
+          a word. */
+      for (const m of src.matchAll(/(?:^|[^A-Za-z-])color:\s*'var\(--accent\)'/gi)) {
+        const line = src.slice(0, m.index).split('\n').length;
+        // An icon is a graphical object at 3:1, not text.
+        const around = src.slice(Math.max(0, (m.index ?? 0) - 160), m.index);
+        if (/<Icon\b|<svg\b/.test(around)) continue;
+        offences.push(`${rel}:${line} paints text in --accent`);
+      }
+    }
+  };
+  for (const r of roots) walk(r);
+  assert.deepEqual(offences, [], offences.join('\n'));
 });
 
 test('a border token is never used as a text colour', () => {

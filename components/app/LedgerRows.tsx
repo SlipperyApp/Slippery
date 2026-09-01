@@ -72,19 +72,27 @@ export function LedgerRows({
       </form>
 
       <div className="row row--wrap" style={{ gap: 'var(--s2)', marginBottom: 'var(--s3)' }}>
+        {/*  .pill--accent, not an inline colour. These carried
+             color: var(--accent) written by hand, which is the exact thing
+             .pill--accent exists to stop: --accent is the button GROUND
+             colour and measured 4.38:1 as text on a card, which axe found
+             and called serious. The class uses --accent-2, which is the one
+             of the two accents made for text. */}
         <button
-          type="button" className="pill pill--lg" aria-pressed={!activeOutcome}
+          type="button" className={`pill pill--lg${activeOutcome ? '' : ' pill--accent'}`}
+          aria-pressed={!activeOutcome}
           onClick={() => set('outcome', null)}
-          style={{ cursor: 'pointer', ...(activeOutcome ? {} : { borderColor: 'var(--accent)', color: 'var(--accent)' }) }}
+          style={{ cursor: 'pointer' }}
         >
           All <span className="tnum">{facetTotal}</span>
         </button>
         {facets.map((f) => (
           <button
-            key={f.id} type="button" className="pill pill--lg"
+            key={f.id} type="button"
+            className={`pill pill--lg${activeOutcome === f.id ? ' pill--accent' : ''}`}
             aria-pressed={activeOutcome === f.id}
             onClick={() => set('outcome', activeOutcome === f.id ? null : f.id)}
-            style={{ cursor: 'pointer', ...(activeOutcome === f.id ? { borderColor: 'var(--accent)', color: 'var(--accent)' } : {}) }}
+            style={{ cursor: 'pointer' }}
           >
             {f.label} <span className="tnum">{f.count}</span>
           </button>

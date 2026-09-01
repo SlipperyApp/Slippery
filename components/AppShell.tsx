@@ -1,10 +1,9 @@
 'use client';
 
 import Link from 'next/link';
+import { Brand } from '@/components/Brand';
 import { usePathname } from 'next/navigation';
 import { Icon } from '@/components/Icon';
-import { Wordmark } from '@/components/Wordmark';
-import { Mark } from '@/components/Mark';
 import { SIDE_NAV, TAB_NAV, isActive } from '@/lib/nav';
 import { money, type Currency } from '@/lib/format';
 
@@ -28,11 +27,7 @@ export function AppShell({ chrome, children }: { chrome: ShellChrome; children: 
   return (
     <div className="shell page">
       <aside className="side">
-        <Link href="/" className="brand" aria-label="Slippery, home">
-          <Mark className="brand__mark" size={26} />
-          <Wordmark id="wm-side" height={17} />
-          <span className="sr-only">Slippery</span>
-        </Link>
+        <Brand size={40} />
 
         <Link href="/app/import" className="btn btn--primary btn--wide">
           <Icon name="plus" size={18} />
@@ -75,9 +70,10 @@ export function AppShell({ chrome, children }: { chrome: ShellChrome; children: 
 
       <div style={{ minWidth: 0 }}>
         <header className="topbar">
-          <Link href="/app" className="brand" aria-label="Slippery, dashboard" style={{ minWidth: 0 }}>
-            <Mark className="brand__mark" size={26} />
-          </Link>
+          {/*  Icon only: the top bar already carries the handle, the example
+               pill and the bankroll, and a word beside them at 390 is what
+               truncated the handle to "@tester1...". */}
+          <Brand size={34} href="/app" word={false} label="Slippery, dashboard" />
 
           <div className="topbar__mid">
             <span className="avatar" aria-hidden="true">{chrome.displayName.slice(0, 1)}</span>

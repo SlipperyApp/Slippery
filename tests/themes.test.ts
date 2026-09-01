@@ -192,3 +192,58 @@ test('no two themes look the same in the picker row', () => {
     seen.set(key, t.name);
   }
 });
+
+/*  The test above only ever caught two themes that were byte for byte
+    identical, which is not the way themes go wrong. Measured, they had gone
+    wrong the other way: every one of the 28 pairs sat at or under 0.08 oklab,
+    the threshold this file already uses for "two colours that read as one",
+    and carbon and slate were 0.013 apart. Eight themes, and by the project's
+    own measure not one was distinct from any other, because a person picking
+    a dark blue by eye picks very nearly the same dark blue every time.
+
+    A generated set fixed the measurement and lost what the measurement could
+    not see, which is that these eight were designed. The palettes are the
+    prototype's own now, and this assertion is a FLOOR UNDER THE DESIGN rather
+    than a target it was made to hit: it catches two themes collapsing into
+    each other in a future edit, and it does not overrule the person who chose
+    them. The set measures 0.027 at its closest, carbon against periwinkle,
+    and 0.020 is the line. */
+test('no two themes are the same theme', () => {
+  const KEYS = ['--bg', '--card', '--raise', '--elev', '--line', '--line2', '--p', '--s'];
+  const FLOOR = 0.020;
+  const rows: string[] = [];
+  let worst = { d: 9, at: '' };
+  for (let i = 0; i < THEMES.length; i += 1) {
+    for (let j = i + 1; j < THEMES.length; j += 1) {
+      const a = paletteOf(THEMES[i].name);
+      const b = paletteOf(THEMES[j].name);
+      const ds = KEYS.map((k) => deltaE(a[k.slice(2)], b[k.slice(2)]));
+      const mean = ds.reduce((x, y) => x + y, 0) / ds.length;
+      const at = `${THEMES[i].name} and ${THEMES[j].name}`;
+      if (mean < worst.d) worst = { d: mean, at };
+      if (mean < FLOOR) rows.push(`${at} are ${mean.toFixed(3)} apart on average, under ${FLOOR}`);
+    }
+  }
+  assert.deepEqual(rows, [], `${rows.join('\n')}\n(closest pair ${worst.at} at ${worst.d.toFixed(3)})`);
+});
+
+/*  A theme is a set of surfaces, and a surface that cannot be told from the
+    one under it is not a surface. Both of these were real: ink's --line and
+    --card quantised to the same #030304, and slate's --card and --raise
+    measured 0.010 apart. */
+test('every theme has four distinguishable surfaces and a visible border', () => {
+  const rows: string[] = [];
+  for (const t of THEMES) {
+    const p = paletteOf(t.name);
+    const order = ['bg', 'card', 'raise', 'elev'];
+    for (let i = 0; i < order.length - 1; i += 1) {
+      const d = deltaE(p[order[i]], p[order[i + 1]]);
+      if (d < 0.012) rows.push(`${t.name}: --${order[i]} and --${order[i + 1]} are ${d.toFixed(3)} apart`);
+    }
+    for (const [a, b] of [['line', 'card'], ['line', 'bg'], ['line2', 'raise']]) {
+      const d = deltaE(p[a], p[b]);
+      if (d < 0.011) rows.push(`${t.name}: --${a} and --${b} are ${d.toFixed(3)} apart, so there is no edge`);
+    }
+  }
+  assert.deepEqual(rows, [], rows.join('\n'));
+});

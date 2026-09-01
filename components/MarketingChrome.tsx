@@ -1,19 +1,17 @@
 import Link from 'next/link';
+import { Brand } from '@/components/Brand';
 import { Icon } from '@/components/Icon';
-import { Wordmark } from '@/components/Wordmark';
-import { Mark } from '@/components/Mark';
 import { MARKETING_NAV } from '@/lib/nav';
 
 /** Anything that navigates is an anchor with an href, never a button. */
-export function MarketingHeader({ id = 'wm-head' }: { id?: string }) {
+/*  No id prop any more. It existed only to give each wordmark's clipPath a
+    unique name, and the cut is a CSS clip-path: path() now, which has no
+    name to collide. */
+export function MarketingHeader() {
   return (
     <header className="mhead">
       <div className="wrap mhead__in">
-        <Link href="/" className="brand" aria-label="Slippery, home">
-          <Mark className="brand__mark" size={26} />
-          <Wordmark id={id} height={17} className="hide-sm" />
-          <span className="brand__word sr-only">Slippery</span>
-        </Link>
+        <Brand size={36} />
         <nav className="mhead__nav" aria-label="Main">
           {MARKETING_NAV.map((n) => (
             <Link key={n.href} href={n.href} className="btn btn--quiet btn--sm">{n.label}</Link>
@@ -65,11 +63,7 @@ export function MarketingFooter() {
       <div className="wrap">
         <div className="mfoot__cols">
           <div>
-            <div className="brand" style={{ marginBottom: 'var(--s3)' }}>
-              <Mark className="brand__mark" size={26} />
-              <Wordmark id="wm-foot" height={17} />
-              <span className="sr-only">Slippery</span>
-            </div>
+            <Brand size={36} className="brand brand--foot" />
             <p className="small muted" style={{ maxWidth: '34ch' }}>
               A bet tracker for UK and Irish bettors. Slippery never accepts bets, holds
               money, pays winnings or gives tips.

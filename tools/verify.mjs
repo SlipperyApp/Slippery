@@ -153,7 +153,13 @@ for (const route of JOURNEY) {
   const page = await ctx.newPage();
   try {
     await page.goto(BASE + route, { waitUntil: 'load', timeout: 30000 });
-    await page.waitForTimeout(200);
+    /*  The app routes stream now: app/app/loading.tsx puts a Suspense
+        boundary above the page, so `load` fires on the shell and the real
+        content arrives after it. Tabbing at that moment counted the
+        skeleton's controls, and /app/ledger dropped from 41 stops to 9
+        without anything having changed. Wait for the placeholder to go. */
+    await page.waitForFunction(() => !document.querySelector('.skel'), null, { timeout: 15000 }).catch(() => {});
+    await page.waitForTimeout(250);
   } catch { await page.close(); continue; }
 
   // Drive real Tab presses and inspect each stop.
@@ -165,17 +171,23 @@ for (const route of JOURNEY) {
     // eslint-disable-next-line no-await-in-loop
     await page.keyboard.press('Tab');
     // eslint-disable-next-line no-await-in-loop
+    /*  Wrap round is detected by ELEMENT IDENTITY, not by a description of
+        the element. Keying on tag, class and text stopped the traversal the
+        first time two links looked alike, and after the header lockup became
+        one component the sidebar and the top bar both said "A.brand|
+        Slippery": /app/ledger reported 9 stops instead of 41 and nothing on
+        the page had changed. A marker attribute is the element itself. */
     const info = await page.evaluate(() => {
       const el = document.activeElement;
       if (!el || el === document.body) return null;
       const cs = getComputedStyle(el);
       const ring = cs.outlineStyle !== 'none' && parseFloat(cs.outlineWidth) > 0;
-      const key = `${el.tagName}.${el.className}|${(el.textContent || '').trim().slice(0, 20)}`;
-      return { key, ring, label: (el.getAttribute('aria-label') || el.textContent || '').trim().slice(0, 30) };
+      const seen = el.hasAttribute('data-verify-seen');
+      el.setAttribute('data-verify-seen', '');
+      return { seen, ring, label: (el.getAttribute('aria-label') || el.textContent || '').trim().slice(0, 30) };
     });
     if (!info) break;
-    if (seenTargets.has(info.key)) break;      // wrapped round
-    seenTargets.add(info.key);
+    if (info.seen) break;                      // wrapped round
     stops += 1;
     if (!firstStop) firstStop = info.label;
     if (!info.ring) { ringless += 1; fail.push(`no focus ring on ${route}: ${info.label}`); }

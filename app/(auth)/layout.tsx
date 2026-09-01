@@ -1,7 +1,5 @@
 import type { Metadata } from 'next';
-import Link from 'next/link';
-import { Wordmark } from '@/components/Wordmark';
-import { Mark } from '@/components/Mark';
+import { Brand } from '@/components/Brand';
 
 export const metadata: Metadata = {
   title: { default: 'Sign in', template: '%s · Slippery' },
@@ -12,10 +10,7 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
     <div className="page" style={{ minHeight: '100svh', display: 'flex', flexDirection: 'column' }}>
       <header style={{ padding: 'var(--s5) var(--s4)' }}>
         <div className="wrap" style={{ padding: 0 }}>
-          <Link href="/" className="brand" aria-label="Slippery, home">
-            <Mark className="brand__mark" size={26} />
-            <Wordmark id="wm-auth" height={17} />
-          </Link>
+          <Brand size={40} />
         </div>
       </header>
       <main id="main" style={{ flex: 1, display: 'flex', alignItems: 'center', padding: 'var(--s4) var(--s4) var(--s9)' }}>

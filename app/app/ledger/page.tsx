@@ -3,9 +3,11 @@ import Link from 'next/link';
 import { getViewer } from '@/lib/data/session';
 import {
   select, summarise, facets, filterByOutcome, scopeFromParams, scopeLabel,
+  runningNow, settledToday,
 } from '@/lib/data/analytics';
 import { ScopeBar } from '@/components/app/ScopeBar';
 import { LedgerRows } from '@/components/app/LedgerRows';
+import { RunningNow } from '@/components/app/RunningNow';
 import { Figure } from '@/components/app/Module';
 import { Icon } from '@/components/Icon';
 import { money, pct, count } from '@/lib/format';
@@ -39,6 +41,12 @@ export default async function Ledger({
   shown = [...shown].sort((a, b) => new Date(b.eventAt).getTime() - new Date(a.eventAt).getTime());
 
   const s = summarise(shown);
+  /*  Off the whole book, not off `rows`: a bet that is running right now is
+      running whatever scope is selected, and hiding one because it was
+      placed last month is not a filter anybody means. */
+  const running = runningNow(bets);
+  const today = settledToday(bets, now);
+  const openStakePence = summarise(running).stakedPence;
 
   return (
     <>
@@ -77,6 +85,11 @@ export default async function Ledger({
           <p className="small dim card__foot">{scopeLabel(scope)}.</p>
         )}
       </div>
+
+      {/*  Open positions first, then the rows. This module was on the
+           dashboard, which is for statistics; a named bet at a named price
+           with a named bookmaker is not a statistic. */}
+      <RunningNow running={running} today={today} openStakePence={openStakePence} currency={account.currency} />
 
       <LedgerRows
         bets={shown}

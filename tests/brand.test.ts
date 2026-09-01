@@ -44,10 +44,42 @@ test('the mark is drawn inline, never through an img or a background', () => {
   /*  The specific failure this prevents: through <img src="/icon.svg"> the
    *  custom properties do not resolve, and the mark renders uncoloured and
    *  identical in all eight themes. */
+  /*  Every header goes through <Brand>, which is the one place a lockup size
+   *  is chosen; the assertion follows that indirection rather than demanding
+   *  <Mark> literally, which would only force the six call sites to inline
+   *  the thing again. */
+  for (const f of ['components/MarketingChrome.tsx', 'components/AppShell.tsx', 'app/(auth)/layout.tsx',
+    'components/Brand.tsx', 'components/Mark.tsx', 'components/Wordmark.tsx']) {
+    const src = readFileSync(f, 'utf8');
+    assert.ok(!/<img[^>]*(icon|wordmark|lockup)\.svg/.test(src), `${f} loads the mark through an img`);
+    assert.ok(!/background(-image)?:\s*url\([^)]*(icon|wordmark)/.test(src), `${f} loads the mark as a background`);
+  }
   for (const f of ['components/MarketingChrome.tsx', 'components/AppShell.tsx', 'app/(auth)/layout.tsx']) {
     const src = readFileSync(f, 'utf8');
-    assert.ok(!/<img[^>]*icon\.svg/.test(src), `${f} loads the mark through an img`);
-    assert.ok(src.includes('<Mark'), `${f} does not render the inline mark`);
+    assert.ok(/<(Brand|Mark)\b/.test(src), `${f} does not render the inline mark`);
+  }
+  assert.ok(readFileSync('components/Brand.tsx', 'utf8').includes('<Mark'), 'Brand does not render the inline mark');
+});
+
+/*  Both marks are drawn twice and the second copy is cut by a diagonal, and
+ *  both cuts were broken at once in different ways. The mark's <g> carried
+ *  clip-path="url(#__ID__)", a placeholder that was never substituted and
+ *  named a clipPath that did not exist: an invalid reference does not clip
+ *  in Chromium, it renders unclipped, so the accent copy covered the ink one
+ *  and the whole S came out a flat accent blue. The wordmark's cut worked
+ *  and was then thrown away by an inline style setting --s to currentColor,
+ *  which painted both halves the same colour. */
+test('the two tone cut survives in both marks', () => {
+  for (const f of ['components/Mark.tsx', 'components/Wordmark.tsx']) {
+    const whole = readFileSync(f, 'utf8');
+    // Comments in these files DISCUSS url(#id) at length, because that is the
+    // bug they exist to remember. Measure the code.
+    const src = whole.replace(/\/\*[\s\S]*?\*\//g, '').replace(/^\s*\/\/.*$/gm, '');
+    assert.ok(!whole.includes('__ID__'), `${f} still has an unsubstituted id placeholder`);
+    assert.ok(!/url\(#/.test(src), `${f} clips by id, which cannot be unique on a page with two marks`);
+    assert.ok(/clip-path:\s*path\(/.test(src), `${f} has no diagonal cut`);
+    assert.ok(/var\(--s[,)]/.test(src), `${f} does not take the theme accent for its cut half`);
+    assert.ok(!/'--s'[^)]*:\s*'currentColor'/.test(src), `${f} forces its accent half to the ink colour`);
   }
 });
 

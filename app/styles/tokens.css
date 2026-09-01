@@ -188,11 +188,11 @@
   --bg: #0C0E13;
   --card: #14171F;
   --raise: #191D27;
-  --elev: #272A34;
-  --line: #212732;
-  --line2: #2C3342;
+  --elev: #222836;
+  --line: #181C26;
+  --line2: #1F2430;
   --p: #6E86B8;
-  --s: #A8C2E8;
+  --s: #ACC0E8;
 
   /* The names the rest of the stylesheet already reads, pointed at the eight
      above. Aliases rather than a rename, so one palette change does not touch
@@ -214,14 +214,14 @@
 }
 
 [data-theme='periwinkle'] {
-  --bg: #0A0C16;
-  --card: #141827;
-  --raise: #191E30;
-  --elev: #272E45;
-  --line: #212840;
-  --line2: #2D3552;
-  --p: #7C86D6;
-  --s: #B3BCF2;
+  --bg: #0A0F1E;
+  --card: #13182A;
+  --raise: #181F32;
+  --elev: #222B41;
+  --line: #171E31;
+  --line2: #1E263B;
+  --p: #6D86DB;
+  --s: #AFC3FF;
 
   /* The names the rest of the stylesheet already reads, pointed at the eight
      above. Aliases rather than a rename, so one palette change does not touch
@@ -243,14 +243,14 @@
 }
 
 [data-theme='ink'] {
-  --bg: #080A11;
-  --card: #101420;
-  --raise: #151A28;
-  --elev: #222939;
-  --line: #1B2130;
-  --line2: #262E40;
-  --p: #6A86C0;
-  --s: #9FB8E4;
+  --bg: #050508;
+  --card: #0E0F15;
+  --raise: #13151E;
+  --elev: #1E212E;
+  --line: #12141C;
+  --line2: #1A1D28;
+  --p: #8B84C4;
+  --s: #C5C1F4;
 
   /* The names the rest of the stylesheet already reads, pointed at the eight
      above. Aliases rather than a rename, so one palette change does not touch
@@ -272,14 +272,14 @@
 }
 
 [data-theme='graphite'] {
-  --bg: #0D0E10;
-  --card: #17191C;
-  --raise: #1C1F23;
-  --elev: #2A2E33;
-  --line: #23262B;
-  --line2: #31353C;
-  --p: #818C99;
-  --s: #BAC3CE;
+  --bg: #0A0C0B;
+  --card: #121517;
+  --raise: #171B1F;
+  --elev: #21272E;
+  --line: #171B1E;
+  --line2: #1D2329;
+  --p: #7E9188;
+  --s: #CFDBD5;
 
   /* The names the rest of the stylesheet already reads, pointed at the eight
      above. Aliases rather than a rename, so one palette change does not touch
@@ -301,14 +301,14 @@
 }
 
 [data-theme='slate'] {
-  --bg: #0B0F14;
-  --card: #141A22;
-  --raise: #19202A;
-  --elev: #262F3B;
-  --line: #1F2833;
-  --line2: #2B3645;
-  --p: #5E8FB8;
-  --s: #9FC6E4;
+  --bg: #161A21;
+  --card: #1E232C;
+  --raise: #232934;
+  --elev: #282E3B;
+  --line: #222833;
+  --line2: #262C39;
+  --p: #7E93B5;
+  --s: #BCCDE9;
 
   /* The names the rest of the stylesheet already reads, pointed at the eight
      above. Aliases rather than a rename, so one palette change does not touch
@@ -330,14 +330,14 @@
 }
 
 [data-theme='bronze'] {
-  --bg: #100C09;
-  --card: #1B1613;
-  --raise: #211A16;
-  --elev: #2F2621;
-  --line: #28201B;
-  --line2: #372C25;
-  --p: #B08663;
-  --s: #E0BC9A;
+  --bg: #12100C;
+  --card: #1A1917;
+  --raise: #1F1F1F;
+  --elev: #292A2D;
+  --line: #1F1E1E;
+  --line2: #252628;
+  --p: #A8926A;
+  --s: #E7D5B6;
 
   /* The names the rest of the stylesheet already reads, pointed at the eight
      above. Aliases rather than a rename, so one palette change does not touch
@@ -359,14 +359,14 @@
 }
 
 [data-theme='cinnabar'] {
-  --bg: #110B0A;
-  --card: #1D1513;
-  --raise: #241A17;
-  --elev: #332622;
-  --line: #2B201C;
-  --line2: #3A2C27;
-  --p: #C0755C;
-  --s: #EBAA93;
+  --bg: #130D0B;
+  --card: #1B1617;
+  --raise: #211C1E;
+  --elev: #2A272D;
+  --line: #201B1D;
+  --line2: #272328;
+  --p: #C4643F;
+  --s: #FFD5C5;
 
   /* The names the rest of the stylesheet already reads, pointed at the eight
      above. Aliases rather than a rename, so one palette change does not touch
@@ -388,14 +388,14 @@
 }
 
 [data-theme='liquid'] {
-  --bg: #070D0F;
-  --card: #0F181B;
-  --raise: #141E22;
-  --elev: #1F2E33;
-  --line: #19262A;
-  --line2: #243539;
-  --p: #4E9BA6;
-  --s: #8FD3DC;
+  --bg: #04171C;
+  --card: #0C2028;
+  --raise: #112630;
+  --elev: #1B323F;
+  --line: #11252F;
+  --line2: #182D39;
+  --p: #54AEBE;
+  --s: #B4E5EF;
 
   /* The names the rest of the stylesheet already reads, pointed at the eight
      above. Aliases rather than a rename, so one palette change does not touch

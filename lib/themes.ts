@@ -21,14 +21,14 @@ export type Theme = {
 };
 
 export const THEMES: Theme[] = [
-  { name: 'carbon', label: 'Carbon', blurb: 'Near black with a steel blue accent. The quietest of the eight.', swatch: ['#0C0E13', '#14171F', '#6E86B8', '#212732'], unlock: 'Default' },
-  { name: 'periwinkle', label: 'Periwinkle', blurb: 'Indigo ground, a soft violet accent that never competes with a figure.', swatch: ['#0A0C16', '#141827', '#7C86D6', '#212840'], unlock: 'Log 10 slips' },
-  { name: 'ink', label: 'Ink', blurb: 'Deepest ground of the eight. Best on an OLED phone at night.', swatch: ['#080A11', '#101420', '#6A86C0', '#1B2130'], unlock: 'Settle 25 bets' },
-  { name: 'graphite', label: 'Graphite', blurb: 'Neutral dark, near monochrome. The most legible in daylight.', swatch: ['#0D0E10', '#17191C', '#818C99', '#23262B'], unlock: 'Add a bookmaker' },
-  { name: 'slate', label: 'Slate', blurb: 'Blue grey throughout. A colder carbon.', swatch: ['#0B0F14', '#141A22', '#5E8FB8', '#1F2833'], unlock: 'Join a group' },
-  { name: 'bronze', label: 'Bronze', blurb: 'Warm umber and a copper accent. Reads well on a big screen.', swatch: ['#100C09', '#1B1613', '#B08663', '#28201B'], unlock: 'A 30 day streak of capture' },
-  { name: 'cinnabar', label: 'Cinnabar', blurb: 'Oxide red ground, terracotta accent. The warmest of the eight.', swatch: ['#110B0A', '#1D1513', '#C0755C', '#2B201C'], unlock: 'Import a full history' },
-  { name: 'liquid', label: 'Liquid', blurb: 'Near black green with a teal accent. The loudest of the eight.', swatch: ['#070D0F', '#0F181B', '#4E9BA6', '#19262A'], unlock: 'Twelve months on Slippery' },
+  { name: 'carbon', label: 'Carbon', blurb: 'Steel on near black. The default.', swatch: ['#0C0E13', '#14171F', '#6E86B8', '#181C26'], unlock: 'Default' },
+  { name: 'periwinkle', label: 'Periwinkle', blurb: 'Indigo on deep navy.', swatch: ['#0A0F1E', '#13182A', '#6D86DB', '#171E31'], unlock: 'Log 10 slips' },
+  { name: 'ink', label: 'Ink', blurb: 'Near black, violet cast. The darkest.', swatch: ['#050508', '#0E0F15', '#8B84C4', '#12141C'], unlock: 'Settle 25 bets' },
+  { name: 'graphite', label: 'Graphite', blurb: 'Deep green grey. Almost black.', swatch: ['#0A0C0B', '#121517', '#7E9188', '#171B1E'], unlock: 'Add a bookmaker' },
+  { name: 'slate', label: 'Slate', blurb: 'Steel blue grey. The lightest dark.', swatch: ['#161A21', '#1E232C', '#7E93B5', '#222833'], unlock: 'Join a group' },
+  { name: 'bronze', label: 'Bronze', blurb: 'Warm paper on dark. The only warm one.', swatch: ['#12100C', '#1A1917', '#A8926A', '#1F1E1E'], unlock: 'A 30 day streak of capture' },
+  { name: 'cinnabar', label: 'Cinnabar', blurb: 'Burnt red on near black.', swatch: ['#130D0B', '#1B1617', '#C4643F', '#201B1D'], unlock: 'Import a full history' },
+  { name: 'liquid', label: 'Liquid', blurb: 'Deep marine. The coldest.', swatch: ['#04171C', '#0C2028', '#54AEBE', '#11252F'], unlock: 'Twelve months on Slippery' },
 ];
 
 export const THEME_NAMES = THEMES.map((t) => t.name);

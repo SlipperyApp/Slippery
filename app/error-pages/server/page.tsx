@@ -11,7 +11,7 @@ export const metadata: Metadata = {
 export default function FiveHundred() {
   return (
     <div className="page">
-      <MarketingHeader id="wm-500" />
+      <MarketingHeader />
       <main id="main"><div className="wrap"><ServerErrorPane /></div></main>
       <MarketingFooter />
     </div>

@@ -6,7 +6,7 @@ import { MarketingHeader, MarketingFooter } from '@/components/MarketingChrome';
 export default function NotFound() {
   return (
     <div className="page">
-      <MarketingHeader id="wm-nf" />
+      <MarketingHeader />
       <main id="main"><div className="wrap"><NotFoundPane /></div></main>
       <MarketingFooter />
     </div>
