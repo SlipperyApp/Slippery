@@ -27,6 +27,12 @@ export type SmtpSend = {
   to: string;
   subject: string;
   text: string;
+  /*  How TLS starts. Implicit means the socket is TLS from its first byte,
+      which is what 465 is for; STARTTLS means a plain socket upgraded after
+      EHLO, which is what 587 and 25 are for. Left unset it follows the port,
+      because a host that wants something else is a host with an unusual port
+      and its operator can say so. */
+  tls?: 'implicit' | 'starttls';
   /** Test only. A self-signed certificate is a defect in production. */
   insecureTls?: boolean;
   timeoutMs?: number;
@@ -134,7 +140,7 @@ export async function sendSmtp(o: SmtpSend): Promise<SmtpResult> {
   }
 
   const timeout = o.timeoutMs ?? 15000;
-  const implicit = o.port !== 587;
+  const implicit = (o.tls ?? (o.port === 587 || o.port === 25 ? 'starttls' : 'implicit')) === 'implicit';
 
   /*  SNI carries a NAME. Node rejects an IP address there, which only ever
    *  happens against a server addressed by number, which only ever happens in

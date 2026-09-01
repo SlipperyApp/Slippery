@@ -4,9 +4,10 @@
  *  variable to get wrong:
  *
  *    EMAIL_API_KEY starting "re_"   Resend, over HTTPS.
- *    anything else                  SMTP, with EMAIL_FROM as the username
- *                                   and EMAIL_SMTP_HOST, or smtp.gmail.com,
- *                                   as the host.
+ *    anything else                  SMTP, with EMAIL_FROM as the username,
+ *                                   EMAIL_SMTP_HOST or smtp.gmail.com as the
+ *                                   host, and EMAIL_SMTP_PORT or 465 as the
+ *                                   port.
  *
  *  The SMTP path exists so that a Gmail App Password is enough to send from
  *  the product's own address with no provider account at all. It must be an
@@ -50,9 +51,13 @@ export async function sendEmail(to: string, subject: string, text: string): Prom
 
   if (emailTransport() === 'smtp') {
     const host = read('EMAIL_SMTP_HOST') ?? 'smtp.gmail.com';
+    /*  465 by default, which is TLS from the first byte. A host that offers
+        only STARTTLS is set to 587 or 25 and the client upgrades instead. An
+        unparseable port falls back rather than sending to NaN. */
+    const port = Number(read('EMAIL_SMTP_PORT'));
     const res = await sendSmtp({
       host,
-      port: 465,
+      port: Number.isInteger(port) && port > 0 && port < 65536 ? port : 465,
       user: from,
       pass: key,
       from,

@@ -208,3 +208,38 @@ test('an unreachable host is unreachable, not a crash', async () => {
   assert.equal(res.sent, false);
   assert.equal(res.reason, 'unreachable');
 });
+
+test('the port decides how TLS starts, and an explicit mode overrides it', async (t) => {
+  /*  465 is TLS from the first byte; 587 and 25 are a plain socket upgraded
+   *  after EHLO. The first version keyed this on "not 587", which is right
+   *  for the two ports anybody uses and wrong for a host offering STARTTLS on
+   *  a third. The rule follows the port now and an explicit tls option beats
+   *  it, which is what EMAIL_SMTP_PORT needs to be safe.
+   *
+   *  Proved by outcome rather than by reading the branch: a STARTTLS client
+   *  against a TLS-from-the-first-byte server cannot get a greeting, so
+   *  asking for the wrong mode against the fake server fails at the greeting
+   *  rather than succeeding. */
+  const fake = await fakeSmtp();
+  if (!fake) return t.skip('no openssl in this environment');
+  /*  `done` is deliberately not awaited here. A plain socket into a TLS
+   *  listener never completes a handshake, so the server's connection
+   *  callback never runs and the promise inside it never settles. */
+  const { port, server } = fake;
+  const res = await sendSmtp({
+    host: '127.0.0.1',
+    port,
+    tls: 'starttls',
+    insecureTls: true,
+    timeoutMs: 3000,
+    user: 'u@example.com',
+    pass: 'p',
+    from: 'u@example.com',
+    to: 'them@example.com',
+    subject: 'x',
+    text: 'x',
+  });
+  server.close();
+  assert.equal(res.sent, false);
+  assert.notEqual(res.reason, undefined);
+});
