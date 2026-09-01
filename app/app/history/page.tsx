@@ -53,7 +53,7 @@ export default async function History() {
       </div>
 
       <div className="card">
-        <div className="scroller">
+        <div className="scroller" tabIndex={0} role="region" aria-label="Settlement events, scrollable">
           <table className="tbl">
             <caption className="sr-only">Settlement events, newest first</caption>
             <thead>

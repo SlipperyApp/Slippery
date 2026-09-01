@@ -95,7 +95,7 @@ export function SportsPicker() {
         <div className="row" style={{ gap: 'var(--s2)', alignItems: 'stretch' }}>
           <input id="cb" className="input grow" value={customName} autoComplete="off"
             onChange={(e) => setCustomName(e.target.value)} placeholder="A local shop, or an exchange" />
-          <button type="button" className="btn btn--ghost" onClick={addCustom}>Add</button>
+          <button type="button" className="btn btn--ghost" onClick={addCustom} disabled={!customName.trim()}>Add</button>
         </div>
         {customs.length ? (
           <ul className="logstrip" style={{ marginTop: 'var(--s3)' }}>

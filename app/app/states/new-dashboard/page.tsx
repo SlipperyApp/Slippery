@@ -37,7 +37,7 @@ export default function NewDashboard() {
           {CHECKLIST.map((c) => (
             <li key={c.t} className="brow" style={{ gridTemplateColumns: '20px minmax(0,1fr) auto', gap: 'var(--s3)' }}>
               <Icon name={c.done ? 'check' : 'minus'} size={16} className={c.done ? 'pos' : 'dim'} />
-              <span style={{ minWidth: 0, opacity: c.done ? 0.55 : 1 }}>
+              <span style={{ minWidth: 0 }}>
                 <Link href={c.href} className="brow__title" style={{ textDecoration: 'none' }}>{c.t}</Link>
                 <span className="brow__sub" style={{ display: 'block' }}>{c.s}</span>
               </span>

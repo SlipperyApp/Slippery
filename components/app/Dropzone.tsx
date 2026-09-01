@@ -40,10 +40,10 @@ export function Dropzone({ enabled }: { enabled: boolean }) {
         onDrop={(e) => { e.preventDefault(); setOver(false); if (enabled) take(e.dataTransfer.files?.[0]); }}
         style={{
           alignItems: 'center', textAlign: 'center', padding: 'var(--s8) var(--s5)',
-          borderStyle: 'dashed', borderWidth: '1.5px',
+          borderWidth: '1.5px',
           borderColor: over ? 'var(--accent)' : 'var(--line-2)',
           background: over ? 'color-mix(in oklab, var(--accent) 8%, var(--surface))' : undefined,
-          opacity: enabled ? 1 : 0.55,
+          borderStyle: enabled ? 'dashed' : 'dotted',
         }}
       >
         <Icon name="camera" size={28} style={{ color: 'var(--ink-3)' }} />

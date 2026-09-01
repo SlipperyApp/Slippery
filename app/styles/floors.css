@@ -21,9 +21,11 @@
 .faq__q,
 .wall__btn,
 .rowcard,
-.pill--lg {
+.pill--lg,
+.brand {
   min-height: 44px;
 }
+.brand { display: inline-flex; align-items: center; }
 
 /* A standalone text link is measured on height only. Padding a four letter
    link out to 44px wide makes the layout worse without making the target
@@ -46,10 +48,56 @@ button.btn--link {
 }
 
 /* A scrollable region has to be reachable by keyboard, or its contents are
-   unreadable without a mouse. */
-.scroller { }
+   unreadable without a mouse. The tabindex is on the element in the markup;
+   this is the ring it gets when it is focused. */
+.scroller:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 
 /* The two result colours, last, so nothing can override them by being
    declared later. They are semantic and never theme dependent. */
 .pos { color: var(--pos); }
 .neg { color: var(--neg); }
+
+/* A switch is a 44px target with a 26px track drawn inside it. Making the
+   track itself 44px tall would be a different control; leaving the target at
+   26px would be one nobody can hit. */
+.switch {
+  width: 44px;
+  height: 44px;
+  background: none;
+  border: 0;
+  border-radius: 0;
+  position: relative;
+}
+.switch::before {
+  content: '';
+  position: absolute;
+  top: 9px; left: 0;
+  width: 44px; height: 26px;
+  border-radius: var(--r-pill);
+  background: var(--surface-3);
+  border: 1px solid var(--line-2);
+  transition: background var(--dur-fast) var(--ease), border-color var(--dur-fast) var(--ease);
+}
+.switch::after {
+  top: 12px;
+  left: 2px;
+}
+.switch[aria-pressed='true'] { background: none; border: 0; }
+.switch[aria-pressed='true']::before {
+  background: color-mix(in oklab, var(--accent) 42%, var(--surface-3));
+  border-color: color-mix(in oklab, var(--accent) 55%, transparent);
+}
+.switch[disabled]::before { border-style: dashed; }
+
+/* A link that is a row title is the row's target, so it takes the row's
+   height rather than the height of its own text. */
+a.brow__title,
+a.small:not(:where(p, li, td, label, legend, small, strong, em) *) {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+}
+
+/* A visually hidden input has a visible label doing the pressing. The label
+   is the target and it is measured; the input is not. */
+input.sr-only { min-height: 0; }

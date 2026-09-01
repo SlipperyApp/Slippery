@@ -33,7 +33,8 @@ export function Breakdown({
       {rows.length === 0 ? (
         <p className="small dim">Nothing in this scope yet.</p>
       ) : (
-        <ul className="grow" style={{ overflowY: 'auto', minHeight: 0 }}>
+        <ul className="grow" tabIndex={0} aria-label={`Broken down by ${dim}, scrollable`}
+          style={{ overflowY: 'auto', minHeight: 0 }}>
           {rows.map((r) => (
             <li key={r.key} className={`brow${r.thin ? ' brow--faded' : ''}`} style={{ gridTemplateColumns: 'minmax(0,1fr) auto', gap: '4px var(--s3)' }}>
               <span className="brow__title" style={{ display: 'flex', gap: 8, alignItems: 'baseline', minWidth: 0 }}>

@@ -23,7 +23,7 @@ export function Module({
   return (
     <section className={`card col-${span} h-${size}`} aria-labelledby={id ? `${id}-t` : undefined} id={id}>
       <header className="card__head">
-        <h3 className="card__title" id={id ? `${id}-t` : undefined}>{title}</h3>
+        <h2 className="card__title" id={id ? `${id}-t` : undefined}>{title}</h2>
         {note ? <p className="card__note">{note}</p> : null}
       </header>
       <div className="grow" style={{ minHeight: 0, display: 'flex', flexDirection: 'column' }}>{children}</div>

@@ -23,7 +23,7 @@ export default function HistoryReview() {
         </p>
 
         <div className="card" style={{ marginTop: 'var(--s5)' }}>
-          <div className="scroller">
+          <div className="scroller" tabIndex={0} role="region" aria-label="Column matches, scrollable">
             <table className="tbl">
               <caption className="sr-only">Column matches</caption>
               <thead>

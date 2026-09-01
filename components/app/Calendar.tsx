@@ -183,7 +183,7 @@ export function MonthCalendar({
         </div>
       </div>
 
-      <div className="cal" role="grid" aria-label={`${MONTH_LONG[p.month - 1]} ${p.year}`}>
+      <div className="cal" role="group" aria-label={`${MONTH_LONG[p.month - 1]} ${p.year}, one cell a day`}>
         {DOW.map((l) => (
           <div key={l} className="cal__dow" aria-hidden="true">{l.slice(0, 1)}</div>
         ))}

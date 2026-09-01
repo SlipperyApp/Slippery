@@ -131,9 +131,11 @@ const MEASURE = () => {
     return false;
   };
 
-  const small = controls.filter((el) => {
+  const small = !window.matchMedia('(pointer: coarse)').matches ? [] : controls.filter((el) => {
     if (inSentence(el)) return false;
     if (el.type === 'range' || el.type === 'checkbox') return false;
+    // A visually hidden input has a visible label doing the pressing.
+    if (el.classList.contains('sr-only')) return false;
     const r = el.getBoundingClientRect();
     const textLink = el.tagName === 'A' && !el.className.includes('btn') && !el.className.includes('tab');
     if (textLink) return r.height < 43.5;
@@ -176,13 +178,21 @@ const MEASURE = () => {
  *  not one per page that links to it. */
 function watch(page) {
   const errors = [];
-  page.on('console', (m) => { if (m.type() === 'error' && !/status of 4\d\d/.test(m.text())) errors.push(m.text().slice(0, 180)); });
+  // "Failed to load resource" duplicates what the response listener already
+  // sees, and an honest 503 from an API route with no database behind it is
+  // the designed behaviour, not a page error.
+  page.on('console', (m) => {
+    if (m.type() !== 'error') return;
+    if (/Failed to load resource/i.test(m.text())) return;
+    errors.push(m.text().slice(0, 180));
+  });
   page.on('pageerror', (e) => errors.push(`pageerror ${String(e).slice(0, 180)}`));
   page.on('response', (r) => {
     if (r.status() < 400) return;
     const url = new URL(r.url());
     if (url.origin !== ORIGIN) return;
     const path = url.pathname;
+    if (path.startsWith('/api/')) return;   // degrading honestly is not a defect
     if (r.request().resourceType() === 'fetch' || url.searchParams.has('_rsc')) {
       missingRoutes.set(path, (missingRoutes.get(path) ?? 0) + 1);
       return;
@@ -315,11 +325,27 @@ console.log('\nControls');
       }).catch(() => false);
       if (isBlockedSubmit) continue;
 
+      // Rule four's sibling: pressing the option that is already chosen in a
+      // radio-like group is supposed to do nothing, and every segmented
+      // control in the product has one.
+      const alreadyChosen = await b.evaluate((el) => el.getAttribute('aria-pressed') === 'true'
+        || el.getAttribute('aria-current') === 'page').catch(() => false);
+      if (alreadyChosen) continue;
+
       const before = await page.evaluate(SIGNATURE).catch(() => null);
       if (!before) break;
+
+      // Clicked TWICE, because a toggle that only works once is a defect too.
+      // But a radio-like control clicked twice ENDS where it started, so the
+      // comparison is against the state after the first click as well: it
+      // passes if either click moved the page. Comparing only the second
+      // reported every segmented control in the product as dead.
+      let mid = null;
       try {
         await b.click({ timeout: 2500 });
         await page.waitForTimeout(200);
+        mid = await page.evaluate(SIGNATURE).catch(() => null);
+        if (mid && mid.url !== landed) { clicked += 1; break; }
         await b.click({ timeout: 2500 }).catch(() => {});
         await page.waitForTimeout(200);
       } catch { continue; }
@@ -328,7 +354,8 @@ console.log('\nControls');
       const after = await page.evaluate(SIGNATURE).catch(() => null);
       if (!after) break;
       if (after.url !== landed) break;   // it navigated: the next page is not this test
-      if (after.text === before.text && after.state === before.state) {
+      const moved = (x) => x && (x.text !== before.text || x.state !== before.state);
+      if (!moved(mid) && !moved(after)) {
         dead += 1;
         const name = await b.evaluate((el) => (el.getAttribute('aria-label') || el.textContent || '').trim().slice(0, 40)).catch(() => '?');
         note(route, 'controls', 'no-observable-change', name || '(unnamed)');

@@ -77,7 +77,7 @@ export default async function Linked() {
 
         <section className="card col-12">
           <h2 className="card__title">What it says back</h2>
-          <div className="scroller" style={{ marginTop: 'var(--s3)' }}>
+          <div className="scroller" tabIndex={0} role="region" aria-label="Bot replies, scrollable" style={{ marginTop: 'var(--s3)' }}>
             <table className="tbl">
               <caption className="sr-only">Bot replies</caption>
               <thead>

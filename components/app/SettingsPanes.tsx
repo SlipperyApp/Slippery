@@ -62,7 +62,7 @@ export function SettingsPanes({ groups, account }: { groups: SettingsGroup[]; ac
             type="button"
             className="rowcard"
             aria-pressed={open === g.id}
-            aria-controls={`pane-${g.id}`}
+            aria-controls="settings-pane"
             onClick={() => setOpen(open === g.id ? null : g.id)}
             style={{
               cursor: 'pointer', textAlign: 'left', width: '100%',
@@ -79,7 +79,7 @@ export function SettingsPanes({ groups, account }: { groups: SettingsGroup[]; ac
         ))}
       </div>
 
-      <div className="col-8" id={`pane-${open ?? 'none'}`}>
+      <div className="col-8" id="settings-pane" aria-live="polite">
         {open === null ? (
           <div className="card">
             <p className="card__title">Pick a group</p>
@@ -391,7 +391,7 @@ export function SettingsPanes({ groups, account }: { groups: SettingsGroup[]; ac
                   type="button" className="switch" aria-pressed={notifs[n.id]}
                   aria-label={`${n.label}: ${notifs[n.id] ? 'on' : 'off'}${n.locked ? ', locked on' : ''}`}
                   disabled={n.locked}
-                  style={n.locked ? { opacity: 0.6, cursor: 'not-allowed' } : undefined}
+                  style={n.locked ? { cursor: 'not-allowed', borderStyle: 'dashed' } : undefined}
                   onClick={() => setNotifs({ ...notifs, [n.id]: !notifs[n.id] })}
                 />
               </div>

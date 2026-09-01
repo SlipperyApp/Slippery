@@ -33,7 +33,7 @@ export function Analysing() {
             const done = i < stage;
             const active = i === stage;
             return (
-              <li key={s.t} className="brow" style={{ gridTemplateColumns: '22px minmax(0,1fr)', gap: 'var(--s3)', opacity: done || active ? 1 : 0.4 }}>
+              <li key={s.t} className={`brow${done || active ? '' : ' brow--faded'}`} style={{ gridTemplateColumns: '22px minmax(0,1fr)', gap: 'var(--s3)' }}>
                 <span style={{ display: 'grid', placeItems: 'center' }}>
                   {done ? <Icon name="check" size={16} className="pos" strokeWidth={2.2} />
                     : active ? <Icon name="refresh" size={16} className="spin" />

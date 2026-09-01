@@ -110,7 +110,8 @@ export default async function Dashboard({
               ghost={<ul><li className="brow"><span className="brow__title">Arsenal to win</span><span className="fig fig--s">£38.25</span></li></ul>}
             />
           ) : (
-            <div className="grow" style={{ overflowY: 'auto', minHeight: 0 }}>
+            <div className="grow" tabIndex={0} aria-label="Running now and settled today, scrollable"
+              style={{ overflowY: 'auto', minHeight: 0 }}>
               {running.length > 0 ? (
                 <>
                   <p className="label" style={{ marginBottom: 4 }}>
@@ -251,7 +252,7 @@ export default async function Dashboard({
 function BandList({ rows, currency }: { rows: { key: string; label: string; count: number; netPence: number; thin: boolean }[]; currency: 'GBP' | 'EUR' }) {
   const peak = Math.max(1, ...rows.map((r) => Math.abs(r.netPence)));
   return (
-    <ul className="grow" style={{ overflowY: 'auto', minHeight: 0 }}>
+    <ul className="grow" tabIndex={0} aria-label="Bands, scrollable" style={{ overflowY: 'auto', minHeight: 0 }}>
       {rows.map((r) => (
         <li key={r.key} className={`brow${r.thin ? ' brow--faded' : ''}`} style={{ gridTemplateColumns: 'minmax(0,1fr) auto', gap: '4px var(--s3)' }}>
           <span className="brow__title" style={{ display: 'flex', gap: 8, alignItems: 'baseline' }}>

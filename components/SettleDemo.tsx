@@ -143,7 +143,6 @@ export function SettleDemo() {
         className={settled ? 'is-settling' : undefined}
         style={{
           marginTop: 'var(--s3)', paddingTop: 'var(--s4)', borderTop: '1px solid var(--line)',
-          opacity: settled ? 1 : 0.35,
         }}
       >
         <div className="spread">
