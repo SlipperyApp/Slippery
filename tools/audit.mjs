@@ -42,13 +42,26 @@ const ORIGIN = new URL(BASE).origin;
 const THEMES = ['carbon', 'periwinkle', 'ink', 'graphite', 'slate', 'bronze', 'cinnabar', 'liquid'];
 const AXE = readFileSync('node_modules/axe-core/axe.min.js', 'utf8');
 
-const VIEWPORTS = [
-  { w: 320, h: 720, mobile: true },
-  { w: 390, h: 844, mobile: true },
-  { w: 430, h: 932, mobile: true },
-  { w: 1024, h: 800, mobile: false },
-  { w: 1440, h: 900, mobile: false },
-];
+/** Against a remote origin every page load is a network round trip, so the
+ *  full sweep takes hours and stops being a gate anybody runs. LIVE mode
+ *  checks that the deployed build really is the one that was audited: status,
+ *  overflow, one h1, a real title, console errors and axe at two widths. The
+ *  control sweep and the eight themes are not repeated, because they were
+ *  measured locally against this exact commit. */
+const LIVE = process.env.AUDIT_MODE === 'live';
+
+const VIEWPORTS = LIVE
+  ? [
+    { w: 390, h: 844, mobile: true },
+    { w: 1440, h: 900, mobile: false },
+  ]
+  : [
+    { w: 320, h: 720, mobile: true },
+    { w: 390, h: 844, mobile: true },
+    { w: 430, h: 932, mobile: true },
+    { w: 1024, h: 800, mobile: false },
+    { w: 1440, h: 900, mobile: false },
+  ];
 
 mkdirSync(OUT, { recursive: true });
 
@@ -272,6 +285,7 @@ for (const vp of VIEWPORTS) {
 }
 
 // ------------------------------------------------------------ the themes
+if (!LIVE) {
 const THEME_ROUTES = ['/', '/app', '/app/ledger', '/app/social', '/pricing', '/app/settings', '/app/import/review'];
 console.log('\nThemes');
 for (const theme of THEMES) {
@@ -281,7 +295,10 @@ for (const theme of THEMES) {
   console.log(`  ${theme}`);
 }
 
+}
+
 // ------------------------------------------- every button, clicked twice
+if (!LIVE) {
 console.log('\nControls');
 {
   const ctx = await browser.newContext({ viewport: { width: 1280, height: 900 } });
@@ -366,6 +383,8 @@ console.log('\nControls');
   }
   console.log(`  clicked ${clicked} buttons twice, ${dead} with nothing observable`);
   await ctx.close();
+}
+
 }
 
 // ----------------------------------------------------------- keyboard

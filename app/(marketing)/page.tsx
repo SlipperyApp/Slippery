@@ -6,6 +6,7 @@ import { SectionHead, Checks, RowList } from '@/components/MarketingChrome';
 import { BetTypeWall } from '@/components/marketing/BetTypeWall';
 import { SplitHeadline } from '@/components/marketing/SplitHeadline';
 import { ThemeStrip } from '@/components/marketing/ThemeStrip';
+import { Sequence } from '@/components/marketing/Sequence';
 import { money } from '@/lib/format';
 
 export const metadata: Metadata = {
@@ -61,6 +62,9 @@ export default function Landing() {
           </div>
         </div>
       </section>
+
+      {/* ---------------------------------------------------- the sequence */}
+      <Sequence />
 
       {/* --------------------------------------------------------- capture */}
       <section className="sect" id="capture">

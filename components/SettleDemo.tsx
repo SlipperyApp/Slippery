@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { Icon } from '@/components/Icon';
 import { money, pl, plClass } from '@/lib/format';
+import { CountUp } from '@/components/app/CountUp';
 
 /** A slip whose legs resolve one at a time and stop on the verdict.
  *
@@ -149,7 +150,9 @@ export function SettleDemo() {
           <div>
             <p className="label">{settled ? outcome.verdict : 'Running'}</p>
             <p className={`fig fig--m ${settled ? plClass(outcome.plMinor) : 'dim'}`}>
-              {settled ? pl(outcome.plMinor) : '+£0.00'}
+              {settled
+                ? <CountUp key={outcome.key} to={outcome.plMinor} render={(v) => pl(v)} />
+                : '+£0.00'}
             </p>
           </div>
           <div style={{ textAlign: 'right' }}>

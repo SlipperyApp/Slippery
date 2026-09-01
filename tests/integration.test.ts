@@ -97,3 +97,18 @@ test('a capability is not ready when its variables are absent', () => {
   for (const c of capabilities()) assert.equal(c.ready, false, `${c.id} claims to be ready with nothing set`);
   Object.assign(process.env, saved);
 });
+
+// ---------------------------------------------------------------- admin
+
+test('an admin lever refuses without the secret, and refuses a wrong one', async () => {
+  const { authoriseAdmin } = await import('@/lib/server/admin');
+  delete process.env.ADMIN_SECRET;
+  assert.equal(authoriseAdmin(new Request('https://x', { headers: { 'x-admin-secret': 'anything' } })), false);
+
+  process.env.ADMIN_SECRET = 'admin-secret-value';
+  assert.equal(authoriseAdmin(new Request('https://x', { headers: { 'x-admin-secret': 'admin-secret-value' } })), true);
+  assert.equal(authoriseAdmin(new Request('https://x', { headers: { 'x-admin-secret': 'admin-secret-valuX' } })), false);
+  assert.equal(authoriseAdmin(new Request('https://x')), false);
+  assert.equal(authoriseAdmin(new Request('https://x', { headers: { 'x-admin-secret': 'admin-secret-value-more' } })), false);
+  delete process.env.ADMIN_SECRET;
+});
