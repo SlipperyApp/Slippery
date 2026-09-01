@@ -312,6 +312,36 @@ const MEASURE = () => {
     if (spilled.length > 4) break;
   }
 
+  /*  A box that is not a box.
+   *
+   *  width and height do nothing on display: inline. A bare <span> given
+   *  44px square renders as a zero-width sliver of its own border, and the
+   *  stylesheet reads correct while the page is not. On /themes the two
+   *  locked colours, which are the whole argument of the page, rendered as
+   *  two 3px marks. It looked right in the theme cards because there the
+   *  same span is a flex item, which blockifies it.
+   *
+   *  This is the third defect this week of one shape: an element whose
+   *  layout silently depends on what its parent's display happens to be.
+   *  Any explicit size on an inline box is that shape. */
+  const sizeless = [];
+  for (const el of document.querySelectorAll('body *')) {
+    if (!visible(el)) continue;
+    // Inside an <svg> the CSS box model does not apply: every shape computes
+    // to display: inline and is laid out by SVG's own rules.
+    if (el.ownerSVGElement || el.closest('svg')) continue;
+    const cs = getComputedStyle(el);
+    if (cs.display !== 'inline') continue;
+    // A replaced element takes width and height while inline, so it is not
+    // this bug.
+    if (/^(img|svg|input|video|canvas|iframe|object|embed|select|textarea|button)$/i.test(el.tagName)) continue;
+    const w = cs.width, h = cs.height;
+    if ((w !== 'auto' && w !== '' && !w.startsWith('0')) || (h !== 'auto' && h !== '' && !h.startsWith('0'))) {
+      sizeless.push(`${el.tagName.toLowerCase()}.${String(el.className).split(' ')[0]} is inline with width ${w}, height ${h}`);
+    }
+    if (sizeless.length > 3) break;
+  }
+
   const collide = [];
   const leaves = [...document.querySelectorAll('p,h1,h2,h3,h4,span,li,td,th,dd,dt,a,button,label')]
     .filter((el) => {
@@ -378,6 +408,7 @@ const MEASURE = () => {
     spill,
     clipped,
     spilled,
+    sizeless,
     collide,
   };
 };
@@ -454,6 +485,7 @@ async function visit(ctx, route, vp, { runAxe = false, theme = null } = {}) {
   if (m.spill.length) note(route, label, 'module-overflows', m.spill.join(', '));
   if (m.clipped.length) note(route, label, 'text-clipped', m.clipped.join(' | '));
   if (m.spilled.length) note(route, label, 'text-spills', m.spilled.join(' | '));
+  if (m.sizeless.length) note(route, label, 'size-on-inline', m.sizeless.join(' | '));
   if (m.collide.length) note(route, label, 'text-collision', m.collide.join(' | '));
 
   if (runAxe) {

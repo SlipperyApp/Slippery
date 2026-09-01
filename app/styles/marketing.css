@@ -226,7 +226,17 @@
 
 .themecard { cursor: pointer; text-align: left; width: 100%; }
 .themecard__swatches { display: flex; gap: 5px; margin-top: var(--s3); }
-.themecard__sw { width: 26px; height: 26px; border-radius: 7px; border: 1px solid color-mix(in oklab, #fff 12%, transparent); }
+/*  inline-block, because a bare <span> is display: inline and width and
+    height are ignored on it. Inside .themecard__swatches it is a flex item and
+    gets its box anyway, which is why the theme cards looked right; on /themes
+    the two locked colours sit in a plain div, so the 44px swatches rendered as
+    two 3px vertical marks. */
+.themecard__sw {
+  display: inline-block;
+  width: 26px; height: 26px;
+  border-radius: 7px;
+  border: 1px solid color-mix(in oklab, #fff 12%, transparent);
+}
 
 .marks { display: flex; flex-wrap: wrap; gap: var(--s2) var(--s4); align-items: center; }
 
