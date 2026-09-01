@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import { Breadcrumbs } from '@/components/marketing/Breadcrumbs';
 
 export const metadata: Metadata = {
   title: 'What changed',
@@ -46,8 +47,8 @@ export default function Changelog() {
   return (
     <section className="sect">
       <div className="wrap">
-        <span className="pill">Changelog</span>
-        <h1 className="sect__h" style={{ marginTop: 'var(--s4)', fontSize: 'clamp(30px, 6vw, 48px)' }}>
+        <Breadcrumbs trail={[{ href: '/', label: 'Slippery' }]} page="What changed" />
+        <h1 className="sect__h" style={{ fontSize: 'clamp(30px, 6vw, 48px)' }}>
           <span className="setup">What changed for you.</span>
           <span>Not what we happened to ship.</span>
         </h1>

@@ -3,7 +3,11 @@ import type { MetadataRoute } from 'next';
 const BASE = process.env.NEXT_PUBLIC_APP_URL || 'https://slippery-iota.vercel.app';
 
 /** The public routes only. Everything under /app is a person's own ledger and
- *  is marked noindex on the page itself. */
+ *  is marked noindex on the page itself.
+ *
+ *  /thank-you is not here on purpose: it is a confirmation page, it is
+ *  noindex, and a sitemap entry for one is how a "thank you" page ends up
+ *  ranking above the product it confirms. */
 export default function sitemap(): MetadataRoute.Sitemap {
   const routes = [
     ['/', 1.0], ['/how', 0.9], ['/pricing', 0.9], ['/demo', 0.8], ['/faq', 0.7],

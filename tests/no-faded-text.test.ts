@@ -42,7 +42,7 @@ test('nothing that has to be read is faded with opacity', () => {
       const m = line.match(/opacity:\s*(?:['"])?(0?\.\d+)/);
       if (!m) return;
       if (ALLOW.some((re) => re.test(line))) return;
-      bad.push(`${file}:${i + 1} opacity ${m[1]} — use .pending, or aria-hidden if it is decoration\n    ${line.trim().slice(0, 110)}`);
+      bad.push(`${file}:${i + 1} opacity ${m[1]}. Use .pending, or aria-hidden if it is decoration\n    ${line.trim().slice(0, 110)}`);
     });
   }
   assert.deepEqual(bad, [], bad.join('\n'));

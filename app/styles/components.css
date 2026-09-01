@@ -295,7 +295,31 @@
 }
 .tbl td { padding: var(--s3); border-top: 1px solid var(--line); vertical-align: middle; }
 .tbl .num { text-align: right; font-variant-numeric: tabular-nums; }
-.scroller { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+/*  A table that scrolls sideways, and SAYS SO.
+
+    It already scrolled. What it did not do was admit it: at 390 the last
+    column was cut mid-word, "system" rendered as "syster", and nothing on
+    screen suggested there was more to the right. A clipped word does not read
+    as "scroll me", it reads as broken.
+
+    Four backgrounds, no JavaScript. The two `local` gradients travel with the
+    content and cover the shadows when you reach an end, so the shadow is
+    present exactly when there is more to see. */
+.scroller {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  background:
+    linear-gradient(to right, var(--surface), transparent) left center,
+    linear-gradient(to left, var(--surface), transparent) right center,
+    radial-gradient(farthest-side at 0 50%, color-mix(in oklab, var(--bg) 55%, transparent), transparent) left center,
+    radial-gradient(farthest-side at 100% 50%, color-mix(in oklab, var(--bg) 55%, transparent), transparent) right center;
+  background-repeat: no-repeat;
+  background-size: 34px 100%, 34px 100%, 16px 100%, 16px 100%;
+  background-attachment: local, local, scroll, scroll;
+}
+/*  Room for the columns rather than crushing them. Below this the table
+    scrolls, which is what the shadows are for. */
+.scroller .tbl { min-width: 520px; }
 
 /* -------------------------------------------------------------------- rows */
 .brow {

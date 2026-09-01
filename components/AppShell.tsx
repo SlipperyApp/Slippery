@@ -66,7 +66,7 @@ export function AppShell({ chrome, children }: { chrome: ShellChrome; children: 
             <Icon name="settings" size={18} className="navrow__icon" />
             <span>Settings</span>
           </Link>
-          <p className="small dim" style={{ padding: '8px 12px 0' }}>
+          <p className="small dim" style={{ padding: 'var(--s2) var(--s3) 0' }}>
             {chrome.readOnly ? 'Read only. Ledger and export stay live.' : 'Times in UK time'}
           </p>
         </div>

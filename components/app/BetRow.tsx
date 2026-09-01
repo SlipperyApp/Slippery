@@ -100,7 +100,7 @@ export function BetLine({ bet, currency = 'GBP' }: { bet: DemoBet; currency?: Cu
         <p className="brow__sub">{dateTime(bet.eventAt)}</p>
       </div>
       <span className={`fig fig--s tnum ${s.realisedPlPence > 0 ? 'pos' : s.realisedPlPence < 0 ? 'neg' : ''}`}>
-        {s.status === 'open' ? '—' : money(s.realisedPlPence, currency, { sign: true })}
+        {s.status === 'open' ? '–' : money(s.realisedPlPence, currency, { sign: true })}
       </span>
     </li>
   );

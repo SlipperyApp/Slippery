@@ -30,11 +30,35 @@ body {
 
 /* Theme swap fades opacity, never colour: tweening `color` puts text through
    an unreadable middle. */
-body { transition: opacity var(--dur-theme) linear; }
-html[data-theme-swapping='1'] body { opacity: 0; }
+/*  The theme swap.
+
+    It used to blank the whole page to opacity 0 for 190ms and back. That is a
+    flash, not a transition: for a fifth of a second there is nothing on
+    screen, and on a slow paint you see the swap anyway.
+
+    Now the COLOURS move. Every ground, line and ink token is interpolated
+    over 140ms, so the page slides from one palette to the other with the
+    words still in place the whole time. The two result colours are locked and
+    identical in every theme, so they do not move at all.
+
+    Text colour is deliberately in the list: a colour transition on text is
+    only dangerous when it passes through the background, and none of these
+    do, because every theme's ink is light and every theme's ground is dark. */
+body, .card, .sect, .topbar, .mhead, .mfoot, .bottombar, .sidebar,
+.btn, .pill, .seg, .seg__btn, .input, .select, .brow, .brk__row, .cal__cell {
+  transition:
+    background-color var(--dur-theme) var(--ease),
+    border-color var(--dur-theme) var(--ease),
+    color var(--dur-theme) var(--ease);
+}
+@media (prefers-reduced-motion: reduce) {
+  body, .card, .sect, .topbar, .mhead, .mfoot, .bottombar, .sidebar,
+  .btn, .pill, .seg, .seg__btn, .input, .select, .brow, .brk__row, .cal__cell {
+    transition: none;
+  }
+}
 @media (prefers-reduced-motion: reduce) {
   body { transition: none; }
-  html[data-theme-swapping='1'] body { opacity: 1; }
 }
 
 h1, h2, h3, h4, p, figure, blockquote, ul, ol, dl, dd { margin: 0; }

@@ -72,7 +72,7 @@ export default async function GroupPage({
           <section className="card">
             <h2 className="card__title">Where you are</h2>
             <p className="fig" style={{ marginTop: 'var(--s3)' }}>
-              {you ? fmtPosition(you.position, board.length) : '—'}
+              {you ? fmtPosition(you.position, board.length) : '–'}
             </p>
             <p className="small muted" style={{ marginTop: 'var(--s3)' }}>
               {summary.division === 'Premier'

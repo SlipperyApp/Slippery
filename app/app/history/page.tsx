@@ -89,7 +89,7 @@ export default async function History() {
                   </td>
                   <td className="dim nowrap">{event.enteredBy}</td>
                   <td className="num tnum">
-                    {event.returnedPence == null ? '—' : money(event.returnedPence, account.currency)}
+                    {event.returnedPence == null ? '–' : money(event.returnedPence, account.currency)}
                   </td>
                 </tr>
               ))}

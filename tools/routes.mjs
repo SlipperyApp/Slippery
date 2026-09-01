@@ -3,6 +3,7 @@
 export const MARKETING = [
   '/', '/demo', '/how', '/pricing', '/faq', '/themes', '/social', '/import',
   '/terms', '/privacy', '/changelog', '/safer-gambling', '/waiting-list',
+  '/thank-you',
 ];
 
 export const AUTH = [

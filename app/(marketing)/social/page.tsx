@@ -3,6 +3,8 @@ import Link from 'next/link';
 import { Icon } from '@/components/Icon';
 import { SectionHead, Checks, RowList } from '@/components/MarketingChrome';
 import { units as fmtUnits } from '@/lib/format';
+import { Breadcrumbs } from '@/components/marketing/Breadcrumbs';
+import { StickyCta } from '@/components/marketing/StickyCta';
 
 export const metadata: Metadata = {
   title: 'Groups and monthly leagues',
@@ -30,8 +32,8 @@ export default function Social() {
     <>
       <section className="sect" style={{ paddingBottom: 'var(--s7)' }}>
         <div className="wrap">
-          <span className="pill">Slippers</span>
-          <h1 className="sect__h" style={{ marginTop: 'var(--s4)', fontSize: 'clamp(30px, 6vw, 52px)' }}>
+          <Breadcrumbs trail={[{ href: '/', label: 'Slippery' }]} page="Groups and leagues" />
+          <h1 className="sect__h" style={{ fontSize: 'clamp(30px, 6vw, 52px)' }}>
             <span className="setup">A bigger bankroll</span>
             <span>should not be a bigger score.</span>
           </h1>
@@ -131,6 +133,7 @@ export default function Social() {
           </div>
         </div>
       </section>
+      <StickyCta />
     </>
   );
 }

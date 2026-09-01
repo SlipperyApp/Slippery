@@ -7,6 +7,8 @@ import { ProfitCurve } from '@/components/app/Charts';
 import { MonthCalendar } from '@/components/app/Calendar';
 import { BetRow } from '@/components/app/BetRow';
 import { money, pct, count, units as fmtUnits, MONTH_LONG, londonParts } from '@/lib/format';
+import { Breadcrumbs } from '@/components/marketing/Breadcrumbs';
+import { StickyCta } from '@/components/marketing/StickyCta';
 
 export const metadata: Metadata = {
   title: 'The example account',
@@ -35,10 +37,11 @@ export default function Demo() {
   const p = londonParts(now);
 
   return (
+    <>
     <section className="sect">
       <div className="wrap">
-        <span className="pill">Live demo</span>
-        <h1 className="sect__h" style={{ marginTop: 'var(--s4)', fontSize: 'clamp(30px, 6vw, 48px)' }}>
+        <Breadcrumbs trail={[{ href: '/', label: 'Slippery' }]} page="The example account" />
+        <h1 className="sect__h" style={{ fontSize: 'clamp(30px, 6vw, 48px)' }}>
           <span className="setup">Not a screenshot.</span>
           <span>The account, running, right now.</span>
         </h1>
@@ -127,5 +130,8 @@ export default function Demo() {
         </div>
       </div>
     </section>
+
+    <StickyCta />
+    </>
   );
 }

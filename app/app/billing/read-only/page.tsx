@@ -36,7 +36,7 @@ export default async function ReadOnly() {
           <h2 className="card__title">Paused</h2>
           <ul style={{ marginTop: 'var(--s3)' }}>
             {READ_ONLY_PAUSES.map((t) => (
-              <li key={t} className="checkitem" style={{ padding: '7px 0' }}>
+              <li key={t} className="checkitem" style={{ padding: 'var(--s2) 0' }}>
                 <Icon name="pause" size={15} style={{ color: 'var(--neg)' }} />
                 <span style={{ textTransform: 'capitalize' }}>{t}</span>
               </li>
@@ -52,7 +52,7 @@ export default async function ReadOnly() {
           <h2 className="card__title">Still fully live</h2>
           <ul style={{ marginTop: 'var(--s3)' }}>
             {READ_ONLY_ALLOWS.map((t) => (
-              <li key={t} className="checkitem" style={{ padding: '7px 0' }}>
+              <li key={t} className="checkitem" style={{ padding: 'var(--s2) 0' }}>
                 <Icon name="check" size={15} />
                 <span style={{ textTransform: 'capitalize' }}>{t}</span>
               </li>

@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import { ThemeStrip } from '@/components/marketing/ThemeStrip';
 import { SectionHead } from '@/components/MarketingChrome';
+import { Breadcrumbs } from '@/components/marketing/Breadcrumbs';
 
 export const metadata: Metadata = {
   title: 'Themes',
@@ -19,8 +20,8 @@ export default function Themes() {
   return (
     <section className="sect">
       <div className="wrap">
-        <span className="pill">Themes</span>
-        <h1 className="sect__h" style={{ marginTop: 'var(--s4)', fontSize: 'clamp(30px, 6vw, 48px)' }}>
+        <Breadcrumbs trail={[{ href: '/', label: 'Slippery' }]} page="Themes" />
+        <h1 className="sect__h" style={{ fontSize: 'clamp(30px, 6vw, 48px)' }}>
           <span className="setup">Eight, all of them dark.</span>
           <span>Pick one and this page changes.</span>
         </h1>

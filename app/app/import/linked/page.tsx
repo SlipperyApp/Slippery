@@ -67,7 +67,7 @@ export default async function Linked() {
               'Asks for a result three hours past an expected finish',
               'Never sends anything about not having bet, or late at night',
             ].map((t) => (
-              <li key={t} className="checkitem" style={{ padding: '6px 0' }}>
+              <li key={t} className="checkitem" style={{ padding: 'var(--s2) 0' }}>
                 <Icon name="check" size={15} />
                 <span>{t}</span>
               </li>

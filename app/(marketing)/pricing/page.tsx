@@ -4,6 +4,8 @@ import { Icon } from '@/components/Icon';
 import { SectionHead } from '@/components/MarketingChrome';
 import { TRIAL_DAYS, TRIAL_SLIPS } from '@/lib/domain/trial';
 import { money } from '@/lib/format';
+import { Breadcrumbs } from '@/components/marketing/Breadcrumbs';
+import { StickyCta } from '@/components/marketing/StickyCta';
 
 export const metadata: Metadata = {
   title: 'Pricing',
@@ -34,8 +36,8 @@ export default function Pricing() {
     <>
       <section className="sect" style={{ paddingBottom: 'var(--s7)' }}>
         <div className="wrap">
-          <span className="pill">Pricing</span>
-          <h1 className="sect__h" style={{ marginTop: 'var(--s4)', fontSize: 'clamp(30px, 6vw, 52px)' }}>
+          <Breadcrumbs trail={[{ href: '/', label: 'Slippery' }]} page="Pricing" />
+          <h1 className="sect__h" style={{ fontSize: 'clamp(30px, 6vw, 52px)' }}>
             <span className="setup">One price. Every feature.</span>
             <span>No tier that hides the useful half.</span>
           </h1>
@@ -132,6 +134,7 @@ export default function Pricing() {
           </p>
         </div>
       </section>
+      <StickyCta />
     </>
   );
 }

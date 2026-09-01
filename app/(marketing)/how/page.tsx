@@ -3,6 +3,8 @@ import Link from 'next/link';
 import { Icon } from '@/components/Icon';
 import { SectionHead, Checks, RowList } from '@/components/MarketingChrome';
 import { SettleDemo } from '@/components/SettleDemo';
+import { Breadcrumbs } from '@/components/marketing/Breadcrumbs';
+import { StickyCta } from '@/components/marketing/StickyCta';
 
 export const metadata: Metadata = {
   title: 'How Slippery works',
@@ -31,8 +33,8 @@ export default function How() {
     <>
       <section className="sect" style={{ paddingBottom: 'var(--s7)' }}>
         <div className="wrap">
-          <span className="pill">How it works</span>
-          <h1 className="sect__h" style={{ marginTop: 'var(--s4)', fontSize: 'clamp(30px, 6vw, 52px)' }}>
+          <Breadcrumbs trail={[{ href: '/', label: 'Slippery' }]} page="How it works" />
+          <h1 className="sect__h" style={{ fontSize: 'clamp(30px, 6vw, 52px)' }}>
             <span className="setup">Six steps, and you do two of them.</span>
             <span>The rest is the point of paying for it.</span>
           </h1>
@@ -135,6 +137,7 @@ export default function How() {
           </div>
         </div>
       </section>
+      <StickyCta />
     </>
   );
 }

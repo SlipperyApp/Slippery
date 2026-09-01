@@ -13,8 +13,19 @@ function readCookie(): ThemeName {
   return isTheme(v) ? v : DEFAULT_THEME;
 }
 
-/** Switching fades out for 190ms, swaps, and fades back. Colour is never
- *  tweened: text goes unreadable through the middle of a colour transition. */
+/** Switching swaps the attribute and lets the COLOURS move.
+ *
+ *  It used to blank the page to opacity 0 for 190ms and fade back, which is a
+ *  flash rather than a transition: for a fifth of a second there is nothing on
+ *  screen at all. The grounds, lines and inks now interpolate over 140ms with
+ *  the words still in place (see base.css), which is both faster and smoother.
+ *
+ *  The old comment said colour must never be tweened because text goes
+ *  unreadable through the middle. That is true when a transition crosses the
+ *  background, and none of these do: every theme's ink is light and every
+ *  theme's ground is dark, so the path between any two never passes through
+ *  the other. The two result colours are identical in all eight themes and do
+ *  not move at all. */
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
   const [theme, setThemeState] = useState<ThemeName>(DEFAULT_THEME);
 
@@ -25,18 +36,8 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
     // One year, lax, no domain: it is a display preference and nothing else.
     document.cookie = `${THEME_COOKIE}=${encodeURIComponent(next)}; path=/; max-age=31536000; samesite=lax`;
 
-    const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    if (reduce) {
-      root.setAttribute('data-theme', next);
-      setThemeState(next);
-      return;
-    }
-    root.setAttribute('data-theme-swapping', '1');
-    window.setTimeout(() => {
-      root.setAttribute('data-theme', next);
-      setThemeState(next);
-      root.removeAttribute('data-theme-swapping');
-    }, 190);
+    root.setAttribute('data-theme', next);
+    setThemeState(next);
   }, []);
 
   return <ThemeCtx.Provider value={{ theme, setTheme }}>{children}</ThemeCtx.Provider>;

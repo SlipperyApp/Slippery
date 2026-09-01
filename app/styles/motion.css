@@ -3,7 +3,6 @@
    background layer. */
 :root {
   --blob-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 200 200'%3E%3Cdefs%3E%3Cfilter id='b' x='-60%25' y='-60%25' width='220%25' height='220%25' color-interpolation-filters='sRGB'%3E%3CfeGaussianBlur stdDeviation='26'/%3E%3C/filter%3E%3C/defs%3E%3Cellipse cx='100' cy='96' rx='56' ry='44' fill='%23ffffff' filter='url(%23b)'/%3E%3Cellipse cx='128' cy='120' rx='34' ry='30' fill='%23ffffff' filter='url(%23b)'/%3E%3C/svg%3E");
-  --grain-img: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n' x='0' y='0'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.82' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='160' height='160' filter='url(%23n)' opacity='0.55'/%3E%3C/svg%3E");
 }
 
 /* Motion.
@@ -88,16 +87,12 @@
   to   { transform: translate3d(0, -7vmax, 0); }
 }
 
-/* Grain, and a veil that keeps text legible over the brightest part of a
-   blob. Both are painted, neither animates. */
-.bgfield__grain {
-  position: absolute;
-  inset: -50%;
-  background-image: var(--grain-img);
-  background-repeat: repeat;
-  opacity: var(--grain);
-  mix-blend-mode: overlay;
-}
+/* A veil that keeps text legible over the brightest part of a blob. Painted,
+   does not animate.
+
+   The grain layer that used to sit here is gone: noise over a soft gradient
+   is the most recognisable stock texture on the web, and it cost a full
+   screen overlay blend to get it. */
 .bgfield__veil {
   position: absolute;
   inset: 0;
@@ -304,4 +299,127 @@
 .jack__snap { height: 0; }
 @media (prefers-reduced-motion: no-preference) and (min-width: 700px) {
   .jack__snap { height: 33.333%; scroll-snap-align: start; }
+}
+
+/* ============================================================== the polish
+
+   Four pieces of motion, each attached to something that actually changes.
+   Nothing here delays a read: every one of them is either on an element
+   arriving, an element the pointer is already on, or a navigation.
+
+   Everything collapses at the bottom of this file under
+   prefers-reduced-motion, and every scroll driven rule is inside a @supports.
+   An entrance animation that starts at opacity 0 and never runs is content
+   that is simply gone, which is the worst possible failure for a progressive
+   enhancement.                                                             */
+
+/* -------------------------------------------------------- sections arrive */
+/*  Scroll driven, so no observer, no state and no JavaScript at all: the
+    browser ties the animation to the element's own position in the viewport.
+    Marketing sections only. The app is a tool, and a tool that animates every
+    time you scroll it is a tool you will turn off.
+
+    TRANSFORM ONLY, and this is the important part. The first version faded
+    from opacity 0, and anything below the fold therefore sat at opacity 0
+    until it was scrolled to. axe measured 46 calendar figures at 1:1 on
+    /demo and was right to: content that is invisible until a scroll is
+    content that is invisible to anything that does not scroll, which
+    includes printing, a short viewport that cannot reach it, and a
+    screenshot. A 14px offset has no such failure mode. */
+@supports (animation-timeline: view()) {
+  @media (prefers-reduced-motion: no-preference) {
+    .sect > .wrap > * {
+      animation: arrive linear both;
+      animation-timeline: view();
+      /*  Finished well before the element reaches the middle of the screen.
+          An entrance still running when you are reading it is a distraction,
+          not a flourish. */
+      animation-range: entry 5% cover 32%;
+    }
+    /*  The hero already has its own staged entrance, and the sequence owns
+        its own scroll range. Two animations on one scroll is a fight. */
+    .hero .wrap > *, .jack .wrap > * { animation: none; }
+  }
+}
+/*  Not a fade. The section settles down into place, which reads as weight
+    rather than as an element materialising out of nothing.
+
+    Travel only. There was a scale(0.988) on it, and two things were wrong
+    with that: a scale on text is a moment of resampling, so every heading was
+    faintly soft while it played, and it shrinks everything inside including
+    the buttons. The sweep measured 66 controls at 43px against a 44px floor,
+    caught mid animation, and it was right to: a target that is under size
+    while it moves is under size while somebody is reaching for it.
+
+    Opacity is never touched either, so nothing here can be invisible. */
+@keyframes arrive {
+  from { transform: translateY(20px); }
+  to   { transform: none; }
+}
+
+/* ---------------------------------------------------------- buttons react */
+/*  Not an opacity fade. A ring grows out of the button's own edge and the
+    face lifts a hair: two things that read as a physical surface responding,
+    where a fade reads as a state the page is unsure about. The ring is a
+    box-shadow so it costs no layout, and it is drawn OUTSIDE the button so it
+    never moves the text. */
+.btn {
+  transition:
+    background-color 160ms var(--ease),
+    border-color 160ms var(--ease),
+    color 160ms var(--ease),
+    box-shadow 200ms var(--ease-out),
+    transform 120ms var(--ease);
+}
+@media (hover: hover) and (prefers-reduced-motion: no-preference) {
+  .btn:hover:not([disabled]):not([aria-disabled='true']) {
+    box-shadow: 0 0 0 3px color-mix(in oklab, var(--accent) 22%, transparent);
+    transform: translateY(-1px);
+  }
+  .btn--link:hover { box-shadow: none; transform: none; text-decoration-color: currentColor; }
+}
+.btn:active:not([disabled]) { box-shadow: none; }
+
+/* ------------------------------------------------------------ cards react */
+/*  Only the ones that DO something. A card that lifts under the pointer and
+    then does nothing when pressed is a promise the page does not keep. */
+.card a.card, a.card, button.card, .themecard, .rowcard[role='button'], button.rowcard {
+  transition: transform var(--dur-fast) var(--ease), border-color var(--dur-fast) var(--ease);
+}
+@media (hover: hover) and (prefers-reduced-motion: no-preference) {
+  a.card:hover, button.card:hover, button.rowcard:hover { transform: translateY(-2px); }
+}
+a.card:active, button.card:active, button.rowcard:active { transform: translateY(0); }
+
+/* -------------------------------------------------- menus and sheets open */
+@media (prefers-reduced-motion: no-preference) {
+  .modmenu__pop:not([hidden]) { animation: pop 140ms var(--ease-out) both; }
+  .sheet__scrim { animation: fade 160ms var(--ease) both; }
+  .sheet { animation: sheet-in 220ms var(--ease-out) both; }
+}
+@keyframes pop {
+  from { opacity: 0; transform: translateY(-6px) scale(0.98); }
+  to   { opacity: 1; transform: none; }
+}
+@keyframes fade { from { opacity: 0; } to { opacity: 1; } }
+@keyframes sheet-in {
+  from { opacity: 0; transform: translateY(12px) scale(0.99); }
+  to   { opacity: 1; transform: none; }
+}
+
+/* ------------------------------------------------------ between the pages */
+/*  One declaration, and only where the browser already knows how. The
+    fallback is the navigation you had before. */
+@media (prefers-reduced-motion: no-preference) {
+  @view-transition { navigation: auto; }
+}
+
+/* ------------------------------------------------------------- the switch */
+/*  Reduced motion is not "shorter". Everything above is off. */
+@media (prefers-reduced-motion: reduce) {
+  .sect > .wrap > *,
+  .modmenu__pop:not([hidden]),
+  .sheet__scrim,
+  .sheet { animation: none !important; }
+  a.card, button.card, button.rowcard, .themecard { transition: none; }
 }

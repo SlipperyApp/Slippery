@@ -2,6 +2,8 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { Icon } from '@/components/Icon';
 import { SectionHead, Checks, RowList } from '@/components/MarketingChrome';
+import { Breadcrumbs } from '@/components/marketing/Breadcrumbs';
+import { StickyCta } from '@/components/marketing/StickyCta';
 
 export const metadata: Metadata = {
   title: 'Import a history',
@@ -21,8 +23,8 @@ export default function ImportPage() {
     <>
       <section className="sect" style={{ paddingBottom: 'var(--s7)' }}>
         <div className="wrap">
-          <span className="pill">Import</span>
-          <h1 className="sect__h" style={{ marginTop: 'var(--s4)', fontSize: 'clamp(30px, 6vw, 52px)' }}>
+          <Breadcrumbs trail={[{ href: '/', label: 'Slippery' }]} page="Import a history" />
+          <h1 className="sect__h" style={{ fontSize: 'clamp(30px, 6vw, 52px)' }}>
             <span className="setup">Bring the old record with you.</span>
             <span>The dry run goes first, always.</span>
           </h1>
@@ -88,6 +90,7 @@ export default function ImportPage() {
           </div>
         </div>
       </section>
+      <StickyCta />
     </>
   );
 }

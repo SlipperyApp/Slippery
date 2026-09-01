@@ -51,7 +51,7 @@ export default function Unreadable() {
             'No finger over the bottom of the slip',
             'Full brightness, if it is a photograph of a printed slip',
           ].map((t) => (
-            <li key={t} className="checkitem" style={{ padding: '6px 0' }}>
+            <li key={t} className="checkitem" style={{ padding: 'var(--s2) 0' }}>
               <Icon name="check" size={15} />
               <span>{t}</span>
             </li>

@@ -82,7 +82,7 @@ export function LoginForm({ startWithReset = false }: { startWithReset?: boolean
           <div style={{ position: 'relative' }}>
             <input id="li-pass" name="password" type={show ? 'text' : 'password'}
               autoComplete="current-password" className="input" value={password}
-              onChange={(e) => setPassword(e.target.value)} required style={{ paddingRight: '52px' }} />
+              onChange={(e) => setPassword(e.target.value)} required style={{ paddingRight: 'var(--s9)' }} />
             <button type="button" className="iconbtn" onClick={() => setShow(!show)} aria-pressed={show}
               aria-label={show ? 'Hide the password' : 'Show the password'}
               style={{ position: 'absolute', right: 4, top: '50%', transform: 'translateY(-50%)' }}>

@@ -129,7 +129,7 @@
 }
 /*  display:block, because half the rows in the product build these out of
     <span> and half out of <p>. On the span version the title and the blurb
-    ran together on one line — "AccountWho you are, how to reach you" — and
+    ran together on one line, "AccountWho you are, how to reach you", and
     margin-top on an inline element does nothing, so the stylesheet looked
     correct and the page was not. */
 .rowcard__t { display: block; font-weight: var(--w-label); font-size: var(--t-small); }
@@ -268,3 +268,95 @@
 }
 /* An icon button must not be squashed by a growing sibling. */
 .iconbtn { flex: none; }
+
+/* ------------------------------------------------------------- breadcrumbs */
+.crumbs { margin-bottom: var(--s5); }
+.crumbs ol {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px;
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  font-size: var(--t-small);
+  color: var(--ink-2);
+}
+.crumbs li { display: inline-flex; align-items: center; gap: 4px; }
+/*  A breadcrumb is a standalone link, so it is its own target: 20px against a
+    floor of 24 on a mouse and 44 on a thumb. The height is padding on the
+    link, not on the row, so the trail itself does not grow. */
+.crumbs a {
+  color: var(--ink-2);
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  min-height: 24px;
+}
+@media (max-width: 699px), (pointer: coarse) {
+  .crumbs a { min-height: var(--tap); }
+  .crumbs ol { gap: 0 4px; }
+}
+.crumbs a:hover { color: var(--ink); text-decoration: underline; text-underline-offset: 3px; }
+.crumbs [aria-current='page'] { color: var(--ink); }
+.crumbs svg { color: var(--ink-3); }
+
+/* -------------------------------------------------------------- sticky cta */
+/*  Phones only, and only once the hero's own button has gone. Two copies of
+    the same control on screen at once is what makes a bar like this read as
+    an advert rather than a convenience. */
+.stickycta { display: none; }
+@media (max-width: 699px) {
+  .stickycta {
+    display: block;
+    position: fixed;
+    left: var(--s4);
+    right: var(--s4);
+    bottom: calc(var(--s4) + env(safe-area-inset-bottom));
+    z-index: 40;
+    opacity: 0;
+    transform: translateY(12px);
+    pointer-events: none;
+    transition: opacity 220ms var(--ease-out), transform 220ms var(--ease-out);
+  }
+  .stickycta--on { opacity: 1; transform: none; pointer-events: auto; }
+  .stickycta .btn {
+    box-shadow: 0 12px 30px -12px rgb(0 0 0 / 0.8);
+    width: 100%;
+  }
+  /*  Room at the bottom of the page so the bar can never sit on top of the
+      last line of the footer. */
+  .page .mfoot { padding-bottom: calc(var(--s9) + env(safe-area-inset-bottom)); }
+}
+@media (prefers-reduced-motion: reduce) { .stickycta { transition: none; } }
+
+/* ------------------------------------------------------------- the makers */
+.makers { display: grid; gap: var(--s7); align-items: start; }
+@media (min-width: 900px) { .makers { grid-template-columns: minmax(0, 1fr) 340px; gap: var(--s8); } }
+.makers__list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s5) var(--s7);
+  margin-top: var(--s6);
+  list-style: none;
+  padding: 0;
+}
+.makers__list li { display: flex; align-items: center; gap: var(--s3); }
+/*  Both portraits are drawings on white, so the disc is white on purpose:
+    knocking the white out would leave one of them floating and the other in a
+    circle. A ring ties them to the page. */
+.makers__face {
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  object-fit: cover;
+  background: #fff;
+  box-shadow: 0 0 0 1px var(--line-2), 0 6px 18px -8px rgb(0 0 0 / 0.7);
+  flex: none;
+}
+.makers__name { display: block; font-weight: var(--w-label); font-size: var(--t-small); }
+.makers__did { display: block; font-size: var(--t-micro); color: var(--ink-2); margin-top: 2px; }
+.makers__tip { align-self: start; }
+.madeby { margin-top: var(--s4); }
+.madeby a { color: var(--ink-2); }
+.madeby a:hover { color: var(--ink); }

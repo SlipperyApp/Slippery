@@ -51,6 +51,7 @@ const P: Record<string, React.ReactNode> = {
   /* Filled, unlike everything else here: three hairline rings read as a
      dotted line rather than as three dots. */
   more: <><circle cx="5" cy="12" r="1.5" fill="currentColor" stroke="none" /><circle cx="12" cy="12" r="1.5" fill="currentColor" stroke="none" /><circle cx="19" cy="12" r="1.5" fill="currentColor" stroke="none" /></>,
+  heart: <><path d="M12 20.2c-1-.8-7.5-5-7.5-9.6a4 4 0 0 1 7.5-2 4 4 0 0 1 7.5 2c0 4.6-6.5 8.8-7.5 9.6Z" /></>,
   share: <><path d="M12 15V4.4" /><path d="m8.4 7.6 3.6-3.2 3.6 3.2" /><path d="M5 13v6.5h14V13" /></>,
   link: <><path d="M10.4 13.6a3.6 3.6 0 0 0 5.1 0l2.6-2.6a3.6 3.6 0 0 0-5.1-5.1l-1.1 1.1" /><path d="M13.6 10.4a3.6 3.6 0 0 0-5.1 0l-2.6 2.6a3.6 3.6 0 0 0 5.1 5.1l1.1-1.1" /></>,
   bell: <><path d="M6.4 10a5.6 5.6 0 0 1 11.2 0c0 4.2 1.4 5.6 1.4 5.6H5s1.4-1.4 1.4-5.6Z" /><path d="M10.2 19a2 2 0 0 0 3.6 0" /></>,

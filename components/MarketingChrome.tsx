@@ -108,12 +108,19 @@ export function MarketingFooter() {
 }
 
 /** Used at the top of every marketing section. */
+/** A section head is a heading and a paragraph.
+ *
+ *  It used to carry a small capitalised pill above the heading, on every
+ *  section of every page. One of those is a label; nine of them in a column
+ *  is a template, and it is the single most recognisable tell of a page that
+ *  was generated rather than written. The `badge` prop is kept and ignored so
+ *  the call sites do not all have to change at once, and so the word is still
+ *  in the source for whoever wants it back as something else. */
 export function SectionHead({
-  badge, setup, claim, children, centred = false,
-}: { badge: string; setup: string; claim: string; children?: React.ReactNode; centred?: boolean }) {
+  setup, claim, children, centred = false,
+}: { badge?: string; setup: string; claim: string; children?: React.ReactNode; centred?: boolean }) {
   return (
     <div className={centred ? 'sect__head sect__head--mid' : 'sect__head'}>
-      <span className="pill sect__badge">{badge}</span>
       <h2 className="sect__h">
         <span className="setup">{setup}</span>
         <span>{claim}</span>

@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import { WaitingListForm } from '@/components/marketing/WaitingListForm';
 import { Icon } from '@/components/Icon';
+import { Breadcrumbs } from '@/components/marketing/Breadcrumbs';
 
 export const metadata: Metadata = {
   title: 'The app waiting list',
@@ -19,9 +20,9 @@ export default function WaitingList() {
   return (
     <section className="sect">
       <div className="wrap">
+        <Breadcrumbs trail={[{ href: '/', label: 'Slippery' }]} page="Waiting list" />
         <div className="column">
-          <span className="pill">Coming soon</span>
-          <h1 style={{ marginTop: 'var(--s4)', fontSize: 'clamp(28px, 6vw, 44px)' }}>
+          <h1 style={{ fontSize: 'clamp(28px, 6vw, 44px)' }}>
             iOS and Android coming soon. The web app works today.
           </h1>
           <p className="lead" style={{ marginTop: 'var(--s4)' }}>

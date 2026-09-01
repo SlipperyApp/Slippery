@@ -81,7 +81,7 @@ export function SignupForm() {
             id="su-pass" name="password" type={show ? 'text' : 'password'}
             autoComplete="new-password" className="input" value={password}
             onChange={(e) => setPassword(e.target.value)} required
-            style={{ paddingRight: '52px' }}
+            style={{ paddingRight: 'var(--s9)' }}
             aria-describedby="su-rules"
           />
           <button
@@ -99,7 +99,7 @@ export function SignupForm() {
           {PASSWORD_RULES.map((r) => {
             const ok = r.test(password);
             return (
-              <li key={r.id} className="small" style={{ display: 'flex', gap: 8, alignItems: 'center', color: ok ? 'var(--pos)' : 'var(--ink-3)' }}>
+              <li key={r.id} className="small" style={{ display: 'flex', gap: 'var(--s2)', alignItems: 'center', color: ok ? 'var(--pos)' : 'var(--ink-3)' }}>
                 <Icon name={ok ? 'check' : 'minus'} size={14} strokeWidth={2.2} />
                 <span>{r.label}</span>
                 <span className="sr-only">{ok ? 'met' : 'not yet met'}</span>

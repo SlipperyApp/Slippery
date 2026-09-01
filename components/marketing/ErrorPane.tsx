@@ -7,8 +7,7 @@ import { Icon } from '@/components/Icon';
 export function NotFoundPane() {
   return (
     <div className="column" style={{ paddingBlock: 'var(--s10)' }}>
-      <span className="pill">404</span>
-      <h1 style={{ marginTop: 'var(--s4)', fontSize: 'clamp(28px, 6vw, 44px)' }}>
+      <h1 style={{ fontSize: 'clamp(28px, 6vw, 44px)' }}>
         Nothing in your ledger has changed.
       </h1>
       <p className="lead" style={{ marginTop: 'var(--s4)' }}>
@@ -46,7 +45,7 @@ export function ServerErrorPane({ reset }: { reset?: () => void }) {
   return (
     <div className="column" style={{ paddingBlock: 'var(--s10)' }}>
       <span className="pill pill--neg">500</span>
-      <h1 style={{ marginTop: 'var(--s4)', fontSize: 'clamp(28px, 6vw, 44px)' }}>
+      <h1 style={{ fontSize: 'clamp(28px, 6vw, 44px)' }}>
         That failed on our side, and nothing was saved.
       </h1>
       <p className="lead" style={{ marginTop: 'var(--s4)' }}>

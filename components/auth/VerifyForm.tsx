@@ -93,7 +93,7 @@ export function VerifyForm({ email }: { email: string }) {
               key={i}
               ref={(el) => { refs.current[i] = el; }}
               className="input mono"
-              style={{ textAlign: 'center', padding: '10px 0', fontSize: '20px', minWidth: 0 }}
+              style={{ textAlign: 'center', padding: 'var(--s3) 0', fontSize: '20px', minWidth: 0 }}
               inputMode="numeric"
               autoComplete={i === 0 ? 'one-time-code' : 'off'}
               maxLength={LEN}

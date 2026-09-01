@@ -58,7 +58,7 @@ export default function Offline() {
             'Reading the ledger you already loaded',
             'Typing a bet in by hand',
           ].map((t) => (
-            <li key={t} className="checkitem" style={{ padding: '6px 0' }}>
+            <li key={t} className="checkitem" style={{ padding: 'var(--s2) 0' }}>
               <Icon name="check" size={15} />
               <span>{t}</span>
             </li>
@@ -67,7 +67,7 @@ export default function Offline() {
             'Reading a slip image, which happens on the server',
             'Settlement, which needs a results feed',
           ].map((t) => (
-            <li key={t} className="checkitem" style={{ padding: '6px 0' }}>
+            <li key={t} className="checkitem" style={{ padding: 'var(--s2) 0' }}>
               <Icon name="close" size={15} style={{ color: 'var(--neg)' }} />
               <span>{t}</span>
             </li>

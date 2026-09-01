@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { Icon } from '@/components/Icon';
+import { Breadcrumbs } from '@/components/marketing/Breadcrumbs';
 
 export const metadata: Metadata = {
   title: 'Safer gambling',
@@ -38,6 +39,7 @@ export default function SaferGambling() {
   return (
     <section className="sect">
       <div className="wrap">
+        <Breadcrumbs trail={[{ href: '/', label: 'Slippery' }]} page="Safer gambling" />
         <span className="pill">18+</span>
         <h1 className="sect__h" style={{ marginTop: 'var(--s4)', fontSize: 'clamp(28px, 5.5vw, 46px)' }}>
           <span className="setup">A red and green grid is an engagement mechanic.</span>
@@ -71,7 +73,7 @@ export default function SaferGambling() {
           <p className="card__title">What Slippery will not do</p>
           <ul style={{ marginTop: 'var(--s4)' }}>
             {CONSTRAINTS.map((c) => (
-              <li key={c} className="checkitem" style={{ padding: '8px 0' }}>
+              <li key={c} className="checkitem" style={{ padding: 'var(--s2) 0' }}>
                 <Icon name="check" size={16} />
                 <span>{c}</span>
               </li>

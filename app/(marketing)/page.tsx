@@ -8,6 +8,8 @@ import { SplitHeadline } from '@/components/marketing/SplitHeadline';
 import { ThemeStrip } from '@/components/marketing/ThemeStrip';
 import { Sequence } from '@/components/marketing/Sequence';
 import { WaveField } from '@/components/marketing/WaveField';
+import { Makers, MadeBy } from '@/components/marketing/Makers';
+import { StickyCta } from '@/components/marketing/StickyCta';
 import { Faq } from '@/components/marketing/Faq';
 import { TOP_QUESTIONS } from '@/lib/content/faq';
 import { money } from '@/lib/format';
@@ -32,12 +34,7 @@ export default function Landing() {
       <section className="hero hero--mid">
         <WaveField />
         <div className="wrap">
-          <span className="pill rise">
-            <span className="dot" style={{ background: 'var(--accent)' }} />
-            Bet tracking for UK and Irish bettors
-          </span>
-
-          <h1 className="hero__h rise rise-1">
+          <h1 className="hero__h rise">
             It all starts with a{' '}
             <span className="slipword">
               <span className="slipword__glow" aria-hidden="true">slip.</span>
@@ -46,17 +43,17 @@ export default function Landing() {
             </span>
           </h1>
 
-          <p className="hero__sub rise rise-2">
+          <p className="hero__sub rise rise-1">
             Forward the slip when you place it. Slippery reads it, settles it, and keeps the
             record you would not have kept.
           </p>
 
-          <div className="hero__cta rise rise-3">
+          <div className="hero__cta rise rise-2">
             <Link href="/signup" className="btn btn--primary btn--lg">Start free for 14 days</Link>
             <Link href="/demo" className="btn btn--link">or see a real account</Link>
           </div>
 
-          <p className="small dim rise rise-4 hero__fine">
+          <p className="small dim rise rise-3 hero__fine">
             14 days or 35 slips. Card required, cancel in one tap.
           </p>
 
@@ -65,7 +62,7 @@ export default function Landing() {
                the same thing in a frame reads as the software. It is chrome,
                so it is aria-hidden, and the demo inside it is the real
                component rather than an image of one. */}
-          <div className="frame rise rise-4">
+          <div className="frame rise rise-3">
             <div className="frame__bar" aria-hidden="true">
               <span className="frame__dot" /><span className="frame__dot" /><span className="frame__dot" />
               <span className="frame__url">slippery.app</span>
@@ -328,6 +325,8 @@ export default function Landing() {
         </div>
       </section>
 
+      <Makers tipUrl={process.env.NEXT_PUBLIC_TIP_URL} />
+
       {/* ------------------------------------------------------- apps line */}
       <section className="sect" style={{ paddingTop: 0 }}>
         <div className="wrap">
@@ -340,9 +339,12 @@ export default function Landing() {
             <Link href="/waiting-list" className="btn btn--ghost btn--sm" style={{ marginTop: 'var(--s4)' }}>
               Join the waiting list
             </Link>
+            <MadeBy />
           </div>
         </div>
       </section>
+
+      <StickyCta />
     </>
   );
 }

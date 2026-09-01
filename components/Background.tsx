@@ -2,7 +2,11 @@
  *
  *  Three layered blobs whose gaussian is baked into an SVG mask (a live
  *  filter: blur() re-evaluates every scroll frame: 49.9ms p95 with it,
- *  16.8ms without), a grain layer, and a veil that keeps text legible.
+ *  16.8ms without) and a veil that keeps text legible.
+ *
+ *  There was a grain layer over the blobs. Noise over a soft gradient is
+ *  the single most recognisable stock texture on the web, and it was
+ *  costing a full screen overlay blend for it. Gone.
  *  Everything is inside overflow:hidden, because uncontained blobs once
  *  caused 47px of horizontal scroll on a phone. transform and opacity only. */
 
@@ -15,7 +19,6 @@ export function Background() {
         <div className="bgfield__blob bgfield__blob--c" />
       </div>
       <div className="bgfield__veil" />
-      <div className="bgfield__grain" />
     </div>
   );
 }

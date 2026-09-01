@@ -11,7 +11,6 @@ export function LegalPage({
     <section className="sect">
       <div className="wrap">
         <div className="column column--wide" style={{ marginInline: 0 }}>
-          <span className="pill">Legal</span>
           <h1 style={{ marginTop: 'var(--s4)', fontSize: 'clamp(28px, 5vw, 40px)' }}>{title}</h1>
           <p className="small dim" style={{ marginTop: 'var(--s2)' }}>Last updated {updated}</p>
 
@@ -38,7 +37,7 @@ export function LegalPage({
             {sections.map((s, i) => (
               <li key={s.h} id={`s${i}`} style={{ marginBottom: 'var(--s7)', scrollMarginTop: '80px' }}>
                 <h2 style={{ fontSize: 'var(--t-h3)' }}>
-                  <span className="mono dim" style={{ marginRight: 10, fontSize: 'var(--t-small)' }}>
+                  <span className="mono dim" style={{ marginRight: 'var(--s3)', fontSize: 'var(--t-small)' }}>
                     {String(i + 1).padStart(2, '0')}
                   </span>
                   {s.h}
