@@ -53,11 +53,16 @@ export default async function Dashboard({
 
   return (
     <>
-      <div className="spread" style={{ marginBottom: 'var(--s4)', flexWrap: 'wrap' }}>
-        <h1>Dashboard</h1>
-      </div>
+      {/*  One h1 per page, and it is not worth 49 pixels of the fold: the
+           sidebar, the tab bar and the top bar all say where you are, and the
+           first thing under it is a figure the size of a headline. */}
+      <h1 className="sr-only">Dashboard</h1>
 
-      {trial.active ? (
+      {/*  Not in the example account. A trial banner there is an offer nobody
+           can act on, stacked under a banner that already says this is not
+           your account, and the two of them together took 78 pixels of a 900
+           pixel screen before the dashboard began. */}
+      {trial.active && !demo ? (
         <div className="banner" style={{ marginBottom: 'var(--s4)' }}>
           <Icon name="clock" size={18} className="banner__icon" />
           <span className="grow">Trial: {trial.message}</span>
@@ -76,11 +81,18 @@ export default async function Dashboard({
           handle={account.handle}
         />
 
-        {/* --------------------------------------------------- calendar */}
+        {/*  THE FIRST SCREEN IS THREE THINGS. The hero, the calendar and
+             what is running. On a 1440 by 900 desktop those fit above the
+             fold with the scope bar, which is the whole point: a dashboard
+             you have to scroll to read is a report.
+
+             Everything under them is analysis rather than status, and it is
+             still here for anybody who wants it. It is just no longer in the
+             way of the three figures somebody opened the app to see. */}
         <Module
           title="Calendar"
-          span={6}
-          size="xxl"
+          span={7}
+          size="xl"
           id="mod-calendar"
         >
           <MonthCalendar
@@ -96,8 +108,8 @@ export default async function Dashboard({
         {/* ------------------------------------------------ running now */}
         <Module
           title="Running now"
-          span={6}
-          size="xxl"
+          span={5}
+          size="xl"
           note="Ignores the scope"
           id="mod-running"
           footer={<ModuleLink href="/app/ledger">Open the ledger</ModuleLink>}
@@ -138,6 +150,12 @@ export default async function Dashboard({
             </div>
           )}
         </Module>
+
+        {/*  Below the fold on purpose, and labelled so it reads as a
+             deliberate second half rather than as more dashboard. */}
+        <div className="col-12 dash__break">
+          <h2 className="label">Analysis</h2>
+        </div>
 
         {/* ------------------------------------------------ profit curve */}
         <Module

@@ -178,6 +178,10 @@
 }
 .seg::-webkit-scrollbar { display: none; }
 .seg--gap { margin-bottom: var(--s3); }
+/*  The module's own corner, from inside the module's body: Breakdown is a
+    client component and the header above it is not, so its menu is positioned
+    into the header's corner rather than passed up through a prop. */
+.brk__tools { position: absolute; top: var(--s4); right: var(--s4); z-index: 2; }
 /*  The edge fades exist only while there is something past the edge, so a
     strip that fits looks like a strip that fits. */
 .seg--fadeL { mask-image: linear-gradient(to right, transparent, #000 22px); }
@@ -398,11 +402,11 @@
 .hero-net__tools { display: flex; align-items: center; gap: 2px; flex: none; }
 .hero-net__fig {
   font-family: var(--f-mono);
-  font-size: clamp(38px, 7.5vw, 64px);
+  font-size: clamp(34px, 6vw, 52px);
   font-weight: 600;
   line-height: 1.02;
   letter-spacing: -0.045em;
-  margin-top: var(--s2);
+  margin-top: var(--s1);
   font-variant-numeric: tabular-nums;
 }
 .hero-net__stats {
@@ -437,8 +441,22 @@
   background: var(--accent);
   animation: bar-grow 620ms var(--ease-out) both;
 }
-.hero-net .scopebar { margin-top: var(--s5); padding: 0; border: 0; background: none; }
-.hero-net__note { margin-top: var(--s3); }
+/*  From 1180 the stats and the scope share one row: on a desktop there is
+    width for both, and stacking them cost the calendar the fold. Below that
+    they stack, which is what a phone needs anyway. */
+.hero-net .scopebar { margin-top: var(--s4); padding: 0; border: 0; background: none; }
+.hero-net__note { margin-top: var(--s2); }
+@media (min-width: 1180px) {
+  .hero-net__row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--s6);
+    flex-wrap: wrap;
+  }
+  .hero-net__row .hero-net__stats { margin-top: var(--s3); }
+  .hero-net__row .scopebar { margin-top: var(--s3); }
+}
 
 /* -------------------------------------------------------------- share card */
 .sheet--share { max-width: min(420px, calc(100vw - 32px)); }
@@ -657,11 +675,15 @@
 @media (min-width: 1000px) { .toast { bottom: var(--s6); } }
 
 /* ------------------------------------------------------------------ banner */
+/*  A banner is one line of information, and two of them stacked were taking
+    172 of a 900 pixel screen before the dashboard began. Centred rather than
+    top aligned, and padded like a row rather than like a card. */
 .banner {
   display: flex;
-  align-items: flex-start;
+  align-items: center;
   gap: var(--s3);
-  padding: var(--s3) var(--s4);
+  min-height: 44px;
+  padding: var(--s2) var(--s4);
   border-radius: var(--r-ctl);
   border: 1px solid var(--line-2);
   background: var(--surface);
@@ -669,7 +691,7 @@
 }
 .banner--accent { border-color: color-mix(in oklab, var(--accent) 34%, transparent); background: color-mix(in oklab, var(--accent) 9%, var(--surface)); }
 .banner--neg { border-color: var(--neg-line); background: color-mix(in oklab, var(--neg) 9%, var(--surface)); }
-.banner__icon { width: 18px; height: 18px; flex: none; margin-top: 1px; }
+.banner__icon { width: 18px; height: 18px; flex: none; }
 
 /* ------------------------------------------------------------------- empty */
 /* Show the thing ghosted with the action on top, never apologise. */

@@ -252,21 +252,26 @@
 @media (min-width: 1000px) { .grid { grid-template-columns: repeat(12, minmax(0, 1fr)); gap: var(--s5); } }
 
 /* Fixed column spans. No packer, no pinning, no drag reorder. */
-.col-4  { grid-column: span 4; }
-.col-6  { grid-column: span 4; }
-.col-8  { grid-column: span 4; }
-.col-12 { grid-column: span 4; }
+.col-4, .col-5, .col-6, .col-7, .col-8, .col-12 { grid-column: span 4; }
 @media (min-width: 700px) {
   .col-4 { grid-column: span 4; }
-  .col-6 { grid-column: span 8; }
-  .col-8 { grid-column: span 8; }
-  .col-12 { grid-column: span 8; }
+  .col-5, .col-6, .col-7, .col-8, .col-12 { grid-column: span 8; }
 }
 @media (min-width: 1000px) {
   .col-4 { grid-column: span 4; }
+  .col-5 { grid-column: span 5; }
   .col-6 { grid-column: span 6; }
+  .col-7 { grid-column: span 7; }
   .col-8 { grid-column: span 8; }
   .col-12 { grid-column: span 12; }
+}
+
+/*  The line between the first screen and everything under it. The three
+    modules above the fold are status; this is where analysis starts. */
+.dash__break {
+  border-top: 1px solid var(--line);
+  padding-top: var(--s5);
+  margin-top: var(--s2);
 }
 
 /* Single-purpose screens render as a centred column. */

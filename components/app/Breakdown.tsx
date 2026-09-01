@@ -1,9 +1,10 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { DIMENSIONS, ORDERED_DIMENSIONS, type Dimension, type BreakRow } from '@/lib/data/analytics';
 import { RowSpark } from '@/components/app/Charts';
 import { Seg } from '@/components/app/Seg';
+import { ModuleMenu, MenuChoice } from '@/components/app/ModuleMenu';
 import { money, pct, units as fmtUnits } from '@/lib/format';
 import type { Currency } from '@/lib/domain/types';
 
@@ -23,6 +24,13 @@ import type { Currency } from '@/lib/domain/types';
  *  compare them. Scaling to the largest win instead makes every losing row a
  *  stub, which is the shape most of these charts have and the reason they
  *  are useless. */
+const UNIT_COOKIE = 'slip_brk';
+
+function readUnits(): boolean {
+  if (typeof document === 'undefined') return false;
+  return new RegExp(`(?:^|; )${UNIT_COOKIE}=u`).test(document.cookie);
+}
+
 export function Breakdown({
   rowsByDim, currency = 'GBP', showUnits = false,
 }: {
@@ -31,10 +39,32 @@ export function Breakdown({
   showUnits?: boolean;
 }) {
   const [dim, setDim] = useState<Dimension>('sport');
+  /*  Money or units, in the corner menu rather than as a second row of
+      buttons over the rows. A £500 staker and a £5 staker read the same list
+      differently and both are right, so it is a preference and it is kept the
+      same way the theme and the calendar's display mode are: a cookie, which
+      survives a phone being closed and needs no database. */
+  const [units, setUnits] = useState(showUnits);
+  useEffect(() => { setUnits(readUnits()); }, []);
   const rows = rowsByDim[dim] ?? [];
+
+  const pick = (next: boolean) => {
+    setUnits(next);
+    document.cookie = `${UNIT_COOKIE}=${next ? 'u' : 'm'}; path=/; max-age=31536000; samesite=lax`;
+  };
 
   return (
     <>
+      <div className="brk__tools">
+        <ModuleMenu label="Breakdown">
+          <MenuChoice
+            label="Show each row in"
+            value={units ? 'units' : 'money'}
+            options={[{ id: 'money', label: 'Money' }, { id: 'units', label: 'Units' }]}
+            onChange={(next) => pick(next === 'units')}
+          />
+        </ModuleMenu>
+      </div>
       <Seg label="Break down by" className="seg--gap">
         {DIMENSIONS.map((d) => (
           <button key={d.id} type="button" className="seg__btn" aria-pressed={dim === d.id} onClick={() => setDim(d.id)}>
@@ -53,7 +83,7 @@ export function Breakdown({
           role="region"
           aria-label={`Broken down by ${dim}, scrollable`}
         >
-          <BreakList rows={rows} currency={currency} showUnits={showUnits} ordered={ORDERED_DIMENSIONS.has(dim)} />
+          <BreakList rows={rows} currency={currency} showUnits={units} ordered={ORDERED_DIMENSIONS.has(dim)} />
         </div>
       )}
     </>

@@ -12,7 +12,7 @@ export function Module({
   title, span = 4, size = 'm', note, children, footer, id, tools,
 }: {
   title: string;
-  span?: 4 | 6 | 8 | 12;
+  span?: 4 | 5 | 6 | 7 | 8 | 12;
   size?: 's' | 'm' | 'l' | 'xl' | 'xxl';
   /** Exactly three modules ignore the scope bar and say so here. */
   note?: string;

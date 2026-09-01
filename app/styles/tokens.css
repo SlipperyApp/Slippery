@@ -117,13 +117,15 @@
   --r-pill: 999px;
   --r-sm: 7px;
 
-  /* Fixed module heights. Rows match by construction, never by stretching. */
+  /*  Fixed module heights. Rows match by construction, never by stretching.
+      xl is what the calendar and what is running are both set to, and it is
+      chosen so that the hero, the scope bar and one row of xl fit inside a
+      1440 by 900 desktop with the top bar taken off. A dashboard you have to
+      scroll to read is a report. */
   --h-mod-s: 176px;
   --h-mod-m: 292px;
   --h-mod-l: 408px;
-  /* The two modules that are mostly picture: the calendar and the curve. */
-  --h-mod-xl: 516px;
-  /* The calendar, which is the module the product is named for. */
+  --h-mod-xl: 444px;
   --h-mod-xxl: 616px;
 
   --tap: 44px;

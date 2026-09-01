@@ -99,6 +99,17 @@ export function NetHero({
                 Yours, and off by default.
               </p>
             </div>
+            {/*  A footnote, in the drawer that footnotes belong in. On the
+                 card it cost the calendar the fold, and it is a caveat about
+                 two of the five figures rather than a figure itself. */}
+            {summary.voidedStakePence > 0 ? (
+              <div className="modmenu__row">
+                <p className="small dim">
+                  Turnover and return exclude {money(summary.voidedStakePence, currency)} of
+                  voided stakes.
+                </p>
+              </div>
+            ) : null}
           </ModuleMenu>
         </div>
       </div>
@@ -107,6 +118,7 @@ export function NetHero({
         {money(net, currency, { sign: true })}
       </p>
 
+      <div className="hero-net__row">
       <ul className="hero-net__stats">
         <li><span className="label">Bets</span><span className="tnum">{count(summary.count)}</span></li>
         <li><span className="label">Units</span><span className="tnum">{fmtUnits(summary.units, { sign: true })}</span></li>
@@ -145,12 +157,9 @@ export function NetHero({
       ) : null}
 
       <ScopeBar scope={scope} books={books} />
+      </div>
 
-      {summary.voidedStakePence > 0 ? (
-        <p className="small dim hero-net__note">
-          Turnover and return exclude {money(summary.voidedStakePence, currency)} of voided stakes.
-        </p>
-      ) : null}
+
     </section>
   );
 }
