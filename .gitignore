@@ -8,3 +8,8 @@ out
 next-env.d.ts
 test-results
 .DS_Store
+
+# scratch measuring scripts: dot prefixed, kept out of the tree
+tools/.*.mjs
+.chrome.mjs
+.sections.mjs
