@@ -2,7 +2,7 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { Icon } from '@/components/Icon';
 import { getViewer } from '@/lib/data/session';
-import { visionKey, has } from '@/lib/server/env';
+import { visionKey } from '@/lib/server/env';
 import { Dropzone } from '@/components/app/Dropzone';
 
 export const metadata: Metadata = {

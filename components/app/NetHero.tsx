@@ -1,7 +1,6 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { Icon } from '@/components/Icon';
 import { ModuleMenu } from '@/components/app/ModuleMenu';
 import { ScopeBar } from '@/components/app/ScopeBar';
 import { ShareButton } from '@/components/app/ShareButton';
@@ -65,7 +64,6 @@ export function NetHero({
         <p className="label" id={`${id}-t`}>Net, {scopeLabel.toLowerCase()}</p>
         <div className="hero-net__tools">
           <ShareButton
-            target={id}
             name="net"
             label="Net"
             params={{

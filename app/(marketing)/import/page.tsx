@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { Icon } from '@/components/Icon';
-import { SectionHead, Checks, RowList, EndCard } from '@/components/MarketingChrome';
+import { Checks, RowList, EndCard } from '@/components/MarketingChrome';
 import { Breadcrumbs } from '@/components/marketing/Breadcrumbs';
 import { StickyCta } from '@/components/marketing/StickyCta';
 

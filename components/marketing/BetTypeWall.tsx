@@ -1,7 +1,6 @@
 'use client';
 
 import { useState } from 'react';
-import { Icon } from '@/components/Icon';
 
 /** The UK and Irish bet type zoo. Being reliably best at reading a Lucky 15
  *  is the moat: US built trackers do not attempt it and the nearest

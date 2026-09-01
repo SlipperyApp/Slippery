@@ -26,8 +26,6 @@ type Outcome = {
   tone: 'pos' | 'neg' | 'flat';
 };
 
-const STAKE = 2500;
-
 const OUTCOMES: Outcome[] = [
   {
     key: 'won', label: 'Won',

@@ -5,7 +5,7 @@ import { getViewer } from '@/lib/data/session';
 import { select, summarise, byMonth, DEFAULT_SCOPE } from '@/lib/data/analytics';
 import { groupSummaries, slippers } from '@/lib/data/social';
 import { SETTINGS_GROUPS } from '@/lib/data/settings';
-import { money, units as fmtUnits, pct, count, initials, position as fmtPosition } from '@/lib/format';
+import { money, units as fmtUnits, pct, count, initials, position as fmtPosition, londonParts } from '@/lib/format';
 
 export const metadata: Metadata = {
   title: 'You',
@@ -19,8 +19,21 @@ export default async function You() {
   const { account, bets } = data;
 
   const all = summarise(select(bets, { ...DEFAULT_SCOPE, period: 'all' }, now));
-  const month = summarise(select(bets, { ...DEFAULT_SCOPE, period: 'month' }, now));
-  const months = byMonth(bets).slice(-6);
+
+  /*  The foot of the Form card and the last row of the Form card are the same
+   *  month, so they come from the same call.
+   *
+   *  They did not. The list came from byMonth, which is a fold over SETTLED
+   *  bets, and the foot came from summarise over the month scope, which counts
+   *  everything in the period. September had three settled bets and one still
+   *  running, so the row read "Sep 3 +£134.50" and the line under it read
+   *  "+£134.50 from 4 bets": the same net attributed to a different number of
+   *  bets, four inches apart. One of the two had to be a lie and it was the
+   *  foot, because an open bet contributed nothing to that net. */
+  const allMonths = byMonth(bets);
+  const months = allMonths.slice(-6);
+  const p = londonParts(now);
+  const thisMonth = allMonths.find((m) => m.key === `${p.year}-${String(p.month).padStart(2, '0')}`);
   const groups = groupSummaries(now);
   const me = slippers(now).find((p) => p.handle === account.handle);
 
@@ -78,9 +91,12 @@ export default async function You() {
               </li>
             ))}
           </ul>
-          <p className="small dim card__foot">
-            This month: {money(month.netPence, account.currency, { sign: true })} from {count(month.count)} bets.
-          </p>
+          {thisMonth ? (
+            <p className="small dim card__foot">
+              This month: {money(thisMonth.netPence, account.currency, { sign: true })} from{' '}
+              {count(thisMonth.count)} settled.
+            </p>
+          ) : null}
         </section>
 
         <section className="card col-6">

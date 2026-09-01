@@ -3,7 +3,7 @@ import Link from 'next/link';
 import { Icon } from '@/components/Icon';
 import { getViewer } from '@/lib/data/session';
 import { money } from '@/lib/format';
-import { TRIAL_DAYS, TRIAL_SLIPS } from '@/lib/domain/trial';
+import { TRIAL_DAYS } from '@/lib/domain/trial';
 
 export const metadata: Metadata = {
   title: 'Your free trial',

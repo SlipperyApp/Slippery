@@ -2,18 +2,17 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { getViewer } from '@/lib/data/session';
 import {
-  select, summarise, byDay, cumulative, byMonth, runningNow, settledToday,
-  offerSplit, orderedBreakdown, scopeFromParams, scopeLabel, buildBreakdowns, type BreakRow,
+  select, summarise, byDay, cumulative, runningNow, settledToday,
+  offerSplit, scopeFromParams, scopeLabel, buildBreakdowns,
 } from '@/lib/data/analytics';
 import { Breakdown } from '@/components/app/Breakdown';
 import { NetHero } from '@/components/app/NetHero';
-import { ScopeBar } from '@/components/app/ScopeBar';
 import { Module, ModuleLink, Figure } from '@/components/app/Module';
 import { MonthCalendar } from '@/components/app/Calendar';
-import { ProfitCurve, MonthBars } from '@/components/app/Charts';
+import { ProfitCurve } from '@/components/app/Charts';
 import { BetRow, EmptyState } from '@/components/app/BetRow';
 import { Icon } from '@/components/Icon';
-import { money, pct, units as fmtUnits, count, MONTH_LONG, londonParts } from '@/lib/format';
+import { money, pct, count } from '@/lib/format';
 
 export const metadata: Metadata = {
   title: 'Dashboard',
@@ -51,7 +50,6 @@ export default async function Dashboard({
   /* Every settled day the account has: the calendar browses months itself,
      so scoping this to the current one would empty every earlier month. */
   const calendarDays = byDay(select(bets, { ...scope, period: 'all' }, now, account.weekStart));
-  const p = londonParts(now);
 
   return (
     <>

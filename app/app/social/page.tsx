@@ -2,7 +2,7 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { Icon } from '@/components/Icon';
 import { getViewer } from '@/lib/data/session';
-import { groupSummaries, slippers, league, groupMembers, feed } from '@/lib/data/social';
+import { groupSummaries, slippers, league, feed } from '@/lib/data/social';
 import { League } from '@/components/app/League';
 import { units as fmtUnits, ago, initials, position as fmtPosition } from '@/lib/format';
 

@@ -7,6 +7,7 @@ import {
 } from '@/lib/data/analytics';
 import { ODDS_BANDS, STAKE_BANDS } from '@/lib/data/reference';
 import { turnoverPence } from '@/lib/domain/fold';
+import { londonParts } from '@/lib/format';
 
 const NOW = new Date('2026-08-31T12:00:00Z');
 const data = demoData(NOW);
@@ -149,4 +150,29 @@ test('the dataset is deterministic for a given day', () => {
   const a = demoData(NOW).bets.length;
   const b = demoData(new Date('2026-08-31T23:00:00Z')).bets.length;
   assert.equal(a, b);
+});
+
+test('a month fold and a month scope disagree by exactly the open bets', () => {
+  /*  /app/you drew the Form list from byMonth, which folds SETTLED bets, and
+   *  the line under it from summarise over the month scope, which counts
+   *  everything in the period. September had three settled and one running,
+   *  so the row read "Sep 3" and the foot four inches below read "from 4
+   *  bets" over the same net. An open bet contributed nothing to that net.
+   *
+   *  Both numbers are correct answers to different questions, which is what
+   *  makes conflating them easy. This pins the relationship so that a page
+   *  showing both has to mean it. */
+  const p = londonParts(NOW);
+  const key = `${p.year}-${String(p.month).padStart(2, '0')}`;
+  const fold = byMonth(data.bets).find((m) => m.key === key);
+  const scope = select(data.bets, { ...DEFAULT_SCOPE, period: 'month' }, NOW);
+  const open = scope.filter((b) => b.state.status === 'open').length;
+
+  assert.ok(fold, 'no settled bets this month in the example account');
+  assert.equal(scope.length - fold.count, open);
+  assert.equal(
+    fold.netPence,
+    scope.filter((b) => b.state.status !== 'open')
+      .reduce((a, b) => a + b.state.realisedPlPence, 0),
+  );
 });

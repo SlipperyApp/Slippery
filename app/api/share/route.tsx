@@ -18,7 +18,6 @@ export const runtime = 'edge';
 const SIZE = { width: 1080, height: 1080 };
 
 const BG = '#0A0A0B';
-const SURFACE = '#141416';
 const LINE = '#26262A';
 const INK = '#F4F3F0';
 const INK2 = '#A9A8A3';

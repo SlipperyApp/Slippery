@@ -20,10 +20,8 @@ import { Icon } from '@/components/Icon';
  *  Nothing about a bet leaves the account: the card carries the same figures
  *  the module already shows, and the query it is built from is integers. */
 export function ShareButton({
-  target, name, label, params,
+  name, label, params,
 }: {
-  /** The id of the module this shares, for the accessible name. */
-  target: string;
   name: string;
   label: string;
   /** The figures, already reduced to integers by the caller. */
