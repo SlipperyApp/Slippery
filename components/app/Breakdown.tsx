@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { DIMENSIONS, ORDERED_DIMENSIONS, type Dimension, type BreakRow } from '@/lib/data/analytics';
 import { RowSpark } from '@/components/app/Charts';
+import { Seg } from '@/components/app/Seg';
 import { money, pct, units as fmtUnits } from '@/lib/format';
 import type { Currency } from '@/lib/domain/types';
 
@@ -34,13 +35,13 @@ export function Breakdown({
 
   return (
     <>
-      <div className="seg" role="group" aria-label="Break down by" style={{ marginBottom: 'var(--s3)' }}>
+      <Seg label="Break down by" className="seg--gap">
         {DIMENSIONS.map((d) => (
           <button key={d.id} type="button" className="seg__btn" aria-pressed={dim === d.id} onClick={() => setDim(d.id)}>
             {d.label}
           </button>
         ))}
-      </div>
+      </Seg>
 
       {rows.length === 0 ? (
         <p className="small dim">Nothing in this scope yet.</p>

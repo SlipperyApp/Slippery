@@ -2,6 +2,7 @@
 
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { PERIODS, type Scope } from '@/lib/data/analytics';
+import { Seg } from '@/components/app/Seg';
 import { SPORTS, ALL_BOOKMAKERS } from '@/lib/data/reference';
 
 /** One global scope bar above the grid governs every module.
@@ -28,7 +29,7 @@ export function ScopeBar({ scope, books }: { scope: Scope; books?: string[] }) {
 
   return (
     <div className="scopebar" role="group" aria-label="Scope for every module below">
-      <div className="seg" role="group" aria-label="Period">
+      <Seg label="Period">
         {PERIODS.map((p) => (
           <button
             key={p.id}
@@ -40,7 +41,7 @@ export function ScopeBar({ scope, books }: { scope: Scope; books?: string[] }) {
             {p.label}
           </button>
         ))}
-      </div>
+      </Seg>
 
       <label className="sr-only" htmlFor="scope-book">Bookmaker</label>
       <select
