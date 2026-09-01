@@ -25,20 +25,37 @@ const INK2 = '#A9A8A3';
 const POS = '#86EFAC';
 const NEG = '#FCA5A5';
 
-const PERIODS: Record<string, string> = {
+/*  A plain object literal inherits from Object.prototype, so PERIODS.toString
+ *  is a FUNCTION, not undefined, and `?? 'This month'` never fires for it.
+ *  /api/share?period=toString reached period.toUpperCase() on a function and
+ *  returned 500 on the live site. Every one of these maps is indexed by a
+ *  query string, so all of them are built without a prototype and every read
+ *  goes through own(). */
+function table(entries: Record<string, string>): Record<string, string> {
+  return Object.assign(Object.create(null) as Record<string, string>, entries);
+}
+
+/** Own properties only, and always a string. */
+function own(map: Record<string, string>, key: string | null, fallback: string): string {
+  if (key === null) return fallback;
+  const v = Object.prototype.hasOwnProperty.call(map, key) ? map[key] : undefined;
+  return typeof v === 'string' ? v : fallback;
+}
+
+const PERIODS = table({
   day: 'Today',
   week: 'This week',
   month: 'This month',
   year: 'This year',
   all: 'All time',
-};
+});
 
-const SYMBOL: Record<string, string> = { GBP: '£', EUR: '€' };
+const SYMBOL = table({ GBP: '£', EUR: '€' });
 
 /** Pence to a display string. The card never receives a formatted string,
  *  only an integer, so there is nothing to inject. */
 function money(minor: number, cur: string, sign = false): string {
-  const s = SYMBOL[cur] ?? '£';
+  const s = own(SYMBOL, cur, '£');
   const neg = minor < 0;
   const abs = Math.abs(minor);
   const body = `${s}${(abs / 100).toLocaleString('en-GB', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
@@ -55,7 +72,7 @@ export async function GET(req: Request) {
   const q = new URL(req.url).searchParams;
 
   const cur = q.get('cur') === 'EUR' ? 'EUR' : 'GBP';
-  const period = PERIODS[q.get('period') ?? 'month'] ?? 'This month';
+  const period = own(PERIODS, q.get('period') ?? 'month', 'This month');
   const net = int(q.get('net'));
   const bets = Math.max(0, int(q.get('bets')));
   const units = int(q.get('units')) / 100;      // sent as hundredths

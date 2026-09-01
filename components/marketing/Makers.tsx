@@ -10,26 +10,20 @@ import { Icon } from '@/components/Icon';
  *  bets, holds money or pays winnings, and a tip that looked like it lived
  *  inside the product would blur the one line the product cannot blur.
  *
- *  With no URL set it says so rather than rendering a dead button. A control
- *  that goes nowhere is worse than an absent one. */
+ *  With no URL set there is no card at all. */
 
+/*  No role under each name. They did the same thing, so the same line twice
+ *  is a caption that says nothing and looks like a template. The heading
+ *  already says what they did. */
 const MAKERS = [
-  {
-    name: 'Zhang',
-    src: '/team/zhang.png',
-    did: 'Design and the interface',
-  },
-  {
-    name: 'Aniket',
-    src: '/team/aniket.png',
-    did: 'Design and the interface',
-  },
+  { name: 'Zhang', src: '/team/zhang.png' },
+  { name: 'Aniket', src: '/team/aniket.png' },
 ];
 
 export function Makers({ tipUrl }: { tipUrl?: string }) {
   return (
     <section className="sect" id="makers">
-      <div className="wrap makers">
+      <div className={`wrap makers${tipUrl ? '' : ' makers--solo'}`}>
         <div className="makers__who">
           <h2 className="sect__h">
             <span className="setup">Two people made this.</span>
@@ -44,21 +38,21 @@ export function Makers({ tipUrl }: { tipUrl?: string }) {
               <li key={m.name}>
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img src={m.src} alt="" className="makers__face" width={64} height={64} />
-                <span>
-                  <span className="makers__name">{m.name}</span>
-                  <span className="makers__did">{m.did}</span>
-                </span>
+                <span className="makers__name">{m.name}</span>
               </li>
             ))}
           </ul>
         </div>
 
-        <div className="card makers__tip">
-          <p className="card__title">Buy them a coffee</p>
-          <p className="small muted" style={{ marginTop: 'var(--s2)' }}>
-            Nothing here is behind a tip.
-          </p>
-          {tipUrl ? (
+        {/*  With no URL there is no card. A tip jar that says "not set up yet"
+             is a control announcing its own absence, which is worse on a live
+             site than the section simply not having one. */}
+        {tipUrl ? (
+          <div className="card makers__tip">
+            <p className="card__title">Buy them a coffee</p>
+            <p className="small muted" style={{ marginTop: 'var(--s2)' }}>
+              Nothing here is behind a tip.
+            </p>
             <Link
               href={tipUrl}
               className="btn btn--ghost"
@@ -68,12 +62,8 @@ export function Makers({ tipUrl }: { tipUrl?: string }) {
             >
               <Icon name="heart" size={16} /> Send one
             </Link>
-          ) : (
-            <p className="small dim" style={{ marginTop: 'var(--s5)' }}>
-              Not set up yet.
-            </p>
-          )}
-        </div>
+          </div>
+        ) : null}
       </div>
     </section>
   );

@@ -355,8 +355,10 @@
   flex: none;
 }
 .makers__name { display: block; font-weight: var(--w-label); font-size: var(--t-small); }
-.makers__did { display: block; font-size: var(--t-micro); color: var(--ink-2); margin-top: 2px; }
 .makers__tip { align-self: start; }
+/*  No tip jar means no second column, and the block reads as one thought
+    rather than a wide left half beside a gap. */
+@media (min-width: 900px) { .makers--solo { grid-template-columns: minmax(0, 1fr); } }
 .madeby { margin-top: var(--s4); }
 .madeby a { color: var(--ink-2); }
 .madeby a:hover { color: var(--ink); }

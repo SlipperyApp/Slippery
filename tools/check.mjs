@@ -64,4 +64,43 @@ for (const p of paths) {
 }
 
 console.log(`\n${paths.length - bad} of ${paths.length} routes answered with real content.`);
-process.exit(bad ? 1 : 0);
+
+/*  Hostile query strings.
+ *
+ *  /api/share?period=toString returned 500 on the live site for weeks. A
+ *  plain object literal inherits from Object.prototype, so PERIODS.toString
+ *  is a function rather than undefined and the `?? fallback` never fired.
+ *  Every route that reads a query parameter is probed with the prototype
+ *  keys and with junk in the numeric fields. None of them may 5xx: a public
+ *  endpoint that crashes on a URL anybody can type is a defect whether or
+ *  not anybody has typed it.
+ */
+const POISON = ['toString', 'constructor', '__proto__', 'valueOf', 'hasOwnProperty', 'prototype'];
+const hostile = [];
+for (const k of POISON) {
+  hostile.push(`/api/share?period=${k}&net=100&bets=5&units=100&roi=10&turn=1000`);
+  hostile.push(`/api/share?cur=${k}&net=100&bets=5&units=100&roi=10&turn=1000`);
+  hostile.push(`/og?title=${k}&sub=${k}`);
+  hostile.push(`/app/ledger?period=${k}&book=${k}&sport=${k}`);
+  hostile.push(`/demo?period=${k}`);
+}
+hostile.push('/api/share?net=NaN&bets=-1e9&units=Infinity&roi=abc&turn=null&h=<script>');
+hostile.push('/api/share');
+hostile.push(`/og?title=${'x'.repeat(600)}`);
+hostile.push('/app/ledger?q=' + encodeURIComponent('"><img src=x onerror=1>'));
+
+let poisoned = 0;
+for (const p of hostile) {
+  let status = 0;
+  try {
+    const res = await fetch(BASE + p, { redirect: 'follow', signal: AbortSignal.timeout(40000) });
+    status = res.status;
+  } catch { status = 0; }
+  if (status >= 500 || status === 0) {
+    poisoned += 1;
+    console.log(`FAIL ${String(status).padEnd(4)} ${p}`);
+  }
+}
+console.log(`${hostile.length - poisoned} of ${hostile.length} hostile query strings handled without a 5xx.`);
+
+process.exit(bad || poisoned ? 1 : 0);
