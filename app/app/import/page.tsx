@@ -78,7 +78,7 @@ export default async function ImportHome() {
           />
         </div>
         <p className="small dim card__foot">
-          One function counts both halves of the trial and says which will run out first, so this figure cannot disagree with what blocks an upload.
+          Whichever runs out first is what stops an upload.
         </p>
       </div>
     </>

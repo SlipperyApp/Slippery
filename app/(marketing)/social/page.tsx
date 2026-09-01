@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { Icon } from '@/components/Icon';
-import { SectionHead, Checks, RowList } from '@/components/MarketingChrome';
+import { SectionHead, Checks, RowList, EndCard } from '@/components/MarketingChrome';
 import { units as fmtUnits } from '@/lib/format';
 import { Breadcrumbs } from '@/components/marketing/Breadcrumbs';
 import { StickyCta } from '@/components/marketing/StickyCta';
@@ -116,15 +116,16 @@ export default function Social() {
 
       <section className="sect" style={{ paddingTop: 0 }}>
         <div className="wrap">
-          <div className="card" style={{ alignItems: 'flex-start' }}>
-            <p className="card__title">Groups take about a minute to start</p>
-            <p className="small muted" style={{ marginTop: 'var(--s2)', maxWidth: '56ch' }}>
-              Name it, choose open or by code, and share the code. It cannot be renamed afterwards.
-            </p>
-            <Link href="/app/social" className="btn btn--primary" style={{ marginTop: 'var(--s5)' }}>
-              Look at a group <Icon name="arrowRight" size={16} />
-            </Link>
-          </div>
+          <EndCard
+            title="Groups take about a minute to start"
+            actions={
+              <Link href="/app/social" className="btn btn--primary">
+                Look at a group <Icon name="arrowRight" size={16} />
+              </Link>
+            }
+          >
+            Name it, choose open or by code, and share the code. It cannot be renamed afterwards.
+          </EndCard>
         </div>
       </section>
       <StickyCta />

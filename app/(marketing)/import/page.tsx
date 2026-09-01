@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { Icon } from '@/components/Icon';
-import { SectionHead, Checks, RowList } from '@/components/MarketingChrome';
+import { SectionHead, Checks, RowList, EndCard } from '@/components/MarketingChrome';
 import { Breadcrumbs } from '@/components/marketing/Breadcrumbs';
 import { StickyCta } from '@/components/marketing/StickyCta';
 
@@ -77,14 +77,17 @@ export default function ImportPage() {
             ]}
           />
 
-          <div className="card" style={{ marginTop: 'var(--s6)', alignItems: 'flex-start' }}>
-            <p className="card__title">Start an import</p>
-            <p className="small muted" style={{ marginTop: 'var(--s2)', maxWidth: '56ch' }}>
+          <div style={{ marginTop: 'var(--s6)' }}>
+            <EndCard
+              title="Start an import"
+              actions={
+                <Link href="/app/import/history" className="btn btn--primary">
+                  Import a history <Icon name="arrowRight" size={16} />
+                </Link>
+              }
+            >
               A few thousand rows dry run in under a minute.
-            </p>
-            <Link href="/app/import/history" className="btn btn--primary" style={{ marginTop: 'var(--s5)' }}>
-              Import a history <Icon name="arrowRight" size={16} />
-            </Link>
+            </EndCard>
           </div>
         </div>
       </section>

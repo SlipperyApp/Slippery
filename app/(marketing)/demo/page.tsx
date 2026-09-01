@@ -9,6 +9,7 @@ import { BetRow } from '@/components/app/BetRow';
 import { money, pct, count, units as fmtUnits, MONTH_LONG, londonParts } from '@/lib/format';
 import { Breadcrumbs } from '@/components/marketing/Breadcrumbs';
 import { StickyCta } from '@/components/marketing/StickyCta';
+import { EndCard } from '@/components/MarketingChrome';
 
 export const metadata: Metadata = {
   title: 'The example account',
@@ -117,16 +118,18 @@ export default function Demo() {
           </div>
         </div>
 
-        <div className="card" style={{ marginTop: 'var(--s6)', alignItems: 'flex-start' }}>
-          <p className="card__title">Walk around it properly</p>
-          <p className="small muted" style={{ marginTop: 'var(--s2)', maxWidth: '56ch' }}>
-            The example account is open in the product itself. Every module, the ledger, the
-            groups and every setting, with a note at the top saying it is an example.
-          </p>
-          <div className="row" style={{ marginTop: 'var(--s5)', gap: 'var(--s4)' }}>
-            <Link href="/app" className="btn btn--primary">Open the example account <Icon name="arrowRight" size={16} /></Link>
-            <Link href="/signup" className="btn btn--link">Start your own</Link>
-          </div>
+        <div style={{ marginTop: 'var(--s6)' }}>
+          <EndCard
+            title="Walk around it properly"
+            actions={
+              <>
+                <Link href="/app" className="btn btn--primary">Open the example account <Icon name="arrowRight" size={16} /></Link>
+                <Link href="/signup" className="btn btn--link">Start your own</Link>
+              </>
+            }
+          >
+            Every module, the ledger, the groups and every setting, in the product itself.
+          </EndCard>
         </div>
       </div>
     </section>

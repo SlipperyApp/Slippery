@@ -74,8 +74,7 @@ export default async function Social() {
           </p>
           <p className="small dim" style={{ marginTop: 4 }}>{you.slipBackedPct}% of them slip backed</p>
           <p className="small muted card__foot">
-            A league is a comparison rather than a record, so units are shown to 1dp here and 2dp
-            everywhere else. Outside a group only units are visible, never stakes.
+            Units to 1dp here, 2dp everywhere else. Outside a group, only units are visible.
           </p>
         </section>
 

@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { Icon } from '@/components/Icon';
-import { SectionHead, Checks, RowList } from '@/components/MarketingChrome';
+import { SectionHead, Checks, RowList, EndCard } from '@/components/MarketingChrome';
 import { SettleDemo } from '@/components/SettleDemo';
 import { Breadcrumbs } from '@/components/marketing/Breadcrumbs';
 import { StickyCta } from '@/components/marketing/StickyCta';
@@ -119,17 +119,18 @@ export default function How() {
 
       <section className="sect" style={{ paddingTop: 0 }}>
         <div className="wrap">
-          <div className="card" style={{ alignItems: 'flex-start' }}>
-            <p className="card__title">Start with one slip and see</p>
-            <p className="small muted" style={{ marginTop: 'var(--s2)', maxWidth: '58ch' }}>
-              Fourteen days or thirty five slips, whichever runs out first. Your ledger and your
-              export stay live afterwards either way.
-            </p>
-            <div className="row" style={{ marginTop: 'var(--s5)', gap: 'var(--s4)' }}>
-              <Link href="/signup" className="btn btn--primary">Start free</Link>
-              <Link href="/demo" className="btn btn--link">Look at the example account <Icon name="arrowRight" size={15} /></Link>
-            </div>
-          </div>
+          <EndCard
+            title="Start with one slip and see"
+            actions={
+              <>
+                <Link href="/signup" className="btn btn--primary">Start free</Link>
+                <Link href="/demo" className="btn btn--link">Look at the example account <Icon name="arrowRight" size={15} /></Link>
+              </>
+            }
+          >
+            Fourteen days or thirty five slips, whichever runs out first. Your ledger and your
+            export stay live afterwards either way.
+          </EndCard>
         </div>
       </section>
       <StickyCta />

@@ -330,6 +330,14 @@
 }
 @media (prefers-reduced-motion: reduce) { .stickycta { transition: none; } }
 
+/* ----------------------------------------------- the card at the end of it */
+.endcard { display: grid; gap: var(--s5); align-items: center; }
+@media (min-width: 760px) {
+  .endcard { grid-template-columns: minmax(0, 1fr) auto; gap: var(--s8); }
+}
+.endcard__p { margin-top: var(--s2); max-width: 58ch; }
+.endcard__do { display: flex; flex-wrap: wrap; gap: var(--s4); align-items: center; }
+
 /* ------------------------------------------------------------- the makers */
 .makers { display: grid; gap: var(--s7); align-items: start; }
 @media (min-width: 900px) { .makers { grid-template-columns: minmax(0, 1fr) 340px; gap: var(--s8); } }

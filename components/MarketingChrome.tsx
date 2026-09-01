@@ -130,6 +130,31 @@ export function SectionHead({
   );
 }
 
+/** The card at the end of a marketing page.
+ *
+ *  Five pages each hand-rolled this: a full width card with a title, a line
+ *  and a button, all stacked hard against the left edge. At 1440 that is a
+ *  1200px card with 500px of content in one corner and nothing in the other
+ *  two thirds, which reads as a layout that ran out rather than one that
+ *  ended. The words go left, the actions go right, and they meet in the
+ *  middle of the same card. Below 760 it stacks, because two columns of one
+ *  thing each is not a row.
+ *
+ *  It is one component so the five pages cannot drift apart again. */
+export function EndCard({
+  title, children, actions,
+}: { title: string; children?: React.ReactNode; actions: React.ReactNode }) {
+  return (
+    <div className="card endcard">
+      <div>
+        <p className="card__title">{title}</p>
+        {children ? <p className="small muted endcard__p">{children}</p> : null}
+      </div>
+      <div className="endcard__do">{actions}</div>
+    </div>
+  );
+}
+
 export function Checks({ items }: { items: string[] }) {
   return (
     <ul className="checks">

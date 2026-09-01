@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { Icon } from '@/components/Icon';
 import { Breadcrumbs } from '@/components/marketing/Breadcrumbs';
+import { EndCard } from '@/components/MarketingChrome';
 
 export const metadata: Metadata = {
   title: 'Safer gambling',
@@ -84,15 +85,18 @@ export default function SaferGambling() {
           </p>
         </div>
 
-        <div className="card" style={{ marginTop: 'var(--s5)', alignItems: 'flex-start' }}>
-          <p className="card__title">Take a break</p>
-          <p className="small muted" style={{ marginTop: 'var(--s2)', maxWidth: '58ch' }}>
+        <div style={{ marginTop: 'var(--s5)' }}>
+          <EndCard
+            title="Take a break"
+            actions={
+              <Link href="/app/settings" className="btn btn--ghost">
+                Open Settings <Icon name="arrowRight" size={16} />
+              </Link>
+            }
+          >
             One control, in Settings, under Account. It pauses every notification and takes you
             out of the monthly leagues. Your ledger, history and export are untouched.
-          </p>
-          <Link href="/app/settings" className="btn btn--ghost" style={{ marginTop: 'var(--s5)' }}>
-            Open Settings <Icon name="arrowRight" size={16} />
-          </Link>
+          </EndCard>
         </div>
       </div>
     </section>
