@@ -761,3 +761,18 @@
     the text inside still has to be readable to say WHY it is off. */
 [data-disabled] { color: var(--ink-2); }
 [data-disabled] .card__title { color: var(--ink-2); }
+
+/* The slip behind a bet, or an honest account of why there is not one. */
+.slipstate {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--s3);
+  padding: var(--s3) var(--s4);
+  margin-top: var(--s2);
+  border-radius: var(--r-ctl);
+  border: 1px solid var(--line);
+  background: var(--surface-2);
+  font-size: var(--t-small);
+  line-height: 1.5;
+}
+.slipstate__i { width: 18px; height: 18px; flex: none; margin-top: 2px; color: var(--ink-2); }

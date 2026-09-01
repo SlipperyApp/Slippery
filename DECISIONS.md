@@ -233,3 +233,73 @@ sweep is the local gate against a given commit, and the live check proves the
 deployed build IS that commit (via the sha in `/api/sources`) and that every
 route answers 200 with a real title, exactly one h1, real content and the
 compliance footer.
+
+## What is not finished, and what I would do next
+
+Written last, and honestly. Everything in the route map is live and every
+control on it works, but "works" is not the same as "has been through a real
+account", and several things below are the difference.
+
+### Flagged, because they are yours and not mine
+
+- **The 50 to 100 reference slips for the reader's golden set.** The table is
+  there (`reference_slips`) and the reader is written to be measured against
+  it. Nothing can be claimed about its accuracy until real slips exist, and no
+  accuracy figure appears anywhere in the product for exactly that reason.
+- **A real Telegram message, end to end.** That needs the bot token, which I
+  must never hold. Everything up to the wire is built and tested: the secret
+  is verified in constant time, `update_id` is deduped, `answerCallbackQuery`
+  runs in a `finally`. What has never happened is a real slip arriving from a
+  real phone. `POST /api/admin/webhook` repoints the webhook when you want to.
+- **Anything needing a payment card.** Checkout, the portal and the webhook are
+  written and the signature verification is tested against a forged signature
+  and a replay, but no card has been declined twice on this deployment, so the
+  two-attempt path has not been walked.
+- **Credential rotation**, if any of the values in Vercel have ever been
+  exposed.
+- **The Gambling Commission position on the leaderboard**, **ICO registration**,
+  and **the final wording of Terms and Privacy**. Both legal pages carry a
+  banner at the top saying they are the working text, rather than presenting
+  themselves as settled.
+
+### Real gaps I would close first
+
+1. **The app renders from the example account, not from Postgres.** The schema
+   is applied, `appendEvent` and the fold write through it, and every write
+   route refuses honestly without a session. But the read path on every page
+   still goes to `lib/data/demo.ts`. The next commit is a repository behind
+   `getViewer()` that returns the signed-in account's rows when there is a
+   session and the example account when there is not, with the same shape
+   either way. Everything above it is already written against that shape.
+2. **`STRIPE_PRICE_MONTHLY`, `STRIPE_PRICE_YEARLY` and `STRIPE_WEBHOOK_SECRET`
+   are not set on the deployment.** `/api/sources` says so. Until they are,
+   the plan step says payments are not set up rather than spinning.
+3. **`GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `EMAIL_API_KEY` and
+   `EMAIL_FROM` are not set either.** Google sign in says it is not set up;
+   verification codes are generated, hashed, stored and not sent. Nobody can
+   complete a signup on production until the email variables exist.
+4. **The reader has never read a real slip.** The prompt is written to report
+   what it can see and to return null rather than infer, and the review screen
+   is built around per-field confidence, but the whole path from image to
+   fields is untested against an actual bookmaker screenshot.
+5. **Duplicate detection has no UI.** `/api/extract` returns `duplicate: true`
+   with the existing bet, and the bot's reply table has the wording, but the
+   web upload path does not yet show "here is the one you already have, add
+   anyway or ignore".
+6. **The slip image is a state, not a file.** The bet sheet says honestly
+   whether an image exists, was typed in, or was deleted after 90 days, and the
+   retention sweep does the deleting. What is missing is the storage: images
+   are read and discarded rather than kept, so the 90 day clock has nothing to
+   run down yet.
+
+### Things I would change if I were carrying on
+
+- **The dashboard defaults to This month, which is nearly empty on the 1st.**
+  That is honest, and it is also a poor first thing to see twelve times a year.
+  I would not add a rolling window without asking, because the period list is a
+  ruling in SPEC.md, but it is worth a decision.
+- **The example account regenerates daily from a seed.** That keeps it alive
+  and deterministic within a day, and it means the figures move overnight. If
+  the demo is ever used in a screenshot, freeze the seed.
+- **`/404` is the one route in the map that answers 404 rather than 200**, and
+  the reason is written above. It serves the real designed page.

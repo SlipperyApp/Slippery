@@ -125,7 +125,9 @@ export default function Pricing() {
       <section className="sect" style={{ paddingTop: 0 }}>
         <div className="wrap">
           <p className="small dim" style={{ maxWidth: '70ch' }}>
-            Prices include VAT where it applies. Slippery never accepts bets, holds money, pays
+            Billed in pounds. Your ledger can be in pounds or in euro, and every figure in it
+            follows that choice: a €25.00 stake stays a €25.00 stake. Prices include VAT where it
+            applies. Slippery never accepts bets, holds money, pays
             winnings or gives tips, so nothing here is a wager and none of it can win or lose.
           </p>
         </div>

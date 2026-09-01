@@ -21,7 +21,7 @@ export default function FaqPage() {
       <div className="wrap">
         <span className="pill">Questions</span>
         <h1 className="sect__h" style={{ marginTop: 'var(--s4)', fontSize: 'clamp(30px, 6vw, 48px)' }}>
-          <span className="setup">Sixteen questions.</span>
+          <span className="setup">Seventeen questions.</span>
           <span>Answered without the marketing.</span>
         </h1>
         <div className="column column--wide" style={{ marginTop: 'var(--s7)', marginInline: 0 }}>

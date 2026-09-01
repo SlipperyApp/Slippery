@@ -1,6 +1,6 @@
 /** The questions, in one place.
  *
- *  The landing page shows the first six and links on; /faq shows all sixteen.
+ *  The landing page shows the first six and links on; /faq shows all seventeen.
  *  Two copies of an answer drift, and the drifted one is always the copy
  *  somebody actually reads. */
 
@@ -15,6 +15,7 @@ export const QUESTIONS: QA[] = [
   { q: 'How does it settle a bet?', a: 'Ninety minute scores only: extra time and penalties never count. Whole lines push, quarter lines split the stake, and handicaps follow the convention your bookmaker actually settles under rather than a single hardcoded rule. Anything uncertain asks you, because a wrong grade is worse than no grade.' },
   { q: 'Can it settle a cash out?', a: 'It cannot detect one, because a cash out is invisible from a results feed. So it is always your action. Full cash out, or partial in eighths of the stake still standing, repeatable as many times as you pulled.' },
   { q: 'Why are groups ranked in units and not pounds?', a: 'Because a bigger bankroll would otherwise be a bigger score, which measures nothing about betting. Units make a £5 stake and a £500 stake comparable. Outside a group only units are visible, never stakes.' },
+  { q: 'I bet in euro. Does that work?', a: 'Yes. Pounds and euro are both first class: you pick one when you sign up and every figure in your account is in it, from a €25.00 stake to a €1,184.00 year. What Slippery will never do is add the two together into one net figure, because £1 and €1 are not the same amount and a total that pretends otherwise is worse than no total. One currency per account, and you can change it in Settings.' },
   { q: 'Is there a light theme?', a: 'No. It was built and rejected: profit green measures 1.07 to 1 against a beige page, which means the single most important colour in the product disappears. All eight themes are dark.' },
   { q: 'What does the free trial include?', a: 'Everything. Fourteen days or thirty five slips, whichever runs out first, and the app tells you which one is about to run out rather than making you count. A card is required, and the yearly plan starts automatically when the trial ends.' },
   { q: 'What happens if my payment fails?', a: 'One retry after three days. Two failures and the account goes read only: new slips, imports and the bot pause. Your ledger and your export stay fully live, and nothing is ever deleted for non payment.' },
