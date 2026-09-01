@@ -132,9 +132,9 @@
 .pill {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
+  gap: var(--s1h);
   height: 24px;
-  padding: 0 10px;
+  padding: 0 var(--s2h);
   border-radius: var(--r-pill);
   background: var(--surface-2);
   border: 1px solid var(--line);
@@ -167,14 +167,22 @@
 /* ------------------------------------------------------------- segmented */
 .seg {
   display: inline-flex;
-  padding: 3px;
-  gap: 2px;
+  padding: var(--s1);
+  gap: var(--s0);
   border-radius: var(--r-ctl);
   background: var(--surface-2);
   border: 1px solid var(--line);
   overflow-x: auto;
   max-width: 100%;
   scrollbar-width: none;
+  /*  Snap, so a chip never comes to rest cut in half. Five periods do not fit
+      across a phone and the strip opens scrolled to the one in force, which
+      left "This week" resting with its T under the fade: a word dissolving
+      mid letter reads as a rendering fault, not as an affordance. Proximity
+      rather than mandatory, so a deliberate small drag is still allowed to
+      stop where it stopped. */
+  scroll-snap-type: x proximity;
+  scroll-padding-inline: var(--s1);
 }
 .seg::-webkit-scrollbar { display: none; }
 .seg--gap { margin-bottom: var(--s3); }
@@ -184,15 +192,16 @@
 .brk__tools { position: absolute; top: var(--s4); right: var(--s4); z-index: 2; }
 /*  The edge fades exist only while there is something past the edge, so a
     strip that fits looks like a strip that fits. */
-.seg--fadeL { mask-image: linear-gradient(to right, transparent, #000 22px); }
-.seg--fadeR { mask-image: linear-gradient(to left, transparent, #000 22px); }
+.seg--fadeL { mask-image: linear-gradient(to right, transparent, #000 16px); }
+.seg--fadeR { mask-image: linear-gradient(to left, transparent, #000 16px); }
 .seg--fadeL.seg--fadeR {
-  mask-image: linear-gradient(to right, transparent, #000 22px, #000 calc(100% - 22px), transparent);
+  mask-image: linear-gradient(to right, transparent, #000 16px, #000 calc(100% - 16px), transparent);
 }
 .seg__btn {
+  scroll-snap-align: start;
   min-height: 34px;
-  padding: 0 12px;
-  border-radius: 7px;
+  padding: 0 var(--s3);
+  border-radius: var(--r-sm);
   font-size: var(--t-small);
   font-weight: var(--w-label);
   color: var(--ink-2);
@@ -224,15 +233,15 @@
   font-size: var(--t-small);
   font-weight: var(--w-label);
   color: var(--ink-2);
-  margin-bottom: 6px;
+  margin-bottom: var(--s1h);
 }
-.field__hint { display: block; font-size: var(--t-small); color: var(--ink-2); margin-top: 6px; }
-.field__err { display: block; font-size: var(--t-small); color: var(--neg); margin-top: 6px; font-weight: var(--w-label); }
+.field__hint { display: block; font-size: var(--t-small); color: var(--ink-2); margin-top: var(--s1h); }
+.field__err { display: block; font-size: var(--t-small); color: var(--neg); margin-top: var(--s1h); font-weight: var(--w-label); }
 
 .input, .select, .textarea {
   width: 100%;
   min-height: var(--tap);
-  padding: 10px var(--s3);
+  padding: var(--s2h) var(--s3);
   border-radius: var(--r-ctl);
   background: var(--bg-2);
   border: 1px solid var(--line-2);
@@ -247,10 +256,16 @@
 .select {
   appearance: none;
   -webkit-appearance: none;
-  padding-right: 38px;
+  /*  Room for the chevron, derived from where the chevron is drawn. The
+      arrow's far edge sits at 100% - 20px and each arm is 6px wide, so the
+      text must stop 20 + 6 + --s3 from the right. Written as a literal 38
+      it was one edit away from text running under the arrow. */
+  --chev-inset: 20px;
+  --chev-arm: 6px;
+  padding-right: calc(var(--chev-inset) + var(--chev-arm) + var(--s3));
   background-image: linear-gradient(45deg, transparent 50%, currentColor 50%), linear-gradient(135deg, currentColor 50%, transparent 50%);
-  background-position: calc(100% - 20px) calc(50% + 2px), calc(100% - 14px) calc(50% + 2px);
-  background-size: 6px 6px, 6px 6px;
+  background-position: calc(100% - var(--chev-inset)) calc(50% + 2px), calc(100% - 14px) calc(50% + 2px);
+  background-size: var(--chev-arm) var(--chev-arm), var(--chev-arm) var(--chev-arm);
   background-repeat: no-repeat;
 }
 .input--money { font-variant-numeric: tabular-nums; }
@@ -260,7 +275,7 @@
   align-items: flex-start;
   gap: var(--s3);
   min-height: var(--tap);
-  padding: 10px 0;
+  padding: var(--s2h) 0;
   cursor: pointer;
 }
 .check input { width: 20px; height: 20px; flex: none; margin-top: 1px; accent-color: var(--accent); }
@@ -270,7 +285,7 @@
     that only exists where the pointer is coarse. */
 .switch {
   position: relative;
-  width: 44px; height: 26px;
+  width: 44px; height: var(--switch-h);
   border-radius: var(--r-pill);
   background: var(--surface-3);
   border: 1px solid var(--line-2);
@@ -295,7 +310,7 @@
     height: var(--tap);
     background-clip: content-box;
     border: 0;
-    padding-block: 9px;
+    padding-block: calc((var(--tap) - var(--switch-h)) / 2);
     /* The visible pill is now the padding box, so the track and the knob are
        drawn against content-box and the extra 18px is pure hit area. */
     box-shadow: inset 0 0 0 1px var(--line-2);
@@ -399,7 +414,7 @@
     the same thing twice. */
 .hero-net { gap: 0; }
 .hero-net__head { display: flex; align-items: flex-start; justify-content: space-between; gap: var(--s3); }
-.hero-net__tools { display: flex; align-items: center; gap: 2px; flex: none; }
+.hero-net__tools { display: flex; align-items: center; gap: var(--s0); flex: none; }
 .hero-net__fig {
   font-family: var(--f-mono);
   font-size: clamp(34px, 6vw, 52px);
@@ -425,7 +440,7 @@
     result, and a second green on the same card meaning something else is
     worse than no colour at all. */
 .hero-net__target { margin-top: var(--s5); }
-.hero-net__targetline { display: flex; justify-content: space-between; gap: var(--s3); margin-bottom: 6px; }
+.hero-net__targetline { display: flex; justify-content: space-between; gap: var(--s3); margin-bottom: var(--s1h); }
 .hero-net__pctv { color: var(--s); font-weight: var(--w-fig); }
 .hero-net__bar {
   display: block;
@@ -482,8 +497,8 @@
   justify-content: center;
   width: 28px;
   height: 28px;
-  margin: -4px -4px -4px 0;
-  border-radius: 8px;
+  margin: calc(var(--s1) * -1) calc(var(--s1) * -1) calc(var(--s1) * -1) 0;
+  border-radius: var(--r-sm);
   border: 1px solid transparent;
   background: none;
   color: var(--ink-2);
@@ -513,7 +528,7 @@
 }
 .modmenu__pop--end { right: 0; }
 .modmenu__pop--start { left: 0; }
-.modmenu__row { display: flex; flex-direction: column; gap: 6px; }
+.modmenu__row { display: flex; flex-direction: column; gap: var(--s1h); }
 .modmenu__row .seg { width: 100%; }
 .modmenu__row .seg__btn { flex: 1 1 0; }
 
@@ -534,7 +549,7 @@
     'name n spark fig'
     'bar  bar bar  sub';
   align-items: center;
-  gap: 5px var(--s3);
+  gap: var(--s1) var(--s3);
   padding: var(--s3) 0;
   border-top: 1px solid var(--line);
 }
@@ -710,7 +725,7 @@
 }
 
 /* ------------------------------------------------------------------- steps */
-.steps { display: flex; gap: 6px; align-items: center; }
+.steps { display: flex; gap: var(--s1h); align-items: center; }
 .steps__pip { height: 3px; flex: 1 1 0; border-radius: var(--r-pill); background: var(--surface-3); }
 .steps__pip--on { background: var(--accent); }
 
@@ -739,7 +754,7 @@
   display: grid;
   grid-template-columns: repeat(7, minmax(0, 1fr));
   grid-template-rows: auto repeat(var(--cal-rows, 6), minmax(0, 1fr));
-  gap: 4px;
+  gap: var(--s1);
   flex: 1 1 auto;
   min-height: 0;
 }
@@ -756,7 +771,7 @@
   flex-wrap: wrap;
   margin-bottom: var(--s3);
 }
-.cal__nav { display: inline-flex; align-items: center; gap: 2px; }
+.cal__nav { display: inline-flex; align-items: center; gap: var(--s0); }
 .cal__month {
   font-size: var(--t-micro);
   font-weight: var(--w-label);
@@ -773,7 +788,7 @@
   justify-content: center;
   width: 26px;
   height: 26px;
-  border-radius: 7px;
+  border-radius: var(--r-sm);
   border: 1px solid transparent;
   background: none;
   color: var(--ink-2);
@@ -789,7 +804,7 @@
   .icobtn { width: var(--tap); height: var(--tap); }
 }
 .cal__dow {
-  font-size: 10px;
+  font-size: var(--t-micro);
   text-align: center;
   color: var(--ink-2);
   font-weight: var(--w-label);
@@ -820,7 +835,7 @@
       under the grid: the rows stretch and the cells did not, and the
       difference is dead space. */
   max-height: 108px;
-  border-radius: 9px;
+  border-radius: var(--r-sm);
   /*  --elev, the lightest ground there is, so a faint fill still reads as a
       fill and the composite the ramp test measures is the composite that
       ships. */
@@ -829,6 +844,9 @@
   display: grid;
   place-items: center;
   align-content: center;
+  /*  One pixel, and it stays one pixel: the amount and the date are two
+      lines of one reading, not two items in a list. Anything larger reads
+      them apart, and the cell is 13px tall on a phone. */
   gap: 1px;
   font-variant-numeric: tabular-nums;
   overflow: hidden;
@@ -851,10 +869,20 @@
   font-family: var(--f-mono);
   font-weight: 600; line-height: 1;
   letter-spacing: -0.03em;
-  font-size: 11px;
-  font-size: clamp(8px, 23cqi, 13px);
+  /*  The floor is --t-micro, the bottom of the scale, and it is a floor for
+      the same reason the scale has a bottom: 8.3px is not a figure anybody
+      reads, it is a smudge that happens to be the right colour, and the ramp
+      already says how big the day was. Where the cell is too narrow to hold
+      the amount at a readable size the amount is DROPPED rather than shrunk:
+      the date stays, the fill stays, and the screen reader sentence under the
+      cell carries the figure either way. Shrinking to fit is how a page ends
+      up with text at eight pixels and a stylesheet that never said eight. */
+  font-size: clamp(11px, 23cqi, 13px);
   max-width: 100%;
   overflow: hidden;
+}
+@container (max-width: 54px) {
+  .cal__v { display: none; }
 }
 .cal__n {
   position: relative; z-index: 1;
@@ -863,8 +891,10 @@
       the tertiary ink measures 2.21:1 in periwinkle. Primary ink measures
       4.55 at the worst step of the worst theme. */
   color: var(--t1);
-  font-size: 10px;
-  font-size: clamp(8px, 19cqi, 11px);
+  /*  Flat 11px, not a clamp: the min and the max met at the scale's bottom,
+      and clamp(11px, 19cqi, 11px) is 11px wearing a hat. Two digits at 11px
+      is 13px wide, which fits the 41px cell a 320px viewport gives. */
+  font-size: var(--t-micro);
 }
 /* A day that was bet on and came out level is stated, not shouted. */
 .cal__v--flat { color: var(--t3); }
@@ -936,8 +966,8 @@
   line-height: var(--lh-micro);
   color: var(--ink-2);
 }
-.cal__key li { display: inline-flex; align-items: center; gap: 6px; }
-.cal__keyswatch { width: 11px; height: 11px; border-radius: 3px; flex: none; }
+.cal__key li { display: inline-flex; align-items: center; gap: var(--s1h); }
+.cal__keyswatch { width: 11px; height: 11px; border-radius: var(--r-xs); flex: none; }
 .cal__keyswatch--pos { background: var(--cal-pos); border: 1px solid color-mix(in srgb, var(--pos) 45%, transparent); }
 .cal__keyswatch--neg { background: var(--cal-neg); border: 1px solid color-mix(in srgb, var(--neg) 45%, transparent); }
 .cal__keyswatch--none {
@@ -959,7 +989,7 @@
 /* ----------------------------------------------------------------- charts */
 .chartbox { width: 100%; position: relative; }
 .chartbox svg { width: 100%; height: auto; display: block; overflow: visible; }
-.axis { font-size: 10px; fill: var(--ink-2); font-variant-numeric: tabular-nums; }
+.axis { font-size: var(--t-micro); fill: var(--ink-2); font-variant-numeric: tabular-nums; }
 
 /* -------------------------------------------------------------------- misc */
 .hr { height: 1px; background: var(--line); border: 0; margin: var(--s5) 0; }

@@ -22,6 +22,7 @@ export const APP = [
   '/app/billing/trial', '/app/billing/declined', '/app/billing/read-only',
   '/app/states/new-dashboard', '/app/states/new-ledger', '/app/states/new-social',
   '/app/states/offline', '/app/states/save-failed', '/app/states/unreadable',
+  '/app/states/loading',
 ];
 
 export const ERRORS = ['/404', '/500'];

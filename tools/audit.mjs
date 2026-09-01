@@ -342,6 +342,42 @@ const MEASURE = () => {
     if (sizeless.length > 3) break;
   }
 
+  /*  The type floor.
+   *
+   *  The scale bottoms out at --t-micro, 11px. Four places had drifted under
+   *  it and none of them said so out loud: two calendar clamps whose lower
+   *  bound was set to whatever stopped the text wrapping (8.0px at 320 and
+   *  8.3px at 1440, thirty cells each), a 9px bankroll label in the top bar,
+   *  a 10px day-of-week row and a 10px chart axis. Nobody chose eight
+   *  pixels; it is what 19cqi came out as, and a computed size is not a
+   *  decision.
+   *
+   *  So this measures the RENDERED size, which is the only number that can
+   *  be wrong. A clamp, a cqi, a percentage, a zoomed ancestor and an SVG
+   *  scale all read correct in the stylesheet and can still paint six
+   *  pixels. SVG text is included on purpose: that is where the chart axis
+   *  was hiding.
+   *
+   *  Sub-pixel slack of 0.5px is allowed, because a clamp against a
+   *  container width lands on fractions and 10.98px is 11px. */
+  const FLOOR = 11;
+  const tiny = [];
+  for (const el of document.querySelectorAll('body *, body svg text')) {
+    if (el.children.length) continue;                        // leaves only
+    if (!(el.textContent || '').trim()) continue;
+    if (el.closest('.sr-only') || el.classList.contains('sr-only')) continue;
+    if (el.getAttribute('aria-hidden') === 'true') continue;
+    const inSvg = !!el.ownerSVGElement;
+    // visible() uses getBoundingClientRect, which is right for both, but an
+    // SVG <text> has no CSS box to be display:none through its own styles.
+    if (!inSvg && !visible(el)) continue;
+    if (inSvg && el.getBoundingClientRect().width < 1) continue;
+    const px = parseFloat(getComputedStyle(el).fontSize);
+    if (!(px > 0) || px >= FLOOR - 0.5) continue;
+    tiny.push(`${el.tagName.toLowerCase()}.${String(el.className.baseVal ?? el.className).split(' ')[0]} at ${px.toFixed(1)}px "${(el.textContent || '').trim().slice(0, 16)}"`);
+    if (tiny.length > 4) break;
+  }
+
   const collide = [];
   const leaves = [...document.querySelectorAll('p,h1,h2,h3,h4,span,li,td,th,dd,dt,a,button,label')]
     .filter((el) => {
@@ -409,6 +445,7 @@ const MEASURE = () => {
     clipped,
     spilled,
     sizeless,
+    tiny,
     collide,
   };
 };
@@ -486,6 +523,7 @@ async function visit(ctx, route, vp, { runAxe = false, theme = null } = {}) {
   if (m.clipped.length) note(route, label, 'text-clipped', m.clipped.join(' | '));
   if (m.spilled.length) note(route, label, 'text-spills', m.spilled.join(' | '));
   if (m.sizeless.length) note(route, label, 'size-on-inline', m.sizeless.join(' | '));
+  if (m.tiny.length) note(route, label, 'type-floor', m.tiny.join(' | '));
   if (m.collide.length) note(route, label, 'text-collision', m.collide.join(' | '));
 
   if (runAxe) {

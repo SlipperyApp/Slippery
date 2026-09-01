@@ -228,6 +228,11 @@
   background: color-mix(in oklab, var(--surface) 70%, transparent);
   transition: border-color 220ms var(--ease), background 220ms var(--ease);
 }
+/*  Three pixels, and it stays three pixels: this is optical, not spacing.
+    The number is --t-small beside a --t-h3 title, and two different sizes
+    aligned on their box tops are not aligned on their cap heights. Snapping
+    it to the 2px grid would move the number off the title's cap line, which
+    is the only line either of them is meant to sit on. */
 .jack__num { color: var(--ink-2); font-size: var(--t-small); padding-top: 3px; }
 /*  The step's timing, beside or beneath the number, never in a pill over the
     title. */
@@ -244,7 +249,7 @@
   .jack__num { grid-column: auto; display: block; }
   .jack__when { display: block; margin-top: 4px; white-space: nowrap; }
 }
-.jack__body { display: grid; gap: 8px; justify-items: start; }
+.jack__body { display: grid; gap: var(--s2); justify-items: start; }
 .jack__title { font-size: clamp(20px, 3.4vw, 30px); line-height: 1.14; font-weight: var(--w-label); letter-spacing: var(--tr-tight); }
 .jack__text { font-size: var(--t-body); line-height: 1.55; color: var(--ink-2); max-width: 52ch; }
 .jack__icon { color: var(--ink-2); margin-top: 4px; }
@@ -369,4 +374,82 @@ a.card:active, button.card:active, button.rowcard:active { transform: translateY
   .sheet__scrim,
   .sheet { animation: none !important; }
   a.card, button.card, button.rowcard, .themecard { transition: none; }
+}
+
+/* ============================================== waiting, and saying so
+
+   The one animation in the product that is not decoration. It exists while
+   a page is genuinely in flight and it ends by being replaced, so it can
+   neither loop at you nor outlive its reason.
+
+   TRANSFORM ONLY, as everything here is: a gradient the width of the bar
+   translates across it, inside the bar's own overflow:hidden. The
+   alternative :  animating background-position :  repaints the bar's whole
+   box every frame, forty of them at once, on the exact frames the browser
+   is also parsing the response that ends the wait.
+
+   The bars sit at a VISIBLE resting tint. An earlier draft had the sweep
+   carry the whole appearance, which meant that with the animation off there
+   was nothing on screen at all: the skeleton has to be legible as a
+   skeleton before anything moves. */
+.skel { --skel-rest: color-mix(in oklab, var(--ink) 9%, transparent); }
+.skel__b { gap: 0; }
+.skel__head { margin-bottom: var(--s4); }
+.skel .hero-net__head { display: flex; align-items: flex-start; justify-content: space-between; }
+.skel__bar {
+  display: block;
+  position: relative;
+  overflow: hidden;
+  border-radius: var(--r-sm);
+  background: var(--skel-rest);
+}
+.skel__bar::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  transform: translate3d(-100%, 0, 0);
+  background: linear-gradient(90deg,
+    transparent 0%,
+    color-mix(in oklab, var(--ink) 12%, transparent) 50%,
+    transparent 100%);
+  animation: skel-sweep 1250ms var(--ease) infinite;
+}
+/*  The sweep is staggered down the page so the module reads as one surface
+    catching light rather than forty bars flashing in lockstep. Four steps,
+    because a fifth is not distinguishable and every one of them is a
+    separate compositor layer. */
+.skel__row:nth-child(4n + 2) .skel__bar::after { animation-delay: 90ms; }
+.skel__row:nth-child(4n + 3) .skel__bar::after { animation-delay: 180ms; }
+.skel__row:nth-child(4n + 4) .skel__bar::after { animation-delay: 270ms; }
+
+@keyframes skel-sweep {
+  from { transform: translate3d(-100%, 0, 0); }
+  to   { transform: translate3d(100%, 0, 0); }
+}
+
+.skel .hero-net__stats li { display: flex; align-items: center; gap: var(--s2); }
+.skel .scopebar { display: flex; gap: var(--s3); margin-top: var(--s4); padding: 0; border: 0; background: none; flex-wrap: wrap; }
+.skel__rows { display: flex; flex-direction: column; gap: var(--s3); }
+.skel__row {
+  display: flex;
+  align-items: center;
+  gap: var(--s4);
+  padding: var(--s2) 0;
+  border-top: 1px solid var(--line);
+}
+.skel__row:first-child { border-top: 0; }
+.skel__grow { flex: 1; min-width: 0; }
+
+/*  Seven columns and five rows, at the calendar's own proportions. A blank
+    rectangle followed by a grid is two layouts; this is one. */
+/*  The cells are .cal__cell, so they already have the calendar's border,
+    radius, ground and row sizing. This only says they are empty. */
+.skel .cal__dow { display: flex; justify-content: center; }
+.skel__cell { background: color-mix(in oklab, var(--ink) 4%, transparent); }
+.skel .cal__foot { margin-top: var(--s3); }
+
+@media (prefers-reduced-motion: reduce) {
+  /*  Not "slower". The bars keep their resting tint, which is what makes
+      them readable as placeholders, and nothing moves. */
+  .skel__bar::after { animation: none; opacity: 0; }
 }

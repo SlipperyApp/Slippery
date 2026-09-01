@@ -108,14 +108,41 @@
   --tr-tight: -0.022em;
   --tr-micro: 0.08em;
 
-  /* Space */
-  --s1: 4px;  --s2: 8px;  --s3: 12px; --s4: 16px; --s5: 20px;
+  /*  Space.
+   *
+   *  A 4px grid, which is the right grain for laying out cards and columns
+   *  and the wrong one for the inside of a pill 24px tall. Counting the
+   *  stylesheet found the evidence: twelve places had reached past --s1 for
+   *  6px, and another five for 10px, each written as a literal, each arrived
+   *  at separately, none of them agreeing on 5, 6 or 7. So the small end
+   *  halves its step rather than pretending nobody needed one. --s0 through
+   *  --s3 is a 2px grid; --s3 up is the 4px grid it always was.
+   *
+   *  Below --s0 is not spacing. One and three pixel values in this codebase
+   *  are optical: a baseline nudge, a hairline offset, a shadow's lift. They
+   *  stay literal, next to a comment saying what they are aligning to, so
+   *  nobody snaps them to a grid they were never on. */
+  --s0: 2px;  --s1: 4px;  --s1h: 6px; --s2: 8px;  --s2h: 10px;
+  --s3: 12px; --s4: 16px; --s5: 20px;
   --s6: 24px; --s7: 32px; --s8: 40px; --s9: 56px; --s10: 72px;
 
+  /*  Control geometry that more than one rule depends on. The switch track
+      was 26px in one place and (44 - 26) / 2 = 9px in another, written as a
+      literal nine: move one and the knob stops being centred. */
+  --switch-h: 26px;
+
+  /*  Radii, and there are five of them because five is what the product
+      needs. Counting found 8px on a 28px button, 9px on a calendar cell and
+      7px in two other places: three values within two pixels of each other,
+      each written as a literal, none of them a decision. Every small box now
+      takes --r-sm, so the calendar cell, the icon button and the theme
+      swatch curve the same way, and --r-xs exists for the things too small
+      to take seven without going round. */
   --r-card: 16px;
   --r-ctl: 10px;
   --r-pill: 999px;
   --r-sm: 7px;
+  --r-xs: 3px;
 
   /*  Fixed module heights. Rows match by construction, never by stretching.
       xl is what the calendar and what is running are both set to, and it is

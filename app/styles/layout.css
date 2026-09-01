@@ -40,14 +40,14 @@
 .brand {
   display: inline-flex;
   align-items: center;
-  gap: 9px;
+  gap: var(--s2);
   text-decoration: none;
   position: relative;
   min-height: var(--tap);
   min-width: var(--tap);
   justify-content: flex-start;
-  margin-inline: -6px;
-  padding-inline: 6px;
+  margin-inline: calc(var(--s1h) * -1);
+  padding-inline: var(--s1h);
 }
 .brand__mark { width: 26px; height: 26px; flex: none; }
 .brand__word {
@@ -101,7 +101,7 @@
 }
 @media (min-width: 1000px) { .side { display: flex; } }
 
-.side__nav { display: flex; flex-direction: column; gap: 2px; }
+.side__nav { display: flex; flex-direction: column; gap: var(--s0); }
 
 .navrow {
   display: flex;
@@ -133,7 +133,7 @@
   margin-left: auto;
   min-width: 22px;
   height: 20px;
-  padding: 0 6px;
+  padding: 0 var(--s1h);
   border-radius: var(--r-pill);
   background: var(--surface-3);
   color: var(--ink-2);
@@ -171,13 +171,23 @@
   flex-direction: column;
   align-items: flex-end;
   line-height: 1.05;
-  padding: 4px 10px;
+  padding: var(--s1) var(--s2h);
   border-radius: var(--r-ctl);
   border: 1px solid var(--line);
   background: var(--surface);
 }
-.balance__k { font-size: 9px; letter-spacing: var(--tr-micro); text-transform: uppercase; color: var(--ink-2); font-weight: var(--w-label); }
-.balance__v { font-size: 14px; font-weight: var(--w-fig); font-variant-numeric: tabular-nums; }
+.balance__k {
+  /*  This was 9px. Nine pixels of uppercase at 0.08em tracking is a texture,
+      not a word: at 320 the measuring pass caught it as the last thing on the
+      site rendering under ten. The scale bottoms out at --t-micro and so does
+      this, because a size that is not on the scale is a size nobody chose. */
+  font-size: var(--t-micro);
+  letter-spacing: var(--tr-micro);
+  text-transform: uppercase;
+  color: var(--ink-2);
+  font-weight: var(--w-label);
+}
+.balance__v { font-size: var(--t-fig-s); font-weight: var(--w-fig); font-variant-numeric: tabular-nums; }
 
 .main {
   padding: var(--s5) var(--s4) calc(var(--bottombar-h) + env(safe-area-inset-bottom) + var(--s8));
@@ -207,12 +217,16 @@
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 3px;
+  gap: var(--s1);
   min-height: var(--tap);
   height: 100%;
   color: var(--ink-2);
   text-decoration: none;
-  font-size: 10px;
+  /*  --t-micro, not 10px. This is the only navigation on a phone and it was
+      the last thing on the site rendering under the scale: 21px icon, 4px
+      gap and an 11px label is 39px inside a 62px bar, so the extra pixel
+      costs nothing and "Social" still clears its 64px column at 320. */
+  font-size: var(--t-micro);
   font-weight: var(--w-label);
   letter-spacing: 0.02em;
 }

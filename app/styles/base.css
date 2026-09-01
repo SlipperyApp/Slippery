@@ -156,7 +156,7 @@ input, select, textarea { font-size: 16px; line-height: 1.4; }
   background: var(--accent);
   color: var(--accent-ink);
   font-weight: var(--w-label);
-  padding: 12px 18px;
+  padding: var(--s3) var(--s5);
   border-radius: 0 0 var(--r-ctl) 0;
 }
 .skip:focus { transform: translateY(0); }

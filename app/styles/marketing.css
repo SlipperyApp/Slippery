@@ -79,22 +79,26 @@
   box-shadow: 0 40px 90px -40px rgb(0 0 0 / 0.75);
 }
 .frame__bar {
+  --frame-dot: 9px;
   display: flex;
   align-items: center;
-  gap: 7px;
+  gap: var(--s1h);
   padding: 0 var(--s4);
   height: 40px;
   border-bottom: 1px solid var(--line);
   background: color-mix(in oklab, var(--surface-2) 70%, transparent);
 }
-.frame__dot { width: 9px; height: 9px; border-radius: 50%; background: var(--line-2); flex: none; }
+.frame__dot { width: var(--frame-dot); height: var(--frame-dot); border-radius: 50%; background: var(--line-2); flex: none; }
 .frame__url {
   margin-inline: auto;
   font-family: var(--f-mono);
   font-size: var(--t-micro);
   color: var(--ink-2);
-  /* Balances the three dots on the left so the label sits in the middle. */
-  padding-right: 45px;
+  /*  Balances the three dots on the left so the label sits in the middle,
+      computed from the dots rather than guessed at: three of them, two gaps.
+      The literal 45 was already wrong by four pixels and nothing could say
+      so, because nothing tied it to what it was balancing. */
+  padding-right: calc(3 * var(--frame-dot) + 2 * var(--s1h));
 }
 .frame__body { padding: var(--s4); }
 @media (min-width: 700px) { .frame__body { padding: var(--s5); } }
@@ -178,9 +182,9 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 8px;
+  gap: var(--s2);
   width: 84px;
-  padding: 10px 6px 8px;
+  padding: var(--s2h) var(--s1h) var(--s2);
   border-radius: var(--r-ctl);
   border: 1px solid transparent;
   background: none;
@@ -225,7 +229,7 @@
 }
 
 .themecard { cursor: pointer; text-align: left; width: 100%; }
-.themecard__swatches { display: flex; gap: 5px; margin-top: var(--s3); }
+.themecard__swatches { display: flex; gap: var(--s1h); margin-top: var(--s3); }
 /*  inline-block, because a bare <span> is display: inline and width and
     height are ignored on it. Inside .themecard__swatches it is a flex item and
     gets its box anyway, which is why the theme cards looked right; on /themes
@@ -234,7 +238,7 @@
 .themecard__sw {
   display: inline-block;
   width: 26px; height: 26px;
-  border-radius: 7px;
+  border-radius: var(--r-sm);
   border: 1px solid color-mix(in oklab, #fff 12%, transparent);
 }
 
@@ -258,7 +262,7 @@
 .wall__btn:hover { border-color: var(--line-2); background: var(--surface); }
 .wall__btn[aria-expanded='true'] { border-color: color-mix(in oklab, var(--accent) 46%, transparent); background: color-mix(in oklab, var(--accent) 7%, var(--surface)); }
 .wall__n { font-weight: var(--w-label); font-size: var(--t-small); display: block; }
-.wall__l { display: block; font-size: var(--t-micro); letter-spacing: 0.04em; text-transform: uppercase; color: var(--ink-2); margin-top: 3px; }
+.wall__l { display: block; font-size: var(--t-micro); letter-spacing: 0.04em; text-transform: uppercase; color: var(--ink-2); margin-top: var(--s1); }
 .wall__w { display: block; font-size: var(--t-small); color: var(--ink-2); margin-top: var(--s2); line-height: 1.45; }
 
 /* ------------------------------------------------------- touch target floor */
@@ -296,14 +300,14 @@
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 4px;
+  gap: var(--s1);
   list-style: none;
   padding: 0;
   margin: 0;
   font-size: var(--t-small);
   color: var(--ink-2);
 }
-.crumbs li { display: inline-flex; align-items: center; gap: 4px; }
+.crumbs li { display: inline-flex; align-items: center; gap: var(--s1); }
 /*  A breadcrumb is a standalone link, so it is its own target: 20px against a
     floor of 24 on a mouse and 44 on a thumb. The height is padding on the
     link, not on the row, so the trail itself does not grow. */
@@ -370,7 +374,7 @@
   display: inline-flex;
   align-items: center;
   height: 22px;
-  padding: 0 9px;
+  padding: 0 var(--s2);
   border-radius: var(--r-pill);
   background: var(--gold-wash);
   border: 1px solid color-mix(in srgb, var(--gold) 34%, transparent);
