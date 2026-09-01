@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { ENV_NAMES, has, capabilities } from '@/lib/server/env';
+import { emailTransport } from '@/lib/server/mail';
 import { pingDatabase, schemaReady } from '@/lib/server/db';
 
 export const runtime = 'nodejs';
@@ -29,7 +30,12 @@ export async function GET() {
       variables: env,
       capabilities: caps.map((c) => ({
         id: c.id, label: c.label, ready: c.ready, needs: c.needs, without: c.without,
+        ...(c.note ? { note: c.note } : {}),
       })),
+      /*  Which of the two transports the key in EMAIL_API_KEY selects. The
+       *  shape of the key chooses, so this is the answer to "it is set and no
+       *  code arrived" without anybody reading the key. */
+      emailTransport: emailTransport(),
       // Configured is not the same as reachable, so both are reported.
       databaseReachable,
       schema,

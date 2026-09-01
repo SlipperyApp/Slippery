@@ -24,6 +24,7 @@ export const ENV_NAMES = [
   'ANTHROPIC_API_KEY',
   'EMAIL_API_KEY',
   'EMAIL_FROM',
+  'EMAIL_SMTP_HOST',
   'ADMIN_SECRET',
   'ADMIN_PROMO_CODE',
   'CRON_SECRET',
@@ -50,6 +51,7 @@ const READERS: Record<EnvName, () => string | undefined> = {
   ANTHROPIC_API_KEY: () => process.env.ANTHROPIC_API_KEY,
   EMAIL_API_KEY: () => process.env.EMAIL_API_KEY,
   EMAIL_FROM: () => process.env.EMAIL_FROM,
+  EMAIL_SMTP_HOST: () => process.env.EMAIL_SMTP_HOST,
   ADMIN_SECRET: () => process.env.ADMIN_SECRET,
   ADMIN_PROMO_CODE: () => process.env.ADMIN_PROMO_CODE,
   CRON_SECRET: () => process.env.CRON_SECRET,
@@ -79,6 +81,8 @@ export type Capability = {
   /** What happens when it is not ready. Honest degradation, named. */
   without: string;
   needs: EnvName[];
+  /** How to configure it, when the names alone are not enough. */
+  note?: string;
 };
 
 export function capabilities(): Capability[] {
@@ -130,6 +134,7 @@ export function capabilities(): Capability[] {
       ready: has('EMAIL_API_KEY') && has('EMAIL_FROM'),
       without: 'Verification codes are not sent. They are still never logged.',
       needs: ['EMAIL_API_KEY', 'EMAIL_FROM'],
+      note: 'A key starting re_ is sent through Resend. Anything else is treated as an SMTP password, with EMAIL_FROM as the username and EMAIL_SMTP_HOST, or smtp.gmail.com, as the host.',
     },
     {
       id: 'admin', label: 'Admin levers',
