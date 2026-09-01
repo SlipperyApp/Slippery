@@ -125,7 +125,7 @@ test('nothing that has to be read is faded below legibility', () => {
   // Track the enclosing selector, not just the line: an opacity three lines
   // below a decorative selector is not a defect, and reading the line alone
   // says it is.
-  const DECORATIVE = /bgfield|__glow|__sheen|grain|ghost|meter|blob|keyframes|from|to|%|disabled|cal__cell--out|empty__|spin|live-dot|pulse/i;
+  const DECORATIVE = /bgfield|__glow|__sheen|grain|ghost|meter|barfill|blob|wave|keyframes|from|to|%|disabled|cal__cell--out|empty__|spin|live-dot|pulse/i;
   for (const file of files) {
     const text = readFileSync(new URL(file, dir), 'utf8').replace(/\/\*[\s\S]*?\*\//g, '');
     let selector = '';

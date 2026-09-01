@@ -63,6 +63,7 @@ export function SettingsPanes({ groups, account }: { groups: SettingsGroup[]; ac
             className="rowcard"
             aria-pressed={open === g.id}
             aria-controls="settings-pane"
+            aria-expanded={open === g.id}
             onClick={() => setOpen(open === g.id ? null : g.id)}
             style={{
               cursor: 'pointer', textAlign: 'left', width: '100%',

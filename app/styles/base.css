@@ -136,3 +136,20 @@ input, select, textarea { font-size: 16px; line-height: 1.4; }
     scroll-behavior: auto !important;
   }
 }
+
+/*  "Not yet", "locked", "already done": the states the code used to express
+    with opacity: 0.35 through 0.6.
+
+    Opacity on text is the single most reliable way to ship an unreadable
+    string that passes every review, because the colour in the stylesheet is
+    the right colour and the fault only exists in the composite. axe measured
+    the faded settle panel at 2.0:1 against a 4.5:1 requirement. --ink-2
+    against the same ground measures 7.9:1 and says the same thing.
+
+    Icons inside may still be dimmed: an icon is not text. */
+.pending { color: var(--ink-2); }
+.pending .fig,
+.pending .brow__title,
+.pending .card__title { color: var(--ink-2); }
+.pending .icon,
+.pending svg { color: var(--ink-3); }

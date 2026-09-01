@@ -22,6 +22,7 @@
   .h-s { height: var(--h-mod-s); }
   .h-m { height: var(--h-mod-m); }
   .h-l { height: var(--h-mod-l); }
+  .h-xl { height: var(--h-mod-xl); }
 }
 
 .card__head {
@@ -239,6 +240,9 @@
 }
 .check input { width: 20px; height: 20px; flex: none; margin-top: 1px; accent-color: var(--accent); }
 
+/*  44 x 26 is the switch you can see. The target has to be 44 x 44 on a
+    thumb, and a taller switch looks wrong, so the extra height is padding
+    that only exists where the pointer is coarse. */
 .switch {
   position: relative;
   width: 44px; height: 26px;
@@ -261,6 +265,19 @@
 .switch[aria-pressed='true'] { background: color-mix(in oklab, var(--accent) 42%, var(--surface-3)); border-color: color-mix(in oklab, var(--accent) 55%, transparent); }
 .switch[aria-pressed='true']::after { transform: translateX(18px); background: var(--accent); }
 .switchrow { display: flex; align-items: center; justify-content: space-between; gap: var(--s4); min-height: var(--tap); padding: var(--s2) 0; }
+@media (max-width: 699px), (pointer: coarse) {
+  .switch {
+    height: var(--tap);
+    background-clip: content-box;
+    border: 0;
+    padding-block: 9px;
+    /* The visible pill is now the padding box, so the track and the knob are
+       drawn against content-box and the extra 18px is pure hit area. */
+    box-shadow: inset 0 0 0 1px var(--line-2);
+    border-radius: var(--r-pill);
+  }
+  .switch::after { top: 11px; }
+}
 
 /* ------------------------------------------------------------------- table */
 .tbl { width: 100%; border-collapse: collapse; font-size: var(--t-small); }
@@ -301,6 +318,91 @@
 }
 .brow--faded .meter__fill { opacity: 0.45; }
 .brow--faded .brow__title { color: var(--ink-2); }
+
+/* -------------------------------------------------------------- breakdown */
+/*  Four columns on the first line and two spans under it:
+
+      name .......... count   spark   figure
+      bar ..............................  roi on turnover
+
+    The name is the only elastic column. Everything else is fixed, so the
+    figures line up down the module however long the labels are, which is the
+    thing that makes a list of numbers scannable. */
+.brk { display: block; }
+.brk__row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto 74px auto;
+  grid-template-areas:
+    'name n spark fig'
+    'bar  bar bar  sub';
+  align-items: center;
+  gap: 5px var(--s3);
+  padding: var(--s3) 0;
+  border-top: 1px solid var(--line);
+}
+.brk__row:first-child { border-top: 0; }
+
+.brk__name {
+  grid-area: name;
+  font-weight: var(--w-label);
+  font-size: var(--t-small);
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.brk__n { grid-area: n; font-size: var(--t-micro); color: var(--ink-2); }
+.brk__spark { grid-area: spark; display: flex; align-items: center; height: 22px; }
+.rspark { display: block; width: 74px; height: 22px; overflow: visible; }
+.brk__fig {
+  grid-area: fig;
+  font-size: var(--t-small);
+  font-weight: var(--w-fig);
+  letter-spacing: -0.01em;
+  white-space: nowrap;
+}
+.brk__bar {
+  grid-area: bar;
+  display: block;
+  height: 5px;
+  border-radius: var(--r-pill);
+  background: var(--surface-3);
+  overflow: hidden;
+}
+.brk__barfill {
+  display: block;
+  height: 100%;
+  border-radius: var(--r-pill);
+  transform-origin: left center;
+  animation: bar-grow 620ms var(--ease-out) both;
+}
+.brk__barfill--pos { background: var(--pos); }
+.brk__barfill--neg { background: var(--neg); }
+.brk__sub {
+  grid-area: sub;
+  font-size: var(--t-micro);
+  color: var(--ink-2);
+  text-align: right;
+  white-space: nowrap;
+}
+
+/*  Too few bets to rank. Fading the row would take the figure to about
+    2.9:1, so the signal is a rule down the left edge and a dimmed bar, which
+    carries no text. Never fade anything that has to be read. */
+.brk__row--faded {
+  border-left: 2px solid var(--line-2);
+  padding-left: var(--s3);
+  margin-left: -2px;
+}
+.brk__row--faded .brk__barfill { opacity: 0.45; }
+.brk__row--faded .brk__name { color: var(--ink-2); }
+
+/*  Under about 420px the sparkline is the first thing to go: a 74px trend
+    beside a name, a count and a figure leaves the name four characters. */
+@media (max-width: 419px) {
+  .brk__row { grid-template-columns: minmax(0, 1fr) auto auto; grid-template-areas: 'name n fig' 'bar bar sub'; }
+  .brk__spark { display: none; }
+}
 
 /* ------------------------------------------------------------------ meters */
 .meter {
@@ -428,18 +530,62 @@
 
 /* ---------------------------------------------------------------- calendar */
 /*  Height driven, not width driven. Sizing cells from their width puts a six
-    row month past the bottom of the card, and overflow:hidden on .card eats
-    the last row of it without saying anything. Six rows always, and the cell
-    size follows from the height the module was given. */
+    row month past the bottom of the card and overflow:hidden eats the last
+    row without saying anything. Six rows always; the cell size follows from
+    the height the module was given. */
 .cal {
   display: grid;
   grid-template-columns: repeat(7, minmax(0, 1fr));
   grid-template-rows: auto repeat(6, minmax(0, 1fr));
-  gap: 3px;
+  gap: 4px;
   flex: 1 1 auto;
   min-height: 0;
 }
-.cal__ctl { display: flex; justify-content: flex-end; margin-bottom: var(--s3); }
+.calwrap { display: flex; flex-direction: column; flex: 1 1 auto; min-height: 0; }
+
+/*  Month nav on the left, what-each-day-shows on the right. They wrap onto
+    two rows on a phone rather than shrinking the segmented control below a
+    tap target. */
+.cal__ctl {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--s3);
+  flex-wrap: wrap;
+  margin-bottom: var(--s3);
+}
+.cal__nav { display: inline-flex; align-items: center; gap: 2px; }
+.cal__month {
+  font-size: var(--t-micro);
+  font-weight: var(--w-label);
+  letter-spacing: -0.005em;
+  white-space: nowrap;
+  /*  Nine characters of month plus a year. Fixed so the arrows do not walk
+      left and right as the months change under them. */
+  min-width: 9ch;
+  text-align: center;
+}
+.icobtn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  border-radius: 7px;
+  border: 1px solid transparent;
+  background: none;
+  color: var(--ink-2);
+  cursor: pointer;
+}
+.icobtn:hover:not(:disabled) { background: var(--surface-2); color: var(--ink); }
+/* Disabled controls are exempt from the contrast floor, but no opacity on
+   anything that renders a glyph: a mixed colour is deterministic and a
+   stacked opacity is not. */
+.icobtn:disabled { color: color-mix(in srgb, var(--ink-2) 42%, var(--bg)); cursor: default; }
+.icobtn svg { width: 14px; height: 14px; }
+@media (max-width: 699px), (pointer: coarse) {
+  .icobtn { width: var(--tap); height: var(--tap); }
+}
 .cal__dow {
   font-size: 10px;
   text-align: center;
@@ -447,92 +593,139 @@
   font-weight: var(--w-label);
   padding-bottom: 4px;
 }
+
+/*  The ramp anchors. The semantic colour is mixed 35% into the ground, which
+    keeps lightness nearly still while chroma climbs, so a continuous ramp has
+    one readable text colour at every step AND leaves enough headroom for the
+    figure to keep its own semantic colour on top of the fill.
+
+    Measured across all eight themes, floor 0.14 to full strength:
+      semantic figure on the cell   4.55:1 worst
+      --ink on the cell             6.53:1 worst
+      full fill against an empty    1.67:1, plainly a fill
+
+    35% is the ceiling. At 45% the figure has to give up its colour and go
+    --ink; at 40% it drops to 3.99:1. Do not raise it. */
+:root {
+  --cal-pos: color-mix(in srgb, var(--pos) 35%, var(--bg));
+  --cal-neg: color-mix(in srgb, var(--neg) 35%, var(--bg));
+}
+
 .cal__cell {
   position: relative;
   min-height: 0;
-  max-height: 52px;
-  border-radius: var(--r-sm);
+  max-height: 58px;
+  border-radius: 9px;
   background: var(--surface-2);
+  border: 1px solid transparent;
   display: grid;
   place-items: center;
+  align-content: center;
+  gap: 1px;
   font-variant-numeric: tabular-nums;
   overflow: hidden;
 }
 .cal__fill { position: absolute; inset: 0; border-radius: inherit; }
 
-/*  The dark saturated anchors the ramp fades in. Mixing the semantic colour
-    45% into the ground keeps lightness almost still while chroma climbs, so
-    one text colour is readable at every step. Any higher and --ink drops
-    under 4.5:1 at the top; any lower and the strongest day stops looking
-    like a fill. */
-:root {
-  --cal-pos: color-mix(in srgb, var(--pos) 45%, var(--bg));
-  --cal-neg: color-mix(in srgb, var(--neg) 45%, var(--bg));
-}
-
-/*  Text on a filled cell is --ink and never --ink-2, which measures 2.25:1
-    against the top of the ramp. */
-.cal__n, .cal__v { position: relative; z-index: 1; color: var(--ink); line-height: 1; }
-.cal__n { font-size: 11px; font-weight: var(--w-label); }
-.cal__v { font-size: 11px; font-weight: var(--w-fig); letter-spacing: -0.01em; }
-
-/*  With both on the cell is two rows, not a centred figure with a date
-    floated over it. Absolute positioning put "16" through the middle of
-    "892" the moment a four figure day appeared. The date gets its own row
-    and the figure gets the rest, so they cannot collide at any width. */
-.cal__cell--stack {
-  display: grid;
-  grid-template-rows: auto 1fr;
-  place-items: stretch;
-  padding: 2px 4px 3px;
-}
-.cal__cell--stack .cal__n {
-  font-size: 10px;
-  justify-self: start;
-  align-self: start;
-  /* No opacity. A smaller size is the difference; fading it costs contrast
-     the ramp has already spent. */
-}
-.cal__cell--stack .cal__v {
-  align-self: center;
-  justify-self: center;
+/*  The figure leads and the date captions it, which is the same rule the
+    rest of the product follows. */
+/*  The figure is sized FROM THE CELL, not from a fixed px. A four column
+    calendar card puts a 44px cell on screen and "+£135" at a fixed 12px
+    overflows it; overflow:hidden then clips the last digit and the number
+    silently reads wrong. The plain declaration comes first so a browser
+    without container units keeps a size that fits rather than inheriting
+    body size. */
+.cal__cell { container-type: inline-size; }
+.cal__v {
+  position: relative; z-index: 1;
+  /*  Mono, because a column of figures that do not line up is a column you
+      cannot read down. Same face as every other figure in the product. */
+  font-family: var(--f-mono);
+  font-weight: 600; line-height: 1;
+  letter-spacing: -0.03em;
   font-size: 11px;
+  font-size: clamp(8px, 23cqi, 13px);
+  max-width: 100%;
+  overflow: hidden;
 }
-/* A day that netted nothing is stated, not shouted. */
-.cal__v--flat { color: var(--ink-2); font-weight: var(--w-label); }
+.cal__n {
+  position: relative; z-index: 1;
+  font-weight: var(--w-label); line-height: 1;
+  color: var(--ink-2);
+  font-size: 10px;
+  font-size: clamp(8px, 19cqi, 11px);
+}
+/* A day that was bet on and came out level is stated, not shouted. */
+.cal__v--flat { color: var(--ink-2); }
 
-/*  A day you did not bet on, struck out. The sr-only sentence says "no bets"
-    as well, so the line is never the only way to know. */
+/*  A day with no bets is slashed corner to corner and outlined in a dash.
+    The mark belongs to the day rather than to the digit: a slash reads across
+    a whole month at a glance where a struck-through number does not, and it
+    never touches the legibility of the number itself. */
+.cal__cell--blank {
+  background: color-mix(in srgb, var(--surface-2) 55%, var(--bg));
+  border-color: color-mix(in srgb, var(--line-2) 70%, transparent);
+  border-style: dashed;
+}
+.cal__cell--blank::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-image: linear-gradient(to top right,
+    transparent calc(50% - 0.5px),
+    color-mix(in srgb, var(--ink-2) 42%, transparent) calc(50% - 0.5px),
+    color-mix(in srgb, var(--ink-2) 42%, transparent) calc(50% + 0.5px),
+    transparent calc(50% + 0.5px));
+}
 .cal__cell--blank .cal__n { color: var(--ink-2); }
-.cal__n--none {
-  text-decoration: line-through;
-  text-decoration-thickness: 1px;
-  text-decoration-color: color-mix(in srgb, var(--ink-2) 62%, transparent);
-}
 
-/*  A day that has not happened is recessed rather than struck out. No opacity
-    on the date: the recessed ground is the difference. */
+/*  A day that has not happened is a dashed outline on the ground itself: no
+    slash, because "you did not bet" and "it has not happened yet" are
+    different facts and a line through tomorrow is a lie. */
 .cal__cell--future {
-  background: color-mix(in srgb, var(--surface-2) 45%, var(--bg));
-  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--line) 60%, transparent);
+  background: none;
+  border-color: color-mix(in srgb, var(--line) 80%, transparent);
+  border-style: dashed;
 }
+/*  Was mixed 72% into the ground, which measured 3.1:1 and axe was right to
+    say so. A day that has not happened is marked by the dashed outline
+    around it, not by making its number hard to read. */
 .cal__cell--future .cal__n { color: var(--ink-2); }
 
-.cal__cell--out { background: none; }
-.cal__cell--today { box-shadow: inset 0 0 0 1.5px var(--accent); }
+.cal__cell--out { background: none; border-color: transparent; }
+.cal__cell--today { border-color: var(--accent); border-style: solid; box-shadow: 0 0 0 1px var(--accent); }
 
+/*  The key and the month's own total on one line: the key explains the fill
+    and the total is the one number somebody actually came for. */
+.cal__foot {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--s3) var(--s4);
+  flex-wrap: wrap;
+  margin-top: var(--s4);
+}
+.cal__sum { color: var(--ink-2); flex: none; }
 .cal__key {
   display: flex;
-  align-items: center;
-  gap: 6px;
-  margin-top: var(--s3);
+  flex-wrap: wrap;
+  gap: var(--s2) var(--s4);
   font-size: var(--t-micro);
   line-height: var(--lh-micro);
   color: var(--ink-2);
 }
-.cal__keyswatch { width: 10px; height: 10px; border-radius: 3px; flex: none; }
-.cal__keyswatch--pos { background: var(--cal-pos); }
-.cal__keyswatch--neg { background: var(--cal-neg); }
+.cal__key li { display: inline-flex; align-items: center; gap: 6px; }
+.cal__keyswatch { width: 11px; height: 11px; border-radius: 3px; flex: none; }
+.cal__keyswatch--pos { background: var(--cal-pos); border: 1px solid color-mix(in srgb, var(--pos) 45%, transparent); }
+.cal__keyswatch--neg { background: var(--cal-neg); border: 1px solid color-mix(in srgb, var(--neg) 45%, transparent); }
+.cal__keyswatch--none {
+  border: 1px dashed color-mix(in srgb, var(--line-2) 80%, transparent);
+  background-image: linear-gradient(to top right,
+    transparent calc(50% - 0.5px),
+    color-mix(in srgb, var(--ink-2) 42%, transparent) calc(50% - 0.5px),
+    color-mix(in srgb, var(--ink-2) 42%, transparent) calc(50% + 0.5px),
+    transparent calc(50% + 0.5px));
+}
 
 .seg--xs .seg__btn { font-size: var(--t-micro); padding: 0 8px; min-height: 34px; }
 @media (max-width: 699px), (pointer: coarse) {
@@ -563,3 +756,8 @@
 .medal--2 { color: #C7CBD1; }
 .medal--3 { color: #C08552; }
 .medal--none { color: var(--ink-2); }
+
+/*  A drop zone that is not accepting anything. Border and label, not a fade:
+    the text inside still has to be readable to say WHY it is off. */
+[data-disabled] { color: var(--ink-2); }
+[data-disabled] .card__title { color: var(--ink-2); }

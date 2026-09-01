@@ -78,10 +78,12 @@ export function AppShell({ chrome, children }: { chrome: ShellChrome; children: 
 
           <div className="topbar__mid">
             <span className="avatar" aria-hidden="true">{chrome.displayName.slice(0, 1)}</span>
-            <span className="small muted mono" style={{ overflow: 'hidden', textOverflow: 'ellipsis' }}>
-              @{chrome.handle}
-            </span>
-            {chrome.demo ? <span className="pill">Example</span> : null}
+            {/*  Under 380px the handle truncates to "@..." which is worse
+                 than nothing: it takes the width of a word and carries none
+                 of one. It goes, and the avatar beside it still identifies
+                 the account. */}
+            <span className="small muted mono topbar__handle">@{chrome.handle}</span>
+            {chrome.demo ? <span className="pill hide-xs">Example</span> : null}
           </div>
 
           <div className="topbar__right">

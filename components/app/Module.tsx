@@ -13,7 +13,7 @@ export function Module({
 }: {
   title: string;
   span?: 4 | 6 | 8 | 12;
-  size?: 's' | 'm' | 'l';
+  size?: 's' | 'm' | 'l' | 'xl';
   /** Exactly three modules ignore the scope bar and say so here. */
   note?: string;
   children: React.ReactNode;

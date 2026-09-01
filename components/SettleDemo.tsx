@@ -141,7 +141,7 @@ export function SettleDemo() {
       </ul>
 
       <div
-        className={settled ? 'is-settling' : undefined}
+        className={`${settled ? 'is-settling' : 'pending'}`}
         style={{
           marginTop: 'var(--s3)', paddingTop: 'var(--s4)', borderTop: '1px solid var(--line)',
         }}

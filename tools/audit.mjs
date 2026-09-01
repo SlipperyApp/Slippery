@@ -30,9 +30,40 @@
  *  its own heading rather than as a console error on forty other pages, and
  *  the server is restarted before any of this is believed, because replacing
  *  .next under a running `next start` serves a mixture of both builds.
+ *
+ *  SIX MORE, and three new checks. The checks are module-overflows,
+ *  text-clipped and text-collision; between them they found a module whose
+ *  last line landed on top of its own footer, a figure that lost its last
+ *  digit to overflow:hidden and therefore READ AS A DIFFERENT NUMBER, and a
+ *  settings list on the live site rendering "AccountWho you are, how to reach
+ *  you". None of the three is visible to axe, to the type checker, or to a
+ *  build.
+ *
+ *   7. The tap floor is 24px on a mouse (WCAG 2.5.8) and 44px on a thumb
+ *      (2.5.5, and the platform guidance). Skipping the check entirely on a
+ *      fine pointer misses a 14px link in a list row, which is a real target
+ *      and a real failure.
+ *   8. An sr-only input is not the target: it is 1px by design and its LABEL
+ *      is what you press, whether the label wraps it or points at it with a
+ *      for attribute.
+ *   9. A collision check that measures raw rectangles reports the fixed
+ *      bottom bar as overlapping the page under it, on every route, at every
+ *      width. Skip anything with a positioned ANCESTOR, not just a positioned
+ *      self.
+ *  10. Clip every rectangle to its scroll containers first. A row scrolled
+ *      out of a module still has coordinates, and they sit on top of whatever
+ *      the module is above.
+ *  11. Only block level boxes can be compared. An inline element's rectangle
+ *      is the union of its line boxes, so two spans two words apart on the
+ *      same wrapped line overlap almost entirely and no glyph touches.
+ *  12. A 503 no_store from an /api route is one fact about an environment
+ *      with no DATABASE_URL. It gets one heading, like the 404s.
+ *
+ *  Rules nine through eleven cost 93 of the 95 collision findings on the
+ *  first run. The two that survived were both real.
  */
 import { chromium } from 'playwright-core';
-import { readFileSync, mkdirSync, writeFileSync } from 'node:fs';
+import { readFileSync, mkdirSync, writeFileSync, readdirSync } from 'node:fs';
 import { ALL } from './routes.mjs';
 
 const BASE = (process.env.E2E_BASE || 'http://127.0.0.1:3100').replace(/\/$/, '');
@@ -65,8 +96,35 @@ const VIEWPORTS = LIVE
 
 mkdirSync(OUT, { recursive: true });
 
+/*  THE STALE SERVER GUARD.
+ *
+ *  Replacing .next under a running `next start` serves a mixture of two
+ *  builds: chunks 404, pages lose their stylesheet entirely, and every
+ *  finding after that is a ghost. It has cost this project two full rounds of
+ *  chasing fixes that were already applied, and while it is happening it
+ *  looks exactly like a real regression.
+ *
+ *  So the CSS filename on disk is compared with the one the server links,
+ *  before anything else runs. */
+{
+  let onDisk = [];
+  try { onDisk = readdirSync('.next/static/css').filter((f) => f.endsWith('.css')); } catch { /* not built */ }
+  const html = await fetch(BASE + '/').then((r) => r.text()).catch(() => '');
+  const served = [...html.matchAll(/\/_next\/static\/css\/([^"']+\.css)/g)].map((m) => m[1]);
+  const missing = served.filter((f) => onDisk.length && !onDisk.includes(f));
+  if (missing.length) {
+    console.error(`\nThe server is serving ${missing.join(', ')}, which is not in .next/static/css.`);
+    console.error('That is a `next start` left running across a rebuild. Restart it: every finding');
+    console.error('from a mixed build is a ghost.\n');
+    process.exit(2);
+  }
+}
+
 const problems = [];
 const missingRoutes = new Map();   // rule six: reported once, under its own heading
+/*  Rule twelve. Endpoints that answer 503 no_store because this run has no
+ *  DATABASE_URL: not defects, and not forty console errors either. */
+const noStore = new Map();
 const note = (route, viewport, kind, detail) => {
   problems.push({ route, viewport, kind, detail });
   // Written as they are found. A dropped connection in a later phase used to
@@ -150,15 +208,16 @@ const MEASURE = () => {
     return false;
   };
 
-  const small = !window.matchMedia('(pointer: coarse)').matches ? [] : controls.filter((el) => {
+  /*  Rules seven and eight. 24 on a mouse, 44 on a thumb; and an sr-only
+   *  input is not the target, whether its label wraps it or points at it. */
+  const touch = window.matchMedia('(pointer: coarse)').matches || window.innerWidth < 700;
+  const floor = touch ? 43.5 : 23.5;
+  const small = controls.filter((el) => {
     if (inSentence(el)) return false;
     if (el.type === 'range' || el.type === 'checkbox') return false;
-    // A visually hidden input has a visible label doing the pressing.
-    if (el.classList.contains('sr-only')) return false;
-    const r = el.getBoundingClientRect();
-    const textLink = el.tagName === 'A' && !el.className.includes('btn') && !el.className.includes('tab');
-    if (textLink) return r.height < 43.5;
-    return r.height < 43.5;
+    if (el.classList.contains('sr-only')
+      && (el.closest('label') || (el.id && document.querySelector(`label[for="${el.id}"]`)))) return false;
+    return el.getBoundingClientRect().height < floor;
   }).map((el) => `${el.tagName}.${String(el.className).slice(0, 34)} ${Math.round(el.getBoundingClientRect().height)}px`);
 
   // Anything with cursor:pointer must be a button or an anchor with an href.
@@ -172,6 +231,92 @@ const MEASURE = () => {
 
   const smallInputs = [...document.querySelectorAll('input,select,textarea')]
     .filter((el) => visible(el) && parseFloat(getComputedStyle(el).fontSize) < 16).length;
+
+  /*  THREE FAULTS NOTHING ELSE HERE CATCHES. Every one of them renders,
+      passes the type check, passes axe, and looks like a design choice in a
+      screenshot until you read the words.
+
+      spill    a module with a fixed height whose content is taller than it.
+               The overflow is neither scrollable nor clipped, so the last
+               line lands ON TOP of the footer of the card.
+      clipped  a box that hides its overflow and holds more text than fits, so
+               a figure silently loses its last digit and READS AS A DIFFERENT
+               NUMBER. GBP 1,350 rendered as GBP 1,35 is a defect an eye
+               scanning a dashboard will never catch.
+      collide  two pieces of text drawn over each other. Neither is hidden, so
+               both are in the accessibility tree and the screenshot is the
+               only place the fault exists. This is the one that found
+               "AccountWho you are, how to reach you" on the live settings
+               page: .rowcard__t is a <p> in half the product and a <span> in
+               the other half, and margin-top on an inline element does
+               nothing. */
+  const spill = [];
+  for (const card of document.querySelectorAll('[class*="h-"]')) {
+    if (!/(^|\s)h-(s|m|l|xl)(\s|$)/.test(card.className) || !visible(card)) continue;
+    const over = card.scrollHeight - card.clientHeight;
+    if (over > 2 && getComputedStyle(card).overflowY === 'visible') {
+      spill.push(`${card.id || card.className.split(' ')[0]} +${over}px`);
+    }
+  }
+
+  const clipped = [];
+  for (const el of document.querySelectorAll('body *')) {
+    if (!visible(el) || el.getAttribute('aria-hidden') === 'true') continue;
+    const cs = getComputedStyle(el);
+    if (cs.overflowX !== 'hidden' && cs.overflow !== 'hidden') continue;
+    if (cs.textOverflow === 'ellipsis' || cs.whiteSpace === 'nowrap') continue;   // deliberate
+    const txt = (el.textContent || '').trim();
+    if (!txt || el.children.length > 2) continue;
+    if (el.scrollWidth - el.clientWidth > 1) {
+      clipped.push(`${el.tagName.toLowerCase()}.${String(el.className).split(' ')[0]} "${txt.slice(0, 24)}"`);
+    }
+    if (clipped.length > 4) break;
+  }
+
+  const collide = [];
+  const leaves = [...document.querySelectorAll('p,h1,h2,h3,h4,span,li,td,th,dd,dt,a,button,label')]
+    .filter((el) => {
+      if (!visible(el) || el.getAttribute('aria-hidden') === 'true') return false;
+      if (el.closest('.sr-only') || el.classList.contains('sr-only')) return false;
+      // Rule eleven: an inline box's rectangle is the union of its line boxes.
+      if (/^inline/.test(getComputedStyle(el).display)) return false;
+      // Rule nine: a positioned ancestor, not just a positioned self.
+      for (let p = el; p && p !== document.body; p = p.parentElement) {
+        const pos = getComputedStyle(p).position;
+        if (pos === 'fixed' || pos === 'sticky' || pos === 'absolute') return false;
+      }
+      return [...el.childNodes].some((n) => n.nodeType === 3 && n.textContent.trim().length > 1);
+    })
+    // Rule ten: clip to every scroll container on the way up.
+    .map((el) => {
+      let r = el.getBoundingClientRect();
+      for (let p = el.parentElement; p && p !== document.body; p = p.parentElement) {
+        const cs = getComputedStyle(p);
+        if (cs.overflow === 'visible' && cs.overflowX === 'visible' && cs.overflowY === 'visible') continue;
+        const pr = p.getBoundingClientRect();
+        const top = Math.max(r.top, pr.top);
+        const left = Math.max(r.left, pr.left);
+        const bottom = Math.min(r.bottom, pr.bottom);
+        const right = Math.min(r.right, pr.right);
+        r = { top, left, bottom, right, width: right - left, height: bottom - top };
+      }
+      return { el, r };
+    })
+    .filter((x) => x.r.width > 4 && x.r.height > 4);
+
+  for (let i = 0; i < leaves.length && collide.length < 4; i++) {
+    for (let j = i + 1; j < leaves.length && collide.length < 4; j++) {
+      const a = leaves[i]; const b = leaves[j];
+      if (a.el.contains(b.el) || b.el.contains(a.el)) continue;
+      const ox = Math.min(a.r.right, b.r.right) - Math.max(a.r.left, b.r.left);
+      const oy = Math.min(a.r.bottom, b.r.bottom) - Math.max(a.r.top, b.r.top);
+      if (ox <= 1 || oy <= 1) continue;
+      const smaller = Math.min(a.r.width * a.r.height, b.r.width * b.r.height);
+      if ((ox * oy) / smaller > 0.3) {
+        collide.push(`"${(a.el.textContent || '').trim().slice(0, 20)}" over "${(b.el.textContent || '').trim().slice(0, 20)}"`);
+      }
+    }
+  }
 
   return {
     scrollWidth: document.body.scrollWidth,
@@ -190,6 +335,9 @@ const MEASURE = () => {
     smallInputs,
     hasMain: Boolean(document.querySelector('main#main')),
     hasSkip: Boolean(document.querySelector('a.skip')),
+    spill,
+    clipped,
+    collide,
   };
 };
 
@@ -211,7 +359,11 @@ function watch(page) {
     const url = new URL(r.url());
     if (url.origin !== ORIGIN) return;
     const path = url.pathname;
-    if (path.startsWith('/api/')) return;   // degrading honestly is not a defect
+    if (r.status() === 503 && path.startsWith('/api/')) {
+      noStore.set(path, (noStore.get(path) ?? 0) + 1);
+      return;                               // degrading honestly is not a defect
+    }
+    if (path.startsWith('/api/')) return;
     if (r.request().resourceType() === 'fetch' || url.searchParams.has('_rsc')) {
       missingRoutes.set(path, (missingRoutes.get(path) ?? 0) + 1);
       return;
@@ -257,6 +409,9 @@ async function visit(ctx, route, vp, { runAxe = false, theme = null } = {}) {
   if (m.smallInputs > 0) note(route, label, 'input-size', `${m.smallInputs} under 16px`);
   if (!m.hasMain) note(route, label, 'landmark', 'no main#main');
   if (!m.hasSkip) note(route, label, 'skip-link', 'no skip link');
+  if (m.spill.length) note(route, label, 'module-overflows', m.spill.join(', '));
+  if (m.clipped.length) note(route, label, 'text-clipped', m.clipped.join(' | '));
+  if (m.collide.length) note(route, label, 'text-collision', m.collide.join(' | '));
 
   if (runAxe) {
     try {
@@ -466,6 +621,14 @@ if (missingRoutes.size) {
   for (const [path, n] of [...missingRoutes].sort((a, b) => b[1] - a[1])) {
     console.log(`  ${String(n).padStart(4)}x  ${path}`);
   }
+}
+
+if (noStore.size) {
+  console.log('\nEndpoints that need a database, and this run has none (503 no_store):');
+  for (const [path, n] of [...noStore].sort((a, b) => b[1] - a[1])) {
+    console.log(`  ${String(n).padStart(4)}x  ${path}`);
+  }
+  console.log('  Not defects. Set DATABASE_URL to exercise them.');
 }
 
 if (!problems.length) {

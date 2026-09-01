@@ -45,6 +45,7 @@ export function Dropzone({ enabled }: { enabled: boolean }) {
           background: over ? 'color-mix(in oklab, var(--accent) 8%, var(--surface))' : undefined,
           borderStyle: enabled ? 'dashed' : 'dotted',
         }}
+        {...(enabled ? {} : { 'data-disabled': '' })}
       >
         <Icon name="camera" size={28} style={{ color: 'var(--ink-3)' }} />
         <p className="card__title" style={{ marginTop: 'var(--s3)' }}>

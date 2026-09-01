@@ -108,10 +108,10 @@ export function MarketingFooter() {
 
 /** Used at the top of every marketing section. */
 export function SectionHead({
-  badge, setup, claim, children,
-}: { badge: string; setup: string; claim: string; children?: React.ReactNode }) {
+  badge, setup, claim, children, centred = false,
+}: { badge: string; setup: string; claim: string; children?: React.ReactNode; centred?: boolean }) {
   return (
-    <div className="sect__head">
+    <div className={centred ? 'sect__head sect__head--mid' : 'sect__head'}>
       <span className="pill sect__badge">{badge}</span>
       <h2 className="sect__h">
         <span className="setup">{setup}</span>

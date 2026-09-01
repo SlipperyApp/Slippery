@@ -7,6 +7,9 @@ import { BetTypeWall } from '@/components/marketing/BetTypeWall';
 import { SplitHeadline } from '@/components/marketing/SplitHeadline';
 import { ThemeStrip } from '@/components/marketing/ThemeStrip';
 import { Sequence } from '@/components/marketing/Sequence';
+import { WaveField } from '@/components/marketing/WaveField';
+import { Faq } from '@/components/marketing/Faq';
+import { TOP_QUESTIONS } from '@/lib/content/faq';
 import { money } from '@/lib/format';
 
 export const metadata: Metadata = {
@@ -27,6 +30,7 @@ export default function Landing() {
     <>
       {/* ------------------------------------------------------------ hero */}
       <section className="hero">
+        <WaveField />
         <div className="wrap">
           <div className="two two--wide-right">
             <div>
@@ -245,13 +249,13 @@ export default function Landing() {
       <section className="sect" id="themes">
         <div className="wrap">
           <SectionHead
+            centred
             badge="Eight themes"
             setup="All of them dark."
-            claim="Profit green has to survive the ground."
+            claim="Pick a theme."
           >
-            There is no light mode. Profit green measures 1.07 to 1 on beige, which is invisible.
-            The two result colours are fixed and never theme dependent, which is why there is no
-            green theme and no red theme.
+            Profit green measures 1.07 to 1 on beige, so there is no light mode. The two result
+            colours are fixed in every theme, which is why none of the eight is green or red.
           </SectionHead>
           <ThemeStrip />
         </div>
@@ -290,6 +294,26 @@ export default function Landing() {
                 What is in it <Icon name="arrowRight" size={16} />
               </Link>
             </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ------------------------------------------------------- questions */}
+      <section className="sect" id="questions">
+        <div className="wrap">
+          <SectionHead
+            centred
+            badge="Questions"
+            setup="Six of them."
+            claim="Answered without the marketing."
+          />
+          <div className="column column--wide" style={{ marginTop: 'var(--s6)' }}>
+            <Faq items={TOP_QUESTIONS} />
+            <p style={{ marginTop: 'var(--s5)', textAlign: 'center' }}>
+              <Link href="/faq" className="btn btn--ghost btn--sm">
+                The other ten <Icon name="arrowRight" size={16} />
+              </Link>
+            </p>
           </div>
         </div>
       </section>

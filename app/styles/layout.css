@@ -31,7 +31,24 @@
 .mhead__cta { margin-left: auto; display: flex; align-items: center; gap: var(--s2); }
 @media (min-width: 900px) { .mhead__cta { margin-left: var(--s3); } }
 
-.brand { display: inline-flex; align-items: center; gap: 9px; text-decoration: none; }
+/*  The wordmark is a link, so it is a target. 26px of art, 44px of hit area,
+    and the art does not move. This one rule was 331 of the 437 findings. */
+/*  A real box, not a ::after hit area. The pseudo element did make the brand
+    tappable, but nothing can measure it: every audit, every browser tool and
+    every future reader sees a 26px target and has to take it on trust. A
+    min-height and a little inline padding say the same thing out loud. */
+.brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  text-decoration: none;
+  position: relative;
+  min-height: var(--tap);
+  min-width: var(--tap);
+  justify-content: flex-start;
+  margin-inline: -6px;
+  padding-inline: 6px;
+}
 .brand__mark { width: 26px; height: 26px; flex: none; }
 .brand__word {
   font-size: 18px;
@@ -263,3 +280,32 @@
 .row--wrap { flex-wrap: wrap; }
 .spread { display: flex; align-items: center; justify-content: space-between; gap: var(--s3); }
 .grow { flex: 1 1 auto; min-width: 0; }
+
+/*  The app top bar at 320. Three things compete for the width: who you are,
+    that this is the example account, and the bankroll. The bankroll is the
+    one somebody opened the app to see, so it is the one that stays. */
+.topbar__handle { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+@media (max-width: 379px) {
+  .topbar__handle { display: none; }
+  .hide-xs { display: none; }
+}
+
+/*  Two link shapes that are their own row rather than part of a sentence, so
+    each is its own target: the compliance links in both footers (marketing
+    and auth carry the same 18+ and helpline line) and the title link in a
+    list row. They measure 19px and 14px, against a floor of 24 on a mouse
+    (WCAG 2.5.8) and 44 on a thumb. */
+.mfoot__legal a,
+footer .row a.small,
+a.brow__title,
+a.brk__name {
+  display: inline-flex;
+  align-items: center;
+  min-height: 24px;
+}
+@media (max-width: 699px), (pointer: coarse) {
+  .mfoot__legal a,
+  footer .row a.small,
+  a.brow__title,
+  a.brk__name { min-height: var(--tap); }
+}

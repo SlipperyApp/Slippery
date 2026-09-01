@@ -3,13 +3,13 @@ import Link from 'next/link';
 import { getViewer } from '@/lib/data/session';
 import {
   select, summarise, byDay, cumulative, byMonth, runningNow, settledToday,
-  offerSplit, orderedBreakdown, scopeFromParams, scopeLabel, buildBreakdowns,
+  offerSplit, orderedBreakdown, scopeFromParams, scopeLabel, buildBreakdowns, type BreakRow,
 } from '@/lib/data/analytics';
-import { Breakdown } from '@/components/app/Breakdown';
+import { Breakdown, BreakList } from '@/components/app/Breakdown';
 import { ScopeBar } from '@/components/app/ScopeBar';
 import { Module, ModuleLink, Figure } from '@/components/app/Module';
 import { MonthCalendar } from '@/components/app/Calendar';
-import { ProfitCurve, MonthBars, Sparkline } from '@/components/app/Charts';
+import { ProfitCurve, MonthBars } from '@/components/app/Charts';
 import { BetRow, EmptyState } from '@/components/app/BetRow';
 import { Icon } from '@/components/Icon';
 import { money, pct, units as fmtUnits, count, MONTH_LONG, londonParts, TZ_LABEL } from '@/lib/format';
@@ -25,13 +25,22 @@ export default async function Dashboard({
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
   const sp = await searchParams;
-  const { data, now, trial } = await getViewer();
-  const scope = scopeFromParams(sp);
+  const { data, now, trial, demo } = await getViewer();
+  const scope = scopeFromParams(sp, demo ? 'all' : undefined);
   const { account, bets } = data;
 
   const rows = select(bets, scope, now, account.weekStart);
   const s = summarise(rows);
   const curve = cumulative(byDay(rows));
+  /*  A curve needs two settled days, and on the first of a month a correct
+      scope has one. Rather than a module sized for a picture showing a
+      sentence, the curve falls back to the whole record and SAYS SO. An
+      unlabelled fallback would be worse than the empty box; a labelled one
+      is the answer to the question the empty box raises. */
+  const allDays = byDay(select(bets, { ...scope, period: 'all' }, now, account.weekStart));
+  const wideCurve = cumulative(allDays);
+  const curveIsWide = curve.length < 2 && wideCurve.length > 1;
+  const shownCurve = curveIsWide ? wideCurve : curve;
   const months = byMonth(bets);
   const running = runningNow(bets);
   const today = settledToday(bets, now);
@@ -39,7 +48,9 @@ export default async function Dashboard({
   const oddsBands = orderedBreakdown(rows, 'odds', account.unitPence);
   const stakeBands = orderedBreakdown(rows, 'stake', account.unitPence);
   const breakdowns = buildBreakdowns(rows);
-  const monthDays = byDay(select(bets, { ...scope, period: 'month' }, now, account.weekStart));
+  /* Every settled day the account has: the calendar browses months itself,
+     so scoping this to the current one would empty every earlier month. */
+  const calendarDays = byDay(select(bets, { ...scope, period: 'all' }, now, account.weekStart));
   const p = londonParts(now);
 
   return (
@@ -64,7 +75,7 @@ export default async function Dashboard({
         <Module
           title="Net"
           span={4}
-          size="l"
+          size="m"
           id="mod-net"
           footer={
             <p className="small dim">
@@ -85,19 +96,13 @@ export default async function Dashboard({
             <Figure value={money(s.turnoverPence, account.currency)} label="Turnover" size="sm" />
             <Figure value={count(s.count)} label="Bets" size="sm" />
           </div>
-          {curve.length > 2 ? (
-            <div style={{ marginTop: 'auto', paddingTop: 'var(--s5)' }}>
-              <p className="label" style={{ marginBottom: 6 }}>The last {Math.min(14, curve.length)} settled days</p>
-              <Sparkline values={curve.slice(-14).map((c) => c.netPence)} height={44} />
-            </div>
-          ) : null}
         </Module>
 
         {/* ------------------------------------------------ running now */}
         <Module
           title="Running now"
           span={4}
-          size="l"
+          size="m"
           note="Live, so it ignores the scope"
           id="mod-running"
           footer={<ModuleLink href="/app/ledger">Open the ledger</ModuleLink>}
@@ -110,8 +115,13 @@ export default async function Dashboard({
               ghost={<ul><li className="brow"><span className="brow__title">Arsenal to win</span><span className="fig fig--s">£38.25</span></li></ul>}
             />
           ) : (
-            <div className="grow" tabIndex={0} aria-label="Running now and settled today, scrollable"
-              style={{ overflowY: 'auto', minHeight: 0 }}>
+            <div
+              className="grow"
+              style={{ overflowY: 'auto', minHeight: 0 }}
+              tabIndex={0}
+              role="region"
+              aria-label="Running now and settled today, scrollable"
+            >
               {running.length > 0 ? (
                 <>
                   <p className="label" style={{ marginBottom: 4 }}>
@@ -132,41 +142,6 @@ export default async function Dashboard({
               ) : null}
             </div>
           )}
-        </Module>
-
-        {/* --------------------------------------------------- calendar */}
-        <Module
-          title={`${MONTH_LONG[p.month - 1]} ${p.year}`}
-          span={4}
-          size="l"
-          note="Always the month shown"
-          id="mod-calendar"
-          footer={<p className="small dim">Days are Europe/London, so a 23:00 bet lands on the right one.</p>}
-        >
-          <MonthCalendar
-            days={monthDays}
-            now={now}
-            weekStart={account.weekStart}
-            show={account.calendarDates ? 'both' : 'amount'}
-            currency={account.currency}
-          />
-        </Module>
-
-        {/* ------------------------------------------------ profit curve */}
-        <Module
-          title="Profit curve"
-          span={8}
-          size="m"
-          id="mod-curve"
-          footer={
-            <p className="small dim">
-              {curve.length > 1
-                ? `${curve.length} settled days, best ${money(Math.max(...byDay(rows).map((d) => d.netPence), 0), account.currency, { sign: true })} on a day.`
-                : 'A curve needs two settled days.'}
-            </p>
-          }
-        >
-          <ProfitCurve points={curve} currency={account.currency} />
         </Module>
 
         {/* --------------------------------------------- offers vs own */}
@@ -195,7 +170,41 @@ export default async function Dashboard({
           </div>
         </Module>
 
-        {/* --------------------------------------------------- breakdown */}
+        {/* ------------------------------------------------ profit curve */}
+        <Module
+          title="Profit curve"
+          span={8}
+          size="xl"
+          id="mod-curve"
+          note={curveIsWide ? 'All time, this scope has one day' : undefined}
+          footer={
+            <p className="small dim">
+              {shownCurve.length > 1
+                ? `${shownCurve.length} settled days, best ${money(Math.max(...(curveIsWide ? allDays : byDay(rows)).map((d) => d.netPence), 0), account.currency, { sign: true })} on a day.`
+                : 'A curve needs two settled days.'}
+            </p>
+          }
+        >
+          <ProfitCurve points={shownCurve} currency={account.currency} />
+        </Module>
+
+        {/* --------------------------------------------------- calendar */}
+        <Module
+          title="Calendar"
+          span={4}
+          size="xl"
+          note="Any month, Europe/London days"
+          id="mod-calendar"
+        >
+          <MonthCalendar
+            days={calendarDays}
+            now={now}
+            weekStart={account.weekStart}
+            show={account.calendarDates ? 'both' : 'amount'}
+            currency={account.currency}
+          />
+        </Module>
+
         <Module title="Breakdown" span={8} size="l" id="mod-breakdown">
           <Breakdown rowsByDim={breakdowns} currency={account.currency} />
         </Module>
@@ -208,7 +217,7 @@ export default async function Dashboard({
           id="mod-odds"
           footer={<p className="small dim">Ordered by price, never by profit: the order is the read.</p>}
         >
-          <BandList rows={oddsBands} currency={account.currency} />
+          <BandList rows={oddsBands} currency={account.currency} label="Profit by odds band" />
         </Module>
 
         {/* ---------------------------------------------- month by month */}
@@ -230,7 +239,7 @@ export default async function Dashboard({
           id="mod-stakes"
           footer={<p className="small dim">Buckets are in units, not pounds, so changing your unit cannot break them.</p>}
         >
-          <BandList rows={stakeBands} currency={account.currency} />
+          <BandList rows={stakeBands} currency={account.currency} label="Profit by stake range" />
         </Module>
 
         {/* -------------------------------------------------- all time */}
@@ -249,27 +258,10 @@ export default async function Dashboard({
   );
 }
 
-function BandList({ rows, currency }: { rows: { key: string; label: string; count: number; netPence: number; thin: boolean }[]; currency: 'GBP' | 'EUR' }) {
-  const peak = Math.max(1, ...rows.map((r) => Math.abs(r.netPence)));
+function BandList({ rows, currency, label }: { rows: BreakRow[]; currency: 'GBP' | 'EUR'; label: string }) {
   return (
-    <ul className="grow" tabIndex={0} aria-label="Bands, scrollable" style={{ overflowY: 'auto', minHeight: 0 }}>
-      {rows.map((r) => (
-        <li key={r.key} className={`brow${r.thin ? ' brow--faded' : ''}`} style={{ gridTemplateColumns: 'minmax(0,1fr) auto', gap: '4px var(--s3)' }}>
-          <span className="brow__title" style={{ display: 'flex', gap: 8, alignItems: 'baseline' }}>
-            <span className="nowrap">{r.label}</span>
-            <span className="small dim tnum">{r.count}</span>
-          </span>
-          <span className={`fig fig--s tnum ${r.netPence > 0 ? 'pos' : r.netPence < 0 ? 'neg' : ''}`}>
-            {money(r.netPence, currency, { sign: true })}
-          </span>
-          <span style={{ gridColumn: '1 / -1' }}>
-            <span className="meter" style={{ display: 'block' }}>
-              <span className={`meter__fill ${r.netPence >= 0 ? 'meter__fill--pos' : 'meter__fill--neg'}`}
-                style={{ width: `${(Math.abs(r.netPence) / peak) * 100}%` }} />
-            </span>
-          </span>
-        </li>
-      ))}
-    </ul>
+    <div className="grow" style={{ overflowY: 'auto', minHeight: 0 }} tabIndex={0} role="region" aria-label={label}>
+      <BreakList rows={rows} currency={currency} ordered />
+    </div>
   );
 }

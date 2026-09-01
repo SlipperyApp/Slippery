@@ -1,18 +1,18 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
+import { Icon } from '@/components/Icon';
 import { londonDay, londonParts, MONTH_LONG, money, cellFigure } from '@/lib/format';
 import type { Currency } from '@/lib/domain/types';
 
-/** The calendar. Always the month shown, so it ignores the scope bar and says
- *  so in its own header. Day boundaries are Europe/London, or a 23:00 bet
- *  lands on the wrong day.
+/** The calendar. Day boundaries are Europe/London, or a 23:00 bet lands on
+ *  the wrong day.
  *
- *  FOUR CELL STATES, and the last two are the whole point:
- *    a past day WITH bets   filled, and the depth carries the size of the day
- *    a past day with NO bets  the date is struck through: you did not bet
- *    a day NOT YET HAPPENED   recessed, and never struck through
- *    padding from another month  empty, aria-hidden
+ *  FOUR CELL STATES, and the middle two are the whole point:
+ *    a past day WITH bets       filled, and the depth carries the size of the day
+ *    a past day with NO bets    the date is struck through: you did not bet
+ *    a day NOT YET HAPPENED     recessed, and never struck through
+ *    padding from another month empty, aria-hidden
  *
  *  "You did not bet" and "it has not happened yet" are different facts, and a
  *  line through tomorrow is a lie.
@@ -25,11 +25,12 @@ import type { Currency } from '@/lib/domain/types';
  *  landed in different tiers and read as different worlds, which costs the
  *  fill the only thing it is for.
  *
- *  So chroma varies instead of lightness. The semantic colour is mixed 45%
+ *  So chroma varies instead of lightness. The semantic colour is mixed 35%
  *  into --bg first, giving a dark saturated anchor, and THAT is faded in over
  *  the cell. Lightness barely moves, so one text colour is readable at every
- *  step of a continuous ramp. tests/calendar-ramp.test.ts measures every step
- *  in every theme, and guards against the naive version coming back. */
+ *  step of a continuous ramp. 35% and not more because the figure in a cell
+ *  keeps its own semantic colour, so green on green is the binding constraint.
+ *  tests/calendar-ramp.test.ts measures every step in every theme. */
 
 export type CalShow = 'date' | 'amount' | 'both' | 'none';
 
@@ -52,10 +53,13 @@ function readCookie(): CalShow | null {
   return SHOW_OPTIONS.some((o) => o.id === v) ? (v as CalShow) : null;
 }
 
+export type CalDay = { day: string; netPence: number; count: number };
+
 export function MonthCalendar({
   days, now, weekStart = 1, show: initialShow = 'both', currency = 'GBP',
 }: {
-  days: { day: string; netPence: number; count: number }[];
+  /** Every settled day the account has. The calendar picks the month itself. */
+  days: CalDay[];
   now: Date;
   weekStart?: 0 | 1;
   show?: CalShow;
@@ -74,17 +78,39 @@ export function MonthCalendar({
     document.cookie = `${SHOW_COOKIE}=${next}; path=/; max-age=31536000; samesite=lax`;
   };
 
-  const p = londonParts(now);
+  const nowParts = londonParts(now);
   const today = londonDay(now);
-  const first = new Date(Date.UTC(p.year, p.month - 1, 1));
-  const daysInMonth = new Date(Date.UTC(p.year, p.month, 0)).getUTCDate();
+  /** Months back from the current one. 0 is this month; the state is an
+   *  offset rather than a date so "this month" survives a midnight tick. */
+  const [back, setBack] = useState(0);
+
+  const byDay = useMemo(() => new Map(days.map((d) => [d.day, d])), [days]);
+
+  /** How far back there is anything to look at. One extra month past the
+   *  earliest record, so the first month is not a wall. */
+  const oldest = useMemo(() => {
+    if (days.length === 0) return 0;
+    const first = days.reduce((a, d) => (d.day < a ? d.day : a), days[0].day);
+    const [y, m] = first.split('-').map(Number);
+    return Math.max(0, (nowParts.year - y) * 12 + (nowParts.month - m));
+  }, [days, nowParts.year, nowParts.month]);
+
+  // The month on screen.
+  const shownIdx = nowParts.year * 12 + (nowParts.month - 1) - back;
+  const year = Math.floor(shownIdx / 12);
+  const month = (shownIdx % 12) + 1;
+
+  const first = new Date(Date.UTC(year, month - 1, 1));
+  const daysInMonth = new Date(Date.UTC(year, month, 0)).getUTCDate();
   const lead = (first.getUTCDay() - weekStart + 7) % 7;
 
-  const byDay = new Map(days.map((d) => [d.day, d]));
-
-  // The peak is the month's OWN biggest day, so a quiet month uses the full
-  // range instead of being washed out by a loud one three months ago.
-  const peak = Math.max(1, ...days.map((d) => Math.abs(d.netPence)));
+  // The peak is the shown month's OWN biggest day, so a quiet month uses the
+  // full range instead of being washed out by a loud one three months ago.
+  const prefix = `${year}-${String(month).padStart(2, '0')}-`;
+  const inMonth = days.filter((d) => d.day.startsWith(prefix));
+  const peak = Math.max(1, ...inMonth.map((d) => Math.abs(d.netPence)));
+  const monthNet = inMonth.reduce((a, d) => a + d.netPence, 0);
+  const monthBets = inMonth.reduce((a, d) => a + d.count, 0);
 
   const DOW = weekStart === 1
     ? ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
@@ -101,7 +127,7 @@ export function MonthCalendar({
   }
 
   for (let d = 1; d <= daysInMonth; d++) {
-    const key = `${p.year}-${String(p.month).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+    const key = `${prefix}${String(d).padStart(2, '0')}`;
     const rec = byDay.get(key);
     const future = key > today;
     const bet = !future && Boolean(rec);
@@ -111,12 +137,12 @@ export function MonthCalendar({
     const alpha = bet && net !== 0 ? FLOOR + (Math.abs(net) / peak) * (1 - FLOOR) : 0;
     const anchor = net >= 0 ? 'var(--cal-pos)' : 'var(--cal-neg)';
 
-    const month = MONTH_LONG[p.month - 1];
+    const label = MONTH_LONG[month - 1];
     const sentence = future
-      ? `${d} ${month}, not yet`
+      ? `${d} ${label}, not yet`
       : bet
-        ? `${d} ${month}, ${money(net, currency, { sign: true })} from ${rec!.count} bet${rec!.count === 1 ? '' : 's'}`
-        : `${d} ${month}, no bets`;
+        ? `${d} ${label}, ${money(net, currency, { sign: true })} from ${rec!.count} bet${rec!.count === 1 ? '' : 's'}`
+        : `${d} ${label}, no bets`;
 
     cells.push(
       <div
@@ -138,22 +164,18 @@ export function MonthCalendar({
           />
         ) : null}
 
-        {showDate ? (
+        {showValue && bet ? (
           <span
-            className={`cal__n${!future && !bet ? ' cal__n--none' : ''}`}
+            className={`cal__v ${net > 0 ? 'pos' : net < 0 ? 'neg' : 'cal__v--flat'}`}
             aria-hidden="true"
           >
-            {d}
-          </span>
-        ) : null}
-
-        {showValue && bet ? (
-          <span className={`cal__v${net === 0 ? ' cal__v--flat' : ''}`} aria-hidden="true">
             {cellFigure(net, currency)}
           </span>
         ) : null}
 
-        {/* The strikethrough is never the only signal. */}
+        {showDate ? <span className="cal__n" aria-hidden="true">{d}</span> : null}
+
+        {/* The slash is never the only signal: the sentence below says it too. */}
         <span className="sr-only">{sentence}</span>
       </div>,
     );
@@ -165,9 +187,33 @@ export function MonthCalendar({
     cells.push(<div key={`tail${cells.length}`} className="cal__cell cal__cell--out" aria-hidden="true" />);
   }
 
+  const title = `${MONTH_LONG[month - 1]} ${year}`;
+
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', flex: '1 1 auto', minHeight: 0 }}>
+    <div className="calwrap">
       <div className="cal__ctl">
+        <div className="cal__nav">
+          <button
+            type="button"
+            className="icobtn"
+            onClick={() => setBack((b) => b + 1)}
+            disabled={back >= oldest}
+            aria-label="Previous month"
+          >
+            <Icon name="chevronLeft" />
+          </button>
+          <p className="cal__month" aria-live="polite">{title}</p>
+          <button
+            type="button"
+            className="icobtn"
+            onClick={() => setBack((b) => Math.max(0, b - 1))}
+            disabled={back === 0}
+            aria-label="Next month"
+          >
+            <Icon name="chevronRight" />
+          </button>
+        </div>
+
         <div className="seg seg--xs" role="group" aria-label="What each day shows">
           {SHOW_OPTIONS.map((o) => (
             <button
@@ -183,7 +229,7 @@ export function MonthCalendar({
         </div>
       </div>
 
-      <div className="cal" role="group" aria-label={`${MONTH_LONG[p.month - 1]} ${p.year}, one cell a day`}>
+      <div className="cal" role="group" aria-label={`${title}, one cell a day`}>
         {DOW.map((l) => (
           <div key={l} className="cal__dow" aria-hidden="true">{l.slice(0, 1)}</div>
         ))}
@@ -192,11 +238,18 @@ export function MonthCalendar({
 
       {/* The ramp is the only thing on the page whose meaning is not written
           down anywhere, so one line says it. */}
-      <p className="cal__key">
-        <span className="cal__keyswatch cal__keyswatch--neg" aria-hidden="true" />
-        <span className="cal__keyswatch cal__keyswatch--pos" aria-hidden="true" />
-        Deeper is a bigger day. A struck out date is a day you did not bet.
-      </p>
+      <div className="cal__foot">
+        <ul className="cal__key">
+          <li><span className="cal__keyswatch cal__keyswatch--pos" aria-hidden="true" />Profitable</li>
+          <li><span className="cal__keyswatch cal__keyswatch--neg" aria-hidden="true" />Losing</li>
+          <li><span className="cal__keyswatch cal__keyswatch--none" aria-hidden="true" />No bets</li>
+        </ul>
+        <p className="small tnum cal__sum">
+          {monthBets > 0
+            ? <>{monthBets} bet{monthBets === 1 ? '' : 's'}, <span className={monthNet >= 0 ? 'pos' : 'neg'}>{money(monthNet, currency, { sign: true })}</span></>
+            : 'Nothing settled'}
+        </p>
+      </div>
     </div>
   );
 }
