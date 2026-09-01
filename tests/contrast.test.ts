@@ -167,6 +167,8 @@ test('the two result colours are never used to mean anything but money', () => {
     // is the correct use by definition
     "> 0 \\? '(pos|neg)'", ">= 0 \\? '(pos|neg)'", "< 0 \\? '(pos|neg)'",
     "startsWith\\('-'\\)", "startsWith\\('\\+'\\)",
+    // a boolean already named for the sign of the figure it colours
+    "\\bpos \\? '(pos|neg)'", "tone=\\{pos", "brk__fig",
     // a ghosted empty state is a picture of a money figure
     "ghost=", "\\+£",
   ].join('|'));
