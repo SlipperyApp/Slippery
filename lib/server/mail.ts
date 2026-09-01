@@ -24,18 +24,19 @@
  *  separates a wrong password from a refused recipient and tells anybody
  *  holding the log nothing else. */
 
-import { has, read } from './env';
+import { emailCredentials, read } from './env';
 import { sendSmtp } from './smtp';
 
 export function canSendEmail(): boolean {
-  return has('EMAIL_API_KEY') && has('EMAIL_FROM');
+  return emailCredentials() !== null;
 }
 
 /** Which transport this deployment would use. Reported by /api/sources so
  *  the answer to "why did no code arrive" is one request. */
 export function emailTransport(): 'resend' | 'smtp' | 'none' {
-  if (!canSendEmail()) return 'none';
-  return read('EMAIL_API_KEY')!.startsWith('re_') ? 'resend' : 'smtp';
+  const c = emailCredentials();
+  if (!c) return 'none';
+  return c.key.startsWith('re_') ? 'resend' : 'smtp';
 }
 
 type Sent = { sent: boolean; reason?: string };
@@ -46,8 +47,7 @@ export async function sendEmail(to: string, subject: string, text: string): Prom
     console.log('[mail] not configured, nothing sent');
     return { sent: false, reason: 'not_configured' };
   }
-  const key = read('EMAIL_API_KEY')!;
-  const from = read('EMAIL_FROM')!;
+  const { key, from, user } = emailCredentials()!;
 
   if (emailTransport() === 'smtp') {
     const host = read('EMAIL_SMTP_HOST') ?? 'smtp.gmail.com';
@@ -58,7 +58,7 @@ export async function sendEmail(to: string, subject: string, text: string): Prom
     const res = await sendSmtp({
       host,
       port: Number.isInteger(port) && port > 0 && port < 65536 ? port : 465,
-      user: from,
+      user,
       pass: key,
       from,
       to,

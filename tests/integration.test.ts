@@ -4,7 +4,7 @@ import { verifyStripeSignature, planStateAfterFailure, accountRoutes } from '@/l
 import { verifySecret, callbackData, PREFIX } from '@/lib/server/telegram';
 import { authoriseCron } from '@/lib/server/cron';
 import { createHmac } from 'node:crypto';
-import { ENV_NAMES, capabilities } from '@/lib/server/env';
+import { ENV_NAMES, capabilities, emailCredentials } from '@/lib/server/env';
 
 // ------------------------------------------------------------- telegram
 
@@ -165,5 +165,50 @@ test('every event the webhook handles offers at least one route back', () => {
       r.stated || r.subscription || r.customer,
       `${name} gives the webhook no way to find the account, so its branch is dead`,
     );
+  }
+});
+
+test('either set of email variable names works, and the explicit one wins', () => {
+  /*  The deployment carries GMAIL_USER, GMAIL_APP_PASSWORD and MAIL_FROM,
+   *  set by hand before this code existed. The code reads EMAIL_API_KEY and
+   *  EMAIL_FROM. While those disagree NOBODY CAN COMPLETE A SIGNUP: a code is
+   *  generated, hashed, stored and never sent.
+   *
+   *  Reading both is the fix nobody has to deploy. This pins the precedence,
+   *  because getting it backwards would silently authenticate as the wrong
+   *  account. */
+  const keys = ['EMAIL_API_KEY', 'EMAIL_FROM', 'GMAIL_USER', 'GMAIL_APP_PASSWORD', 'MAIL_FROM'] as const;
+  const saved = Object.fromEntries(keys.map((k) => [k, process.env[k]]));
+  const set = (v: Partial<Record<typeof keys[number], string | undefined>>) => {
+    for (const k of keys) {
+      if (v[k] === undefined) delete process.env[k];
+      else process.env[k] = v[k];
+    }
+  };
+
+  try {
+    set({});
+    assert.equal(emailCredentials(), null, 'neither set: nothing is sent');
+
+    set({ GMAIL_USER: 'a@gmail.com', GMAIL_APP_PASSWORD: 'app pass', MAIL_FROM: 'a@gmail.com' });
+    assert.deepEqual(emailCredentials(), { key: 'app pass', from: 'a@gmail.com', user: 'a@gmail.com' });
+
+    set({ EMAIL_API_KEY: 're_x', EMAIL_FROM: 'b@slippery.app', GMAIL_APP_PASSWORD: 'app pass', MAIL_FROM: 'a@gmail.com' });
+    const both = emailCredentials()!;
+    assert.equal(both.key, 're_x', 'EMAIL_API_KEY must win over GMAIL_APP_PASSWORD');
+    assert.equal(both.from, 'b@slippery.app', 'EMAIL_FROM must win over MAIL_FROM');
+
+    // Half a pair is not a pair: a password without an address sends nothing.
+    set({ GMAIL_APP_PASSWORD: 'app pass' });
+    assert.equal(emailCredentials(), null);
+    set({ MAIL_FROM: 'a@gmail.com' });
+    assert.equal(emailCredentials(), null);
+
+    // The SMTP username is the account the app password belongs to.
+    set({ GMAIL_USER: 'account@gmail.com', GMAIL_APP_PASSWORD: 'p', EMAIL_FROM: 'noreply@slippery.app' });
+    assert.equal(emailCredentials()!.user, 'account@gmail.com');
+    assert.equal(emailCredentials()!.from, 'noreply@slippery.app');
+  } finally {
+    set(saved as Record<typeof keys[number], string | undefined>);
   }
 });

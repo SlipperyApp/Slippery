@@ -26,6 +26,9 @@ export const ENV_NAMES = [
   'EMAIL_FROM',
   'EMAIL_SMTP_HOST',
   'EMAIL_SMTP_PORT',
+  'GMAIL_USER',
+  'GMAIL_APP_PASSWORD',
+  'MAIL_FROM',
   'ADMIN_SECRET',
   'ADMIN_PROMO_CODE',
   'CRON_SECRET',
@@ -54,6 +57,9 @@ const READERS: Record<EnvName, () => string | undefined> = {
   EMAIL_FROM: () => process.env.EMAIL_FROM,
   EMAIL_SMTP_HOST: () => process.env.EMAIL_SMTP_HOST,
   EMAIL_SMTP_PORT: () => process.env.EMAIL_SMTP_PORT,
+  GMAIL_USER: () => process.env.GMAIL_USER,
+  GMAIL_APP_PASSWORD: () => process.env.GMAIL_APP_PASSWORD,
+  MAIL_FROM: () => process.env.MAIL_FROM,
   ADMIN_SECRET: () => process.env.ADMIN_SECRET,
   ADMIN_PROMO_CODE: () => process.env.ADMIN_PROMO_CODE,
   CRON_SECRET: () => process.env.CRON_SECRET,
@@ -74,6 +80,31 @@ export function read(name: EnvName): string | undefined {
  *  fallback is kept deliberately, so a rename cannot take slip reading down. */
 export function visionKey(): string | undefined {
   return read('VISION_API_KEY') ?? read('ANTHROPIC_API_KEY');
+}
+
+/*  THE EMAIL VARIABLES HAVE TWO NAMES, and this is not tidiness for its own
+ *  sake. The deployment already carries GMAIL_USER, GMAIL_APP_PASSWORD and
+ *  MAIL_FROM, set by hand before this code existed; the code reads
+ *  EMAIL_API_KEY and EMAIL_FROM. They do not match, and while they do not
+ *  match NOBODY CAN COMPLETE A SIGNUP: the code is generated, hashed, stored
+ *  and never sent.
+ *
+ *  Renaming three live variables to fix that is a change somebody has to make
+ *  by hand at exactly the moment they are least likely to. Reading both is a
+ *  change nobody has to make at all. EMAIL_* wins where both are set, so the
+ *  explicit name is always the one in charge.
+ *
+ *  The pair is resolved TOGETHER. A password from one set with an address
+ *  from the other authenticates as the wrong account, so the halves cannot be
+ *  mixed. */
+export function emailCredentials(): { key: string; from: string; user: string } | null {
+  const key = read('EMAIL_API_KEY') ?? read('GMAIL_APP_PASSWORD');
+  const from = read('EMAIL_FROM') ?? read('MAIL_FROM') ?? read('GMAIL_USER');
+  if (!key || !from) return null;
+  /*  Gmail's SMTP username is the full address and is usually the same as the
+   *  from address, but GMAIL_USER wins when both exist: it is the account
+   *  the app password belongs to, and that is what authenticates. */
+  return { key, from, user: read('GMAIL_USER') ?? from };
 }
 
 export type Capability = {
@@ -133,10 +164,10 @@ export function capabilities(): Capability[] {
     },
     {
       id: 'email', label: 'Transactional email',
-      ready: has('EMAIL_API_KEY') && has('EMAIL_FROM'),
+      ready: emailCredentials() !== null,
       without: 'Verification codes are not sent. They are still never logged.',
       needs: ['EMAIL_API_KEY', 'EMAIL_FROM'],
-      note: 'A key starting re_ is sent through Resend. Anything else is treated as an SMTP password, with EMAIL_FROM as the username, EMAIL_SMTP_HOST or smtp.gmail.com as the host, and EMAIL_SMTP_PORT or 465 as the port. 465 is TLS from the first byte; 587 and 25 upgrade with STARTTLS.',
+      note: 'GMAIL_APP_PASSWORD, MAIL_FROM and GMAIL_USER are read as aliases of EMAIL_API_KEY and EMAIL_FROM, so either set works and the explicit one wins. A key starting re_ is sent through Resend. Anything else is treated as an SMTP password, with EMAIL_FROM as the username, EMAIL_SMTP_HOST or smtp.gmail.com as the host, and EMAIL_SMTP_PORT or 465 as the port. 465 is TLS from the first byte; 587 and 25 upgrade with STARTTLS.',
     },
     {
       id: 'admin', label: 'Admin levers',
