@@ -81,7 +81,7 @@ export function ReviewSlip({ read }: { read: SlipRead }) {
             {read.fields.map((f) => {
               const t = TONE[f.confidence];
               return (
-                <li key={f.key} className="brow" style={{ gridTemplateColumns: '20px minmax(0,1fr) auto', gap: 'var(--s3)' }}>
+                <li key={f.key} className="brow brow--field">
                   <Icon name={t.icon} size={16} className={`readmark readmark--${t.cls}`} />
                   <span style={{ minWidth: 0 }}>
                     <span className="brow__title" style={{ display: 'block' }}>{f.label}</span>

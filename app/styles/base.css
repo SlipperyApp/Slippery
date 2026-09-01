@@ -11,6 +11,13 @@ html {
   html { scroll-behavior: auto; }
 }
 
+/*  The last resort against text painting outside its own box.
+ *
+ *  A word that cannot fit its column does not shrink the column, it paints
+ *  over whatever is beside it, and the element's rectangle never changes, so
+ *  the sweep's collision and clipping checks are both blind to it. This makes
+ *  the word break instead. It changes nothing anywhere the text already fits.
+ */
 body {
   margin: 0;
   min-height: 100svh;               /* svh, never dvh: dvh recalculates when the
@@ -26,6 +33,7 @@ body {
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
   overflow-x: hidden;
+  overflow-wrap: break-word;
 }
 
 /* Theme swap fades opacity, never colour: tweening `color` puts text through

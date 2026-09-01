@@ -33,7 +33,7 @@ export default function Offline() {
         </div>
         <ul style={{ marginTop: 'var(--s3)' }}>
           {queued.map((q) => (
-            <li key={q.t} className="brow" style={{ gridTemplateColumns: '20px minmax(0,1fr) auto', gap: 'var(--s3)' }}>
+            <li key={q.t} className="brow brow--field">
               <Icon name="clock" size={16} className="dim" />
               <span style={{ minWidth: 0 }}>
                 <span className="brow__title" style={{ display: 'block' }}>{q.t}</span>

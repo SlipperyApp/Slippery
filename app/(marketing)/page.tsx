@@ -209,7 +209,7 @@ export default function Landing() {
                   <li key={r.n} className="brow" style={{ gridTemplateColumns: '26px minmax(0,1fr) auto auto', gap: 'var(--s3)' }}>
                     <span className="small dim tnum">{r.p}</span>
                     <span className="brow__title">{r.n}</span>
-                    <span className="small dim">{r.s} slip backed</span>
+                    <span className="small dim hide-xs">{r.s} slip backed</span>
                     <span className={`fig fig--s tnum ${r.u.startsWith('-') ? 'neg' : 'pos'}`}>{r.u}u</span>
                   </li>
                 ))}

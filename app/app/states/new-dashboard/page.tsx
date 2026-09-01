@@ -35,7 +35,7 @@ export default function NewDashboard() {
         </div>
         <ul style={{ marginTop: 'var(--s4)' }}>
           {CHECKLIST.map((c) => (
-            <li key={c.t} className="brow" style={{ gridTemplateColumns: '20px minmax(0,1fr) auto', gap: 'var(--s3)' }}>
+            <li key={c.t} className="brow brow--field">
               <Icon name={c.done ? 'check' : 'minus'} size={16} className={c.done ? 'readmark readmark--ok' : 'dim'} />
               <span style={{ minWidth: 0 }}>
                 <Link href={c.href} className="brow__title" style={{ textDecoration: 'none' }}>{c.t}</Link>

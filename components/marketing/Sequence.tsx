@@ -86,9 +86,15 @@ export function Sequence() {
                   className={`jack__step${i === step ? ' jack__step--on' : ''}`}
                   aria-current={i === step ? 'step' : undefined}
                 >
-                  <span className="jack__num mono">{String(i + 1).padStart(2, '0')}</span>
+                  {/*  The badge used to be a pill above the title. A pill above
+                       every heading is the most recognisable shape a generated
+                       page has, so the words moved onto the number line: same
+                       fact, no badge. */}
+                  <span className="jack__num mono">
+                    {String(i + 1).padStart(2, '0')}
+                    <span className="jack__when">{s.badge}</span>
+                  </span>
                   <span className="jack__body">
-                    <span className="pill">{s.badge}</span>
                     <span className="jack__title">{s.title}</span>
                     <span className="jack__text">{s.body}</span>
                   </span>

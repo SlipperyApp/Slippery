@@ -284,6 +284,34 @@ const MEASURE = () => {
     if (clipped.length > 4) break;
   }
 
+  /*  Text painting OUTSIDE its own box.
+   *
+   *  The opposite failure to text-clipped, and invisible to both of the other
+   *  two. white-space: nowrap in a column narrower than the words does not
+   *  change the element's rectangle: the box stays 44px and the letters paint
+   *  across whatever is beside them. So the collision check, which compares
+   *  rectangles, sees nothing, and the clipped check only looks at boxes that
+   *  hide their overflow. Found in the landing sequence at 390, where three
+   *  uppercase labels ran underneath the body text of their own cards.
+   *
+   *  overflow: visible and scrollWidth past clientWidth is the whole signal.
+   *  Anything scrollable, clipped or inline is somebody else's check. */
+  const spilled = [];
+  for (const el of document.querySelectorAll('body *')) {
+    if (!visible(el) || el.getAttribute('aria-hidden') === 'true') continue;
+    if (el.children.length) continue;                       // leaves only
+    const txt = (el.textContent || '').trim();
+    if (!txt) continue;
+    const cs = getComputedStyle(el);
+    if (cs.overflowX !== 'visible') continue;               // scrollable or clipped
+    if (/^inline$|^inline-/.test(cs.display)) continue;     // union of line boxes
+    const over = el.scrollWidth - el.clientWidth;
+    if (over > 1) {
+      spilled.push(`${el.tagName.toLowerCase()}.${String(el.className).split(' ')[0]} +${over}px "${txt.slice(0, 24)}"`);
+    }
+    if (spilled.length > 4) break;
+  }
+
   const collide = [];
   const leaves = [...document.querySelectorAll('p,h1,h2,h3,h4,span,li,td,th,dd,dt,a,button,label')]
     .filter((el) => {
@@ -349,6 +377,7 @@ const MEASURE = () => {
     shown,
     spill,
     clipped,
+    spilled,
     collide,
   };
 };
@@ -424,6 +453,7 @@ async function visit(ctx, route, vp, { runAxe = false, theme = null } = {}) {
   if (m.shown.length) note(route, label, 'hidden-not-hidden', m.shown.join(' | '));
   if (m.spill.length) note(route, label, 'module-overflows', m.spill.join(', '));
   if (m.clipped.length) note(route, label, 'text-clipped', m.clipped.join(' | '));
+  if (m.spilled.length) note(route, label, 'text-spills', m.spilled.join(' | '));
   if (m.collide.length) note(route, label, 'text-collision', m.collide.join(' | '));
 
   if (runAxe) {

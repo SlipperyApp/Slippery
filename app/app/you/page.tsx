@@ -120,7 +120,7 @@ export default async function You() {
           <h2 className="card__title">Settings</h2>
           <ul style={{ marginTop: 'var(--s3)' }}>
             {SETTINGS_GROUPS.map((g) => (
-              <li key={g.id} className="brow" style={{ gridTemplateColumns: '20px minmax(0,1fr) auto', gap: 'var(--s3)' }}>
+              <li key={g.id} className="brow brow--field">
                 <Icon name={g.icon} size={16} className="dim" />
                 <span style={{ minWidth: 0 }}>
                   <Link href="/app/settings" className="brow__title" style={{ textDecoration: 'none' }}>{g.label}</Link>

@@ -32,7 +32,7 @@ export default function Unreadable() {
         <p className="card__title">What was read</p>
         <ul style={{ marginTop: 'var(--s3)' }}>
           {FIELDS.map(([t, v, c]) => (
-            <li key={t} className="brow" style={{ gridTemplateColumns: '20px minmax(0,1fr) auto', gap: 'var(--s3)' }}>
+            <li key={t} className="brow brow--field">
               <Icon name={c === 'high' ? 'check' : 'minus'} size={16} className={`readmark readmark--${c === 'high' ? 'ok' : 'gap'}`} />
               <span className="brow__title">{t}</span>
               <span className={`small ${c === 'high' ? 'mono' : 'muted'}`}>{v}</span>

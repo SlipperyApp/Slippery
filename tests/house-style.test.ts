@@ -83,7 +83,12 @@ test('no section leads with a pill restating its own title', () => {
       const label = />([^<]{1,30})</.exec(line)?.[1]?.trim() ?? '';
       if (!label || /\d/.test(label)) return;
       const after = lines.slice(i + 1, i + 6).join(' ');
-      if (/<h1|<h2|sect__h|hero__h/.test(after)) found.push(`${f}:${i + 1} "${label}" sits above a heading`);
+      /*  Not only <h1>/<h2>. The landing sequence put its badge above a
+       *  <span className="jack__title">, which is a heading in every way that
+       *  matters to a reader and in none that matter to a selector, so it
+       *  shipped past the first version of this test. Anything that reads as
+       *  a title counts. */
+      if (/<h1|<h2|sect__h|hero__h|__title|card__title/.test(after)) found.push(`${f}:${i + 1} "${label}" sits above a heading`);
     });
   }
   assert.deepEqual(found, [], found.join('\n'));

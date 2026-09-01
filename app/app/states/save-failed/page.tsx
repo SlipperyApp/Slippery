@@ -27,7 +27,7 @@ export default function SaveFailed() {
             ['Most this could return', money(3750), true],
             ['What you entered', money(9900), false],
           ].map(([t, v, ok]) => (
-            <li key={String(t)} className="brow" style={{ gridTemplateColumns: '20px minmax(0,1fr) auto', gap: 'var(--s3)' }}>
+            <li key={String(t)} className="brow brow--field">
               <Icon name={ok ? 'check' : 'close'} size={16} className={`readmark readmark--${ok ? 'ok' : 'gap'}`} />
               <span className="brow__title">{t}</span>
               <span className="fig fig--s tnum">{v}</span>

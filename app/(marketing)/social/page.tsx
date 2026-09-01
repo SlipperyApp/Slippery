@@ -57,7 +57,7 @@ export default function Social() {
                   <li key={r.n} className="brow" style={{ gridTemplateColumns: '28px minmax(0,1fr) auto auto', gap: 'var(--s3)' }}>
                     <span className={`small tnum ${r.p <= 3 ? '' : 'dim'}`} style={{ fontWeight: 600 }}>{r.p}</span>
                     <span className="brow__title">{r.n}</span>
-                    <span className="small dim nowrap">{r.s}% slip backed</span>
+                    <span className="small dim nowrap hide-xs">{r.s}% slip backed</span>
                     <span className={`fig fig--s tnum ${r.u >= 0 ? 'pos' : 'neg'}`}>{fmtUnits(r.u, { league: true, sign: true })}</span>
                   </li>
                 ))}

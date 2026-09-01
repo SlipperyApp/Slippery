@@ -260,7 +260,11 @@
 
 .jack__step {
   display: grid;
-  grid-template-columns: 44px minmax(0, 1fr) 24px;
+  /*  On a phone the number and its timing share one line across the top and
+      the body takes the full width beneath. A 44px column cannot hold "LATER,
+      ON ITS OWN" on one line, and holding it on two makes a 44px column of
+      shouting. Three columns from 640 up, where there is room for both. */
+  grid-template-columns: minmax(0, 1fr) 24px;
   gap: var(--s4);
   align-items: start;
   padding: var(--s5);
@@ -278,6 +282,21 @@
 }
 .jack__num { color: var(--ink-2); font-size: var(--t-small); padding-top: 3px; }
 .jack__step--on .jack__num { color: var(--accent); }
+/*  The step's timing, beside or beneath the number, never in a pill over the
+    title. */
+.jack__when {
+  font-size: var(--t-micro);
+  letter-spacing: var(--tr-micro);
+  text-transform: uppercase;
+  color: var(--ink-2);
+}
+.jack__num { grid-column: 1 / -1; display: flex; gap: var(--s3); align-items: baseline; }
+@media (min-width: 640px) {
+  /* 140, because "LATER, ON ITS OWN" measures 127 and nowrap does not wrap. */
+  .jack__step { grid-template-columns: 140px minmax(0, 1fr) 24px; }
+  .jack__num { grid-column: auto; display: block; }
+  .jack__when { display: block; margin-top: 4px; white-space: nowrap; }
+}
 .jack__body { display: grid; gap: 8px; justify-items: start; }
 .jack__title { font-size: clamp(20px, 3.4vw, 30px); line-height: 1.14; font-weight: var(--w-label); letter-spacing: var(--tr-tight); }
 .jack__text { font-size: var(--t-body); line-height: 1.55; color: var(--ink-2); max-width: 52ch; }
