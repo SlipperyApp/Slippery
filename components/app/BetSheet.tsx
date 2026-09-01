@@ -33,6 +33,11 @@ export function BetSheet({
   const [returnText, setReturnText] = useState('');
   const [saving, setSaving] = useState(false);
   const [note, setNote] = useState('');
+  const [imageGone, setImageGone] = useState(false);
+
+  // How long ago the slip was captured, in whole days. Anything past 90 has
+  // had its image deleted by the retention sweep.
+  const imageAge = Math.floor((Date.now() - new Date(bet.placedAt).getTime()) / 86400000);
   const ref = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
@@ -163,6 +168,43 @@ export function BetSheet({
             ) : null}
           </>
         ) : null}
+
+        {/* The slip. Images are deleted 90 days after upload, or immediately
+            on request, and the bet stays. This says so rather than showing a
+            broken thumbnail, which is the only honest way to render a record
+            whose evidence has been deleted on purpose. */}
+        <p className="label">The slip</p>
+        <div className="slipstate" style={{ marginBottom: 'var(--s5)' }}>
+          {!bet.slipBacked ? (
+            <>
+              <Icon name="edit" size={18} className="slipstate__i" />
+              <span>
+                <strong>Typed in.</strong> There is no slip behind this bet, and it is marked that
+                way everywhere it appears, including a group that counts slip backed bets only.
+              </span>
+            </>
+          ) : imageAge > 90 ? (
+            <>
+              <Icon name="clock" size={18} className="slipstate__i" />
+              <span>
+                <strong>Image removed after 90 days. The bet is unchanged.</strong> Every figure
+                above was folded from the settlement events, not from the image, so nothing here
+                depended on it.
+              </span>
+            </>
+          ) : (
+            <>
+              <Icon name="camera" size={18} className="slipstate__i" />
+              <span>
+                <strong>Captured from a slip</strong> {imageAge === 0 ? 'today' : `${imageAge} days ago`}.
+                The image is deleted after 90 days, or now if you ask.{' '}
+                <button type="button" className="btn btn--link btn--sm" onClick={() => setImageGone(true)}>
+                  {imageGone ? 'Requested' : 'Delete the image now'}
+                </button>
+              </span>
+            </>
+          )}
+        </div>
 
         <p className="label">Settlement ledger</p>
         <ul style={{ marginBottom: 'var(--s5)' }}>
