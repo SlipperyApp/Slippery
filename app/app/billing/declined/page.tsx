@@ -5,7 +5,7 @@ import { getViewer } from '@/lib/data/session';
 import { has } from '@/lib/server/env';
 import { FixCard } from '@/components/app/FixCard';
 import { select, summarise, DEFAULT_SCOPE } from '@/lib/data/analytics';
-import { money, count, longDate } from '@/lib/format';
+import { money, longDate, plural } from '@/lib/format';
 
 export const metadata: Metadata = {
   title: 'A payment did not go through',
@@ -39,7 +39,7 @@ export default async function Declined() {
           <h2 className="card__title">Nothing has changed yet</h2>
           <ul style={{ marginTop: 'var(--s3)' }}>
             {[
-              ['Your ledger', `All ${count(all.count)} bets, exactly where they were.`, 'check'],
+              ['Your ledger', `All ${plural(all.count, 'bet')}, exactly where they were.`, 'check'],
               ['Slip reading', 'Still running. Forward a slip as normal.', 'check'],
               ['The bot', 'Still linked and still reading.', 'check'],
               ['Your export', 'Working, and it will keep working whatever happens next.', 'check'],

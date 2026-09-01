@@ -94,6 +94,15 @@ export function count(n: number): string {
   return new Intl.NumberFormat('en-GB').format(n);
 }
 
+/** A count and its noun, agreeing. "1 bets" appears the moment a filter
+ *  leaves one row, which is exactly when somebody is reading the number
+ *  most carefully. English pluralises by adding s for every noun this
+ *  product counts, so this takes the singular and does that; a noun that
+ *  does not follow the rule passes its own plural. */
+export function plural(n: number, one: string, many = `${one}s`): string {
+  return `${count(n)} ${n === 1 ? one : many}`;
+}
+
 // ------------------------------------------------------------------- dates
 
 const partsOf = (d: Date, o: Intl.DateTimeFormatOptions) =>

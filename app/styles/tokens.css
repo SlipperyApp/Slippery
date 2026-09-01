@@ -208,9 +208,9 @@
   --accent: var(--p);
   --accent-2: var(--s);
   --accent-ink: var(--bg);
-  --glow-a: color-mix(in oklab, var(--p) 34%, var(--bg));
-  --glow-b: color-mix(in oklab, var(--p) 18%, var(--bg));
-  --glow-c: color-mix(in oklab, var(--p) 8%, var(--bg));
+  --glow-a: color-mix(in oklab, var(--p) 30%, var(--bg));
+  --glow-b: color-mix(in oklab, var(--p) 23%, var(--bg));
+  --glow-c: color-mix(in oklab, var(--s) 16%, var(--bg));
 }
 
 [data-theme='periwinkle'] {
@@ -237,9 +237,9 @@
   --accent: var(--p);
   --accent-2: var(--s);
   --accent-ink: var(--bg);
-  --glow-a: color-mix(in oklab, var(--p) 34%, var(--bg));
-  --glow-b: color-mix(in oklab, var(--p) 18%, var(--bg));
-  --glow-c: color-mix(in oklab, var(--p) 8%, var(--bg));
+  --glow-a: color-mix(in oklab, var(--p) 30%, var(--bg));
+  --glow-b: color-mix(in oklab, var(--p) 23%, var(--bg));
+  --glow-c: color-mix(in oklab, var(--s) 16%, var(--bg));
 }
 
 [data-theme='ink'] {
@@ -266,9 +266,9 @@
   --accent: var(--p);
   --accent-2: var(--s);
   --accent-ink: var(--bg);
-  --glow-a: color-mix(in oklab, var(--p) 34%, var(--bg));
-  --glow-b: color-mix(in oklab, var(--p) 18%, var(--bg));
-  --glow-c: color-mix(in oklab, var(--p) 8%, var(--bg));
+  --glow-a: color-mix(in oklab, var(--p) 30%, var(--bg));
+  --glow-b: color-mix(in oklab, var(--p) 23%, var(--bg));
+  --glow-c: color-mix(in oklab, var(--s) 16%, var(--bg));
 }
 
 [data-theme='graphite'] {
@@ -295,9 +295,9 @@
   --accent: var(--p);
   --accent-2: var(--s);
   --accent-ink: var(--bg);
-  --glow-a: color-mix(in oklab, var(--p) 34%, var(--bg));
-  --glow-b: color-mix(in oklab, var(--p) 18%, var(--bg));
-  --glow-c: color-mix(in oklab, var(--p) 8%, var(--bg));
+  --glow-a: color-mix(in oklab, var(--p) 30%, var(--bg));
+  --glow-b: color-mix(in oklab, var(--p) 23%, var(--bg));
+  --glow-c: color-mix(in oklab, var(--s) 16%, var(--bg));
 }
 
 [data-theme='slate'] {
@@ -324,9 +324,9 @@
   --accent: var(--p);
   --accent-2: var(--s);
   --accent-ink: var(--bg);
-  --glow-a: color-mix(in oklab, var(--p) 34%, var(--bg));
-  --glow-b: color-mix(in oklab, var(--p) 18%, var(--bg));
-  --glow-c: color-mix(in oklab, var(--p) 8%, var(--bg));
+  --glow-a: color-mix(in oklab, var(--p) 30%, var(--bg));
+  --glow-b: color-mix(in oklab, var(--p) 23%, var(--bg));
+  --glow-c: color-mix(in oklab, var(--s) 16%, var(--bg));
 }
 
 [data-theme='bronze'] {
@@ -353,9 +353,9 @@
   --accent: var(--p);
   --accent-2: var(--s);
   --accent-ink: var(--bg);
-  --glow-a: color-mix(in oklab, var(--p) 34%, var(--bg));
-  --glow-b: color-mix(in oklab, var(--p) 18%, var(--bg));
-  --glow-c: color-mix(in oklab, var(--p) 8%, var(--bg));
+  --glow-a: color-mix(in oklab, var(--p) 30%, var(--bg));
+  --glow-b: color-mix(in oklab, var(--p) 23%, var(--bg));
+  --glow-c: color-mix(in oklab, var(--s) 16%, var(--bg));
 }
 
 [data-theme='cinnabar'] {
@@ -382,9 +382,9 @@
   --accent: var(--p);
   --accent-2: var(--s);
   --accent-ink: var(--bg);
-  --glow-a: color-mix(in oklab, var(--p) 34%, var(--bg));
-  --glow-b: color-mix(in oklab, var(--p) 18%, var(--bg));
-  --glow-c: color-mix(in oklab, var(--p) 8%, var(--bg));
+  --glow-a: color-mix(in oklab, var(--p) 30%, var(--bg));
+  --glow-b: color-mix(in oklab, var(--p) 23%, var(--bg));
+  --glow-c: color-mix(in oklab, var(--s) 16%, var(--bg));
 }
 
 [data-theme='liquid'] {
@@ -411,7 +411,7 @@
   --accent: var(--p);
   --accent-2: var(--s);
   --accent-ink: var(--bg);
-  --glow-a: color-mix(in oklab, var(--p) 34%, var(--bg));
-  --glow-b: color-mix(in oklab, var(--p) 18%, var(--bg));
-  --glow-c: color-mix(in oklab, var(--p) 8%, var(--bg));
+  --glow-a: color-mix(in oklab, var(--p) 30%, var(--bg));
+  --glow-b: color-mix(in oklab, var(--p) 23%, var(--bg));
+  --glow-c: color-mix(in oklab, var(--s) 16%, var(--bg));
 }

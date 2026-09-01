@@ -6,6 +6,7 @@
  *  person's record. */
 
 import { cookies } from 'next/headers';
+import { attention } from '@/lib/data/attention';
 import { demoData, type DemoData } from './demo';
 import { trialState, type TrialState } from '@/lib/domain/trial';
 import { bankroll } from './analytics';
@@ -29,6 +30,7 @@ export async function getViewer(): Promise<Viewer> {
   const jar = await cookies();
   const now = new Date();
   const data = demoData(now);
+  const att = attention(data.bets, now);
   const signedIn = Boolean(jar.get(SESSION_COOKIE)?.value);
   const forced = jar.get(STATE_COOKIE)?.value;
 
@@ -41,9 +43,13 @@ export async function getViewer(): Promise<Viewer> {
     balanceMinor: bankroll(data.bets, data.account.bankrollStartPence),
     currency: data.account.currency,
     badges: {
-      ledger: data.bets.filter((b) => b.state.status === 'open').length,
+      /*  The ledger badge is every open bet; the two under "Needs you" split
+          the same set by whether the event has had time to finish. Same
+          source, so the numbers cannot disagree. */
+      ledger: att.running.length + att.waiting.length,
       social: 3,
     },
+    needs: { running: att.running.length, waiting: att.waiting.length },
     readOnly,
     demo: !signedIn,
   };

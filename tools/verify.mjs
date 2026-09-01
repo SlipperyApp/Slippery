@@ -196,6 +196,64 @@ for (const route of JOURNEY) {
   await page.close();
 }
 await ctx.close();
+
+// ---------------------------------------------------------------------- 6
+/*  Is the background actually there?
+ *
+ *  This check exists because the answer was no for a long time and nothing
+ *  said so. Three blobs drifted on 46, 61 and 73 second cycles behind a veil
+ *  that laid the page ground over the whole field at 30% rising to 86%; with
+ *  the content hidden the entire viewport measured RGB 12 to 25. Every test
+ *  passed. The animation ran. The compositor did work every frame. Eleven
+ *  levels out of 255 is not an animation, and no assertion in the codebase
+ *  was capable of noticing.
+ *
+ *  So it is measured the only way it can honestly be measured: hide the
+ *  content, photograph the field, and report the spread between its darkest
+ *  and lightest pixel. */
+line('');
+line('6  THE BACKGROUND FIELD, measured in pixels');
+let sharp = null;
+try { sharp = (await import('sharp')).default; } catch { /* reported below */ }
+if (!sharp) {
+  line('   SKIPPED: no image decoder, so nothing was measured');
+  fail.push('check 6 could not run: no image decoder');
+} else {
+  const ctx6 = await browser.newContext({ viewport: { width: 1440, height: 900 } });
+  const worstField = { spread: 999, theme: '' };
+  for (const theme of THEMES) {
+    await ctx6.addCookies([{ name: 'slip_theme', value: theme, url: BASE }]);
+    const page = await ctx6.newPage();
+    try {
+      await page.goto(BASE + '/', { waitUntil: 'load', timeout: 30000 });
+      await page.waitForTimeout(400);
+    } catch { await page.close(); continue; }
+    await page.evaluate(() => {
+      for (const el of document.querySelectorAll('body > *')) {
+        if (!el.classList.contains('bgfield')) el.style.visibility = 'hidden';
+      }
+    });
+    await page.waitForTimeout(120);
+    const buf = await page.screenshot();
+    const { data, info } = await sharp(buf).raw().toBuffer({ resolveWithObject: true });
+    let lo = 255; let hi = 0;
+    for (let i = 0; i < data.length; i += info.channels * 97) {
+      const v = (data[i] + data[i + 1] + data[i + 2]) / 3;
+      if (v < lo) lo = v;
+      if (v > hi) hi = v;
+    }
+    const spread = hi - lo;
+    if (spread < worstField.spread) Object.assign(worstField, { spread, theme, lo, hi });
+    /*  24 levels out of 255. Below that the field is a flat colour that
+        happens to be repainting itself, which is worse than no field: it
+        costs a compositor layer every frame and returns nothing. */
+    if (spread < 24) fail.push(`background field in ${theme} spans only ${spread.toFixed(1)} levels (${lo.toFixed(0)} to ${hi.toFixed(0)})`);
+    await page.close();
+  }
+  await ctx6.close();
+  line(`   8 themes, narrowest ${worstField.spread.toFixed(1)} levels of 255 (${worstField.theme}, ${worstField.lo?.toFixed(0)} to ${worstField.hi?.toFixed(0)})`);
+}
+
 await browser.close();
 
 line('');
@@ -204,4 +262,4 @@ if (fail.length) {
   for (const f of fail.slice(0, 20)) line(`  ${f}`);
   process.exit(1);
 }
-line('All five checks pass.');
+line('All six checks pass.');

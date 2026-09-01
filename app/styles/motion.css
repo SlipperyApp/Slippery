@@ -36,7 +36,11 @@
           mask-size: 100% 100%;
   -webkit-mask-repeat: no-repeat;
           mask-repeat: no-repeat;
-  opacity: 0.85;
+  /*  1, not 0.85. The mask is already a gaussian: it fades every blob to
+      nothing at its own edges, which is the softening this opacity was
+      doing a second, blunter time. Stacked under the old veil the two of
+      them together left an 11 level spread across the whole viewport. */
+  opacity: 1;
 }
 
 .bgfield__blob--a {
@@ -76,18 +80,37 @@
     It is gone: the field keeps its own slow drift, on its own clock, which
     looks the same and does not move because you moved. */
 
-/* A veil that keeps text legible over the brightest part of a blob. Painted,
-   does not animate.
+/*  A veil that keeps text legible over the brightest part of a blob.
+    Painted, does not animate.
 
-   The grain layer that used to sit here is gone: noise over a soft gradient
-   is the most recognisable stock texture on the web, and it cost a full
-   screen overlay blend to get it. */
+    IT WAS PAINTING OVER EVERYTHING. The old veil laid the page ground across
+    the whole field at 30% at the top rising to 86% at the bottom, on top of
+    a radial that reached the ground at 68%. With the page content hidden and
+    only the field showing, the entire viewport measured RGB 12 to 25: an
+    eleven level spread out of 255, which is not an animation, it is a
+    rounding error. Three blobs drifted on 46, 61 and 73 second cycles and
+    nothing moved that anybody could see.
+
+    The veil defends legibility, so the question is what legibility actually
+    costs. Scanned per theme, the field can reach oklab L 0.305 before --t3,
+    the tertiary ink and the darkest thing that ever sits directly on it,
+    drops under 4.5:1. The blobs are mixed to land at that ceiling and the
+    veil now only does the two jobs that are left:
+
+      the TOP, where the marketing header floats over the field
+      the BOTTOM, where the footer's --t3 has to be readable
+
+    Between them it is transparent, which is where the animation lives. */
 .bgfield__veil {
   position: absolute;
   inset: 0;
   background:
-    radial-gradient(120% 80% at 50% -10%, transparent 0%, color-mix(in oklab, var(--bg) 62%, transparent) 68%, var(--bg) 100%),
-    linear-gradient(to bottom, color-mix(in oklab, var(--bg) 30%, transparent), color-mix(in oklab, var(--bg) 86%, transparent));
+    linear-gradient(to bottom,
+      color-mix(in oklab, var(--bg) 34%, transparent) 0%,
+      transparent 16%,
+      transparent 62%,
+      color-mix(in oklab, var(--bg) 78%, transparent) 100%),
+    radial-gradient(140% 110% at 50% 40%, transparent 0%, transparent 58%, color-mix(in oklab, var(--bg) 55%, transparent) 100%);
 }
 
 @media (prefers-reduced-motion: reduce) {

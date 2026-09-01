@@ -336,3 +336,34 @@ a.brk__name {
   a.brow__title,
   a.brk__name { min-height: var(--tap); }
 }
+
+/*  NEEDS YOU, a second nav under the first.
+    The five rows above it are places; these are jobs, and the difference has
+    to be visible or they read as five more places. A label, a hairline and a
+    gap say it once; a heavier treatment would make the jobs shout over the
+    navigation, which is backwards on every page except the one where
+    something is actually wrong. */
+.side__group {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s0);
+  margin-top: var(--s4);
+  padding-top: var(--s4);
+  border-top: 1px solid var(--line);
+}
+.side__grouph {
+  padding: 0 var(--s3) var(--s1);
+  /*  --ink-2, not --ink-3. --ink-3 aliases --t4, which the palette ships as
+      a BORDER weight and never as a text colour, and a test enforces that.
+      A group heading is quiet, not invisible. */
+  color: var(--ink-2);
+}
+/*  The warn tint is on the BADGE, not the row. A row in warn colour reads as
+    broken; a warn count reads as "this many are waiting", which is what it
+    is. The row itself stays a link like any other. */
+.navrow__badge--warn {
+  background: var(--warn-wash);
+  border-color: var(--warn-line);
+  color: var(--warn);
+}
+.navrow--warn .navrow__icon { color: var(--warn); }

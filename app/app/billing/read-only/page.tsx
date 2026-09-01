@@ -4,7 +4,7 @@ import { Icon } from '@/components/Icon';
 import { getViewer } from '@/lib/data/session';
 import { select, summarise, DEFAULT_SCOPE } from '@/lib/data/analytics';
 import { READ_ONLY_ALLOWS, READ_ONLY_PAUSES } from '@/lib/domain/trial';
-import { count, money } from '@/lib/format';
+import { money, plural } from '@/lib/format';
 
 export const metadata: Metadata = {
   title: 'Read only',
@@ -26,7 +26,7 @@ export default async function ReadOnly() {
       <span className="pill pill--neg">Read only</span>
       <h1 style={{ marginTop: 'var(--s4)' }}>Two payments failed, so new slips are paused</h1>
       <p className="lead" style={{ marginTop: 'var(--s3)', maxWidth: '62ch' }}>
-        Nothing has been deleted and nothing will be. Your {count(all.count)} bets, worth{' '}
+        Nothing has been deleted and nothing will be. Your {plural(all.count, 'bet')}, worth{' '}
         {money(all.netPence, data.account.currency, { sign: true })} net, are where you left them,
         and your export works right now.
       </p>

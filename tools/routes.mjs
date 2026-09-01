@@ -23,6 +23,9 @@ export const APP = [
   '/app/states/new-dashboard', '/app/states/new-ledger', '/app/states/new-social',
   '/app/states/offline', '/app/states/save-failed', '/app/states/unreadable',
   '/app/states/loading',
+  /*  The ledger arrived at from the sidebar's counts. A filtered list is a
+      different page from an unfiltered one and the sweep should see both. */
+  '/app/ledger?needs=waiting', '/app/ledger?needs=running',
 ];
 
 export const ERRORS = ['/404', '/500'];

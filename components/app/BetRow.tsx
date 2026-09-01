@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import { SETTLE_GRACE_MS } from '@/lib/data/attention';
 import { Icon } from '@/components/Icon';
 import { effectiveOdds } from '@/lib/domain/fold';
 import { formatOdds, type OddsFormat } from '@/lib/odds';
@@ -16,12 +17,28 @@ const OUTCOME_LABEL: Record<Outcome, string> = {
   void: 'Void',
 };
 
-export function OutcomePill({ bet }: { bet: DemoBet }) {
+/*  An open bet is not one state, it is two, and the pill has to agree with
+ *  the heading it sits under. Listed under "Waiting on a result" a bet that
+ *  says RUNNING contradicts the line above it, and the reader has to decide
+ *  which of the two the page means. The split is the one in
+ *  lib/data/attention.ts, computed the same way from the same constant, so
+ *  the pill, the heading and the sidebar count can never disagree.
+ *
+ *  The dot only pulses on a bet that is genuinely in play. A pulse on a bet
+ *  that finished four hours ago is the page insisting something is
+ *  happening when nothing is. */
+export function OutcomePill({ bet, now = new Date() }: { bet: DemoBet; now?: Date }) {
   if (bet.state.status === 'open') {
-    return (
+    const live = new Date(bet.eventAt).getTime() > now.getTime() - SETTLE_GRACE_MS;
+    return live ? (
       <span className="pill">
         <span className="dot live-dot" style={{ background: 'var(--accent)' }} />
         Running
+      </span>
+    ) : (
+      <span className="pill pill--warn">
+        <span className="dot" style={{ background: 'var(--warn)' }} />
+        Waiting
       </span>
     );
   }

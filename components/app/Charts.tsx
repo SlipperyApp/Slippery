@@ -8,19 +8,28 @@ import { axisMoney, axisMonth } from '@/lib/format';
 
 const PAD = { l: 4, r: 4, t: 8, b: 18 };
 
+/** The curve, filling whatever box it is given.
+ *
+ *  It was a fixed 168px tall inside a module of 408, so a third of the
+ *  module was chart and the rest was nothing: a picture with room for twice
+ *  as much picture, in a layout whose whole argument is that the module
+ *  heights are chosen. useMeasure already reported height and nobody read
+ *  it. The prop stays as the FLOOR, for the places that render this outside
+ *  a fixed height module. */
 export function ProfitCurve({
-  points, height = 168, currency = 'GBP',
+  points, height: minHeight = 168, currency = 'GBP',
 }: {
   points: { day: string; netPence: number }[];
   height?: number;
   currency?: 'GBP' | 'EUR';
 }) {
-  const { ref, width } = useMeasure<HTMLDivElement>();
+  const { ref, width, height: boxH } = useMeasure<HTMLDivElement>();
   const id = useId().replace(/[^a-zA-Z0-9]/g, '');
+  const height = Math.max(minHeight, Math.round(boxH || 0));
 
   if (points.length < 2) {
     return (
-      <div ref={ref} className="chartbox" style={{ minHeight: height, display: 'grid', placeItems: 'center' }}>
+      <div ref={ref} className="chartbox chartbox--fill" style={{ minHeight, display: 'grid', placeItems: 'center' }}>
         <p className="small dim">Two settled days draws a curve. There is one so far.</p>
       </div>
     );
@@ -46,7 +55,7 @@ export function ProfitCurve({
   const ticks = [0, Math.floor((points.length - 1) / 2), points.length - 1];
 
   return (
-    <div ref={ref} className="chartbox">
+    <div ref={ref} className="chartbox chartbox--fill">
       {width > 0 ? (
         <svg viewBox={`0 0 ${w} ${height}`} width={w} height={height} role="img"
           aria-label={`Profit curve, ending at ${axisMoney(last, currency)}`}>

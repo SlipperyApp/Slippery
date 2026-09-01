@@ -6,7 +6,7 @@ import { select, summarise, byDay, cumulative, offerSplit, runningNow, breakdown
 import { ProfitCurve } from '@/components/app/Charts';
 import { MonthCalendar } from '@/components/app/Calendar';
 import { BetRow } from '@/components/app/BetRow';
-import { money, pct, count, units as fmtUnits, MONTH_LONG, londonParts } from '@/lib/format';
+import { money, pct, count, plural, units as fmtUnits, MONTH_LONG, londonParts } from '@/lib/format';
 import { Breadcrumbs } from '@/components/marketing/Breadcrumbs';
 import { StickyCta } from '@/components/marketing/StickyCta';
 import { EndCard } from '@/components/MarketingChrome';
@@ -47,7 +47,7 @@ export default function Demo() {
           <span>The account, running, right now.</span>
         </h1>
         <p className="sect__p">
-          <span className="mono">@{account.handle}</span> has {count(s.count)} bets across six
+          <span className="mono">@{account.handle}</span> has {plural(s.count, 'bet')} across six
           months. Every figure below is folded by the function your own ledger uses, from the same append only events. Nothing here can flatter itself.
         </p>
 
@@ -84,7 +84,7 @@ export default function Demo() {
               <p className="card__note">All time</p>
             </div>
             <p className={`fig fig--m ${offers.ownNetPence >= 0 ? 'pos' : 'neg'}`}>{money(offers.ownNetPence, account.currency, { sign: true })}</p>
-            <p className="small dim">{count(offers.ownCount)} bets with your own stake</p>
+            <p className="small dim">{plural(offers.ownCount, 'bet')} with your own stake</p>
             <p className="label" style={{ marginTop: 'var(--s5)' }}>Money they gave you</p>
             <p className="fig fig--m">{money(offers.offerNetPence, account.currency, { sign: true })}</p>
             <p className="small dim">{pct(offers.offerSharePct)} of the total, from {count(offers.offerCount)} offers</p>

@@ -11,7 +11,7 @@ import { Module, Figure } from '@/components/app/Module';
 import { MonthCalendar } from '@/components/app/Calendar';
 import { ProfitCurve } from '@/components/app/Charts';
 import { Icon } from '@/components/Icon';
-import { money, pct, count } from '@/lib/format';
+import { money, pct, count, plural, longDate } from '@/lib/format';
 
 export const metadata: Metadata = {
   title: 'Dashboard',
@@ -47,6 +47,13 @@ export default async function Dashboard({
   /* Every settled day the account has: the calendar browses months itself,
      so scoping this to the current one would empty every earlier month. */
   const calendarDays = byDay(select(bets, { ...scope, period: 'all' }, now, account.weekStart));
+  /*  The best and worst settled DAY, not bet: a tracker's user thinks in
+      sessions, and one +£700 day is a different story from one +£700 bet.
+      Computed off the scope's own days so the pair moves with the period
+      the rest of the module is describing. */
+  const dayNets = byDay(rows);
+  const best = dayNets.reduce((a, d) => (d.netPence > a.netPence ? d : a), { day: '', netPence: 0 });
+  const worst = dayNets.reduce((a, d) => (d.netPence < a.netPence ? d : a), { day: '', netPence: 0 });
 
   return (
     <>
@@ -118,11 +125,29 @@ export default async function Dashboard({
         <Module title="The record" span={5} size="xl" id="mod-record" note="All time">
           <div className="record">
             <Figure value={pct(s.winRate)} label="Win rate" size="md" sub={`${s.wins} won, ${s.losses} lost`} />
-            <Figure value={s.avgOdds.toFixed(2)} label="Average price" size="md" sub={`across ${count(s.count)} bets`} />
+            <Figure value={s.avgOdds.toFixed(2)} label="Average price" size="md" sub={`across ${plural(s.count, 'bet')}`} />
             <Figure value={money(s.avgStakePence, account.currency)} label="Average stake" size="md" sub={`${money(account.unitPence, account.currency)} a unit`} />
             <Figure value={money(s.turnoverPence, account.currency)} label="Turnover" size="md" sub="Void stakes excluded" />
             <Figure value={String(s.longestWin)} label="Longest winning run" size="md" sub={`${s.longestLoss} is the longest losing one`} />
             <Figure value={count(s.voids)} label="Void" size="md" sub="Neither won nor lost" />
+            {/*  A fourth row, because six figures left a third of a 444px
+                 module empty beside a calendar that fills its own. These two
+                 are the pair somebody looks for after the averages: the
+                 shape of the tail, which an average hides by construction. */}
+            <Figure
+              value={money(best.netPence, account.currency, { sign: true })}
+              label="Best day"
+              tone="pos"
+              size="md"
+              sub={best.day ? longDate(best.day + 'T12:00:00Z') : 'No settled day yet'}
+            />
+            <Figure
+              value={money(worst.netPence, account.currency, { sign: true })}
+              label="Worst day"
+              tone={worst.netPence < 0 ? 'neg' : ''}
+              size="md"
+              sub={worst.day ? longDate(worst.day + 'T12:00:00Z') : 'No settled day yet'}
+            />
           </div>
         </Module>
 
@@ -136,7 +161,7 @@ export default async function Dashboard({
         <Module
           title="Profit curve"
           span={8}
-          size="m"
+          size="l"
           id="mod-curve"
           note={curveIsWide ? 'All time: this scope has one day' : undefined}
           footer={
@@ -154,24 +179,46 @@ export default async function Dashboard({
         <Module
           title="Offers versus own"
           span={4}
-          size="m"
+          size="l"
           note="All time"
           id="mod-offers"
         >
+          {/*  THE NUMBER, THEN WHAT IT MEANS. Two figures side by side
+               leave the reader to do the division and then decide whether
+               the answer is good news. The bar does the division and the
+               sentence says the thing a bettor is actually afraid this
+               number means, which is the only reason it is worth showing:
+               a tracker that hides where the profit came from is a tracker
+               telling you that you are better than you are. */}
           <Figure
             value={money(offers.ownNetPence, account.currency, { sign: true })}
-            label="Money you won"
+            label="From your own stake"
             tone={offers.ownNetPence >= 0 ? 'pos' : 'neg'}
             size="md"
-            sub={`${count(offers.ownCount)} bets with your own stake`}
+            sub={`${plural(offers.ownCount, 'bet')}`}
           />
           <div style={{ marginTop: 'var(--s4)' }}>
             <Figure
               value={money(offers.offerNetPence, account.currency, { sign: true })}
-              label="Money they gave you"
+              label="From offers and free bets"
+              tone={offers.offerNetPence >= 0 ? 'pos' : 'neg'}
               size="md"
-              sub={`${count(offers.offerCount)} bets, ${pct(offers.offerSharePct)} of the total`}
+              sub={`${plural(offers.offerCount, 'bet')}`}
             />
+          </div>
+          <div className="split">
+            <span
+              className="split__bar"
+              role="img"
+              aria-label={`${pct(offers.offerSharePct)} of the net came from offers`}
+            >
+              <span className="split__fill" style={{ width: `${Math.max(0, Math.min(100, offers.offerSharePct))}%` }} />
+            </span>
+            <p className="small dim split__say">
+              {offers.offerSharePct >= 50
+                ? `${pct(offers.offerSharePct)} of your net came from offers. That is not a criticism, it is the number most trackers leave out.`
+                : `${pct(100 - offers.offerSharePct)} of your net came from your own stake.`}
+            </p>
           </div>
         </Module>
 

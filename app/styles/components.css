@@ -1042,11 +1042,21 @@
     Two columns at any width the module has: six figures in one column needs
     more height than the calendar has, and the module's height is what makes
     the two of them one row. */
+/*  The record, six figures in a fixed height module beside the calendar.
+    Two columns at any width the module has: six figures in one column needs
+    more height than the calendar has, and the module's height is what makes
+    the two of them one row.
+
+    align-content START, not space-between. Spread across 444px the three
+    rows floated as three disconnected pairs with holes between them, which
+    reads as three separate things rather than one record. They sit together
+    at the top and the module has room underneath, which is what a fixed
+    height module is for. */
 .record {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: var(--s4) var(--s5);
-  align-content: space-between;
+  gap: var(--s6) var(--s5);
+  align-content: start;
   flex: 1;
   min-height: 0;
 }
@@ -1056,3 +1066,117 @@
     Module because the ledger has no module grid: it is a page of rows with
     a summary above it, and this sits between the two. */
 .runnow ul { list-style: none; margin: 0; padding: 0; }
+
+/*  At risk, above the open bets rather than inside them.
+    Two figures, because the third thing somebody wants (profit if they all
+    land) is the difference between them and belongs under one, not beside
+    them as a third box competing with both. */
+.risk {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--s4);
+  padding: var(--s3) 0 var(--s4);
+  border-bottom: 1px solid var(--line);
+  margin-bottom: var(--s3);
+}
+@media (max-width: 520px) { .risk { grid-template-columns: minmax(0, 1fr); gap: var(--s3); } }
+.risk__fig .fig { margin-top: var(--s0); }
+.risk__fig .small { margin-top: var(--s1); }
+
+.runnow ul { list-style: none; margin: 0; padding: 0; }
+.runnow__h {
+  display: flex;
+  align-items: center;
+  gap: var(--s1h);
+  margin: var(--s4) 0 var(--s1);
+}
+.runnow__h:first-of-type { margin-top: 0; }
+.runnow__hi { color: var(--warn); flex: none; }
+.runnow__note { margin: 0 0 var(--s2); max-width: 62ch; }
+
+/*  A summary as boxes rather than a row of figures.
+    Five numbers on one line read as a sentence and have to be parsed left to
+    right; four bordered cells can be read in any order and compared by eye,
+    which is what somebody actually does with a summary. */
+.statgrid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: var(--s3);
+}
+@media (max-width: 860px) { .statgrid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+.stat {
+  padding: var(--s3) var(--s4);
+  border: 1px solid var(--line);
+  border-radius: var(--r-ctl);
+  background: color-mix(in oklab, var(--surface) 76%, transparent);
+  min-width: 0;
+}
+.stat .fig { margin-top: var(--s1); }
+.statgrid__foot { grid-column: 1 / -1; margin: 0; }
+
+/*  The chip that says why a list is short.
+    role=status, so a reader that has just followed "Waiting on a result 7"
+    from the sidebar hears what it landed on. */
+.filterchip {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--s2) var(--s3);
+  margin-bottom: var(--s4);
+  padding: var(--s2) var(--s4);
+  border: 1px solid var(--line2);
+  border-radius: var(--r-ctl);
+  background: color-mix(in oklab, var(--surface) 70%, transparent);
+  font-size: var(--t-small);
+}
+.filterchip__i { color: var(--ink-2); flex: none; }
+/*  A real target, not a 20px line of text. The chip's own height stays what
+    it was: the padding that makes the 44px is taken back out with a matching
+    negative margin, so the row does not grow to fit a hit area nobody sees.
+    The sweep measured this at 20px on the day it was written. */
+.filterchip__x {
+  margin-left: auto;
+  color: var(--accent-2);
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--tap);
+  padding-inline: var(--s2);
+  margin-block: calc(var(--s2) * -1);
+  margin-right: calc(var(--s2) * -1);
+}
+
+/*  A bet whose event finished and which has not graded. Advisory, not a
+    result: --warn, which is the colour this product uses for "look at this"
+    and never for "you lost". */
+.pill--warn { background: var(--warn-wash); border-color: var(--warn-line); color: var(--warn); }
+
+/*  Where the profit came from, as a proportion rather than as a division the
+    reader has to do. The fill is --gold, not --pos: money from an offer is
+    not a better result than money from your own stake, it is a different
+    KIND of money, and painting it in the profit colour would say the wrong
+    thing about it. */
+.split__bar {
+  display: block;
+  height: 6px;
+  border-radius: var(--r-pill);
+  background: var(--surface-3);
+  overflow: hidden;
+}
+.split__fill {
+  display: block;
+  height: 100%;
+  border-radius: var(--r-pill);
+  background: var(--gold);
+}
+.split__say { margin-top: var(--s2); max-width: 44ch; }
+
+/*  A chart that fills its module rather than sitting in the top third of it.
+    The height comes from the box, so the box has to have one: flex:1 inside
+    the module's own column, and min-height:0 so a flex child is allowed to
+    be shorter than its content wants. */
+.chartbox--fill { flex: 1 1 auto; min-height: 0; }
+
+/*  The offer split sits at the FOOT of its module. It is the conclusion the
+    two figures above it lead to, and a conclusion belongs under the thing it
+    concludes rather than floating in the middle of the space left over. */
+.split { margin-top: auto; padding-top: var(--s5); }

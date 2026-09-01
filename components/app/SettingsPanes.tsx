@@ -22,7 +22,14 @@ type Account = {
 /** Six groups, each opening a detail pane. Every control changes something
  *  visible on this page, so none of them is a preference nothing reads. */
 export function SettingsPanes({ groups, account }: { groups: SettingsGroup[]; account: Account }) {
-  const [open, setOpen] = useState<string | null>(null);
+  /*  OPEN ON ARRIVAL, not empty.
+      Landing on Settings showed six cards and a read only summary, so
+      changing your unit was two clicks and the first one only revealed that
+      a control existed. Twenty settings do not need a browse step: the first
+      group is open and its controls are on screen, and the cards beside it
+      still switch between them. The pane is collapsible, so somebody who
+      wants the overview can still close it. */
+  const [open, setOpen] = useState<string | null>(groups[0]?.id ?? null);
   const { theme, setTheme } = useTheme();
 
   const [unitPence, setUnitPence] = useState(account.unitPence);
