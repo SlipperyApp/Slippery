@@ -3,6 +3,7 @@ import { getViewer } from '@/lib/data/session';
 import { turnoverPence, effectiveOdds, riskPence } from '@/lib/domain/fold';
 import { bookmakerName } from '@/lib/data/reference';
 import { londonDay, money } from '@/lib/format';
+import { textPdf } from '@/lib/server/pdf';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -56,22 +57,44 @@ export async function GET(req: Request) {
   }
 
   if (format === 'pdf') {
-    // A text ledger rather than a fake PDF. Producing a real PDF needs a
-    // renderer this deployment does not carry, and a file with the wrong
-    // bytes inside is worse than an honest one with the right ones.
+    /*  A real PDF, from lib/server/pdf.ts. This used to return a .txt with a
+     *  comment explaining that a PDF needed a renderer, which is an honest
+     *  comment inside a broken promise: /pricing sells "CSV, JSON and PDF
+     *  export, always" and Settings offers a PDF button. */
+    const cur = data.account.currency;
+    const net = rows.reduce((a, r) => a + r.profitPence, 0);
+    /*  Truncate one short of the column so a long selection cannot butt up
+     *  against the bookmaker beside it: "Over 2.5 goals / Real Sociedadbet365"
+     *  is two facts read as one word. */
+    const col = (v: string, n: number) => (v.length > n - 1 ? `${v.slice(0, n - 2)}…` : v).padEnd(n);
     const lines = [
       'SLIPPERY LEDGER',
       `Account @${data.account.handle}`,
-      `Exported ${new Date().toISOString()}`,
-      `${rows.length} bets`,
+      `Exported ${new Date().toISOString().replace('T', ' ').slice(0, 16)} UTC`,
+      `${rows.length} bets, ${money(net, cur, { sign: true })} net`,
       '',
+      `${col('DAY', 12)}${col('SELECTION', 30)}${col('BOOKMAKER', 18)}${'STAKE'.padStart(11)}`
+      + `${'PRICE'.padStart(9)}  ${col('RESULT', 14)}${'NET'.padStart(12)}`,
+      ''.padEnd(106, '-'),
       ...rows.map((r) =>
-        `${r.day}  ${String(r.selection).padEnd(28).slice(0, 28)}  ${String(r.bookmaker).padEnd(16).slice(0, 16)}  ${money(r.stakePence, data.account.currency).padStart(11)}  ${String(r.odds).padStart(7)}  ${String(r.outcome || r.status).padEnd(12)}  ${money(r.profitPence, data.account.currency, { sign: true }).padStart(12)}`),
+        `${col(r.day, 12)}${col(String(r.selection), 30)}${col(String(r.bookmaker), 18)}`
+        + `${money(r.stakePence, cur).padStart(11)}${r.odds.toFixed(2).padStart(9)}  `
+        + `${col(String(r.outcome || r.status), 14)}`
+        + `${money(r.profitPence, cur, { sign: true }).padStart(12)}`),
+      '',
+      'Slippery never accepts bets, holds money, pays winnings or gives tips.',
+      '18+ · BeGambleAware.org · National Gambling Helpline 0808 8020 133',
     ];
-    return new NextResponse(lines.join('\n'), {
+    const pdf = textPdf({
+      title: `Slippery ledger, @${data.account.handle}`,
+      lines,
+      footer: (page, of) => `Slippery · @${data.account.handle} · ${stamp} · page ${page} of ${of}`,
+    });
+    return new NextResponse(new Uint8Array(pdf), {
       headers: {
-        'content-type': 'text/plain; charset=utf-8',
-        'content-disposition': `attachment; filename="slippery-${stamp}.txt"`,
+        'content-type': 'application/pdf',
+        'content-disposition': `attachment; filename="slippery-${stamp}.pdf"`,
+        'content-length': String(pdf.length),
       },
     });
   }
