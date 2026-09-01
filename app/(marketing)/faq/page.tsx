@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import { Faq } from '@/components/marketing/Faq';
 import { QUESTIONS } from '@/lib/content/faq';
+import { spell } from '@/lib/format';
 import { Breadcrumbs } from '@/components/marketing/Breadcrumbs';
 
 export const metadata: Metadata = {
@@ -22,7 +23,7 @@ export default function FaqPage() {
       <div className="wrap">
         <Breadcrumbs trail={[{ href: '/', label: 'Slippery' }]} page="Questions" />
         <h1 className="sect__h" style={{ fontSize: 'clamp(30px, 6vw, 48px)' }}>
-          <span className="setup">Seventeen questions.</span>
+          <span className="setup">{spell(QUESTIONS.length)} questions.</span>
           <span>Answered without the marketing.</span>
         </h1>
         <div className="column column--wide" style={{ marginTop: 'var(--s7)', marginInline: 0 }}>

@@ -190,3 +190,22 @@ export function initials(name: string): string {
   const parts = name.trim().split(/\s+/).slice(0, 2);
   return parts.map((p) => p[0] ?? '').join('').toUpperCase() || '?';
 }
+
+/** Small numbers, spelled.
+ *
+ *  The house voice writes "Seventeen questions", not "17 questions", and a
+ *  spelled number in prose is a number nobody updates. The landing page said
+ *  "Six of them" over the top six and "The other ten" under them, against a
+ *  list of seventeen: correct when it was written and wrong by one the
+ *  moment a question was added. Every count of a list now comes from the
+ *  list. Figures are never spelled, only prose. */
+const WORDS = [
+  'Zero', 'One', 'Two', 'Three', 'Four', 'Five', 'Six', 'Seven', 'Eight', 'Nine', 'Ten',
+  'Eleven', 'Twelve', 'Thirteen', 'Fourteen', 'Fifteen', 'Sixteen', 'Seventeen', 'Eighteen',
+  'Nineteen', 'Twenty',
+];
+
+export function spell(n: number, { cap = true }: { cap?: boolean } = {}): string {
+  const w = Number.isInteger(n) && n >= 0 && n <= 20 ? WORDS[n] : String(n);
+  return cap ? w : w.toLowerCase();
+}

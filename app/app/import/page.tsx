@@ -25,8 +25,7 @@ export default async function ImportHome() {
     <>
       <h1>Add a bet</h1>
       <p className="muted" style={{ marginTop: 'var(--s2)', maxWidth: '58ch' }}>
-        Capture at placement. A record made before you know how it went cannot quietly become only
-        the bets you wanted to remember.
+        Four ways in. Send it now, while you still do not know.
       </p>
 
       {readOnly ? (
@@ -77,9 +76,6 @@ export default async function ImportHome() {
             style={{ width: `${Math.round((trial.slipsUsed / Math.max(1, trial.slipsAllowed)) * 100)}%` }}
           />
         </div>
-        <p className="small dim card__foot">
-          Whichever runs out first is what stops an upload.
-        </p>
       </div>
     </>
   );

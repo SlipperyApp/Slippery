@@ -261,9 +261,20 @@
   .seg__btn { min-height: var(--tap); }
   /*  A standalone link in a list, a nav or a footer is a target in its own
       right. A link inside a sentence is left alone: padding it out would
-      break the line it sits in. */
+      break the line it sits in.
+      
+      A COLUMN, not a row. It was inline-flex, which is fine while the link
+      holds one line of text and wrong the moment it holds a title and a
+      subtitle: on /404 the four suggestions rendered as "Add a betForward,
+      upload, photograph or type it in", because two block children of a flex
+      row sit side by side. A column centred on the cross axis lays a single
+      line out exactly as before and stacks two. */
   .mfoot a, .rows a, .checks a, .card > ul > li > a, .stack > li > a {
-    display: inline-flex; align-items: center; min-height: var(--tap);
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: flex-start;
+    min-height: var(--tap);
   }
 }
 /* An icon button must not be squashed by a growing sibling. */

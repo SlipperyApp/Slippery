@@ -1,5 +1,7 @@
 import Link from 'next/link';
 import { Icon } from '@/components/Icon';
+import { QUESTIONS } from '@/lib/content/faq';
+import { spell } from '@/lib/format';
 
 /** The 404 line is the best copy in the product and it stays. The 500 is
  *  written in the same voice and answers the only question that matters
@@ -25,7 +27,7 @@ export function NotFoundPane() {
             { href: '/app/ledger', t: 'Your ledger', s: 'Every bet, with facets that agree with the row count' },
             { href: '/app/import', t: 'Add a bet', s: 'Forward, upload, photograph or type it in' },
             { href: '/app/social', t: 'Groups', s: 'Your leagues and the Slippers in them' },
-            { href: '/faq', t: 'Questions', s: 'Seventeen of them, answered without the marketing' },
+            { href: '/faq', t: 'Questions', s: `${spell(QUESTIONS.length)} of them, answered without the marketing` },
           ].map((l) => (
             <li key={l.href} className="brow">
               <Link href={l.href} style={{ textDecoration: 'none', minWidth: 0 }}>

@@ -2,6 +2,8 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { Icon } from '@/components/Icon';
 import { Breadcrumbs } from '@/components/marketing/Breadcrumbs';
+import { QUESTIONS } from '@/lib/content/faq';
+import { spell } from '@/lib/format';
 
 export const metadata: Metadata = {
   title: 'Thank you',
@@ -22,7 +24,7 @@ export const metadata: Metadata = {
 const NEXT = [
   { href: '/demo', t: 'The example account', s: 'Six months of a real record, running now' },
   { href: '/how', t: 'How it works', s: 'Slip in, ledger out, and what happens between' },
-  { href: '/faq', t: 'Questions', s: 'Seventeen of them, answered without the marketing' },
+  { href: '/faq', t: 'Questions', s: `${spell(QUESTIONS.length)} of them, answered without the marketing` },
 ];
 
 export default function ThankYou() {

@@ -11,8 +11,8 @@ import { WaveField } from '@/components/marketing/WaveField';
 import { Makers, MadeBy } from '@/components/marketing/Makers';
 import { StickyCta } from '@/components/marketing/StickyCta';
 import { Faq } from '@/components/marketing/Faq';
-import { TOP_QUESTIONS } from '@/lib/content/faq';
-import { money } from '@/lib/format';
+import { QUESTIONS, TOP_QUESTIONS } from '@/lib/content/faq';
+import { money, spell } from '@/lib/format';
 
 export const metadata: Metadata = {
   title: { absolute: 'Slippery, a bet tracker that captures at placement' },
@@ -277,14 +277,15 @@ export default function Landing() {
           <SectionHead
             centred
             badge="Questions"
-            setup="Six of them."
+            setup={`${spell(TOP_QUESTIONS.length)} of them.`}
             claim="Answered without the marketing."
           />
           <div className="column column--wide" style={{ marginTop: 'var(--s6)' }}>
             <Faq items={TOP_QUESTIONS} />
             <p style={{ marginTop: 'var(--s5)', textAlign: 'center' }}>
               <Link href="/faq" className="btn btn--ghost btn--sm">
-                The other ten <Icon name="arrowRight" size={16} />
+                The other {spell(QUESTIONS.length - TOP_QUESTIONS.length, { cap: false })}{' '}
+                <Icon name="arrowRight" size={16} />
               </Link>
             </p>
           </div>

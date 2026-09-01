@@ -121,3 +121,32 @@ test('the product says return, never ROI, in anything a reader sees', () => {
   }
   assert.deepEqual(found, [], found.join('\n'));
 });
+
+test('every page that counts the questions counts them from the list', () => {
+  /*  The landing page said "Six of them" over the top six questions and "The
+   *  other ten" under them, against a list of seventeen. Correct when it was
+   *  written and wrong by one the moment a question was added, which is what
+   *  a spelled number in prose always becomes.
+   *
+   *  The four places that state a count now derive it, and this asserts both
+   *  halves: that they call spell() on the list, and that no spelled numeral
+   *  sits next to "questions" or "of them" in any of them. */
+  const PAGES = [
+    'app/(marketing)/faq/page.tsx',
+    'app/(marketing)/page.tsx',
+    'app/(marketing)/thank-you/page.tsx',
+    'components/marketing/ErrorPane.tsx',
+  ];
+  const NUMBERS = 'two|three|four|five|six|seven|eight|nine|ten|eleven|twelve|thirteen|fourteen|fifteen|sixteen|seventeen|eighteen|nineteen|twenty';
+  for (const f of PAGES) {
+    const src = readFileSync(f, 'utf8')
+      .replace(/\/\*[\s\S]*?\*\//g, ' ')
+      .replace(/^\s*\/\/.*$/gm, ' ');
+    assert.match(src, /spell\(\s*(QUESTIONS|TOP_QUESTIONS)/, `${f} states a question count without deriving it`);
+    assert.doesNotMatch(
+      src,
+      new RegExp(`\\b(${NUMBERS})\\b[^\\n]{0,10}\\b(questions?|of them)\\b`, 'i'),
+      `${f} spells a count that should come from the list`,
+    );
+  }
+});
