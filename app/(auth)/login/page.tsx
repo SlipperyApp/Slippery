@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { LoginForm } from '@/components/auth/LoginForm';
+import { canSendEmail } from '@/lib/server/mail';
 
 export const metadata: Metadata = {
   title: 'Sign in',
@@ -20,7 +21,7 @@ export default async function Login({
         Your ledger is where you left it. Signing in never changes a settled bet, and a
         correction is always a new event rather than an edit.
       </p>
-      <div style={{ marginTop: 'var(--s6)' }}><LoginForm startWithReset={reset} /></div>
+      <div style={{ marginTop: 'var(--s6)' }}><LoginForm startWithReset={reset} canEmail={canSendEmail()} /></div>
       <p className="small muted" style={{ marginTop: 'var(--s6)' }}>
         No account yet? <Link href="/signup">Start free</Link>. Or{' '}
         <Link href="/app">look at the example account</Link> without one.

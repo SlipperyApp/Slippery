@@ -5,7 +5,15 @@ import { useState } from 'react';
 import { Icon } from '@/components/Icon';
 import { isEmail } from '@/lib/server/codes';
 
-export function LoginForm({ startWithReset = false }: { startWithReset?: boolean }) {
+export function LoginForm({
+  startWithReset = false, canEmail = true,
+}: {
+  startWithReset?: boolean;
+  /*  Whether this deployment can actually send. The reset screen used to say
+      a link was on its way on a deployment that has no transport, which is
+      the one thing this product does not do anywhere else. */
+  canEmail?: boolean;
+}) {
   const router = useRouter();
   const [mode, setMode] = useState<'sign-in' | 'reset'>(startWithReset ? 'reset' : 'sign-in');
   const [email, setEmail] = useState('');
@@ -51,11 +59,17 @@ export function LoginForm({ startWithReset = false }: { startWithReset?: boolean
     return (
       <div className="card">
         <div className="row" style={{ alignItems: 'flex-start' }}>
-          <Icon name="check" size={20} style={{ color: 'var(--pos)', flex: 'none', marginTop: 2 }} />
+          <Icon name={canEmail ? 'check' : 'alert'} size={20} style={{ color: canEmail ? 'var(--pos)' : 'var(--ink-2)', flex: 'none', marginTop: 2 }} />
           <div>
-            <p className="card__title">If that address has an account, a reset link is on its way</p>
+            <p className="card__title">
+              {canEmail
+                ? 'If that address has an account, a reset link is on its way'
+                : 'Email is not configured on this deployment, so nothing was sent'}
+            </p>
             <p className="small muted" style={{ marginTop: 'var(--s2)' }}>
-              Worded that way on purpose: saying whether an address exists would say it to anybody. The link lasts an hour.
+              {canEmail
+                ? 'Worded that way on purpose: saying whether an address exists would say it to anybody. The link lasts an hour.'
+                : 'Your account and your ledger are untouched. Nothing was charged.'}
             </p>
             <button type="button" className="btn btn--link" style={{ marginTop: 'var(--s3)' }}
               onClick={() => { setSent(false); setMode('sign-in'); }}>
