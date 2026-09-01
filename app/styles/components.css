@@ -352,6 +352,14 @@
     1fr column collapsed under the width of one word. 88px is four or five
     characters, which is enough for the value beside it to wrap first. */
 .brow--field { grid-template-columns: 20px minmax(88px, 1fr) auto; gap: var(--s3); }
+/*  Under 400 there is no width for three columns. "Saw: Each line priced
+    separately, which is what a Lucky 15 does" in a 78px mono column is eight
+    lines of two words. The value drops under the label instead, still in the
+    label's column so it stays clear of the tick. */
+@media (max-width: 399px) {
+  .brow--field { grid-template-columns: 20px minmax(0, 1fr); }
+  .brow--field > :nth-child(3) { grid-column: 2; justify-self: start; margin-top: 2px; }
+}
 /* Too few bets to rank. The bet count beside the name already says so, and
    fading the row would take the figure to about 2.9:1, so the signal is a
    rule down the left edge and a dimmed meter, which carries no text.

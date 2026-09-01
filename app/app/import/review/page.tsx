@@ -21,8 +21,7 @@ export default function Review() {
 
       <h1>Check what was read</h1>
       <p className="muted" style={{ marginTop: 'var(--s2)', maxWidth: '62ch' }}>
-        Nothing is written until you confirm. Each field is scored on its own, because scoring a
-        whole slip means one bad field poisons nineteen good ones.
+        Nothing is written until you confirm. Each field is scored on its own.
       </p>
 
       <div style={{ marginTop: 'var(--s5)' }}>

@@ -86,7 +86,14 @@ export function ReviewSlip({ read }: { read: SlipRead }) {
                   <span style={{ minWidth: 0 }}>
                     <span className="brow__title" style={{ display: 'block' }}>{f.label}</span>
                     {f.saw ? <span className="brow__sub" style={{ display: 'block' }}>Saw: <span className="mono">{f.saw}</span></span> : null}
-                    <span className="brow__sub">{CONFIDENCE_COPY[f.confidence].note}</span>
+                    {/*  Only where it says something. "Saved without asking.
+                         Nothing here was in doubt." under every clean field is
+                         one sentence repeated fifteen times, and the tick beside
+                         it already said it. The three that need an explanation
+                         still get one. */}
+                    {f.confidence === 'high' ? null : (
+                      <span className="brow__sub">{CONFIDENCE_COPY[f.confidence].note}</span>
+                    )}
                   </span>
                   <span className="fig fig--s tnum">{f.value}</span>
                 </li>
