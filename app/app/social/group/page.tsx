@@ -63,8 +63,8 @@ export default async function GroupPage({
           <League rows={board} showEdits={summary.showEditAudit} period={summary.rankingPeriod} />
           <p className="small dim card__foot">
             {summary.showEditAudit
-              ? 'A late edit is a settlement event entered after the result was known. It is counted, not hidden, and it does not change anybody’s position.'
-              : 'This group does not show late edits. They are still recorded in each Slipper’s own change history.'}
+              ? 'A late edit is a settlement entered after the result was known. Counted, not hidden.'
+              : 'Late edits are not shown here. They stay in each Slipper’s own change history.'}
           </p>
         </section>
 

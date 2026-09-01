@@ -41,9 +41,7 @@ export default async function History() {
 
       <div className="card" style={{ marginBottom: 'var(--s4)' }}>
         <p className="small muted">
-          <code>settlement_events</code> is append only. A correction is a new event rather than an
-          edit, so nothing here can be quietly rewritten. Events entered <strong>after a result was
-          known</strong> are flagged, and that flag is what a group&rsquo;s late-edit column reads.
+          <code>settlement_events</code> is append only: a correction is a new event, never an edit. Events entered <strong>after a result was known</strong> are flagged.
         </p>
         <div className="row row--wrap" style={{ gap: 'var(--s6)', marginTop: 'var(--s4)' }}>
           <div><p className="label">Events shown</p><p className="fig fig--s tnum">{rows.length}</p></div>

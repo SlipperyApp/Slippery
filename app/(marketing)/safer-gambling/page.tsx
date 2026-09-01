@@ -46,8 +46,8 @@ export default function SaferGambling() {
           <span>So is a leaderboard.</span>
         </h1>
         <p className="sect__p">
-          Slippery is built to tell you the truth about your record, and a truthful record is
-          sometimes an uncomfortable one. Nothing here is designed to make you bet more. The list below is constraints on the product, not features.
+          Slippery tells you the truth about your record, and a truthful record is sometimes an
+          uncomfortable one. Nothing here is designed to make you bet more.
         </p>
 
         <div className="grid" style={{ marginTop: 'var(--s7)' }}>
@@ -87,9 +87,8 @@ export default function SaferGambling() {
         <div className="card" style={{ marginTop: 'var(--s5)', alignItems: 'flex-start' }}>
           <p className="card__title">Take a break</p>
           <p className="small muted" style={{ marginTop: 'var(--s2)', maxWidth: '58ch' }}>
-            One control, in Settings, under Account. It pauses every notification and takes you out
-            of the monthly leagues. Your ledger, your history and your export are untouched, and
-            turning it back on is one tap whenever you want it.
+            One control, in Settings, under Account. It pauses every notification and takes you
+            out of the monthly leagues. Your ledger, history and export are untouched.
           </p>
           <Link href="/app/settings" className="btn btn--ghost" style={{ marginTop: 'var(--s5)' }}>
             Open Settings <Icon name="arrowRight" size={16} />

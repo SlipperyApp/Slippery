@@ -42,9 +42,7 @@ export default function NewSocial() {
         <section className="card col-4">
           <p className="card__title">Why units</p>
           <p className="small muted" style={{ marginTop: 'var(--s3)' }}>
-            A Slipper staking £5 and a Slipper staking £500 are directly comparable in units, and a
-            bigger bankroll stops being a bigger score. Outside a group only units are visible,
-            never stakes.
+            A Slipper staking £5 and a Slipper staking £500 are directly comparable in units.
           </p>
           <div className="card__foot">
             <Link href="/social" className="btn btn--quiet btn--sm">How groups work</Link>

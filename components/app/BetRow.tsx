@@ -45,16 +45,18 @@ export function BetRow({
   const open = s.status === 'open';
   const tone = s.realisedPlPence > 0 ? 'pos' : s.realisedPlPence < 0 ? 'neg' : '';
   const legs = bet.legs.length;
+  const tags = [
+    bet.isFreeBet ? 'Free bet' : null,
+    bet.isBoosted ? 'Boosted' : null,
+    bet.side === 'lay' ? 'Lay' : null,
+    bet.slipBacked ? null : 'Typed in',
+  ].filter(Boolean) as string[];
 
   return (
     <li className={`brow${settling ? ' is-settling' : ''}`} style={{ gridTemplateColumns: 'minmax(0,1fr) auto', alignItems: 'start' }}>
       <div style={{ minWidth: 0 }}>
         <div className="row" style={{ gap: 'var(--s2)', marginBottom: 3 }}>
           <OutcomePill bet={bet} />
-          {bet.isFreeBet ? <span className="pill">Free bet</span> : null}
-          {bet.isBoosted ? <span className="pill">Boosted</span> : null}
-          {bet.side === 'lay' ? <span className="pill">Lay</span> : null}
-          {!bet.slipBacked ? <span className="pill">Typed in</span> : null}
         </div>
         <p className="brow__title" style={{ overflow: 'hidden', textOverflow: 'ellipsis' }}>
           {legs > 1 ? `${legs} fold` : bet.selection}
@@ -62,10 +64,15 @@ export function BetRow({
         <p className="brow__sub" style={{ overflow: 'hidden', textOverflow: 'ellipsis' }}>
           {legs > 1 ? bet.legs.map((l) => l.selection).join(' / ') : `${bet.eventName} · ${bet.marketRaw}`}
         </p>
+        {/*  The modifiers used to be four more pills on the row above. Five
+             coloured boxes on every row of a thirty row list is the noisiest
+             thing on the page, and none of them is the thing you scan for.
+             They are facts, so they sit on the line of facts. */}
         <p className="brow__sub mono" style={{ marginTop: 2 }}>
           {money(bet.side === 'lay' ? (bet.liabilityPence ?? 0) : bet.stakePence, currency)} at{' '}
-          {formatOdds(effectiveOdds(bet), oddsFormat)} · {bookmakerName(bet.bookmakerId)} ·{' '}
-          {shortDate(bet.eventAt)} {timeOfDay(bet.eventAt)}
+          {formatOdds(effectiveOdds(bet), oddsFormat)} · {bookmakerName(bet.bookmakerId)}
+          {tags.map((t) => <span key={t}> · {t}</span>)} · {shortDate(bet.eventAt)}{' '}
+          {timeOfDay(bet.eventAt)}
         </p>
       </div>
       <div style={{ textAlign: 'right' }}>

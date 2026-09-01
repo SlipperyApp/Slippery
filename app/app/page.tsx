@@ -13,7 +13,7 @@ import { MonthCalendar } from '@/components/app/Calendar';
 import { ProfitCurve, MonthBars } from '@/components/app/Charts';
 import { BetRow, EmptyState } from '@/components/app/BetRow';
 import { Icon } from '@/components/Icon';
-import { money, pct, units as fmtUnits, count, MONTH_LONG, londonParts, TZ_LABEL } from '@/lib/format';
+import { money, pct, units as fmtUnits, count, MONTH_LONG, londonParts } from '@/lib/format';
 
 export const metadata: Metadata = {
   title: 'Dashboard',
@@ -57,7 +57,6 @@ export default async function Dashboard({
     <>
       <div className="spread" style={{ marginBottom: 'var(--s4)', flexWrap: 'wrap' }}>
         <h1>Dashboard</h1>
-        <p className="small dim">{TZ_LABEL}</p>
       </div>
 
       {trial.active ? (
@@ -84,7 +83,6 @@ export default async function Dashboard({
           title="Calendar"
           span={6}
           size="xxl"
-          note="Any month, Europe/London days"
           id="mod-calendar"
         >
           <MonthCalendar
@@ -102,7 +100,7 @@ export default async function Dashboard({
           title="Running now"
           span={6}
           size="xxl"
-          note="Live, so it ignores the scope"
+          note="Ignores the scope"
           id="mod-running"
           footer={<ModuleLink href="/app/ledger">Open the ledger</ModuleLink>}
         >
@@ -149,7 +147,7 @@ export default async function Dashboard({
           span={8}
           size="m"
           id="mod-curve"
-          note={curveIsWide ? 'All time, this scope has one day' : undefined}
+          note={curveIsWide ? 'All time: this scope has one day' : undefined}
           footer={
             <p className="small dim">
               {shownCurve.length > 1
@@ -166,9 +164,8 @@ export default async function Dashboard({
           title="Offers versus own"
           span={4}
           size="m"
-          note="Always all time"
+          note="All time"
           id="mod-offers"
-          footer={<p className="small dim">Free bets, bonus funds and boosts are flagged when the slip is read.</p>}
         >
           <Figure
             value={money(offers.ownNetPence, account.currency, { sign: true })}
@@ -193,7 +190,6 @@ export default async function Dashboard({
           span={12}
           size="l"
           id="mod-breakdown"
-          footer={<p className="small dim">Odds and stake keep their band order. The order is the read, so they are never sorted by profit.</p>}
         >
           <Breakdown rowsByDim={breakdowns} currency={account.currency} />
         </Module>
@@ -202,10 +198,10 @@ export default async function Dashboard({
         <Module title="The record" span={12} size="s" id="mod-record">
           <div className="row row--wrap" style={{ gap: 'var(--s7)' }}>
             <Figure value={pct(s.winRate)} label="Win rate" size="sm" sub={`${s.wins} won, ${s.losses} lost`} />
-            <Figure value={s.avgOdds.toFixed(2)} label="Average price" size="sm" sub="Settled bets only" />
+            <Figure value={s.avgOdds.toFixed(2)} label="Average price" size="sm" />
             <Figure value={money(s.avgStakePence, account.currency)} label="Average stake" size="sm" />
-            <Figure value={String(s.longestWin)} label="Longest run of winners" size="sm" />
-            <Figure value={String(s.longestLoss)} label="Longest run of losers" size="sm" />
+            <Figure value={String(s.longestWin)} label="Longest winning run" size="sm" />
+            <Figure value={String(s.longestLoss)} label="Longest losing run" size="sm" />
             <Figure value={count(s.voids)} label="Void" size="sm" sub="Excluded from turnover" />
           </div>
         </Module>

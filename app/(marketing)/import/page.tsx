@@ -8,7 +8,7 @@ import { StickyCta } from '@/components/marketing/StickyCta';
 export const metadata: Metadata = {
   title: 'Import a history',
   description:
-    'Bring a history in from a spreadsheet or another tracker. Dry run first, counts reported before anything is written, and nothing that cannot be split reliably is guessed at.',
+    'Bring a history in from a spreadsheet or another tracker. Dry run first, counts before writes, nothing guessed.',
   alternates: { canonical: '/import' },
   openGraph: {
     title: 'Import a history into Slippery',
@@ -63,8 +63,7 @@ export default function ImportPage() {
                 ))}
               </ul>
               <p className="small muted card__foot">
-                Nothing is written by a dry run. The fourteen it cannot split go to a resolve step
-                where you see the original text and pick, one at a time.
+                Nothing is written by a dry run. The fourteen go to a resolve step, one at a time.
               </p>
             </div>
           </div>
@@ -72,7 +71,7 @@ export default function ImportPage() {
           <Checks
             items={[
               'Duplicates matched on selection, stake, bookmaker and kick-off',
-              'Multiples re-derived into real legs, never joined with an ampersand',
+              'Multiples re-derived into real legs',
               'Imported bets are marked and are not slip backed',
               'Every mutation writes an audit line with its source',
             ]}
@@ -81,8 +80,7 @@ export default function ImportPage() {
           <div className="card" style={{ marginTop: 'var(--s6)', alignItems: 'flex-start' }}>
             <p className="card__title">Start an import</p>
             <p className="small muted" style={{ marginTop: 'var(--s2)', maxWidth: '56ch' }}>
-              A history of a few thousand rows takes under a minute to dry run. You will see the
-              counts before anything touches your ledger.
+              A few thousand rows dry run in under a minute.
             </p>
             <Link href="/app/import/history" className="btn btn--primary" style={{ marginTop: 'var(--s5)' }}>
               Import a history <Icon name="arrowRight" size={16} />

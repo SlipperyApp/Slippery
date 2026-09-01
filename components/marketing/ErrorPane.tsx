@@ -49,9 +49,8 @@ export function ServerErrorPane({ reset }: { reset?: () => void }) {
         That failed on our side, and nothing was saved.
       </h1>
       <p className="lead" style={{ marginTop: 'var(--s4)' }}>
-        Every write goes inside one transaction with the recompute that follows it, so a request
-        that fails writes nothing at all. Your ledger is exactly as it was a moment ago, and no
-        half finished bet is sitting in it.
+        Every write goes inside one transaction, so a request that fails writes nothing at all.
+        Your ledger is exactly as it was a moment ago.
       </p>
       <p className="muted" style={{ marginTop: 'var(--s4)' }}>
         If you were sending a slip, send it again. It has not been counted against your allowance.

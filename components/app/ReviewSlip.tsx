@@ -153,8 +153,7 @@ export function ReviewSlip({ read }: { read: SlipRead }) {
                   </div>
                   {answers[f.key] === 'Not sure' ? (
                     <p className="small dim" style={{ marginTop: 'var(--s2)' }}>
-                      Then it stays unanswered and this bet is held out of your aggregates until it
-                      settles. That is the safe direction.
+                      It stays unanswered, and this bet is held out of your aggregates until it settles.
                     </p>
                   ) : null}
                 </li>
@@ -212,8 +211,7 @@ export function ReviewSlip({ read }: { read: SlipRead }) {
         <section className="card">
           <h2 className="card__title">Read it wrong?</h2>
           <p className="small muted" style={{ marginTop: 'var(--s2)' }}>
-            Flag it and the slip goes back for a human look. The slip returns to your allowance:
-            our worst moment should not cost you one.
+            Flag it and the slip goes back for a human look. The credit returns to your allowance.
           </p>
           <button
             type="button"

@@ -25,8 +25,7 @@ export default function Unreadable() {
         {read} of {FIELDS.length} fields came off that slip
       </h1>
       <p className="lead" style={{ marginTop: 'var(--s3)' }}>
-        Two did not, and neither is being guessed at. A missing price is visible to you; a wrong
-        one is not, and a wrong one would sit in your ROI for months.
+        Two did not, and neither is being guessed at.
       </p>
 
       <div className="card" style={{ marginTop: 'var(--s6)' }}>

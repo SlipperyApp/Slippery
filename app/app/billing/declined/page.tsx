@@ -98,8 +98,7 @@ export default async function Declined() {
           <section className="card">
             <h2 className="card__title">Or stop paying</h2>
             <p className="small muted" style={{ marginTop: 'var(--s2)' }}>
-              Cancelling keeps your ledger, your history and your export. It is not a punishment
-              and you can come back to the same record whenever you want.
+              Cancelling keeps your ledger, your history and your export.
             </p>
             <div className="row row--wrap card__foot" style={{ gap: 'var(--s2)' }}>
               <a className="btn btn--ghost btn--sm" href="/api/export?format=csv">

@@ -56,11 +56,6 @@ export default function Themes() {
                 <p className="small dim">Loss</p>
               </div>
             </div>
-            <p className="small muted" style={{ marginTop: 'var(--s4)' }}>
-              These two are declared once, outside every theme block, and no theme may redefine
-              them. No theme accent is allowed near either, which is why there is no green theme
-              and no red theme in the eight.
-            </p>
           </div>
         </div>
       </div>

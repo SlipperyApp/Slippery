@@ -37,8 +37,7 @@ export default async function Linked() {
 
       <h1>The Telegram bot</h1>
       <p className="muted" style={{ marginTop: 'var(--s2)', maxWidth: '58ch' }}>
-        Link a chat once. After that, forwarding a slip screenshot the moment you place it takes
-        about four seconds.
+        Link a chat once. After that, forwarding a slip takes about four seconds.
       </p>
 
       <div className="grid" style={{ marginTop: 'var(--s5)' }}>
@@ -46,13 +45,11 @@ export default async function Linked() {
           <h2 className="card__title">Your link code</h2>
           <p className="small muted" style={{ marginTop: 'var(--s2)' }}>
             Open <span className="mono">@SlipperyAppBot</span>, send <span className="mono">/start</span>,
-            then send this code. One code, one format, and the bot validates it with the same
-            function that generated it.
+            then send this code.
           </p>
           <CopyCode code={data.account.linkCode} />
           <p className="small dim card__foot">
-            A code used somewhere else asks you to confirm the move in the app first. An invalid
-            code gets &ldquo;Not a code I recognise&rdquo;, which never reveals whether it exists.
+            A code used somewhere else asks you to confirm the move in the app first.
           </p>
         </section>
 
@@ -91,9 +88,8 @@ export default async function Linked() {
             </table>
           </div>
           <p className="small dim card__foot">
-            Fixed prefixes so a reply is scannable in a busy chat: READ, TRACKING, FT, UNREADABLE,
-            DUPLICATE, PAUSED, LINKED. No greetings and no exclamation marks. Slip contents are
-            never logged, only a chat identifier and a short outcome line.
+            Fixed prefixes, so a reply is scannable in a busy chat: READ, TRACKING, FT,
+            UNREADABLE, DUPLICATE, PAUSED, LINKED. Slip contents are never logged.
           </p>
         </section>
       </div>
@@ -102,8 +98,8 @@ export default async function Linked() {
         <div className="banner" style={{ marginTop: 'var(--s5)' }}>
           <Icon name="alert" size={18} className="banner__icon" />
           <span>
-            The bot is not configured on this deployment, so its webhook rejects everything, which
-            is the safe direction. <Link href="/api/sources">What this deployment has</Link>.
+            The bot is not configured on this deployment, so its webhook rejects everything.{' '}
+            <Link href="/api/sources">What this deployment has</Link>.
           </span>
         </div>
       ) : null}

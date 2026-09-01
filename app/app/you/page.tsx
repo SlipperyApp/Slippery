@@ -96,9 +96,6 @@ export default async function You() {
               </li>
             ))}
           </ul>
-          <p className="small dim card__foot">
-            A division changes quietly at the end of a month. It states the number and stops.
-          </p>
         </section>
 
         <section className="card col-6">
@@ -115,7 +112,7 @@ export default async function You() {
             ))}
           </ul>
           <p className="small dim card__foot">
-            Every badge is for something you did in the app. None of them is for winning a bet.
+            Every badge is for something you did, never for winning a bet.
           </p>
         </section>
 

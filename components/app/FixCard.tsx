@@ -31,8 +31,7 @@ export function FixCard({ stripeReady, amountPence }: { stripeReady: boolean; am
       </button>
       {!stripeReady ? (
         <p className="small dim" style={{ marginTop: 'var(--s3)' }}>
-          Payments are not configured on this deployment, so this button will say so rather than
-          spinning. That is the honest failure, not a broken one.
+          Payments are not configured on this deployment, so this button says so rather than spinning.
         </p>
       ) : null}
       {note ? <p className="small muted" role="status" style={{ marginTop: 'var(--s3)' }}>{note}</p> : null}

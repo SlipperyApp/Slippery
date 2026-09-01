@@ -58,8 +58,7 @@ export default async function Social() {
           <div className="card__foot row" style={{ gap: 'var(--s3)' }}>
             <Link href="/app/social/discover" className="btn btn--ghost btn--sm">Find a group</Link>
             <p className="small dim">
-              Groups cannot be renamed once created, so a league nobody joined cannot become a
-              league everybody did.
+              Groups cannot be renamed once created.
             </p>
           </div>
         </section>

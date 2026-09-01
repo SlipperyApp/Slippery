@@ -98,7 +98,7 @@ export function NetHero({
                 />
               </div>
               <p className="small dim">
-                Yours, and off by default. A target nobody set is not a measure of anything.
+                Yours, and off by default.
               </p>
             </div>
           </ModuleMenu>

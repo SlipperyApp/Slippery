@@ -55,8 +55,7 @@ export function LoginForm({ startWithReset = false }: { startWithReset?: boolean
           <div>
             <p className="card__title">If that address has an account, a reset link is on its way</p>
             <p className="small muted" style={{ marginTop: 'var(--s2)' }}>
-              It is deliberately worded that way: telling you whether an address exists would tell
-              anybody else too. The link is good for one hour.
+              Worded that way on purpose: saying whether an address exists would say it to anybody. The link lasts an hour.
             </p>
             <button type="button" className="btn btn--link" style={{ marginTop: 'var(--s3)' }}
               onClick={() => { setSent(false); setMode('sign-in'); }}>

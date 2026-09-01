@@ -59,9 +59,7 @@ export default async function TrialPage() {
           <section className="card col-12">
             <p className="card__title">When it ends</p>
             <p className="small muted" style={{ marginTop: 'var(--s2)', maxWidth: '62ch' }}>
-              The yearly plan starts automatically at {money(2999)}, and there is deliberately no
-              reminder email. A reminder is a nudge, and cancelling is one tap from Settings at any
-              point before it starts. Your ledger and your export stay live whatever you decide.
+              The yearly plan starts automatically at {money(2999)}. No reminder email, deliberately. Cancel in one tap from Settings any time before it starts.
             </p>
             <div className="row row--wrap card__foot" style={{ gap: 'var(--s2)' }}>
               <Link href="/app/settings/plan" className="btn btn--primary btn--sm">See the plans</Link>

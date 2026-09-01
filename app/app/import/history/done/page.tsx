@@ -47,8 +47,7 @@ export default function ImportDone() {
       </div>
 
       <p className="small dim" style={{ marginTop: 'var(--s5)' }}>
-        Imported bets carry a source of <span className="mono">csv_import</span> in your change
-        history, so this import can always be told apart from a slip you captured.
+        Imported bets carry a source of <span className="mono">csv_import</span> in your change history.
       </p>
     </div>
   );

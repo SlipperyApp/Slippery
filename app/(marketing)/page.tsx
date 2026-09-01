@@ -2,7 +2,7 @@ import Link from 'next/link';
 import type { Metadata } from 'next';
 import { Icon } from '@/components/Icon';
 import { SettleDemo } from '@/components/SettleDemo';
-import { SectionHead, Checks, RowList } from '@/components/MarketingChrome';
+import { SectionHead, RowList } from '@/components/MarketingChrome';
 import { BetTypeWall } from '@/components/marketing/BetTypeWall';
 import { SplitHeadline } from '@/components/marketing/SplitHeadline';
 import { ThemeStrip } from '@/components/marketing/ThemeStrip';
@@ -86,8 +86,8 @@ export default function Landing() {
               setup="A record you make afterwards"
               claim="is a record of your best days."
             >
-              Capture happens at placement, not at settlement. A ledger written before you know
-              how it went cannot quietly become only the bets you wanted to remember.
+              Capture happens at placement. A ledger written before you know how it went cannot
+              become only the bets you wanted to remember.
             </SectionHead>
             <RowList
               rows={[
@@ -98,14 +98,6 @@ export default function Landing() {
               ]}
             />
           </div>
-          <Checks
-            items={[
-              'Confirmed by you before anything is written',
-              'The price is read, never guessed',
-              'Duplicate slips are caught before they double count',
-              'Manual and shop bets are first class, and marked as such',
-            ]}
-          />
         </div>
       </section>
 
@@ -117,9 +109,8 @@ export default function Landing() {
             setup="Most trackers read a single."
             claim="This one reads a Lucky 15."
           >
-            The bookmaker template is detected first and the slip is parsed second, because
-            generic text recognition falls over on a permed bet. Confidence is scored per field,
-            not per slip.
+            The bookmaker template is detected first, then the slip is parsed. Confidence is
+            scored per field, not per slip.
           </SectionHead>
           <BetTypeWall />
           <div className="two" style={{ marginTop: 'var(--s7)' }}>
@@ -133,12 +124,8 @@ export default function Landing() {
             <div className="card">
               <p className="label">Flag a misread</p>
               <p style={{ marginTop: 'var(--s3)' }}>
-                Every read carries a flag button. Press it and the slip goes back for a human
-                look and the credit returns to your allowance.
-              </p>
-              <p className="small muted" style={{ marginTop: 'var(--s3)' }}>
-                A missing price is visible. A wrong one is not. That is why Slippery asks rather
-                than guesses, and why a wrong grade is treated as worse than no grade.
+                Every read carries a flag. Press it and the slip goes back for a human look, and
+                the credit returns to your allowance.
               </p>
               <div className="card__foot">
                 <Link href="/how" className="btn btn--ghost btn--sm">
@@ -159,9 +146,8 @@ export default function Landing() {
               setup="Nobody separates the two."
               claim="Your headline is two numbers."
             >
-              Free bets, bonus funds and boosts are flagged at ingestion. Up {money(118400)} means
-              something different when {money(89000)} of it came from sign-up offers, and for most
-              UK bettors it did.
+              Free bets, bonus funds and boosts are flagged as the slip is read. Up {money(118400)}
+              means something different when {money(89000)} of it came from sign-up offers.
             </SectionHead>
             <SplitHeadline />
           </div>
@@ -171,33 +157,23 @@ export default function Landing() {
       {/* ------------------------------------------------------ settlement */}
       <section className="sect" id="settlement">
         <div className="wrap">
-          <SectionHead
-            badge="Settlement"
-            setup="Six outcomes, and a slider."
-            claim="Cash out included, twice if you like."
-          >
-            A bet is a container with a settlement ledger, not a row with a result. That is what
-            makes a repeated partial cash out, exchange commission, a Rule 4 deduction and a promo
-            refund landing a week later all representable.
-          </SectionHead>
-          <div className="grid" style={{ marginTop: 'var(--s6)' }}>
-            {[
-              { t: 'Won and lost', s: '90 minutes only. Extra time and penalties never count.', i: 'check' as const },
-              { t: 'Void', s: 'Postponed and cancelled. Stake back, excluded from turnover and from ROI.', i: 'minus' as const },
-              { t: 'Push and split', s: 'Whole lines push. Quarter lines split the stake.', i: 'split' as const },
-              { t: 'Cash out, in eighths', s: 'Of the remaining stake, relabelled after each pull, repeatable.', i: 'cash' as const },
-            ].map((c) => (
-              <div className="card col-6" key={c.t} style={{ gridColumn: 'span 4' }}>
-                <Icon name={c.i} size={22} style={{ color: 'var(--accent)' }} />
-                <p className="card__title" style={{ marginTop: 'var(--s3)' }}>{c.t}</p>
-                <p className="small muted" style={{ marginTop: 'var(--s2)' }}>{c.s}</p>
-              </div>
-            ))}
+          <div className="two">
+            <SectionHead
+              setup="Six outcomes, and a slider."
+              claim="Cash out included, twice if you like."
+            >
+              A bet is a container with a settlement ledger, not a row with a result. Anything
+              uncertain asks rather than guesses.
+            </SectionHead>
+            <RowList
+              rows={[
+                { title: 'Won and lost', sub: '90 minutes only. Extra time and penalties never count.', icon: 'check', on: true },
+                { title: 'Void', sub: 'Stake back, out of turnover and out of return.', icon: 'minus' },
+                { title: 'Push and split', sub: 'Whole lines push. Quarter lines split the stake.', icon: 'split' },
+                { title: 'Cash out, in eighths', sub: 'Of the stake still standing, repeatable.', icon: 'cash' },
+              ]}
+            />
           </div>
-          <p className="small dim" style={{ marginTop: 'var(--s4)', maxWidth: '62ch' }}>
-            Anything uncertain resolves to a question rather than a guess: player props, anytime
-            scorer, cards, corners, bet builders, same game multis and next goal always ask.
-          </p>
         </div>
       </section>
 
@@ -211,17 +187,9 @@ export default function Landing() {
                 setup="Ranked in units."
                 claim="Never in pounds."
               >
-                Groups rank on units so a bigger bankroll is not a bigger score. Positions read
-                as a place out of a field, and a division moves quietly at the end of a month.
+                Units, so a bigger bankroll is not a bigger score. Stakes are never visible
+                outside a group.
               </SectionHead>
-              <Checks
-                items={[
-                  'Slip backed percentage on every member',
-                  'Units only outside a group, never stakes',
-                  'Late edits are visible where a group asks for it',
-                  'Nothing tells you to bet more',
-                ]}
-              />
               <Link href="/social" className="btn btn--ghost" style={{ marginTop: 'var(--s5)' }}>
                 Groups and monthly leagues <Icon name="arrowRight" size={16} />
               </Link>
@@ -246,7 +214,6 @@ export default function Landing() {
                   </li>
                 ))}
               </ul>
-              <p className="small dim card__foot">Units to 1dp on a league, because a league is a comparison rather than a record.</p>
             </div>
           </div>
         </div>
@@ -262,7 +229,7 @@ export default function Landing() {
             claim="Pick a theme."
           >
             Profit green measures 1.07 to 1 on beige, so there is no light mode. The two result
-            colours are fixed in every theme, which is why none of the eight is green or red.
+            colours are fixed, so none of the eight is green or red.
           </SectionHead>
           <ThemeStrip />
         </div>
@@ -277,9 +244,8 @@ export default function Landing() {
               setup="One price, both platforms."
               claim="£3.49 a month, £29.99 a year."
             >
-              Free for 14 days or 35 slips, whichever runs out first. The yearly plan starts
-              automatically when the trial ends, and your ledger and export stay live even if the
-              card does not.
+              Free for 14 days or 35 slips. The yearly plan starts when the trial ends, and your
+              ledger and export stay live even if the card does not.
             </SectionHead>
             <div className="rows">
               <div className="rowcard rowcard--on">
@@ -327,20 +293,17 @@ export default function Landing() {
 
       <Makers tipUrl={process.env.NEXT_PUBLIC_TIP_URL} />
 
-      {/* ------------------------------------------------------- apps line */}
+      {/* --------------------------------------------------------- the end */}
       <section className="sect" style={{ paddingTop: 0 }}>
-        <div className="wrap">
-          <div className="card" style={{ textAlign: 'center', alignItems: 'center' }}>
-            <p className="card__title">iOS and Android coming soon. The web app works today.</p>
-            <p className="small muted" style={{ marginTop: 'var(--s2)', maxWidth: '52ch' }}>
-              Add it to your home screen and it behaves like an app. When the listings are live
-              the real store badges go here, unmodified, as both companies require.
-            </p>
-            <Link href="/waiting-list" className="btn btn--ghost btn--sm" style={{ marginTop: 'var(--s4)' }}>
-              Join the waiting list
-            </Link>
-            <MadeBy />
-          </div>
+        <div className="wrap column" style={{ textAlign: 'center' }}>
+          <p className="card__title">iOS and Android coming soon. The web app works today.</p>
+          <p className="small muted" style={{ marginTop: 'var(--s2)' }}>
+            Add it to your home screen and it behaves like one.
+          </p>
+          <p style={{ marginTop: 'var(--s5)' }}>
+            <Link href="/waiting-list" className="btn btn--ghost btn--sm">Join the waiting list</Link>
+          </p>
+          <MadeBy />
         </div>
       </section>
 

@@ -36,16 +36,14 @@ export default function SaveFailed() {
         </ul>
         <p className="small muted card__foot">
           {money(9900)} is {money(6150)} more than the bet could return at 3.00 on{' '}
-          {money(1250)}. If the bookmaker really did pay that, the price was not 3.00 and the price
-          is the thing to correct.
+          {money(1250)}. If the bookmaker really did pay that, correct the price.
         </p>
       </div>
 
       <div className="card" style={{ marginTop: 'var(--s4)' }}>
         <p className="card__title">What is in your ledger right now</p>
         <p className="small muted" style={{ marginTop: 'var(--s2)' }}>
-          Exactly what was there before you pressed the button. The event and the recompute of
-          bet_state happen in one transaction, so a refused write leaves nothing half done.
+          Exactly what was there before you pressed the button. Nothing half-written is left behind.
         </p>
       </div>
 

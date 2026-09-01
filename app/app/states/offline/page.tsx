@@ -23,8 +23,7 @@ export default function Offline() {
       <h1 style={{ marginTop: 'var(--s4)' }}>Two slips are waiting, and nothing has been lost</h1>
       <p className="lead" style={{ marginTop: 'var(--s3)' }}>
         A bet captured with no signal is held on this device and sent the moment there is one. It
-        keeps the time you captured it, not the time it eventually sent, because that is the
-        moment the record is meant to be from.
+        keeps the time you captured it, not the time it sent.
       </p>
 
       <div className="card" style={{ marginTop: 'var(--s6)' }}>

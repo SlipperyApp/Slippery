@@ -37,8 +37,7 @@ export default async function Plan() {
             <li className="brow"><span className="brow__title">Then</span><span className="fig fig--s tnum">{money(2999)} a year</span></li>
           </ul>
           <p className="small dim card__foot">
-            The yearly plan starts automatically when the trial ends, and there is deliberately no
-            reminder email: a reminder is a nudge. Cancelling is one tap and takes effect
+            The yearly plan starts when the trial ends. Cancelling is one tap and takes effect
             immediately.
           </p>
         </section>

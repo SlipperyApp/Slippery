@@ -9,7 +9,7 @@ import { StickyCta } from '@/components/marketing/StickyCta';
 export const metadata: Metadata = {
   title: 'Groups and monthly leagues',
   description:
-    'Slippers rank in units, never in pounds, so a bigger bankroll is not a bigger score. Slip backed percentages, honest divisions, and nothing that nudges you to bet more.',
+    'Ranked in units, never in pounds, so a bigger bankroll is not a bigger score.',
   alternates: { canonical: '/social' },
   openGraph: {
     title: 'Groups and monthly leagues',
@@ -38,8 +38,8 @@ export default function Social() {
             <span>should not be a bigger score.</span>
           </h1>
           <p className="sect__p">
-            Groups rank in units. A Slipper staking £5 and a Slipper staking £500 are directly
-            comparable, and outside a group only units are ever visible, never stakes.
+            Groups rank in units, so a £5 stake and a £500 stake are directly comparable.
+            Outside a group, only units are visible, never stakes.
           </p>
         </div>
       </section>
@@ -63,8 +63,7 @@ export default function Social() {
                 ))}
               </ul>
               <p className="small dim card__foot">
-                Units to 1dp here, 2dp everywhere else: a league is a comparison rather than a
-                record, and a column of 2dp units is unreadable.
+                Units to 1dp here, 2dp everywhere else.
               </p>
             </div>
 
@@ -74,15 +73,14 @@ export default function Social() {
                 setup="Anyone can type in a winner."
                 claim="A percentage says who does."
               >
-                A bet captured from a slip at placement is slip backed. One typed in afterwards is
-                not, and it says so. A group can require slip backed bets only.
+                A bet captured from a slip at placement is slip backed. One typed in afterwards
+                is not, and a group can require slip backed only.
               </SectionHead>
               <Checks
                 items={[
                   'Members see each other’s unit size',
                   'Outside a group, units only, never stakes',
                   'Late edits are visible where a group asks for it',
-                  'Positions read as a place out of a field',
                 ]}
               />
             </div>
@@ -98,8 +96,7 @@ export default function Social() {
               setup="A leaderboard is an engagement mechanic."
               claim="This one refuses to behave like one."
             >
-              Nothing in Slippery nudges toward more volume. The rules below are constraints on the
-              product, not features of it.
+              Nothing here nudges you toward more volume.
             </SectionHead>
             <RowList
               rows={[
@@ -107,13 +104,12 @@ export default function Social() {
                 { title: 'Nothing late at night', sub: 'No push after the last fixture of the evening, for any reason.', icon: 'clock' },
                 { title: '"Moving to League One next month"', sub: 'Never "RELEGATED". State the number and stop.', icon: 'trophy' },
                 { title: 'Celebrate app actions, never outcomes', sub: 'A capture streak is worth marking. A winning bet is not.', icon: 'check' },
-                { title: 'Take a break, one control', sub: 'Pauses notifications and leagues, touches nothing in your ledger, and does not argue.', icon: 'pause' },
+                { title: 'Take a break, one control', sub: 'Pauses notifications and leagues. Touches nothing in your ledger.', icon: 'pause' },
               ]}
             />
           </div>
           <p className="small dim" style={{ marginTop: 'var(--s6)', maxWidth: '68ch' }}>
             If any of this stops being true, it is a bug. Report it and it will be treated as one.
-            Free and confidential help is at BeGambleAware.org and on 0808 8020 133, 24 hours a day.
           </p>
         </div>
       </section>
@@ -123,9 +119,7 @@ export default function Social() {
           <div className="card" style={{ alignItems: 'flex-start' }}>
             <p className="card__title">Groups take about a minute to start</p>
             <p className="small muted" style={{ marginTop: 'var(--s2)', maxWidth: '56ch' }}>
-              Name it, pick whether it is open or by code, and share the code. Groups cannot be
-              renamed afterwards, so that a league nobody joined cannot become a league everybody
-              did.
+              Name it, choose open or by code, and share the code. It cannot be renamed afterwards.
             </p>
             <Link href="/app/social" className="btn btn--primary" style={{ marginTop: 'var(--s5)' }}>
               Look at a group <Icon name="arrowRight" size={16} />

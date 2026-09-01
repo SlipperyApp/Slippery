@@ -27,8 +27,8 @@ export default async function ReadOnly() {
       <h1 style={{ marginTop: 'var(--s4)' }}>Two payments failed, so new slips are paused</h1>
       <p className="lead" style={{ marginTop: 'var(--s3)', maxWidth: '62ch' }}>
         Nothing has been deleted and nothing will be. Your {count(all.count)} bets, worth{' '}
-        {money(all.netPence, data.account.currency, { sign: true })} net, are exactly where you left
-        them, and your export works right now.
+        {money(all.netPence, data.account.currency, { sign: true })} net, are where you left them,
+        and your export works right now.
       </p>
 
       <div className="grid" style={{ marginTop: 'var(--s6)' }}>

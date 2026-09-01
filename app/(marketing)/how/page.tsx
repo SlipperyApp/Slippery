@@ -9,7 +9,7 @@ import { StickyCta } from '@/components/marketing/StickyCta';
 export const metadata: Metadata = {
   title: 'How Slippery works',
   description:
-    'Forward a slip, confirm what was read, and it settles itself. How capture at placement, the reader, and the settlement ledger actually work.',
+    'Forward a slip, confirm what was read, and it settles itself. The reader, the settlement rules and the ledger.',
   alternates: { canonical: '/how' },
   openGraph: {
     title: 'How Slippery works',
@@ -20,12 +20,12 @@ export const metadata: Metadata = {
 };
 
 const STEPS = [
-  { n: '01', t: 'You place the bet', s: 'On whatever app or in whatever shop you already use. Slippery is never between you and the bookmaker.' },
-  { n: '02', t: 'You send the slip', s: 'Forward the screenshot to the bot, upload it, photograph a shop slip, or type it in. Under ten seconds either way.' },
-  { n: '03', t: 'The reader reads it', s: 'The bookmaker template is detected first, then the fields are parsed and each one is scored for confidence on its own.' },
-  { n: '04', t: 'You confirm', s: 'You see exactly what was read before anything is written. A low confidence field is named, not guessed at.' },
-  { n: '05', t: 'It settles itself', s: 'Ninety minute scores only. Anything uncertain asks you rather than grading it wrong.' },
-  { n: '06', t: 'It reports', s: 'Your ledger, your calendar, your breakdowns, and the split between money you won and money they gave you.' },
+  { n: '01', t: 'You place the bet', s: 'On whatever app or shop you already use. Slippery is never between you and the bookmaker.' },
+  { n: '02', t: 'You send the slip', s: 'Forward the screenshot to the bot, upload it, photograph a shop slip, or type it in.' },
+  { n: '03', t: 'The reader reads it', s: 'It detects the bookmaker template, then scores every field for confidence on its own.' },
+  { n: '04', t: 'You confirm', s: 'You see what was read before anything is written. Low confidence fields are named, not guessed.' },
+  { n: '05', t: 'It settles itself', s: 'Ninety minute scores only. Anything uncertain asks you.' },
+  { n: '06', t: 'It reports', s: 'Ledger, calendar, breakdowns, and the split between money you won and money they gave you.' },
 ];
 
 export default function How() {
@@ -39,7 +39,8 @@ export default function How() {
             <span>The rest is the point of paying for it.</span>
           </h1>
           <p className="sect__p">
-            Capture happens at placement, not settlement. A record made before you know how it went cannot become only the bets you wanted to remember.
+            Capture happens at placement, not settlement, so the record cannot quietly become
+            only the bets you wanted to remember.
           </p>
         </div>
       </section>
@@ -67,21 +68,19 @@ export default function How() {
                 setup="Not per slip."
                 claim="A slip is right in parts."
               >
-                Scoring a whole slip means one bad field poisons nineteen good ones, or nineteen good
-                ones hide one bad one. Slippery scores each field on its own.
+                Each field is scored on its own, so one bad field cannot poison nineteen good ones.
               </SectionHead>
               <RowList
                 rows={[
-                  { title: 'High confidence', sub: 'Saved silently. You are not asked to confirm what was never in doubt.', icon: 'check', on: true },
-                  { title: 'Medium confidence', sub: 'One targeted question naming the field, not a whole form to fill in again.', icon: 'help' },
-                  { title: 'Low confidence', sub: 'Held out of the aggregates until you settle it, so a guess cannot move your ROI.', icon: 'alert' },
+                  { title: 'High confidence', sub: 'Saved without asking you.', icon: 'check', on: true },
+                  { title: 'Medium confidence', sub: 'One question, naming the field.', icon: 'help' },
+                  { title: 'Low confidence', sub: 'Held out of your totals until you settle it.', icon: 'alert' },
                 ]}
               />
               <Checks
                 items={[
-                  'A missing price is visible, a wrong one is not',
                   'Flag a misread and the credit comes back',
-                  'Duplicate slips are caught on selection, stake, bookmaker and kick-off',
+                  'Duplicates caught on selection, stake, bookmaker and kick-off',
                   'Manual and shop bets are marked, never hidden',
                 ]}
               />
@@ -97,20 +96,17 @@ export default function How() {
             badge="Settlement"
             setup="A wrong grade is worse"
             claim="than no grade at all."
-          >
-            Everything below is a rule, not a preference. Each one exists because getting it wrong
-            corrupts a real profit and loss figure that somebody is making decisions from.
-          </SectionHead>
+          />
           <div className="grid" style={{ marginTop: 'var(--s6)' }}>
             {[
-              { t: '90 minutes only', s: 'Extra time and penalties never count. If the feed cannot prove the 90 minute score, Slippery asks.' },
-              { t: 'Whole lines push', s: 'Over 2.0 on a 1-1 is a void, not a loss. Your stake comes back and the bet leaves the ROI denominator.' },
+              { t: '90 minutes only', s: 'Extra time and penalties never count. If the feed cannot prove the score, it asks.' },
+              { t: 'Whole lines push', s: 'Over 2.0 on a 1-1 is a void. Your stake comes back and the bet leaves your return.' },
               { t: 'Quarter lines split', s: 'Over 2.25 on a 1-1 loses half the stake and returns the other half.' },
-              { t: 'Handicaps by bookmaker', s: 'bet365 settles Asian, so a whole line pushes. Most others give the handicap draw its own outcome, so a -1 acts like a -1.5.' },
-              { t: 'Postponed is void', s: 'Cancelled too. Abandoned asks, because bookmakers genuinely differ on it.' },
-              { t: 'Some markets always ask', s: 'Player props, anytime scorer, cards, corners, bet builders, same game multis and next goal. Never graded from a feed.' },
-              { t: 'Accumulators wait', s: 'Every leg must grade or the whole bet defers. Void legs drop out and the price recalculates.' },
-              { t: 'Cash out is yours', s: 'It cannot be detected from a feed, so it is always your action. Full, or in eighths of what is left.' },
+              { t: 'Handicaps by bookmaker', s: 'bet365 settles Asian, so a whole line pushes. Most others give the handicap draw its own outcome.' },
+              { t: 'Postponed is void', s: 'Cancelled too. Abandoned asks, because bookmakers differ.' },
+              { t: 'Some markets always ask', s: 'Player props, scorers, cards, corners, bet builders, same game multis, next goal.' },
+              { t: 'Accumulators wait', s: 'Every leg must grade or the bet defers. Void legs drop out and the price recalculates.' },
+              { t: 'Cash out is yours', s: 'Always your action. Full, or in eighths of what is left.' },
             ].map((r) => (
               <div key={r.t} className="card col-4">
                 <p className="card__title">{r.t}</p>
@@ -127,8 +123,7 @@ export default function How() {
             <p className="card__title">Start with one slip and see</p>
             <p className="small muted" style={{ marginTop: 'var(--s2)', maxWidth: '58ch' }}>
               Fourteen days or thirty five slips, whichever runs out first. Your ledger and your
-              export stay live afterwards either way, because a betting record belongs to the person
-              who kept it.
+              export stay live afterwards either way.
             </p>
             <div className="row" style={{ marginTop: 'var(--s5)', gap: 'var(--s4)' }}>
               <Link href="/signup" className="btn btn--primary">Start free</Link>

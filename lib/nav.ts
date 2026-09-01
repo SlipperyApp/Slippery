@@ -21,14 +21,14 @@ export const TAB_NAV: NavItem[] = [
   { href: '/app/you', label: 'You', icon: 'you', match: ['/app/you', '/app/settings', '/app/billing'] },
 ];
 
+/** Four. It was seven, and seven links plus two buttons is a menu you read
+ *  rather than a bar you use. Groups, Import and Themes are one scroll away in
+ *  the footer, which is where a visitor looks for the rest of a site. */
 export const MARKETING_NAV = [
   { href: '/how', label: 'How it works' },
   { href: '/demo', label: 'Demo' },
-  { href: '/social', label: 'Groups' },
-  { href: '/import', label: 'Import' },
-  { href: '/themes', label: 'Themes' },
   { href: '/pricing', label: 'Pricing' },
-  { href: '/faq', label: 'FAQ' },
+  { href: '/faq', label: 'Questions' },
 ];
 
 export function isActive(pathname: string, item: { href: string; match: string[] }): boolean {

@@ -93,10 +93,6 @@ export default function NewDashboard() {
         </section>
       </div>
 
-      <p className="small dim" style={{ marginTop: 'var(--s5)' }}>
-        Nothing here says &ldquo;no bets yet&rdquo;. The module is shown for what it will be, with
-        the one action that fills it on top.
-      </p>
     </>
   );
 }

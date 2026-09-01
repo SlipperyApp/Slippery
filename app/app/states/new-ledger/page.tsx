@@ -52,10 +52,6 @@ export default function NewLedger() {
         />
       </div>
 
-      <p className="small dim" style={{ marginTop: 'var(--s4)' }}>
-        Capture at placement is the whole idea: a record written afterwards is a record of the bets
-        you felt like writing down.
-      </p>
     </>
   );
 }

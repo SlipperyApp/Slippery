@@ -36,8 +36,7 @@ export function Makers({ tipUrl }: { tipUrl?: string }) {
             <span>Zhang and Aniket.</span>
           </h2>
           <p className="sect__p">
-            They designed every screen in it, including the calendar, which is the part
-            people actually come back for.
+            They designed every screen in it, including the calendar.
           </p>
 
           <ul className="makers__list">
@@ -57,7 +56,7 @@ export function Makers({ tipUrl }: { tipUrl?: string }) {
         <div className="card makers__tip">
           <p className="card__title">Buy them a coffee</p>
           <p className="small muted" style={{ marginTop: 'var(--s2)' }}>
-            Nothing in Slippery is behind a tip. This is a coffee, not a feature.
+            Nothing here is behind a tip.
           </p>
           {tipUrl ? (
             <Link
@@ -71,7 +70,7 @@ export function Makers({ tipUrl }: { tipUrl?: string }) {
             </Link>
           ) : (
             <p className="small dim" style={{ marginTop: 'var(--s5)' }}>
-              Not set up yet. No button until there is somewhere for it to go.
+              Not set up yet.
             </p>
           )}
         </div>

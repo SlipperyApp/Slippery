@@ -84,10 +84,6 @@ export function SettingsPanes({ groups, account }: { groups: SettingsGroup[]; ac
         {open === null ? (
           <div className="card">
             <p className="card__title">Pick a group</p>
-            <p className="small muted" style={{ marginTop: 'var(--s2)', maxWidth: '52ch' }}>
-              Six groups rather than thirty three flat rows, because settings is rarely visited and
-              a wall of switches is where a dead control goes to hide.
-            </p>
             <div className="hr" />
             <p className="label">Right now</p>
             <ul style={{ marginTop: 'var(--s3)' }}>
@@ -238,8 +234,7 @@ export function SettingsPanes({ groups, account }: { groups: SettingsGroup[]; ac
           <div className="card">
             <h2 className="card__title">Data</h2>
             <p className="small muted" style={{ marginTop: 'var(--s2)' }}>
-              Export works in read only and after cancelling, because a betting record belongs to
-              the person who kept it.
+              Export works in read only and after cancelling.
             </p>
             <div className="row row--wrap" style={{ gap: 'var(--s2)', marginTop: 'var(--s4)' }}>
               {(['csv', 'json', 'pdf'] as const).map((f) => (
@@ -296,9 +291,8 @@ export function SettingsPanes({ groups, account }: { groups: SettingsGroup[]; ac
           <div className="card">
             <h2 className="card__title">Sharing</h2>
             <p className="small muted" style={{ marginTop: 'var(--s2)' }}>
-              Outside a group only units are ever visible, never stakes. Inside a group, members
-              see each other&rsquo;s unit size and that cannot be turned off while you are a member,
-              because a comparison without it means nothing.
+              Outside a group, only units are visible, never stakes. Inside a group, members see
+              each other&rsquo;s unit size, and that cannot be turned off while you are a member.
             </p>
             {[
               ['Profile visible to other Slippers', 'Your units, your slip backed percentage and your groups.'],
@@ -335,8 +329,7 @@ export function SettingsPanes({ groups, account }: { groups: SettingsGroup[]; ac
               ))}
             </ul>
             <p className="small dim">
-              The handicap convention is a lookup per bookmaker, never a hardcode, which is why a
-              -1 at bet365 and a -1 at Sky Bet settle differently on the same scoreline.
+              A &minus;1 at bet365 and a &minus;1 at Sky Bet settle differently, and each follows its own book.
             </p>
 
             <div className="hr" />
@@ -350,8 +343,7 @@ export function SettingsPanes({ groups, account }: { groups: SettingsGroup[]; ac
               ))}
             </ul>
             <p className="small dim">
-              Aliases collapse each bookmaker&rsquo;s own wording, so the By market breakdown is not
-              thirty rows of the same thing.
+              Aliases collapse each bookmaker&rsquo;s own wording into one market.
             </p>
           </div>
         ) : null}
@@ -376,8 +368,7 @@ export function SettingsPanes({ groups, account }: { groups: SettingsGroup[]; ac
               ))}
             </ul>
             <p className="small dim">
-              Eight, all dark. Switching fades out for 190ms, swaps, and fades back; colour is
-              never tweened, or text goes unreadable through the middle.
+              Eight, all dark. There is no light mode.
             </p>
 
             <div className="hr" />

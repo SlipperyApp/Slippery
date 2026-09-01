@@ -8,7 +8,7 @@ import { ScopeBar } from '@/components/app/ScopeBar';
 import { LedgerRows } from '@/components/app/LedgerRows';
 import { Figure } from '@/components/app/Module';
 import { Icon } from '@/components/Icon';
-import { money, pct, count, TZ_LABEL } from '@/lib/format';
+import { money, pct, count } from '@/lib/format';
 
 export const metadata: Metadata = {
   title: 'Ledger',
@@ -74,7 +74,7 @@ export default async function Ledger({
             Turnover and ROI exclude {money(s.voidedStakePence, account.currency)} of voided stakes.
           </p>
         ) : (
-          <p className="small dim card__foot">{scopeLabel(scope)}. {TZ_LABEL}.</p>
+          <p className="small dim card__foot">{scopeLabel(scope)}.</p>
         )}
       </div>
 

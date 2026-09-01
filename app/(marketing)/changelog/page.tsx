@@ -3,11 +3,11 @@ import { Breadcrumbs } from '@/components/marketing/Breadcrumbs';
 
 export const metadata: Metadata = {
   title: 'What changed',
-  description: 'Written as what changed for you, not as what shipped. Newest first.',
+  description: 'What changed for you, newest first.',
   alternates: { canonical: '/changelog' },
   openGraph: {
     title: 'What changed in Slippery',
-    description: 'Written as what changed for you, not as what shipped.',
+    description: 'What changed for you, newest first.',
     url: '/changelog',
     images: [{ url: '/og?title=What+changed&sub=For+you%2C+not+for+us', width: 1200, height: 630, alt: 'Slippery changelog' }],
   },
@@ -18,27 +18,27 @@ const ENTRIES: { date: string; items: { t: string; s: string }[] }[] = [
   {
     date: '31 August 2026',
     items: [
-      { t: 'Your dashboard has one layout now', s: 'The modules stopped moving. Every one has a fixed place and a fixed height, so a figure is where it was yesterday. Nothing to arrange, nothing to lose.' },
-      { t: 'One scope bar governs everything below it', s: 'Change the period once and every module follows, and the scope rides in the link so a shared dashboard arrives showing what you were looking at. Three modules deliberately ignore it and say so in their own header.' },
-      { t: 'Your headline is two numbers', s: 'Money you won, and money they gave you. Free bets, bonus funds and boosts are separated as the slip is read. A good year built on sign-up offers stops looking like a good year of betting.' },
-      { t: 'Four breakdowns became one', s: 'Sport, market, tipster and bookmaker share one module and one control. Rows under five bets are greyed, because profit without volume ranks one lucky bet above forty disciplined ones.' },
-      { t: 'Closing line value is gone', s: 'It could not be sourced honestly. An average taken over whichever bets happened to have a closing price overstates itself, and a figure you cannot trust is worse than no figure.' },
+      { t: 'Your dashboard has one layout now', s: 'Every module has a fixed place and a fixed height. Nothing to arrange, nothing to lose.' },
+      { t: 'One scope bar governs everything below it', s: 'Set the period once and every module follows. Three ignore it and say so in their header.' },
+      { t: 'Your headline is two numbers', s: 'Money you won, and money they gave you. Free bets, bonus funds and boosts are split out as the slip is read.' },
+      { t: 'Four breakdowns became one', s: 'Sport, market, tipster and bookmaker share one module and one control. Rows under five bets are greyed.' },
+      { t: 'Closing line value is gone', s: 'It could not be sourced honestly, and a figure you cannot trust is worse than none.' },
     ],
   },
   {
     date: '24 August 2026',
     items: [
-      { t: 'A misread slip gives you the credit back', s: 'Every read carries a flag. Press it and the slip goes for a human look and the slip returns to your allowance. Your worst moment with the reader should cost you nothing.' },
-      { t: 'Partial cash out stopped lying about the stake', s: 'The eighths are of what is still standing, not of what you originally staked, so a second pull lands on the right base. Pull it as many times as you actually did.' },
-      { t: 'Quarter lines settle properly', s: 'Over 2.25 on a 1-1 loses half your stake and returns the other half, which is what your bookmaker did. It used to record a whole loss.' },
+      { t: 'A misread slip gives you the credit back', s: 'Press the flag on any read. It goes for a human look and returns to your allowance.' },
+      { t: 'Partial cash out stopped lying about the stake', s: 'The eighths are of what is still standing, so a second pull lands on the right base.' },
+      { t: 'Quarter lines settle properly', s: 'Over 2.25 on a 1-1 loses half and returns half. It used to record a whole loss.' },
     ],
   },
   {
     date: '17 August 2026',
     items: [
-      { t: 'Handicaps follow your bookmaker', s: 'bet365 settles Asian, so a -1 on a one goal win is a void. Most others give the handicap draw its own outcome, so the same bet loses. One rule for both was wrong for one of them every time.' },
-      { t: 'Nothing is graded from a feed that cannot prove 90 minutes', s: 'Extra time and penalties never counted, but the old grader could not always tell. Now it asks instead. A wrong grade is worse than no grade.' },
-      { t: 'Your counts agree with each other', s: 'The banner, the ledger and the facets used to say 486, 482 and 474. They all come from one query now, so the facet total is the row total.' },
+      { t: 'Handicaps follow your bookmaker', s: 'bet365 settles Asian, so a -1 on a one goal win voids. Most others give the handicap draw its own outcome.' },
+      { t: 'Nothing is graded from a feed that cannot prove 90 minutes', s: 'Extra time and penalties never counted. The grader asks now instead of guessing.' },
+      { t: 'Your counts agree with each other', s: 'The banner, the ledger and the facets come from one query, so the facet total is the row total.' },
     ],
   },
 ];

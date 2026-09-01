@@ -20,9 +20,8 @@ export default function Resolve() {
       <div className="column column--wide" style={{ marginInline: 0 }}>
         <h1>Combined selections</h1>
         <p className="muted" style={{ marginTop: 'var(--s2)', maxWidth: '62ch' }}>
-          These rows have an ampersand in them and the importer cannot tell whether it joins two
-          selections or sits inside one name. A guess here turns one bet into two, or two into one,
-          and both are wrong in a way nobody notices for months.
+          These rows have an ampersand in them, and the importer cannot tell whether it joins two
+          selections or sits inside one name. It asks rather than guessing.
         </p>
         <div style={{ marginTop: 'var(--s5)' }}><Resolver items={UNRESOLVED} /></div>
       </div>

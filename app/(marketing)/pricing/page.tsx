@@ -76,7 +76,7 @@ export default function Pricing() {
               </div>
               <p className="small muted">a month, cancel any month</p>
               <p className="small dim" style={{ marginTop: 'var(--s3)' }}>
-                Exactly the same product. There is no feature behind the yearly plan.
+                Exactly the same product.
               </p>
               <div className="card__foot">
                 <Link href="/signup/plan" className="btn btn--ghost btn--wide">Start the free trial</Link>
@@ -103,8 +103,7 @@ export default function Pricing() {
               setup="Nothing is deleted."
               claim="Ever, for any reason."
             >
-              One retry after three days. Two failures and the account goes read only: new slips,
-              imports and the bot pause. The ledger and the export stay fully live.
+              One retry after three days. Two failures and the account goes read only.
             </SectionHead>
             <div className="rows">
               <div className="rowcard">
@@ -117,7 +116,7 @@ export default function Pricing() {
               </div>
               <div className="rowcard rowcard--on">
                 <Icon name="download" size={20} className="rowcard__i" />
-                <div><p className="rowcard__t">Export keeps working</p><p className="rowcard__s">In read only, and after cancelling. A betting record belongs to the person who kept it.</p></div>
+                <div><p className="rowcard__t">Export keeps working</p><p className="rowcard__s">In read only, and after cancelling.</p></div>
               </div>
             </div>
           </div>
@@ -127,10 +126,7 @@ export default function Pricing() {
       <section className="sect" style={{ paddingTop: 0 }}>
         <div className="wrap">
           <p className="small dim" style={{ maxWidth: '70ch' }}>
-            Billed in pounds. Your ledger can be in pounds or in euro, and every figure in it
-            follows that choice: a €25.00 stake stays a €25.00 stake. Prices include VAT where it
-            applies. Slippery never accepts bets, holds money, pays
-            winnings or gives tips, so nothing here is a wager and none of it can win or lose.
+            Billed in pounds. Your ledger can be in pounds or euro, and the two are never added together.
           </p>
         </div>
       </section>
