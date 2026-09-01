@@ -157,3 +157,79 @@ takes the shell with it and the command exits 144 with nothing done.
 command line BEGINS with the server, then waits for the port to answer before
 returning. If a rendered page ever looks unhydrated again, check the chunk
 hashes in the HTML against `.next/static/chunks` before suspecting the code.
+
+## The calendar ramp
+
+The obvious fill cannot work and it is worth writing down why, because the
+build before this one hit the same wall and solved it in a way that cost the
+module its point.
+
+Laying the semantic colour over the cell at an opacity that tracks the size of
+the day sweeps the cell through mid luminance. Across all eight themes,
+`--ink` fails 4.5:1 above alpha 0.24, `--bg` does not reach 4.5:1 until 0.60,
+and nothing is readable between the two. The previous build jumped that dead
+band with two fixed tiers, and said so in its own commit message: 112 and 148
+landed in different tiers and read as different worlds.
+
+So the ramp varies **chroma**, not lightness. The semantic colour is mixed 45%
+into `--bg` first, which gives a dark saturated anchor, and that is what fades
+in. Lightness barely moves, so one text colour is readable at every step of a
+continuous ramp.
+
+Measured, all eight themes, every step: worst `--ink` on a filled cell is
+4.80:1 in graphite at full strength; the weakest full fill against an empty
+cell is 2.20:1, so it is plainly a fill; `--ink-2` on a filled cell is 2.25:1,
+which is why text up there is `--ink` and never `--ink-2`. 45% is the most
+colour that still fits under 4.5:1 at the top, so it is not a number to raise.
+
+`tests/calendar-ramp.test.ts` walks every step in every theme, and its third
+assertion is a guard rather than a check: it asserts that the NAIVE ramp still
+fails. If that ever starts passing, the palette changed and the decision can
+be revisited deliberately instead of by accident.
+
+Four other things the module needs and one of them is not obvious:
+
+- The figure is **signed**, not left to the colour. At the bottom of the ramp
+  the tint is deliberately faint, and a faint red and a faint green are
+  precisely the two things a red-green colour blind reader cannot separate.
+- A past day with no bets has its date **struck through**. A day that has not
+  happened is **recessed and never struck through**: "you did not bet" and "it
+  has not happened yet" are different facts, and a line through tomorrow is a
+  lie. The strikethrough is never the only signal, because every cell carries
+  a full sentence for a screen reader.
+- Six rows always, 42 cells, height driven. Sizing cells from their width put
+  a six week month past the bottom of the card where `overflow: hidden` ate it
+  silently, and a grid that changes height between months moves every module
+  in its row with it.
+- The peak of the ramp is the month's own biggest day, so a quiet month uses
+  the full range instead of being washed out by a loud one three months ago.
+
+## Gate 4
+
+The sweep runs in real Chromium, never jsdom, because jsdom has no layout
+engine and a previous build passed every jsdom test while scrolling sideways
+on a phone.
+
+**Result: clean.** 55 routes at 320, 390, 430, 1024 and 1440; all eight themes
+on seven routes; 178 buttons clicked twice with none dead; 111 controls
+reached by Tab across four routes with a visible focus ring on every one;
+axe-core clean at 390 on every route and at 1440 on every public one; no
+duplicate ids; `body.scrollWidth <= clientWidth` at every mobile width; every
+view over 40 characters; tabular figures verified by measuring "111111"
+against "000000" in the live font rather than assuming the face ships them.
+
+It took four passes to get there, and most of what the first pass reported was
+the harness being wrong about the product rather than the product being wrong.
+The five rules that fixed that are written at the top of `tools/audit.mjs`,
+and the one that mattered most: a control clicked TWICE ends where it started
+if it is radio-like, so comparing only the second click called every segmented
+control in the product dead.
+
+**Live verification is `tools/check.mjs`, not the browser sweep.** Driving
+Chromium over the network from this container is not reliable enough to tell a
+dropped connection from a defect: a live run reported 89 navigation failures on
+routes that plain `fetch` answered at 200 four times in a row. So the browser
+sweep is the local gate against a given commit, and the live check proves the
+deployed build IS that commit (via the sha in `/api/sources`) and that every
+route answers 200 with a real title, exactly one h1, real content and the
+compliance footer.

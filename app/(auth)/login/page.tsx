@@ -17,7 +17,8 @@ export default async function Login({
     <>
       <h1>Sign in</h1>
       <p className="muted" style={{ marginTop: 'var(--s2)' }}>
-        Your ledger is where you left it.
+        Your ledger is where you left it. Signing in never changes a settled bet, and a
+        correction is always a new event rather than an edit.
       </p>
       <div style={{ marginTop: 'var(--s6)' }}><LoginForm startWithReset={reset} /></div>
       <p className="small muted" style={{ marginTop: 'var(--s6)' }}>

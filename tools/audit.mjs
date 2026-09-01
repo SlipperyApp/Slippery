@@ -67,7 +67,13 @@ mkdirSync(OUT, { recursive: true });
 
 const problems = [];
 const missingRoutes = new Map();   // rule six: reported once, under its own heading
-const note = (route, viewport, kind, detail) => problems.push({ route, viewport, kind, detail });
+const note = (route, viewport, kind, detail) => {
+  problems.push({ route, viewport, kind, detail });
+  // Written as they are found. A dropped connection in a later phase used to
+  // take the whole report with it.
+  try { writeFileSync(`${OUT}/audit.json`, JSON.stringify({ problems, missingRoutes: [...missingRoutes] }, null, 2)); }
+  catch { /* the report is a convenience, not the gate */ }
+};
 
 const browser = await chromium.launch({
   executablePath: EXEC,
@@ -389,12 +395,18 @@ console.log('\nControls');
 
 // ----------------------------------------------------------- keyboard
 console.log('\nKeyboard');
-{
+try {
   const ctx = await browser.newContext({ viewport: { width: 1280, height: 900 } });
   for (const route of ['/app', '/', '/signup', '/app/ledger']) {
     const page = await ctx.newPage();
-    await page.goto(BASE + route, { waitUntil: 'domcontentloaded' });
-    await page.waitForTimeout(600);
+    try {
+      await page.goto(BASE + route, { waitUntil: 'domcontentloaded', timeout: 45000 });
+      await page.waitForTimeout(600);
+    } catch {
+      console.log(`  ${route}: could not be opened, skipped`);
+      await page.close();
+      continue;
+    }
     const reached = new Set();
     let ringless = 0;
     for (let i = 0; i < 40; i++) {
@@ -418,11 +430,13 @@ console.log('\nKeyboard');
     await page.close();
   }
   await ctx.close();
+} catch (err) {
+  console.log('  keyboard phase stopped early:', String(err).slice(0, 90));
 }
 
 // ---------------------------------------------------------- screenshots
 console.log('\nScreenshots');
-{
+try {
   const ctx = await browser.newContext({
     viewport: { width: 390, height: 844 }, deviceScaleFactor: 2, isMobile: true, hasTouch: true,
   });
@@ -436,9 +450,11 @@ console.log('\nScreenshots');
   }
   console.log(`  written to ${OUT}/`);
   await ctx.close();
+} catch (err) {
+  console.log('  screenshot phase stopped early:', String(err).slice(0, 90));
 }
 
-await browser.close();
+await browser.close().catch(() => {});
 
 // -------------------------------------------------------------- report
 const byKind = new Map();

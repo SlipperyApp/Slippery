@@ -20,7 +20,12 @@ export default async function Verify({
       <h1>Check your email</h1>
       <p className="muted" style={{ marginTop: 'var(--s2)' }}>
         A six digit code is on its way{email ? <> to <span className="mono">{email}</span></> : null}. It
-        is good for ten minutes.
+        is good for ten minutes and can be used once.
+      </p>
+      <p className="small dim" style={{ marginTop: 'var(--s3)' }}>
+        The code is stored only as a hash and is never written to a log, in any environment. If it
+        does not arrive, check the spam folder before sending another: a second code makes the
+        first one useless.
       </p>
       <div style={{ marginTop: 'var(--s6)' }}>
         <VerifyForm email={email} />
