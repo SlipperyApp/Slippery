@@ -67,7 +67,7 @@ export default async function Dashboard({
            your account, and the two of them together took 78 pixels of a 900
            pixel screen before the dashboard began. */}
       {trial.active && !demo ? (
-        <div className="banner" style={{ marginBottom: 'var(--s4)' }}>
+        <div className="banner" style={{ marginBottom: 'var(--gap-block)' }}>
           <Icon name="clock" size={18} className="banner__icon" />
           <span className="grow">Trial: {trial.message}</span>
           <Link href="/app/settings/plan" className="btn btn--ghost btn--sm">See plans</Link>

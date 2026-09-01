@@ -24,7 +24,7 @@ export default async function ImportHome() {
   return (
     <>
       <h1>Add a bet</h1>
-      <p className="muted" style={{ marginTop: 'var(--s2)', maxWidth: '58ch' }}>
+      <p className="muted" style={{ marginTop: 'var(--s2)' }}>
         Four ways in. Send it now, while you still do not know.
       </p>
 

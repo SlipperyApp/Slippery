@@ -125,7 +125,7 @@ export default function Pricing() {
 
       <section className="sect" style={{ paddingTop: 0 }}>
         <div className="wrap">
-          <p className="small dim" style={{ maxWidth: '70ch' }}>
+          <p className="small dim" >
             Billed in pounds. Your ledger can be in pounds or euro, and the two are never added together.
           </p>
         </div>

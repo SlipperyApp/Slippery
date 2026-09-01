@@ -11,7 +11,7 @@ export const metadata: Metadata = {
 export default function NewSocial() {
   return (
     <>
-      <div className="spread" style={{ marginBottom: 'var(--s4)', flexWrap: 'wrap' }}>
+      <div className="spread" style={{ marginBottom: 'var(--gap-block)', flexWrap: 'wrap' }}>
         <h1>Social</h1>
         <Link href="/app/social/discover" className="btn btn--ghost btn--sm">
           <Icon name="search" size={16} /> Find Slippers

@@ -196,3 +196,44 @@ input, select, textarea { font-size: 16px; line-height: 1.4; }
     both dashboard menus shipped open. This is the one place !important is
     the correct tool, because the whole point is that nothing may override it. */
 [hidden] { display: none !important; }
+
+/*  A MEASURE ON PROSE, which is the thing that stops translating between a
+    phone and a monitor.
+
+    Measured across six widths, mobile was clean at both ends: 0 paragraphs
+    over 78 characters a line at 320 or 390, because the screen does the
+    capping. At 768 and above, 41 of them ran past it, up to 106 on the
+    landing page and 87 on the terms page, purely because nothing said stop.
+    A line that long loses the reader on the return sweep, and it is the
+    same copy that read perfectly two hundred pixels narrower.
+
+    54ch, and the number looks too small because the CSS unit is not a
+    character. `ch` is the advance width of the digit ZERO, and a zero is
+    wider than the average letter: measured on Archivo at 13px it is 7.45px
+    against an average of 5.92, a ratio of 1.257. A cap of 68ch therefore
+    admitted 86 real characters a line, which is exactly what the first
+    version of this rule shipped and exactly what the measurement kept
+    reporting after it. 54ch is 68 characters.
+
+    68, not the 75 the typographic rule of thumb allows: this is a dark
+    theme, and light text on a dark ground wants a slightly shorter line for
+    the same comfort.
+
+    It goes on the PROSE classes only. .small and .muted also caption
+    figures and label rows, and a max-width on a one line caption inside a
+    flex row changes nothing, which is why this is safe to apply broadly. */
+/*  .small and .muted, not p.small and p.muted. Half the long lines were on
+    a span or a div, and max-width on an inline box does nothing at all, so
+    applying it to the class is both broader and still safe: it changes
+    only the ones that are actually laying out as blocks. */
+.small, .muted, .lead, p.dim, .rowcard__s, .prose p, dd { max-width: 54ch; }
+
+/*  ONE CAP, IN ONE PLACE. There were fourteen more of these written inline
+    in JSX at 58, 60, 62, 68 and 70ch, every one of them calibrated on the
+    assumption that a ch is a character, and therefore every one of them a
+    different wrong answer to the same question. They are gone. A measure is
+    a property of reading, not of a page, so it belongs in the stylesheet
+    once. */
+/*  Centred copy centres its measure too, or a capped paragraph under a
+    centred heading hangs off to the left of it. */
+.sect__head--mid p.small, .sect__head--mid p.muted, .hero p.small { margin-inline: auto; }

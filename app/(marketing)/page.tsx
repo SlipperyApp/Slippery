@@ -34,8 +34,14 @@ export default function Landing() {
       <section className="hero hero--mid">
         <WaveField />
         <div className="wrap">
-          <h1 className="hero__h rise">
-            It all starts with a{' '}
+          {/*  The eyebrow says who this is for before the headline says what
+               it does. A visitor who bets in Ireland and lands on a page that
+               opens with a pun has to read three more lines to find out
+               whether the product handles their bookmaker. */}
+          <p className="eyebrow rise">Bet tracking for UK and Irish bettors</p>
+
+          <h1 className="hero__h rise rise-1">
+            Don&rsquo;t let your profit{' '}
             <span className="slipword">
               <span className="slipword__glow" aria-hidden="true">slip.</span>
               <span className="slipword__text">slip.</span>
@@ -43,17 +49,17 @@ export default function Landing() {
             </span>
           </h1>
 
-          <p className="hero__sub rise rise-1">
-            Forward the slip when you place it. Slippery reads it, settles it, and keeps the
-            record you would not have kept.
+          <p className="hero__sub rise rise-2">
+            Forward a slip to the bot before kick off, in play, or after it settled.
+            Slippery reads it, settles it, keeps the record.
           </p>
 
-          <div className="hero__cta rise rise-2">
+          <div className="hero__cta rise rise-3">
             <Link href="/signup" className="btn btn--primary btn--lg">Start free for 14 days</Link>
             <Link href="/demo" className="btn btn--link">or see a real account</Link>
           </div>
 
-          <p className="small dim rise rise-3 hero__fine">
+          <p className="small dim rise rise-4 hero__fine">
             14 days or 35 slips. Card required, cancel in one tap.
           </p>
 
@@ -62,7 +68,7 @@ export default function Landing() {
                the same thing in a frame reads as the software. It is chrome,
                so it is aria-hidden, and the demo inside it is the real
                component rather than an image of one. */}
-          <div className="frame rise rise-3">
+          <div className="frame rise rise-4">
             <div className="frame__bar" aria-hidden="true">
               <span className="frame__dot" /><span className="frame__dot" /><span className="frame__dot" />
               <span className="frame__url">slippery.app</span>

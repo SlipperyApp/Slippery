@@ -21,7 +21,7 @@ const ROWS: { k: keyof typeof DRY_RUN; t: string; s: string }[] = [
 export default function DryRun() {
   return (
     <>
-      <div className="row" style={{ marginBottom: 'var(--s4)' }}>
+      <div className="row" style={{ marginBottom: 'var(--gap-block)' }}>
         <Link href="/app/import/history/review" className="btn btn--quiet btn--sm">
           <Icon name="chevronLeft" size={16} /> Match the columns
         </Link>
@@ -29,7 +29,7 @@ export default function DryRun() {
       <div className="column column--wide" style={{ marginInline: 0 }}>
         <span className="pill">Nothing written</span>
         <h1 style={{ marginTop: 'var(--s4)' }}>Dry run</h1>
-        <p className="muted" style={{ marginTop: 'var(--s2)', maxWidth: '60ch' }}>
+        <p className="muted" style={{ marginTop: 'var(--s2)' }}>
           This is what the import would do. Your ledger has not been touched and you can close this
           tab with no consequence at all.
         </p>

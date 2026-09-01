@@ -60,7 +60,7 @@ export default function Changelog() {
                 {e.items.map((i) => (
                   <li key={i.t} className="brow" style={{ gridTemplateColumns: '1fr' }}>
                     <p className="brow__title" style={{ fontSize: 'var(--t-body)' }}>{i.t}</p>
-                    <p className="small muted" style={{ marginTop: 4, maxWidth: '68ch' }}>{i.s}</p>
+                    <p className="small muted" style={{ marginTop: 4 }}>{i.s}</p>
                   </li>
                 ))}
               </ul>

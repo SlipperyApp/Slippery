@@ -31,7 +31,7 @@ export function HistoryUpload() {
       <div className="card" style={{ alignItems: 'center', textAlign: 'center', padding: 'var(--s8) var(--s5)', borderStyle: 'dashed', borderWidth: '1.5px' }}>
         <Icon name="upload" size={28} style={{ color: 'var(--ink-3)' }} />
         <p className="card__title" style={{ marginTop: 'var(--s3)' }}>{name || 'Choose an export'}</p>
-        <p className="small muted" style={{ marginTop: 'var(--s2)', maxWidth: '46ch' }}>
+        <p className="small muted" style={{ marginTop: 'var(--s2)' }}>
           {rows > 0
             ? `${rows} data rows found. Nothing has been read beyond counting the lines.`
             : 'CSV, TSV or JSON. Column names are matched, never assumed by position.'}

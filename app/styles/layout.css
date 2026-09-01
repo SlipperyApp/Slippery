@@ -2,13 +2,15 @@
 
 .page { position: relative; z-index: 1; }
 
+/*  The gutter is fluid for the same reason the rhythm is: it stepped once
+    at 700px, so a 320px phone and a 690px tablet had the same 16px, and
+    every window from 700 to 2560 had the same 24. */
 .wrap {
   width: 100%;
   max-width: var(--shell-max);
   margin-inline: auto;
-  padding-inline: var(--s4);
+  padding-inline: clamp(16px, 1.1vw + 12px, 32px);
 }
-@media (min-width: 700px) { .wrap { padding-inline: var(--s6); } }
 
 /* ------------------------------------------------------------- marketing */
 .mhead {
@@ -197,11 +199,14 @@
 }
 .balance__v { font-size: var(--t-fig-s); font-weight: var(--w-fig); font-variant-numeric: tabular-nums; }
 
+/*  Same again for the app's own content area. The bottom is not fluid: it
+    clears the tab bar and the safe area, which are fixed sizes. */
 .main {
-  padding: var(--s5) var(--s4) calc(var(--bottombar-h) + env(safe-area-inset-bottom) + var(--s8));
+  padding: var(--gap-block) clamp(16px, 1.1vw + 12px, 32px)
+    calc(var(--bottombar-h) + env(safe-area-inset-bottom) + var(--s8));
   min-width: 0;
 }
-@media (min-width: 1000px) { .main { padding: var(--s6) var(--s6) var(--s10); } }
+@media (min-width: 1000px) { .main { padding-bottom: var(--s10); } }
 
 /* -------------------------------------------------------------- bottom bar */
 .bottombar {
@@ -264,14 +269,18 @@
 .tab--add__btn svg { width: 24px; height: 24px; }
 
 /* ------------------------------------------------------------------- grids */
+/*  The module grid. The gap is fluid, the column count steps: a column
+    count has to step because half a column is not a layout, and a gap does
+    not, so it no longer jumps from 16 to 20 at exactly 1000px and then sits
+    at 20 for every monitor ever made. */
 .grid {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: var(--s4);
+  gap: var(--gap-grid);
   align-items: stretch;
 }
 @media (min-width: 700px) { .grid { grid-template-columns: repeat(8, minmax(0, 1fr)); } }
-@media (min-width: 1000px) { .grid { grid-template-columns: repeat(12, minmax(0, 1fr)); gap: var(--s5); } }
+@media (min-width: 1000px) { .grid { grid-template-columns: repeat(12, minmax(0, 1fr)); } }
 
 /* Fixed column spans. No packer, no pinning, no drag reorder. */
 .col-4, .col-5, .col-6, .col-7, .col-8, .col-12 { grid-column: span 4; }
@@ -367,3 +376,8 @@ a.brk__name {
   color: var(--warn);
 }
 .navrow--warn .navrow__icon { color: var(--warn); }
+
+/*  Auth headings take the display serif too, which is where the prototype
+    puts it (.authh there). A sign-in page is the last marketing surface
+    before the app, not the first app screen: it is still selling. */
+.column--narrow h1 { font-family: var(--f-display); font-weight: 700; letter-spacing: -0.012em; }

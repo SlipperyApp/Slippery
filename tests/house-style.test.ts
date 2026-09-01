@@ -94,13 +94,44 @@ test('no section leads with a pill restating its own title', () => {
   assert.deepEqual(found, [], found.join('\n'));
 });
 
-test('the fonts are the two the product uses, and no others', () => {
+/*  Three faces now, and the third one earns its place: the design this
+ *  product is drawn from sets its display type in a serif, and shipped
+ *  without it the landing page was the same page in a different typeface,
+ *  which is the difference a visitor notices before any other. Source Serif
+ *  4 is the prototype's own subset, so the shipped face is the one the
+ *  design was drawn with.
+ *
+ *  It is capped at three. A fourth face is a fourth download and a fourth
+ *  set of metrics to reason about, and there is no fourth job. */
+test('the fonts are the three the product uses, and no others', () => {
   const css = readFileSync('app/styles/tokens.css', 'utf8');
   const families = [...css.matchAll(/font-family:\s*'([^']+)'/g)].map((m) => m[1]);
-  assert.deepEqual([...new Set(families)].sort(), ['Archivo', 'Plex Mono']);
+  assert.deepEqual([...new Set(families)].sort(), ['Archivo', 'Plex Mono', 'Source Serif 4']);
   for (const banned of ['Inter', 'Space Grotesk', 'Instrument Serif', 'Geist']) {
     assert.ok(!css.includes(banned), `${banned} is in tokens.css`);
   }
+  /*  And every one of them is self hosted. A @font-face pointing anywhere
+      but /fonts is a third party request on the critical path. */
+  for (const m of css.matchAll(/src:\s*url\('([^']+)'\)/g)) {
+    assert.ok(m[1].startsWith('/fonts/'), `${m[1]} is not self hosted`);
+  }
+});
+
+/*  The display serif goes on marketing and auth headings and nowhere else.
+ *  The app is a tool and a tool is set in one face: a serif h2 on the
+ *  dashboard would be decoration on a page whose whole argument is that
+ *  every mark on it is a number somebody needs. */
+test('the display serif stays out of the app', () => {
+  const offences: string[] = [];
+  for (const f of ['app/styles/components.css', 'app/styles/floors.css']) {
+    const css = readFileSync(f, 'utf8');
+    css.split('\n').forEach((line, i) => {
+      if (line.includes('--f-display') && !line.trim().startsWith('*')) {
+        offences.push(`${f}:${i + 1} ${line.trim()}`);
+      }
+    });
+  }
+  assert.deepEqual(offences, [], offences.join('\n'));
 });
 
 test('the product says return, never ROI, in anything a reader sees', () => {

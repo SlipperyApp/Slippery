@@ -21,13 +21,13 @@ export default async function Feed() {
 
   return (
     <>
-      <div className="row" style={{ marginBottom: 'var(--s4)' }}>
+      <div className="row" style={{ marginBottom: 'var(--gap-block)' }}>
         <Link href="/app/social" className="btn btn--quiet btn--sm">
           <Icon name="chevronLeft" size={16} /> Social
         </Link>
       </div>
       <h1>Feed</h1>
-      <p className="muted" style={{ marginTop: 'var(--s2)', maxWidth: '60ch' }}>
+      <p className="muted" style={{ marginTop: 'var(--s2)' }}>
         App actions only. Nothing here says who won what, because celebrating a betting outcome is
         a nudge toward more of them.
       </p>

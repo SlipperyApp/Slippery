@@ -17,6 +17,36 @@
    or --ink-2, and tests/contrast.test.ts measures both against every ground.
 --------------------------------------------------------------------------- */
 
+/*  THE DISPLAY SERIF, and it is the face this product is designed in.
+ *
+ *  The landing page shipped set entirely in Archivo, and next to the design
+ *  it was drawn from that is the difference you notice before any other:
+ *  the prototype sets its headlines in a high contrast serif and everything
+ *  else in a grotesk, which is the pairing that makes a marketing page read
+ *  as designed rather than as a template.
+ *
+ *  It goes on marketing and auth headings ONLY, which is where the
+ *  prototype puts it: .lh1, .lh2 and .authh there, the hero and section
+ *  headings and the auth heading here. The app is a tool and a tool is set
+ *  in one face.
+ *
+ *  The file is the prototype's own subset, lifted from the base64 it embeds
+ *  rather than fetched, so the shipped face is byte for byte the one the
+ *  design was drawn with. 18KB, and it covers every glyph the marketing
+ *  copy uses: measured against the notdef box, nothing in the Latin set,
+ *  the curly quotes, the dashes or the currency symbols is missing.
+ *
+ *  Source Serif 4 is SIL OFL. font-display: swap, like the others: a
+ *  headline that is invisible for 300ms is worse than a headline in Times
+ *  for 300ms, and the fallback stack is chosen so the reflow is small. */
+@font-face {
+  font-family: 'Source Serif 4';
+  font-style: normal;
+  font-weight: 400 800;
+  font-display: swap;
+  src: url('/fonts/sourceserif4-latin.woff2') format('woff2');
+}
+
 @font-face {
   font-family: 'Archivo';
   font-style: normal;
@@ -88,6 +118,10 @@
   /* Type. Every size is paired with a line height, or row rhythm drifts. */
   --f-ui: 'Archivo', ui-sans-serif, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
   --f-mono: 'Plex Mono', ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  /*  Marketing and auth headings only. Tinos before Times: it is metric
+      compatible with Times and far more likely to be installed on Linux,
+      so the fallback reflow is smaller where the fallback actually runs. */
+  --f-display: 'Source Serif 4', Tinos, 'Times New Roman', Times, serif;
 
   --t-display: 40px;      --lh-display: 1.03;
   --t-h1: 30px;           --lh-h1: 1.1;
@@ -122,6 +156,26 @@
    *  are optical: a baseline nudge, a hairline offset, a shadow's lift. They
    *  stay literal, next to a comment saying what they are aligning to, so
    *  nobody snaps them to a grid they were never on. */
+  /*  TWO KINDS OF SPACE, and conflating them is why a 320px phone and a
+      1920px monitor had exactly the same 16px between every block on the
+      page. Measured across six widths, the most common top level gap was
+      16px at 320, at 390, at 768, at 1024, at 1440 AND at 1920: the layout
+      never breathed, it only ever got wider.
+
+      INSIDE a component the scale below is fixed, and it should be: the
+      padding of a pill does not want to be bigger because the window is,
+      and a card that reflows its own internals at every width is a card
+      nobody can predict.
+
+      BETWEEN blocks it is fluid. These two grow with the viewport and stop,
+      so the rhythm at 1440 is not the rhythm of a phone stretched out, and
+      the rhythm at 2560 is not the rhythm of 1440 with more empty margin
+      either. The floors are the old fixed values, so nothing on a phone
+      moves; the ceilings are where a gap stops reading as a gap and starts
+      reading as a missing element. */
+  --gap-block: clamp(16px, 1.15vw + 11.5px, 28px);
+  --gap-grid: clamp(16px, 1.0vw + 12px, 26px);
+
   --s0: 2px;  --s1: 4px;  --s1h: 6px; --s2: 8px;  --s2h: 10px;
   --s3: 12px; --s4: 16px; --s5: 20px;
   --s6: 24px; --s7: 32px; --s8: 40px; --s9: 56px; --s10: 72px;

@@ -11,14 +11,14 @@ export const metadata: Metadata = {
 export default function NewLedger() {
   return (
     <>
-      <div className="spread" style={{ marginBottom: 'var(--s4)', flexWrap: 'wrap' }}>
+      <div className="spread" style={{ marginBottom: 'var(--gap-block)', flexWrap: 'wrap' }}>
         <h1>Ledger</h1>
         <Link href="/app/import" className="btn btn--primary btn--sm">
           <Icon name="plus" size={16} /> Add a bet
         </Link>
       </div>
 
-      <div className="card" style={{ marginBottom: 'var(--s4)' }}>
+      <div className="card" style={{ marginBottom: 'var(--gap-block)' }}>
         <div className="row row--wrap" style={{ gap: 'var(--s7)' }}>
           {[['Staked', '£0.00'], ['Returned', '£0.00'], ['Net', '+£0.00'], ['Return', '+0.0%'], ['Bets', '0']].map(([l, v]) => (
             <div key={l}><p className="label">{l}</p><p className="fig fig--s tnum dim">{v}</p></div>

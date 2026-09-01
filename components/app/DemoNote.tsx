@@ -10,7 +10,7 @@ export function DemoNote({ handle }: { handle: string }) {
   const [gone, setGone] = useState(false);
   if (gone) return null;
   return (
-    <div className="banner banner--accent" style={{ marginBottom: 'var(--s4)' }}>
+    <div className="banner banner--accent" style={{ marginBottom: 'var(--gap-block)' }}>
       <Icon name="info" size={18} className="banner__icon" />
       <span className="grow">
         The example account, <span className="mono">@{handle}</span>, folded by the same code your

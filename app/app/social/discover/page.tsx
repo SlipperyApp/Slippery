@@ -14,13 +14,13 @@ export default async function DiscoverPage() {
   const { now } = await getViewer();
   return (
     <>
-      <div className="row" style={{ marginBottom: 'var(--s4)' }}>
+      <div className="row" style={{ marginBottom: 'var(--gap-block)' }}>
         <Link href="/app/social" className="btn btn--quiet btn--sm">
           <Icon name="chevronLeft" size={16} /> Social
         </Link>
       </div>
       <h1>Find Slippers</h1>
-      <p className="muted" style={{ marginTop: 'var(--s2)', maxWidth: '58ch' }}>
+      <p className="muted" style={{ marginTop: 'var(--s2)' }}>
         Search a group name or a handle. Nothing here shows anybody&rsquo;s stakes, in a group or
         out of one.
       </p>

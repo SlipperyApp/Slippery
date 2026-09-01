@@ -53,7 +53,7 @@ export default async function Ledger({
 
   return (
     <>
-      <div className="spread" style={{ marginBottom: 'var(--s4)', flexWrap: 'wrap' }}>
+      <div className="spread" style={{ marginBottom: 'var(--gap-block)', flexWrap: 'wrap' }}>
         <h1>Ledger</h1>
         <div className="row" style={{ gap: 'var(--s3)' }}>
           <Link href="/app/history" className="btn btn--quiet btn--sm">
@@ -87,7 +87,7 @@ export default async function Ledger({
            can be looked at in any order, which is how somebody actually
            reads a summary. Bets moved into the footer because it is a count
            of the rows below, not a fifth statistic about money. */}
-      <div className="statgrid" style={{ marginBottom: 'var(--s4)' }}>
+      <div className="statgrid" style={{ marginBottom: 'var(--gap-block)' }}>
         <div className="stat">
           <p className="label">Staked</p>
           <p className="fig fig--m tnum">{money(s.stakedPence, account.currency)}</p>

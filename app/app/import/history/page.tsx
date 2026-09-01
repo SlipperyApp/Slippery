@@ -11,14 +11,14 @@ export const metadata: Metadata = {
 export default function ImportHistory() {
   return (
     <>
-      <div className="row" style={{ marginBottom: 'var(--s4)' }}>
+      <div className="row" style={{ marginBottom: 'var(--gap-block)' }}>
         <Link href="/app/import" className="btn btn--quiet btn--sm">
           <Icon name="chevronLeft" size={16} /> Add a bet
         </Link>
       </div>
       <div className="column column--wide" style={{ marginInline: 0 }}>
         <h1>Import a history</h1>
-        <p className="muted" style={{ marginTop: 'var(--s2)', maxWidth: '60ch' }}>
+        <p className="muted" style={{ marginTop: 'var(--s2)' }}>
           A CSV or JSON export from a spreadsheet or another tracker. Slippery reads it, reports
           exactly what it would create, and writes nothing until you say so.
         </p>

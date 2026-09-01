@@ -101,15 +101,24 @@ export function WaveField() {
         + Math.sin(p * 5.9 - t * 0.15 + u * 6.2) * amp * 0.42
         + Math.sin(p * 1.4 + t * 0.33 - u * 2.1) * amp * 0.66;
 
-      const bandTop = -h * 0.25;
-      const bandH = h * 1.6;
+      /*  THE RIBBON HAS A SIZE OF ITS OWN, and it stopped having one the
+          moment the canvas was allowed to be as tall as the hero. Every
+          number here used to be a fraction of h, so a 1173px hero spread
+          56 lines over 1877px at 33px apart with amplitudes up to 176: the
+          same drawing, four times as loose, which reads as a few stray
+          hairlines rather than as a fold. Anchored to a reference height
+          the ribbon keeps its density at any hero size, and it is placed so
+          its bright core lands where the mask lets it through. */
+      const gh = Math.min(h, 660);
+      const bandH = gh * 1.6;
+      const bandTop = h * 0.74 - 0.62 * bandH;
 
       for (let bIdx = 0; bIdx < 4; bIdx++) {
         const u0 = core + (bIdx - 2) * 0.075;
         const u1 = u0 + 0.075;
         if (u1 < -0.1 || u0 > 1.1) continue;
 
-        const amp0 = h * 0.15 * (0.35 + 1);
+        const amp0 = gh * 0.15 * (0.35 + 1);
         ctx.beginPath();
         for (let sIdx = 0; sIdx <= steps; sIdx++) {
           const x = x0 + (sIdx / steps) * span;
@@ -152,7 +161,7 @@ export function WaveField() {
         const env = Math.max(0, 1 - Math.min(1, d) ** 2.2);
         if (env <= 0.004) continue;
 
-        const amp = h * 0.15 * (0.35 + env);
+        const amp = gh * 0.15 * (0.35 + env);
 
         ctx.beginPath();
         for (let sIdx = 0; sIdx <= steps; sIdx++) {
@@ -173,9 +182,11 @@ export function WaveField() {
         //  Brightest at the core of the band and towards the right, which is
         //  where the copy is not. The left third is where the headline sits,
         //  and a line under a headline is a contrast problem.
-        const a = 0.66 * env;
+        /*  0.86, not 0.66. Measured against the design the ribbons were a
+            third too faint even where the mask let them through. */
+        const a = 0.86 * env;
 
-        ctx.lineWidth = 0.7 + env * 0.8;
+        ctx.lineWidth = 0.8 + env * 1.15;
         const g = ctx.createLinearGradient(x0, 0, x1, 0);
         g.addColorStop(0, `rgba(${ar},${ag},${ab},0)`);
         g.addColorStop(0.3, `rgba(${ar},${ag},${ab},${(a * 0.18).toFixed(4)})`);

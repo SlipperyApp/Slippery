@@ -29,14 +29,14 @@ export default async function Linked() {
 
   return (
     <>
-      <div className="row" style={{ marginBottom: 'var(--s4)' }}>
+      <div className="row" style={{ marginBottom: 'var(--gap-block)' }}>
         <Link href="/app/import" className="btn btn--quiet btn--sm">
           <Icon name="chevronLeft" size={16} /> Add a bet
         </Link>
       </div>
 
       <h1>The Telegram bot</h1>
-      <p className="muted" style={{ marginTop: 'var(--s2)', maxWidth: '58ch' }}>
+      <p className="muted" style={{ marginTop: 'var(--s2)' }}>
         Link a chat once. After that, forwarding a slip takes about four seconds.
       </p>
 

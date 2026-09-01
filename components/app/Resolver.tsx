@@ -13,7 +13,7 @@ export function Resolver({ items }: { items: Unresolved[] }) {
 
   return (
     <>
-      <div className="card" style={{ marginBottom: 'var(--s4)' }}>
+      <div className="card" style={{ marginBottom: 'var(--gap-block)' }}>
         <div className="spread">
           <span className="card__title">{done} of {items.length} decided</span>
           <span className="small dim">{items.length - done} left</span>

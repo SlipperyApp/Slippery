@@ -17,7 +17,7 @@ export default async function ReadOnly() {
 
   return (
     <>
-      <div className="row" style={{ marginBottom: 'var(--s4)' }}>
+      <div className="row" style={{ marginBottom: 'var(--gap-block)' }}>
         <Link href="/app/settings/plan" className="btn btn--quiet btn--sm">
           <Icon name="chevronLeft" size={16} /> Plan and billing
         </Link>
@@ -25,7 +25,7 @@ export default async function ReadOnly() {
 
       <span className="pill pill--neg">Read only</span>
       <h1 style={{ marginTop: 'var(--s4)' }}>Two payments failed, so new slips are paused</h1>
-      <p className="lead" style={{ marginTop: 'var(--s3)', maxWidth: '62ch' }}>
+      <p className="lead" style={{ marginTop: 'var(--s3)' }}>
         Nothing has been deleted and nothing will be. Your {plural(all.count, 'bet')}, worth{' '}
         {money(all.netPence, data.account.currency, { sign: true })} net, are where you left them,
         and your export works right now.
@@ -68,7 +68,7 @@ export default async function ReadOnly() {
 
         <section className="card col-12">
           <h2 className="card__title">The one thing that undoes it</h2>
-          <p className="small muted" style={{ marginTop: 'var(--s2)', maxWidth: '58ch' }}>
+          <p className="small muted" style={{ marginTop: 'var(--s2)' }}>
             A working card, and everything above turns back on immediately. There is no penalty, no
             reactivation fee, and no gap in your record where the pause was.
           </p>

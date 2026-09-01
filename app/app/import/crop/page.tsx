@@ -11,7 +11,7 @@ export const metadata: Metadata = {
 export default function Crop() {
   return (
     <>
-      <div className="row" style={{ marginBottom: 'var(--s4)' }}>
+      <div className="row" style={{ marginBottom: 'var(--gap-block)' }}>
         <Link href="/app/import" className="btn btn--quiet btn--sm">
           <Icon name="chevronLeft" size={16} /> Add a bet
         </Link>

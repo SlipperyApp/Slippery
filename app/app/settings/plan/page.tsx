@@ -17,7 +17,7 @@ export default async function Plan() {
 
   return (
     <>
-      <div className="row" style={{ marginBottom: 'var(--s4)' }}>
+      <div className="row" style={{ marginBottom: 'var(--gap-block)' }}>
         <Link href="/app/settings" className="btn btn--quiet btn--sm">
           <Icon name="chevronLeft" size={16} /> Settings
         </Link>

@@ -22,7 +22,7 @@ export default async function Social() {
 
   return (
     <>
-      <div className="spread" style={{ marginBottom: 'var(--s4)', flexWrap: 'wrap' }}>
+      <div className="spread" style={{ marginBottom: 'var(--gap-block)', flexWrap: 'wrap' }}>
         <h1>Social</h1>
         <div className="row" style={{ gap: 'var(--s2)' }}>
           <Link href="/app/social/discover" className="btn btn--ghost btn--sm">

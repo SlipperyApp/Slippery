@@ -64,7 +64,7 @@ export function MarketingFooter() {
         <div className="mfoot__cols">
           <div>
             <Brand size={36} className="brand brand--foot" />
-            <p className="small muted" style={{ maxWidth: '34ch' }}>
+            <p className="small muted" >
               A bet tracker for UK and Irish bettors. Slippery never accepts bets, holds
               money, pays winnings or gives tips.
             </p>

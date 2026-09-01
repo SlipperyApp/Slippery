@@ -11,14 +11,14 @@ export const metadata: Metadata = {
 export default function HistoryReview() {
   return (
     <>
-      <div className="row" style={{ marginBottom: 'var(--s4)' }}>
+      <div className="row" style={{ marginBottom: 'var(--gap-block)' }}>
         <Link href="/app/import/history" className="btn btn--quiet btn--sm">
           <Icon name="chevronLeft" size={16} /> Import a history
         </Link>
       </div>
       <div className="column column--wide" style={{ marginInline: 0 }}>
         <h1>Match the columns</h1>
-        <p className="muted" style={{ marginTop: 'var(--s2)', maxWidth: '60ch' }}>
+        <p className="muted" style={{ marginTop: 'var(--s2)' }}>
           Matched on the header names in your file, never on position. Two are marked as guesses.
         </p>
 

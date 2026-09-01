@@ -14,13 +14,13 @@ export default async function Manual() {
   const { data } = await getViewer();
   return (
     <>
-      <div className="row" style={{ marginBottom: 'var(--s4)' }}>
+      <div className="row" style={{ marginBottom: 'var(--gap-block)' }}>
         <Link href="/app/import" className="btn btn--quiet btn--sm">
           <Icon name="chevronLeft" size={16} /> Add a bet
         </Link>
       </div>
       <h1>Type it in</h1>
-      <p className="muted" style={{ marginTop: 'var(--s2)', maxWidth: '58ch' }}>
+      <p className="muted" style={{ marginTop: 'var(--s2)' }}>
         A typed-in bet counts everywhere a captured one does, and is marked as typed in, which is
         what a group&rsquo;s slip backed filter reads.
       </p>

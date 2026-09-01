@@ -40,7 +40,7 @@ export function RunningNow({
   const shareOfRoll = bankrollPence > 0 ? (att.openStakePence / bankrollPence) * 100 : 0;
 
   return (
-    <section className="card runnow" aria-labelledby="runnow-t" style={{ marginBottom: 'var(--s4)' }}>
+    <section className="card runnow" aria-labelledby="runnow-t" style={{ marginBottom: 'var(--gap-block)' }}>
       <header className="card__head">
         <h2 className="card__title" id="runnow-t">Open bets</h2>
         <p className="card__note">Ignores the scope</p>

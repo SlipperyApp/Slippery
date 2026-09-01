@@ -14,7 +14,7 @@ export default async function Settings() {
   const { data } = await getViewer();
   return (
     <>
-      <div className="spread" style={{ marginBottom: 'var(--s4)', flexWrap: 'wrap' }}>
+      <div className="spread" style={{ marginBottom: 'var(--gap-block)', flexWrap: 'wrap' }}>
         <h1>Settings</h1>
         <Link href="/app/settings/plan" className="btn btn--ghost btn--sm">
           <Icon name="card" size={16} /> Plan and billing

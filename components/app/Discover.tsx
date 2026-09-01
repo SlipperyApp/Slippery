@@ -38,7 +38,7 @@ export function Discover({ groups, people }: { groups: GroupSummary[]; people: S
 
   return (
     <>
-      <div className="row row--wrap" style={{ gap: 'var(--s3)', marginBottom: 'var(--s4)' }}>
+      <div className="row row--wrap" style={{ gap: 'var(--s3)', marginBottom: 'var(--gap-block)' }}>
         <div className="seg" role="group" aria-label="What to search">
           <button type="button" className="seg__btn" aria-pressed={tab === 'groups'} onClick={() => setTab('groups')}>Groups</button>
           <button type="button" className="seg__btn" aria-pressed={tab === 'people'} onClick={() => setTab('people')}>Slippers</button>

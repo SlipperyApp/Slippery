@@ -18,7 +18,7 @@ export default async function TrialPage() {
 
   return (
     <>
-      <div className="row" style={{ marginBottom: 'var(--s4)' }}>
+      <div className="row" style={{ marginBottom: 'var(--gap-block)' }}>
         <Link href="/app/settings/plan" className="btn btn--quiet btn--sm">
           <Icon name="chevronLeft" size={16} /> Plan and billing
         </Link>
@@ -26,7 +26,7 @@ export default async function TrialPage() {
       <div className="column column--wide" style={{ marginInline: 0 }}>
         <span className="pill pill--accent">Free trial</span>
         <h1 style={{ marginTop: 'var(--s4)' }}>{trial.message}</h1>
-        <p className="muted" style={{ marginTop: 'var(--s3)', maxWidth: '58ch' }}>
+        <p className="muted" style={{ marginTop: 'var(--s3)' }}>
           Two halves, and they run out differently. One function owns both numbers and tells the
           app which one is closer, so the counter here cannot disagree with what blocks an upload.
         </p>
@@ -58,7 +58,7 @@ export default async function TrialPage() {
 
           <section className="card col-12">
             <p className="card__title">When it ends</p>
-            <p className="small muted" style={{ marginTop: 'var(--s2)', maxWidth: '62ch' }}>
+            <p className="small muted" style={{ marginTop: 'var(--s2)' }}>
               The yearly plan starts automatically at {money(2999)}. No reminder email, deliberately. Cancel in one tap from Settings any time before it starts.
             </p>
             <div className="row row--wrap card__foot" style={{ gap: 'var(--s2)' }}>

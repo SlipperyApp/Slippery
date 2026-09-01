@@ -15,10 +15,11 @@
 .sect__head--mid .sect__p { margin-inline: auto; }
 .sect__badge { margin-bottom: var(--s4); }
 .sect__h {
-  font-size: clamp(26px, 5.2vw, 40px);
-  line-height: 1.08;
-  letter-spacing: var(--tr-tight);
-  font-weight: var(--w-label);
+  font-family: var(--f-display);
+  font-size: clamp(27px, 5.4vw, 42px);
+  line-height: 1.1;
+  letter-spacing: -0.014em;
+  font-weight: 700;
 }
 .sect__h span { display: block; }
 .sect__h .setup { color: var(--ink-2); }
@@ -40,14 +41,35 @@
 .wavefield {
   position: absolute;
   inset: calc(var(--topbar-h) * -1) 0 -42% 0;
+  /*  height: 100%, NOT auto, and this is the bug that made the field a
+      decoration on the top edge of the hero rather than the ground behind
+      it. A <canvas> has an intrinsic aspect ratio from its width and height
+      attributes, so with width:100% and height:auto the box follows THAT
+      ratio and ignores the inset entirely. The sizing pass then read the
+      box back and set the backing store from it, which reproduces the same
+      ratio: a fixed point at 2:1 that could never grow. Measured, the
+      canvas was 900 by 450 inside a hero 1173 tall, so two thirds of the
+      hero had no field in it at any point in this component's life. */
   width: 100%;
-  height: auto;
+  height: 100%;
   z-index: -1;
   pointer-events: none;
   opacity: 0;
   transition: opacity 900ms var(--ease);
-  -webkit-mask-image: linear-gradient(to bottom, transparent, #000 16%, #000 74%, transparent 99%);
-  mask-image: linear-gradient(to bottom, transparent, #000 16%, #000 74%, transparent 99%);
+  /*  THE MASK WAS UPSIDE DOWN, and it took a measurement against the design
+      to see it. It ran the field at full strength through the middle and
+      faded it from 74% down, which is exactly the band the prototype's
+      ribbons are brightest in: sampled at 900px wide, the bottom third of
+      its hero reads p95 82 of 255 and mine read 24. The field was strongest
+      where the headline is and absent where the eye has nothing else to
+      look at.
+
+      Turned over, it is also the better arrangement for contrast: the copy
+      lives in the top half and the ribbons now start below it, so the
+      thing that has to stay at 4.5:1 no longer has a texture running
+      through it at all. */
+  -webkit-mask-image: linear-gradient(to bottom, transparent 0%, transparent 26%, #000 58%, #000 88%, transparent 100%);
+  mask-image: linear-gradient(to bottom, transparent 0%, transparent 26%, #000 58%, #000 88%, transparent 100%);
 }
 .wavefield[data-ready='1'] { opacity: 1; }
 @media (prefers-reduced-motion: reduce) {
@@ -103,11 +125,17 @@
 .frame__body { padding: var(--s4); }
 @media (min-width: 700px) { .frame__body { padding: var(--s5); } }
 
+/*  THE SERIF, and the numbers around it change with it.
+    A high contrast serif at 76px does not want the -0.035em a grotesk
+    wants: the letterforms already carry their own rhythm and tightening
+    them closes the counters. It also sits happily at a heavier weight,
+    where Archivo at 700 was already as bold as this size could take. */
 .hero__h {
-  font-size: clamp(38px, 9vw, 76px);
-  line-height: 1.02;
-  letter-spacing: -0.035em;
-  font-weight: var(--w-label);
+  font-family: var(--f-display);
+  font-size: clamp(40px, 9.4vw, 78px);
+  line-height: 1.03;
+  letter-spacing: -0.018em;
+  font-weight: 700;
   max-width: 15ch;
 }
 .hero__sub { margin-top: var(--s5); font-size: clamp(16px, 2.4vw, 19px); line-height: 1.55; color: var(--ink-2); max-width: 48ch; }
@@ -154,7 +182,7 @@
 .plan__was { color: var(--ink-2); text-decoration: line-through; font-size: 17px; font-variant-numeric: tabular-nums; }
 
 .faq__q { width: 100%; text-align: left; display: flex; align-items: center; justify-content: space-between; gap: var(--s4); min-height: var(--tap); padding: var(--s3) 0; cursor: pointer; font-weight: var(--w-label); }
-.faq__a { padding-bottom: var(--s4); color: var(--ink-2); font-size: var(--t-small); line-height: 1.6; max-width: 64ch; }
+.faq__a { padding-bottom: var(--s4); color: var(--ink-2); font-size: var(--t-small); line-height: 1.6; max-width: 60ch; }
 .faq__i { width: 18px; height: 18px; flex: none; color: var(--ink-3); transition: transform var(--dur) var(--ease); }
 .faq__q[aria-expanded='true'] .faq__i { transform: rotate(45deg); }
 
@@ -417,3 +445,24 @@
 .madeby { margin-top: var(--s4); }
 .madeby a { color: var(--ink-2); }
 .madeby a:hover { color: var(--ink); }
+
+/*  The eyebrow. A bordered pill rather than a coloured line of text: at this
+    size a tinted caption above a 78px serif reads as a stray sentence, and
+    the border is what makes it read as a label on the page rather than the
+    first line of the copy. --ink-2, so it recedes under the headline it
+    introduces instead of competing with it. */
+.eyebrow {
+  display: inline-flex;
+  align-items: center;
+  min-height: 34px;
+  padding: 0 var(--s4);
+  border: 1px solid var(--line2);
+  border-radius: var(--r-pill);
+  background: color-mix(in oklab, var(--surface) 60%, transparent);
+  font-size: var(--t-micro);
+  font-weight: var(--w-label);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--ink-2);
+}
+.hero--mid .eyebrow { margin-inline: auto; }

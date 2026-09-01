@@ -52,7 +52,7 @@ export function LedgerRows({
     <>
       <form
         className="row"
-        style={{ gap: 'var(--s2)', marginBottom: 'var(--s4)' }}
+        style={{ gap: 'var(--s2)', marginBottom: 'var(--gap-block)' }}
         onSubmit={(e) => { e.preventDefault(); set('q', q || null); }}
       >
         <label className="sr-only" htmlFor="ledger-q">Search your bets</label>

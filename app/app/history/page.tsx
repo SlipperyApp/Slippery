@@ -32,14 +32,14 @@ export default async function History() {
 
   return (
     <>
-      <div className="spread" style={{ marginBottom: 'var(--s4)', flexWrap: 'wrap' }}>
+      <div className="spread" style={{ marginBottom: 'var(--gap-block)', flexWrap: 'wrap' }}>
         <h1>Change history</h1>
         <Link href="/app/ledger" className="btn btn--quiet btn--sm">
           <Icon name="chevronLeft" size={16} /> Back to the ledger
         </Link>
       </div>
 
-      <div className="card" style={{ marginBottom: 'var(--s4)' }}>
+      <div className="card" style={{ marginBottom: 'var(--gap-block)' }}>
         <p className="small muted">
           Append only: a correction is a new event, never an edit. Anything entered{' '}
           <strong>after a result was known</strong> is flagged.

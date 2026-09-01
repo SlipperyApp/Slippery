@@ -43,7 +43,7 @@ export function LegalPage({
                   {s.h}
                 </h2>
                 {s.p.map((para) => (
-                  <p key={para} className="muted" style={{ marginTop: 'var(--s3)', maxWidth: '68ch' }}>{para}</p>
+                  <p key={para} className="muted" style={{ marginTop: 'var(--s3)' }}>{para}</p>
                 ))}
               </li>
             ))}

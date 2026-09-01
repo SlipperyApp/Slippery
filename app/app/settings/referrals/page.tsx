@@ -14,14 +14,14 @@ export default async function Referrals() {
   const { data } = await getViewer();
   return (
     <>
-      <div className="row" style={{ marginBottom: 'var(--s4)' }}>
+      <div className="row" style={{ marginBottom: 'var(--gap-block)' }}>
         <Link href="/app/settings" className="btn btn--quiet btn--sm">
           <Icon name="chevronLeft" size={16} /> Settings
         </Link>
       </div>
       <div className="column column--wide" style={{ marginInline: 0 }}>
         <h1>Referrals</h1>
-        <p className="muted" style={{ marginTop: 'var(--s2)', maxWidth: '58ch' }}>
+        <p className="muted" style={{ marginTop: 'var(--s2)' }}>
           Your code gives the person who uses it a longer trial. You get nothing for it, on purpose.
         </p>
 

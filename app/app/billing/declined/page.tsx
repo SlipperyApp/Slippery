@@ -22,7 +22,7 @@ export default async function Declined() {
 
   return (
     <>
-      <div className="row" style={{ marginBottom: 'var(--s4)' }}>
+      <div className="row" style={{ marginBottom: 'var(--gap-block)' }}>
         <Link href="/app/settings/plan" className="btn btn--quiet btn--sm">
           <Icon name="chevronLeft" size={16} /> Plan and billing
         </Link>
@@ -30,7 +30,7 @@ export default async function Declined() {
 
       <span className="pill pill--neg">Attempt 1 of 2</span>
       <h1 style={{ marginTop: 'var(--s4)' }}>Your card was declined</h1>
-      <p className="lead" style={{ marginTop: 'var(--s3)', maxWidth: '60ch' }}>
+      <p className="lead" style={{ marginTop: 'var(--s3)' }}>
         Your bank refused the payment. Usually an expiry date, a spending limit, or a bank blocking something it has not seen before. None of it is about your account here.
       </p>
 

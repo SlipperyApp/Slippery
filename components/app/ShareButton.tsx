@@ -97,7 +97,7 @@ export function ShareButton({
             aria-label={`Share ${label}`}
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="spread" style={{ marginBottom: 'var(--s4)' }}>
+            <div className="spread" style={{ marginBottom: 'var(--gap-block)' }}>
               <p className="card__title">Share {label.toLowerCase()}</p>
               <button type="button" className="modmenu__btn" aria-label="Close" onClick={() => setOpen(false)}>
                 <Icon name="close" size={16} />

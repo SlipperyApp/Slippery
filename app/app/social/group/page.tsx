@@ -25,13 +25,13 @@ export default async function GroupPage({
 
   return (
     <>
-      <div className="row" style={{ marginBottom: 'var(--s4)' }}>
+      <div className="row" style={{ marginBottom: 'var(--gap-block)' }}>
         <Link href="/app/social" className="btn btn--quiet btn--sm">
           <Icon name="chevronLeft" size={16} /> Social
         </Link>
       </div>
 
-      <div className="spread" style={{ marginBottom: 'var(--s4)', flexWrap: 'wrap', gap: 'var(--s3)' }}>
+      <div className="spread" style={{ marginBottom: 'var(--gap-block)', flexWrap: 'wrap', gap: 'var(--s3)' }}>
         <div>
           <h1>{summary.name}</h1>
           <p className="muted small" style={{ marginTop: 4 }}>{summary.blurb}</p>
@@ -42,7 +42,7 @@ export default async function GroupPage({
         </div>
       </div>
 
-      <div className="banner banner--accent" style={{ marginBottom: 'var(--s4)' }}>
+      <div className="banner banner--accent" style={{ marginBottom: 'var(--gap-block)' }}>
         <Icon name="shield" size={18} className="banner__icon" />
         <span>
           {verified}% of the bets here came from a slip captured at placement.

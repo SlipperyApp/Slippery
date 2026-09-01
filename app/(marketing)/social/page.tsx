@@ -108,7 +108,7 @@ export default function Social() {
               ]}
             />
           </div>
-          <p className="small dim" style={{ marginTop: 'var(--s6)', maxWidth: '68ch' }}>
+          <p className="small dim" style={{ marginTop: 'var(--s6)' }}>
             If any of this stops being true, it is a bug. Report it and it will be treated as one.
           </p>
         </div>

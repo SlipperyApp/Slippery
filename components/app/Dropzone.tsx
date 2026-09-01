@@ -51,7 +51,7 @@ export function Dropzone({ enabled }: { enabled: boolean }) {
         <p className="card__title" style={{ marginTop: 'var(--s3)' }}>
           {name || 'Drop a slip here'}
         </p>
-        <p className="small muted" style={{ marginTop: 'var(--s2)', maxWidth: '44ch' }}>
+        <p className="small muted" style={{ marginTop: 'var(--s2)' }}>
           A screenshot from the bookmaker app, a photograph of a shop slip, or a PDF. The template
           is detected before anything is parsed.
         </p>
