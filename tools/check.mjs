@@ -81,7 +81,7 @@ const MUST_HAVE = {
   'x-content-type-options': 'nosniff',
   'referrer-policy': 'strict-origin-when-cross-origin',
   'x-frame-options': 'SAMEORIGIN',
-  'content-security-policy': "frame-ancestors 'self'",
+  'content-security-policy': "base-uri 'self'; object-src 'none'; frame-ancestors 'self'",
   'cross-origin-opener-policy': 'same-origin',
 };
 let headerFails = 0;

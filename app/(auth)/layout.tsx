@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { Wordmark } from '@/components/Wordmark';
+import { Mark } from '@/components/Mark';
 
 export const metadata: Metadata = {
   title: { default: 'Sign in', template: '%s · Slippery' },
@@ -12,7 +13,7 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
       <header style={{ padding: 'var(--s5) var(--s4)' }}>
         <div className="wrap" style={{ padding: 0 }}>
           <Link href="/" className="brand" aria-label="Slippery, home">
-            <img src="/icon.svg" alt="" className="brand__mark" width={26} height={26} />
+            <Mark className="brand__mark" size={26} />
             <Wordmark id="wm-auth" height={17} />
           </Link>
         </div>

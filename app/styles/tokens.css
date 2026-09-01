@@ -53,9 +53,31 @@
 }
 
 :root {
-  /* LOCKED semantic colours. Never redefined in a theme block. */
-  --pos: #86EFAC;
-  --neg: #FCA5A5;
+  /* LOCKED semantic colours. Never redefined in a theme block.
+     Four now, not two, and each has exactly one meaning:
+       --pos   profit
+       --neg   loss
+       --warn  attention, and a cash out, which is neither a win nor a loss
+       --gold  a NEW marker, and nothing else. It sits 0.120 from --warn in
+               oklab; under 0.08 two colours read as one at small sizes. */
+  --pos: #7FE3A6;
+  --neg: #F5A3A3;
+  --warn: #E8C34A;
+  --gold: #C79A3F;
+  --gold-wash: color-mix(in srgb, var(--gold) 14%, transparent);
+  --warn-wash: color-mix(in oklab, var(--warn) 13%, transparent);
+  --warn-line: color-mix(in oklab, var(--warn) 36%, transparent);
+
+  /* Text, fixed across all eight themes, which is why the line about the two
+     result colours being identical everywhere stays true of the ink as well.
+       --t1  primary
+       --t2  secondary
+       --t3  tertiary, which still clears 4.5:1 on --elev, the lightest ground
+       --t4  NEVER a text colour. Rules, and the fill of a disabled icon. */
+  --t1: #E6EBF3;
+  --t2: #9AA6BB;
+  --t3: #8E97A8;
+  --t4: #545E6E;
   --pos-dim: color-mix(in oklab, var(--pos) 74%, var(--bg));
   --neg-dim: color-mix(in oklab, var(--neg) 74%, var(--bg));
   --pos-wash: color-mix(in oklab, var(--pos) 13%, transparent);
@@ -122,157 +144,245 @@
 
 /* ------------------------------------------------------------------ themes */
 /* Eight, all dark. There is no light mode: profit green measures 1.07:1 on
-   beige, which is invisible. Ground, surfaces, ink and one accent each. */
+   beige, which is invisible.
+
+   ONLY THE SURFACES AND THE ACCENT PAIR CHANGE. Text and the four semantic
+   colours are declared once, above, and are identical in all eight, which is
+   what makes "the two result colours are fixed, so none of the eight is green
+   or red" true rather than aspirational.
+
+   --p is the solid accent: buttons, bars, active states.
+   --s is the light accent: links and inline emphasis. */
 
 :root,
 [data-theme='carbon'] {
-  --bg: #0A0A0B;
-  --bg-2: #0F0F11;
-  --surface: #141416;
-  --surface-2: #1B1B1E;
-  --surface-3: #232327;
-  --line: #26262A;
-  --line-2: #33333A;
-  --ink: #F4F3F0;
-  --ink-2: #A9A8A3;
-  --ink-3: #74736F;
-  --accent: #D9D4C7;
-  --accent-2: #EFEBE0;
-  --accent-ink: #131311;
-  --glow-a: #3B3A34;
-  --glow-b: #2A2C33;
-  --glow-c: #1D1D20;
+  --bg: #0C0E13;
+  --card: #14171F;
+  --raise: #191D27;
+  --elev: #272A34;
+  --line: #212732;
+  --line2: #2C3342;
+  --p: #6E86B8;
+  --s: #A8C2E8;
+
+  /* The names the rest of the stylesheet already reads, pointed at the eight
+     above. Aliases rather than a rename, so one palette change does not touch
+     four thousand declarations. */
+  --bg-2: var(--card);
+  --surface: var(--card);
+  --surface-2: var(--raise);
+  --surface-3: var(--elev);
+  --line-2: var(--line2);
+  --ink: var(--t1);
+  --ink-2: var(--t2);
+  --ink-3: var(--t4);
+  --accent: var(--p);
+  --accent-2: var(--s);
+  --accent-ink: var(--bg);
+  --glow-a: color-mix(in oklab, var(--p) 34%, var(--bg));
+  --glow-b: color-mix(in oklab, var(--p) 18%, var(--bg));
+  --glow-c: color-mix(in oklab, var(--p) 8%, var(--bg));
 }
 
 [data-theme='periwinkle'] {
-  --bg: #0C0E1C;
-  --bg-2: #111327;
-  --surface: #171A31;
-  --surface-2: #1E2240;
-  --surface-3: #262B4E;
-  --line: #272B4A;
-  --line-2: #363C63;
-  --ink: #F0F1FB;
-  --ink-2: #A6ABD0;
-  --ink-3: #6F759C;
-  --accent: #A9B6FF;
-  --accent-2: #C6CEFF;
-  --accent-ink: #0B0E22;
-  --glow-a: #3A3F86;
-  --glow-b: #2A2F6B;
-  --glow-c: #1B1E45;
+  --bg: #0A0C16;
+  --card: #141827;
+  --raise: #191E30;
+  --elev: #272E45;
+  --line: #212840;
+  --line2: #2D3552;
+  --p: #7C86D6;
+  --s: #B3BCF2;
+
+  /* The names the rest of the stylesheet already reads, pointed at the eight
+     above. Aliases rather than a rename, so one palette change does not touch
+     four thousand declarations. */
+  --bg-2: var(--card);
+  --surface: var(--card);
+  --surface-2: var(--raise);
+  --surface-3: var(--elev);
+  --line-2: var(--line2);
+  --ink: var(--t1);
+  --ink-2: var(--t2);
+  --ink-3: var(--t4);
+  --accent: var(--p);
+  --accent-2: var(--s);
+  --accent-ink: var(--bg);
+  --glow-a: color-mix(in oklab, var(--p) 34%, var(--bg));
+  --glow-b: color-mix(in oklab, var(--p) 18%, var(--bg));
+  --glow-c: color-mix(in oklab, var(--p) 8%, var(--bg));
 }
 
 [data-theme='ink'] {
-  --bg: #061019;
-  --bg-2: #091622;
-  --surface: #0D1C2B;
-  --surface-2: #122539;
-  --surface-3: #182F47;
-  --line: #1B3047;
-  --line-2: #274563;
-  --ink: #EAF3FA;
-  --ink-2: #9DB4C7;
-  --ink-3: #678094;
-  --accent: #7DD3FC;
-  --accent-2: #A9E4FE;
-  --accent-ink: #04121C;
-  --glow-a: #14496B;
-  --glow-b: #0E3550;
-  --glow-c: #0A2438;
+  --bg: #080A11;
+  --card: #101420;
+  --raise: #151A28;
+  --elev: #222939;
+  --line: #1B2130;
+  --line2: #262E40;
+  --p: #6A86C0;
+  --s: #9FB8E4;
+
+  /* The names the rest of the stylesheet already reads, pointed at the eight
+     above. Aliases rather than a rename, so one palette change does not touch
+     four thousand declarations. */
+  --bg-2: var(--card);
+  --surface: var(--card);
+  --surface-2: var(--raise);
+  --surface-3: var(--elev);
+  --line-2: var(--line2);
+  --ink: var(--t1);
+  --ink-2: var(--t2);
+  --ink-3: var(--t4);
+  --accent: var(--p);
+  --accent-2: var(--s);
+  --accent-ink: var(--bg);
+  --glow-a: color-mix(in oklab, var(--p) 34%, var(--bg));
+  --glow-b: color-mix(in oklab, var(--p) 18%, var(--bg));
+  --glow-c: color-mix(in oklab, var(--p) 8%, var(--bg));
 }
 
 [data-theme='graphite'] {
-  --bg: #0F0F11;
-  --bg-2: #141416;
-  --surface: #1A1A1E;
-  --surface-2: #222227;
-  --surface-3: #2A2A31;
-  --line: #2C2C33;
-  --line-2: #3B3B45;
-  --ink: #F2F1F5;
-  --ink-2: #A8A6B2;
-  --ink-3: #73717E;
-  --accent: #C4B5FD;
-  --accent-2: #DBD1FE;
-  --accent-ink: #14111F;
-  --glow-a: #3E3663;
-  --glow-b: #2C2848;
-  --glow-c: #201E2E;
+  --bg: #0D0E10;
+  --card: #17191C;
+  --raise: #1C1F23;
+  --elev: #2A2E33;
+  --line: #23262B;
+  --line2: #31353C;
+  --p: #818C99;
+  --s: #BAC3CE;
+
+  /* The names the rest of the stylesheet already reads, pointed at the eight
+     above. Aliases rather than a rename, so one palette change does not touch
+     four thousand declarations. */
+  --bg-2: var(--card);
+  --surface: var(--card);
+  --surface-2: var(--raise);
+  --surface-3: var(--elev);
+  --line-2: var(--line2);
+  --ink: var(--t1);
+  --ink-2: var(--t2);
+  --ink-3: var(--t4);
+  --accent: var(--p);
+  --accent-2: var(--s);
+  --accent-ink: var(--bg);
+  --glow-a: color-mix(in oklab, var(--p) 34%, var(--bg));
+  --glow-b: color-mix(in oklab, var(--p) 18%, var(--bg));
+  --glow-c: color-mix(in oklab, var(--p) 8%, var(--bg));
 }
 
 [data-theme='slate'] {
-  --bg: #0A1015;
-  --bg-2: #0E151C;
-  --surface: #131C24;
-  --surface-2: #1A242E;
-  --surface-3: #212D39;
-  --line: #212D38;
-  --line-2: #2F3F4E;
-  --ink: #EDF2F6;
-  --ink-2: #A2B0BC;
-  --ink-3: #6D7B88;
-  --accent: #BACADD;
-  --accent-2: #D6E1EC;
-  --accent-ink: #0B1218;
-  --glow-a: #2C3F52;
-  --glow-b: #223140;
-  --glow-c: #17222D;
+  --bg: #0B0F14;
+  --card: #141A22;
+  --raise: #19202A;
+  --elev: #262F3B;
+  --line: #1F2833;
+  --line2: #2B3645;
+  --p: #5E8FB8;
+  --s: #9FC6E4;
+
+  /* The names the rest of the stylesheet already reads, pointed at the eight
+     above. Aliases rather than a rename, so one palette change does not touch
+     four thousand declarations. */
+  --bg-2: var(--card);
+  --surface: var(--card);
+  --surface-2: var(--raise);
+  --surface-3: var(--elev);
+  --line-2: var(--line2);
+  --ink: var(--t1);
+  --ink-2: var(--t2);
+  --ink-3: var(--t4);
+  --accent: var(--p);
+  --accent-2: var(--s);
+  --accent-ink: var(--bg);
+  --glow-a: color-mix(in oklab, var(--p) 34%, var(--bg));
+  --glow-b: color-mix(in oklab, var(--p) 18%, var(--bg));
+  --glow-c: color-mix(in oklab, var(--p) 8%, var(--bg));
 }
 
 [data-theme='bronze'] {
-  --bg: #100E09;
-  --bg-2: #15120C;
-  --surface: #1C1811;
-  --surface-2: #241F16;
-  --surface-3: #2D271B;
-  --line: #2C2619;
-  --line-2: #3E3626;
-  --ink: #F7F2E7;
-  --ink-2: #B5A98F;
-  --ink-3: #7D7460;
-  --accent: #E3B341;
-  --accent-2: #F0CA71;
-  --accent-ink: #171205;
-  --glow-a: #5A4517;
-  --glow-b: #3E3011;
-  --glow-c: #26200E;
+  --bg: #100C09;
+  --card: #1B1613;
+  --raise: #211A16;
+  --elev: #2F2621;
+  --line: #28201B;
+  --line2: #372C25;
+  --p: #B08663;
+  --s: #E0BC9A;
+
+  /* The names the rest of the stylesheet already reads, pointed at the eight
+     above. Aliases rather than a rename, so one palette change does not touch
+     four thousand declarations. */
+  --bg-2: var(--card);
+  --surface: var(--card);
+  --surface-2: var(--raise);
+  --surface-3: var(--elev);
+  --line-2: var(--line2);
+  --ink: var(--t1);
+  --ink-2: var(--t2);
+  --ink-3: var(--t4);
+  --accent: var(--p);
+  --accent-2: var(--s);
+  --accent-ink: var(--bg);
+  --glow-a: color-mix(in oklab, var(--p) 34%, var(--bg));
+  --glow-b: color-mix(in oklab, var(--p) 18%, var(--bg));
+  --glow-c: color-mix(in oklab, var(--p) 8%, var(--bg));
 }
 
 [data-theme='cinnabar'] {
-  --bg: #140A09;
-  --bg-2: #1A0D0B;
-  --surface: #22120F;
-  --surface-2: #2B1815;
-  --surface-3: #351E1A;
-  --line: #341D19;
-  --line-2: #492A24;
-  --ink: #FBF1EC;
-  --ink-2: #C0A79D;
-  --ink-3: #86706A;
-  --accent: #F3D7A3;
-  --accent-2: #F9E7C6;
-  --accent-ink: #1B0D0A;
-  --glow-a: #5E2A1E;
-  --glow-b: #431E16;
-  --glow-c: #2C1410;
+  --bg: #110B0A;
+  --card: #1D1513;
+  --raise: #241A17;
+  --elev: #332622;
+  --line: #2B201C;
+  --line2: #3A2C27;
+  --p: #C0755C;
+  --s: #EBAA93;
+
+  /* The names the rest of the stylesheet already reads, pointed at the eight
+     above. Aliases rather than a rename, so one palette change does not touch
+     four thousand declarations. */
+  --bg-2: var(--card);
+  --surface: var(--card);
+  --surface-2: var(--raise);
+  --surface-3: var(--elev);
+  --line-2: var(--line2);
+  --ink: var(--t1);
+  --ink-2: var(--t2);
+  --ink-3: var(--t4);
+  --accent: var(--p);
+  --accent-2: var(--s);
+  --accent-ink: var(--bg);
+  --glow-a: color-mix(in oklab, var(--p) 34%, var(--bg));
+  --glow-b: color-mix(in oklab, var(--p) 18%, var(--bg));
+  --glow-c: color-mix(in oklab, var(--p) 8%, var(--bg));
 }
 
 [data-theme='liquid'] {
-  --bg: #04100F;
-  --bg-2: #071815;
-  --surface: #0A211E;
-  --surface-2: #0F2C28;
-  --surface-3: #143832;
-  --line: #143732;
-  --line-2: #1E4E46;
-  --ink: #E8F7F4;
-  --ink-2: #97BAB4;
-  --ink-3: #62847F;
-  --accent: #22D3EE;
-  --accent-2: #67E8F9;
-  --accent-ink: #03181C;
-  --glow-a: #0B4D5C;
-  --glow-b: #0A3A42;
-  --glow-c: #07272C;
+  --bg: #070D0F;
+  --card: #0F181B;
+  --raise: #141E22;
+  --elev: #1F2E33;
+  --line: #19262A;
+  --line2: #243539;
+  --p: #4E9BA6;
+  --s: #8FD3DC;
+
+  /* The names the rest of the stylesheet already reads, pointed at the eight
+     above. Aliases rather than a rename, so one palette change does not touch
+     four thousand declarations. */
+  --bg-2: var(--card);
+  --surface: var(--card);
+  --surface-2: var(--raise);
+  --surface-3: var(--elev);
+  --line-2: var(--line2);
+  --ink: var(--t1);
+  --ink-2: var(--t2);
+  --ink-3: var(--t4);
+  --accent: var(--p);
+  --accent-2: var(--s);
+  --accent-ink: var(--bg);
+  --glow-a: color-mix(in oklab, var(--p) 34%, var(--bg));
+  --glow-b: color-mix(in oklab, var(--p) 18%, var(--bg));
+  --glow-c: color-mix(in oklab, var(--p) 8%, var(--bg));
 }

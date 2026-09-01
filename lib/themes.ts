@@ -13,7 +13,7 @@ export type Theme = {
   blurb: string;
   /** ground, surface, accent, line. The picker chip is built from these, so
    *  the row reads as eight palettes rather than eight labels. They mirror
-   *  --bg/--surface/--accent/--line in tokens.css; tests/themes.test.ts
+   *  --bg/--card/--p/--line in tokens.css; tests/themes.test.ts
    *  fails if they drift. */
   swatch: [string, string, string, string];
   /** Every theme past the first is an unlock, not a settings free for all. */
@@ -21,14 +21,14 @@ export type Theme = {
 };
 
 export const THEMES: Theme[] = [
-  { name: 'carbon', label: 'Carbon', blurb: 'Near black, bone accent. The quietest of the eight.', swatch: ['#0A0A0B', '#141416', '#D9D4C7', '#26262A'], unlock: 'Default' },
-  { name: 'periwinkle', label: 'Periwinkle', blurb: 'Indigo ground, a soft blue accent that never competes with the figures.', swatch: ['#0C0E1C', '#171A31', '#A9B6FF', '#272B4A'], unlock: 'Log 10 slips' },
-  { name: 'ink', label: 'Ink', blurb: 'Deep navy and a cold sky accent. Best on an OLED phone at night.', swatch: ['#061019', '#0D1C2B', '#7DD3FC', '#1B3047'], unlock: 'Settle 25 bets' },
-  { name: 'graphite', label: 'Graphite', blurb: 'Neutral dark with a lilac accent. The most legible in daylight.', swatch: ['#0F0F11', '#1A1A1E', '#C4B5FD', '#2C2C33'], unlock: 'Add a bookmaker' },
-  { name: 'slate', label: 'Slate', blurb: 'Blue grey throughout, accent included. Almost monochrome.', swatch: ['#0A1015', '#131C24', '#BACADD', '#212D38'], unlock: 'Join a group' },
-  { name: 'bronze', label: 'Bronze', blurb: 'Warm umber and a metallic gold. Reads well on a big screen.', swatch: ['#100E09', '#1C1811', '#E3B341', '#2C2619'], unlock: 'A 30 day streak of capture' },
-  { name: 'cinnabar', label: 'Cinnabar', blurb: 'Oxide red ground, porcelain accent. The only warm ground with a pale accent.', swatch: ['#140A09', '#22120F', '#F3D7A3', '#341D19'], unlock: 'Import a full history' },
-  { name: 'liquid', label: 'Liquid', blurb: 'Near black green with an aqua accent. The loudest of the eight.', swatch: ['#04100F', '#0A211E', '#22D3EE', '#143732'], unlock: 'Twelve months on Slippery' },
+  { name: 'carbon', label: 'Carbon', blurb: 'Near black with a steel blue accent. The quietest of the eight.', swatch: ['#0C0E13', '#14171F', '#6E86B8', '#212732'], unlock: 'Default' },
+  { name: 'periwinkle', label: 'Periwinkle', blurb: 'Indigo ground, a soft violet accent that never competes with a figure.', swatch: ['#0A0C16', '#141827', '#7C86D6', '#212840'], unlock: 'Log 10 slips' },
+  { name: 'ink', label: 'Ink', blurb: 'Deepest ground of the eight. Best on an OLED phone at night.', swatch: ['#080A11', '#101420', '#6A86C0', '#1B2130'], unlock: 'Settle 25 bets' },
+  { name: 'graphite', label: 'Graphite', blurb: 'Neutral dark, near monochrome. The most legible in daylight.', swatch: ['#0D0E10', '#17191C', '#818C99', '#23262B'], unlock: 'Add a bookmaker' },
+  { name: 'slate', label: 'Slate', blurb: 'Blue grey throughout. A colder carbon.', swatch: ['#0B0F14', '#141A22', '#5E8FB8', '#1F2833'], unlock: 'Join a group' },
+  { name: 'bronze', label: 'Bronze', blurb: 'Warm umber and a copper accent. Reads well on a big screen.', swatch: ['#100C09', '#1B1613', '#B08663', '#28201B'], unlock: 'A 30 day streak of capture' },
+  { name: 'cinnabar', label: 'Cinnabar', blurb: 'Oxide red ground, terracotta accent. The warmest of the eight.', swatch: ['#110B0A', '#1D1513', '#C0755C', '#2B201C'], unlock: 'Import a full history' },
+  { name: 'liquid', label: 'Liquid', blurb: 'Near black green with a teal accent. The loudest of the eight.', swatch: ['#070D0F', '#0F181B', '#4E9BA6', '#19262A'], unlock: 'Twelve months on Slippery' },
 ];
 
 export const THEME_NAMES = THEMES.map((t) => t.name);

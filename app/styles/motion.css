@@ -71,21 +71,10 @@
   to   { transform: translate3d(6vmax, -6vmax, 0) scale(1.12); }
 }
 
-/* Slow parallax, scroll linked where the browser supports it. Transform only,
-   and purely decorative, so browsers without it simply keep the drift. */
-@supports (animation-timeline: scroll()) {
-  @media (prefers-reduced-motion: no-preference) {
-    .bgfield__parallax {
-      animation: bg-parallax linear both;
-      animation-timeline: scroll();
-      will-change: transform;
-    }
-  }
-}
-@keyframes bg-parallax {
-  from { transform: translate3d(0, 0, 0); }
-  to   { transform: translate3d(0, -7vmax, 0); }
-}
+/*  NO PARALLAX. The background used to drift on a scroll() timeline, which
+    is motion driven by scroll position rather than by anything happening.
+    It is gone: the field keeps its own slow drift, on its own clock, which
+    looks the same and does not move because you moved. */
 
 /* A veil that keeps text legible over the brightest part of a blob. Painted,
    does not animate.
@@ -129,32 +118,6 @@
   animation: settle-fill var(--dur-settle) var(--ease-out) both;
 }
 
-/* --------------------------------------------------------- landing sequence */
-/* Scroll jacking, kept, with the five properties that separate it from the
-   version that was rejected: a real tall track, a sticky stage rather than
-   fixed, proximity snap, no intercepted wheel or touch events, and a full
-   collapse under prefers-reduced-motion. */
-
-.jack {
-  position: relative;
-  height: 260svh;
-}
-.jack__stage {
-  position: sticky;
-  top: 0;
-  height: 100svh;
-  display: grid;
-  place-items: center;
-  overflow: hidden;
-}
-@media (prefers-reduced-motion: no-preference) and (min-width: 700px) {
-  .jack { scroll-snap-type: y proximity; }
-  .jack__snap { scroll-snap-align: start; }
-}
-@media (prefers-reduced-motion: reduce) {
-  .jack { height: auto; }
-  .jack__stage { position: static; height: auto; overflow: visible; }
-}
 
 /* ------------------------------------------------------------ the wordmark */
 /* The treatment goes on the last word of the headline, never on the wordmark:
@@ -248,14 +211,6 @@
 }
 
 /* ------------------------------------------------ the landing sequence UI */
-.jack__inner {
-  display: grid;
-  gap: var(--s5);
-  grid-template-columns: 1fr;
-  align-items: center;
-}
-@media (min-width: 900px) { .jack__inner { grid-template-columns: 1fr 40px; } }
-
 .jack__steps { display: grid; gap: var(--s4); max-width: 780px; }
 
 .jack__step {
@@ -271,17 +226,9 @@
   border-radius: var(--r-card);
   border: 1px solid var(--line);
   background: color-mix(in oklab, var(--surface) 70%, transparent);
-  transform: translate3d(0, 0, 0) scale(0.985);
-  transition: transform 420ms var(--ease-out), border-color 420ms var(--ease),
-              background 420ms var(--ease);
-}
-.jack__step--on {
-  transform: translate3d(0, 0, 0) scale(1);
-  border-color: color-mix(in oklab, var(--accent) 44%, transparent);
-  background: color-mix(in oklab, var(--accent) 8%, var(--surface));
+  transition: border-color 220ms var(--ease), background 220ms var(--ease);
 }
 .jack__num { color: var(--ink-2); font-size: var(--t-small); padding-top: 3px; }
-.jack__step--on .jack__num { color: var(--accent); }
 /*  The step's timing, beside or beneath the number, never in a pill over the
     title. */
 .jack__when {
@@ -301,24 +248,8 @@
 .jack__title { font-size: clamp(20px, 3.4vw, 30px); line-height: 1.14; font-weight: var(--w-label); letter-spacing: var(--tr-tight); }
 .jack__text { font-size: var(--t-body); line-height: 1.55; color: var(--ink-2); max-width: 52ch; }
 .jack__icon { color: var(--ink-2); margin-top: 4px; }
-.jack__step--on .jack__icon { color: var(--accent); }
 
-.jack__rail { display: none; }
-@media (min-width: 900px) {
-  .jack__rail { display: grid; gap: 8px; justify-items: center; }
-}
-.jack__pip {
-  width: 3px; height: 34px;
-  border-radius: var(--r-pill);
-  background: var(--surface-3);
-  transition: background 320ms var(--ease);
-}
-.jack__pip--on { background: var(--accent); }
 
-.jack__snap { height: 0; }
-@media (prefers-reduced-motion: no-preference) and (min-width: 700px) {
-  .jack__snap { height: 33.333%; scroll-snap-align: start; }
-}
 
 /* ============================================================== the polish
 
@@ -345,20 +276,17 @@
     content that is invisible to anything that does not scroll, which
     includes printing, a short viewport that cannot reach it, and a
     screenshot. A 14px offset has no such failure mode. */
-@supports (animation-timeline: view()) {
-  @media (prefers-reduced-motion: no-preference) {
-    .sect > .wrap > * {
-      animation: arrive linear both;
-      animation-timeline: view();
-      /*  Finished well before the element reaches the middle of the screen.
-          An entrance still running when you are reading it is a distraction,
-          not a flourish. */
-      animation-range: entry 5% cover 32%;
-    }
-    /*  The hero already has its own staged entrance, and the sequence owns
-        its own scroll range. Two animations on one scroll is a fight. */
-    .hero .wrap > *, .jack .wrap > * { animation: none; }
-  }
+/*  Fired once by an IntersectionObserver, never by scroll position, and
+    removed from the observer the moment it fires. The offset only exists
+    while .js-reveal is on <html>, which only happens once something is able
+    to take it off again: with JavaScript off nothing is displaced. */
+.js-reveal .sect > .wrap > * {
+  transform: translate3d(0, 14px, 0);
+  transition: transform 520ms var(--ease-out);
+}
+.js-reveal .sect > .wrap > .is-in { transform: none; }
+@media (prefers-reduced-motion: reduce) {
+  .js-reveal .sect > .wrap > * { transform: none; transition: none; }
 }
 /*  Not a fade. The section settles down into place, which reads as weight
     rather than as an element materialising out of nothing.

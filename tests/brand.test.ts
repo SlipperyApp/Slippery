@@ -1,52 +1,62 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
-import { MARK_GRID, MARK_ALPHA, MARK_POS, MARK_NEG, MARK_GROUND } from '@/lib/brand';
+import { MARK_CLIP, MARK_PATH, MARK_TILE, MARK_INK, MARK_ACCENT } from '@/lib/brand';
 
 /*  Three surfaces draw the mark and only one of them can load the file.
  *
- *  Everywhere the browser renders HTML it is public/icon.svg. /api/share and
- *  /og go through Satori, which draws no external file, so both rebuild the
- *  mark out of divs from lib/brand.ts. Nothing stops those two from drifting
- *  away from the icon except this: the icon is parsed and compared.
+ *  Everywhere the browser renders HTML it is inlined by components/Mark.tsx,
+ *  which is why it takes the theme colour: through an <img src> a custom
+ *  property never resolves and the mark renders the same shade in all eight
+ *  themes. /api/share and /og go through Satori, which loads no external file
+ *  either, so both draw the paths from lib/brand.ts.
  *
- *  They had drifted. The share card drew a five by five pattern nobody had
- *  checked, and /og drew three rounded squares in a row, which is not the
- *  mark at all. */
+ *  Nothing stops those from drifting away from the icon except this: the icon
+ *  is parsed and compared. They had drifted before, into two different
+ *  approximations of a mark that no longer exists. */
 
-function gridFromIcon(): { grid: string[]; alpha: number[][] } {
-  const svg = readFileSync('public/icon.svg', 'utf8');
-  const rects = [...svg.matchAll(
-    /<rect x="([\d.]+)" y="([\d.]+)"[^>]*fill="(#[0-9A-Fa-f]{6})" opacity="([\d.]+)"/g,
-  )];
-  const xs = [...new Set(rects.map((r) => Number(r[1])))].sort((a, b) => a - b);
-  const ys = [...new Set(rects.map((r) => Number(r[2])))].sort((a, b) => a - b);
-  const grid = ys.map(() => new Array<string>(xs.length).fill(' '));
-  const alpha = ys.map(() => new Array<number>(xs.length).fill(1));
-  for (const [, x, y, fill, op] of rects) {
-    const c = xs.indexOf(Number(x));
-    const r = ys.indexOf(Number(y));
-    const hex = fill.toUpperCase();
-    grid[r][c] = hex === MARK_POS.toUpperCase() ? 'p' : hex === MARK_NEG.toUpperCase() ? 'n' : ' ';
-    alpha[r][c] = Number(op);
+const ICON = readFileSync('public/app-icon.svg', 'utf8');
+const THEMED = readFileSync('components/Mark.tsx', 'utf8');
+
+test('the generated images draw the paths the icon file actually contains', () => {
+  assert.ok(ICON.includes(MARK_PATH), 'lib/brand.ts and public/app-icon.svg draw different outlines');
+  assert.ok(ICON.includes(MARK_CLIP), 'the diagonal cut has drifted from the icon');
+  for (const c of [MARK_TILE, MARK_INK, MARK_ACCENT]) {
+    assert.ok(ICON.includes(c), `${c} is not a colour in the icon`);
   }
-  return { grid: grid.map((r) => r.join('')), alpha };
-}
-
-test('the generated images draw the mark the icon file actually contains', () => {
-  const { grid, alpha } = gridFromIcon();
-  assert.deepEqual(grid, [...MARK_GRID], 'lib/brand.ts and public/icon.svg disagree');
-  assert.deepEqual(alpha, MARK_ALPHA.map((r) => [...r]));
 });
 
-test('the mark uses its own colours, never the two locked result colours', () => {
-  /*  #86EFAC and #FCA5A5 mean profit and loss and nothing else. A logo drawn
-   *  in them would be a fourth meaning on two colours that the whole product
-   *  keeps down to one each. The icon uses a softer pair on purpose. */
-  assert.notEqual(MARK_POS.toUpperCase(), '#86EFAC');
-  assert.notEqual(MARK_NEG.toUpperCase(), '#FCA5A5');
-  for (const c of [MARK_POS, MARK_NEG, MARK_GROUND]) {
-    assert.match(c, /^#[0-9A-F]{6}$/i);
-    assert.ok(readFileSync('public/icon.svg', 'utf8').includes(c), `${c} is not in the icon`);
+test('the in-app mark is the same outline, and takes the theme', () => {
+  /*  The themed file draws the same glyph with fill="currentColor" and
+   *  fill="var(--s, ...)" instead of two fixed colours. Same outline, or the
+   *  app and its own share card are different logos. */
+  assert.ok(THEMED.includes(MARK_PATH.slice(0, 120)), 'components/Mark.tsx draws a different outline');
+  assert.ok(THEMED.includes('currentColor'), 'the mark does not follow the text colour');
+  assert.ok(/var\(--s/.test(THEMED), 'the mark does not follow the accent');
+  /*  #A8C2E8 appears once, as the fallback inside var(--s, ...), which is
+   *  what a fallback is for. A bare fill of either colour is a baked in
+   *  logo that ignores seven of the eight themes. */
+  assert.ok(!/fill="#(E6EBF3|A8C2E8)"/.test(THEMED), 'the in-app mark has a colour baked into it');
+  assert.equal((THEMED.match(/#A8C2E8/g) ?? []).length, 1, 'more than a single var() fallback');
+});
+
+test('the mark is drawn inline, never through an img or a background', () => {
+  /*  The specific failure this prevents: through <img src="/icon.svg"> the
+   *  custom properties do not resolve, and the mark renders uncoloured and
+   *  identical in all eight themes. */
+  for (const f of ['components/MarketingChrome.tsx', 'components/AppShell.tsx', 'app/(auth)/layout.tsx']) {
+    const src = readFileSync(f, 'utf8');
+    assert.ok(!/<img[^>]*icon\.svg/.test(src), `${f} loads the mark through an img`);
+    assert.ok(src.includes('<Mark'), `${f} does not render the inline mark`);
+  }
+});
+
+test('the mark does not use the two locked result colours', () => {
+  /*  #7FE3A6 and #F5A3A3 mean profit and loss and nothing else. A logo drawn
+   *  in them would be a third meaning on two colours the product keeps to one
+   *  each. */
+  for (const c of [MARK_TILE, MARK_INK, MARK_ACCENT]) {
+    assert.notEqual(c.toUpperCase(), '#7FE3A6');
+    assert.notEqual(c.toUpperCase(), '#F5A3A3');
   }
 });

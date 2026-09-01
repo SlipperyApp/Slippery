@@ -38,7 +38,8 @@ export const viewport: Viewport = {
   width: 'device-width',
   initialScale: 1,
   viewportFit: 'cover',
-  themeColor: '#0A0A0B',
+  // carbon's --bg. ThemeBoot overwrites it before first paint for the other seven.
+  themeColor: '#0C0E13',
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

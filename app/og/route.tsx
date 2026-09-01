@@ -1,4 +1,4 @@
-import { MARK_GRID, MARK_ALPHA, MARK_POS, MARK_NEG, MARK_GROUND } from '@/lib/brand';
+import { MARK_CLIP, MARK_PATH, MARK_TILE, MARK_INK, MARK_ACCENT } from '@/lib/brand';
 import { ImageResponse } from 'next/og';
 
 export const runtime = 'edge';
@@ -39,26 +39,17 @@ export async function GET(req: Request) {
           }}
         />
         <div style={{ display: 'flex', alignItems: 'center', gap: 18 }}>
-          {/*  The mark, from lib/brand.ts, which is the grid public/icon.svg
-               actually contains. This drew three rounded squares in a row
-               before, which is not the mark: the largest surface the product
-               has was carrying a logo the product does not use. */}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
-            {MARK_GRID.map((row, y) => (
-              <div key={y} style={{ display: 'flex', gap: 3 }}>
-                {[...row].map((ch, x) => (
-                  <div
-                    key={x}
-                    style={{
-                      width: 8, height: 8, borderRadius: 2.2, display: 'flex',
-                      background: ch === 'p' ? MARK_POS : ch === 'n' ? MARK_NEG : MARK_GROUND,
-                      opacity: MARK_ALPHA[y][x],
-                    }}
-                  />
-                ))}
-              </div>
-            ))}
-          </div>
+          {/*  The mark, drawn from lib/brand.ts, which carries the paths in
+               public/app-icon.svg. Satori loads no external file, so it is
+               inline; a test asserts these are still the icon's own paths. */}
+          <svg width={44} height={44} viewBox="0 0 1024 1024">
+            <defs>
+              <clipPath id="mk-cut"><path d={MARK_CLIP} /></clipPath>
+            </defs>
+            <rect width="1024" height="1024" rx="230" fill={MARK_TILE} />
+            <path d={MARK_PATH} fill={MARK_INK} />
+            <g clipPath="url(#mk-cut)"><path d={MARK_PATH} fill={MARK_ACCENT} /></g>
+          </svg>
           <div style={{ color: '#F4F3F0', fontSize: 30, fontWeight: 800, letterSpacing: -1 }}>SLIPPERY</div>
         </div>
 

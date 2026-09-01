@@ -13,15 +13,32 @@ import { THEME_NAMES } from '@/lib/themes';
 
 const CSS = readFileSync(new URL('../app/styles/tokens.css', import.meta.url), 'utf8');
 
+/*  Text and the four semantic colours are declared once on :root and are the
+ *  same in all eight themes. Only surfaces and the accent pair sit in a theme
+ *  block, and the old names (--ink, --surface, --accent) are aliases pointing
+ *  at the new ones, so resolving one level of var() is required to measure
+ *  anything at all. */
+const ROOT: Record<string, string> = (() => {
+  const body = /:root \{([\s\S]*?)\n\}/.exec(CSS)?.[1] ?? '';
+  const out: Record<string, string> = {};
+  for (const m of body.matchAll(/--([a-z0-9-]+):\s*(#[0-9a-fA-F]{6})/g)) out[m[1]] = m[2];
+  return out;
+})();
+
 function block(theme: string): Record<string, string> {
   const re = theme === 'carbon'
     ? /:root,\s*\[data-theme='carbon'\]\s*\{([\s\S]*?)\n\}/
     : new RegExp(`\\[data-theme='${theme}'\\]\\s*\\{([\\s\\S]*?)\\n\\}`);
   const body = re.exec(CSS)?.[1] ?? '';
-  const out: Record<string, string> = {};
+  const out: Record<string, string> = { ...ROOT };
+  const alias: Record<string, string> = {};
   for (const m of body.matchAll(/--([a-z0-9-]+):\s*(#[0-9a-fA-F]{6})/g)) out[m[1]] = m[2];
+  for (const m of body.matchAll(/--([a-z0-9-]+):\s*var\(--([a-z0-9-]+)\)/g)) alias[m[1]] = m[2];
+  // One pass is enough: no alias points at another alias.
+  for (const [name, target] of Object.entries(alias)) if (out[target]) out[name] = out[target];
   return out;
 }
+
 
 function srgbToLinear(c: number) {
   const v = c / 255;
@@ -42,14 +59,18 @@ function contrast(a: string, b: string) {
 }
 
 /** Every ground a piece of text can land on. */
-const GROUNDS = ['bg', 'bg-2', 'surface', 'surface-2', 'surface-3'];
+const GROUNDS = ['bg', 'card', 'raise', 'elev'];
 
-/** Every token that is used as a text colour anywhere in the stylesheets. */
-const TEXT_TOKENS = ['ink', 'ink-2'];
+/** Every token that is used as a text colour anywhere in the stylesheets.
+ *  --t3 is included: the claim is that it clears 4.5:1 on every surface
+ *  including --elev, the lightest ground there is, and a claim is not a
+ *  measurement. */
+const TEXT_TOKENS = ['t1', 't2', 't3', 'ink', 'ink-2'];
 
-/** --ink-3 is a BORDER and disabled-icon token. If it ever appears as a text
- *  colour again, the second test below fails rather than this one. */
-const NOT_TEXT = ['ink-3', 'line', 'line-2'];
+/** --t4, and its alias --ink-3, is a BORDER and disabled-icon token. If it
+ *  ever appears as a text colour again, the second test below fails rather
+ *  than this one. */
+const NOT_TEXT = ['ink-3', 't4', 'line', 'line-2', 'line2'];
 
 test('every text token clears 4.5 to 1 on every ground, in all eight themes', () => {
   const failures: string[] = [];
@@ -66,12 +87,13 @@ test('every text token clears 4.5 to 1 on every ground, in all eight themes', ()
   assert.deepEqual(failures, []);
 });
 
-test('the two result colours clear 4.5 to 1 on every ground, in all eight themes', () => {
+test('the four semantic colours clear 4.5 to 1 on every ground, in all eight themes', () => {
   const failures: string[] = [];
   for (const theme of THEME_NAMES) {
     const t = block(theme);
     for (const ground of GROUNDS) {
-      for (const [name, hex] of [['pos', '#86EFAC'], ['neg', '#FCA5A5']] as const) {
+      for (const name of ['pos', 'neg', 'warn', 'gold'] as const) {
+        const hex = ROOT[name];
         const ratio = contrast(hex, t[ground]);
         if (ratio < 4.5) failures.push(`${theme}: --${name} ${hex} on --${ground} ${t[ground]} is ${ratio.toFixed(2)}:1`);
       }

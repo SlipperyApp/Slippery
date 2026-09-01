@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { Icon } from '@/components/Icon';
 import { ModuleMenu, MenuChoice } from '@/components/app/ModuleMenu';
 import { londonDay, londonParts, MONTH_LONG, money, cellFigure } from '@/lib/format';
+import { rampStep } from '@/lib/calendar-ramp';
 import type { Currency } from '@/lib/domain/types';
 
 /** The calendar. Day boundaries are Europe/London, or a 23:00 bet lands on
@@ -18,20 +19,13 @@ import type { Currency } from '@/lib/domain/types';
  *  "You did not bet" and "it has not happened yet" are different facts, and a
  *  line through tomorrow is a lie.
  *
- *  THE RAMP. Laying the semantic colour over the cell at an opacity that
- *  tracks the size of the day sweeps the cell through mid luminance: across
- *  all eight themes --ink fails 4.5:1 above alpha 0.24, --bg does not reach
- *  4.5:1 until alpha 0.60, and NOTHING is readable between the two. The build
- *  before this one jumped that dead band with two fixed tiers, and 112 and 148
- *  landed in different tiers and read as different worlds, which costs the
- *  fill the only thing it is for.
- *
- *  So chroma varies instead of lightness. The semantic colour is mixed 35%
- *  into --bg first, giving a dark saturated anchor, and THAT is faded in over
- *  the cell. Lightness barely moves, so one text colour is readable at every
- *  step of a continuous ramp. 35% and not more because the figure in a cell
- *  keeps its own semantic colour, so green on green is the binding constraint.
- *  tests/calendar-ramp.test.ts measures every step in every theme. */
+ *  THE RAMP lives in lib/calendar-ramp.ts, with the reasoning, and
+ *  tests/calendar-ramp.test.ts measures every step of it in every theme. The
+ *  short version: the fill sweeps through a band of mid luminance where
+ *  NEITHER the result colour nor the page ground clears 4.5:1, so the ramp is
+ *  two bands that skip that hole rather than one continuous one. The figure
+ *  and the date take the same decision, from the same call, because computing
+ *  them apart is what leaves a date invisible on a mid cell. */
 
 export type CalShow = 'date' | 'amount' | 'both' | 'none';
 
@@ -42,10 +36,6 @@ const SHOW_OPTIONS: { id: CalShow; label: string }[] = [
   { id: 'amount', label: 'Amount' },
   { id: 'none', label: 'Neither' },
 ];
-
-/** The ramp floor, so the smallest winning day still looks different from a
- *  day with no bets at all. */
-const FLOOR = 0.14;
 
 function readCookie(): CalShow | null {
   if (typeof document === 'undefined') return null;
@@ -134,9 +124,8 @@ export function MonthCalendar({
     const bet = !future && Boolean(rec);
     const net = bet ? rec!.netPence : 0;
 
-    // A continuous ramp from the floor to full strength. No tiers.
-    const alpha = bet && net !== 0 ? FLOOR + (Math.abs(net) / peak) * (1 - FLOOR) : 0;
-    const anchor = net >= 0 ? 'var(--cal-pos)' : 'var(--cal-neg)';
+    const step = rampStep(bet ? net : 0, peak);
+    const anchor = net >= 0 ? 'var(--pos)' : 'var(--neg)';
 
     const label = MONTH_LONG[month - 1];
     const sentence = future
@@ -154,14 +143,17 @@ export function MonthCalendar({
           !future && !bet ? 'cal__cell--blank' : '',
           key === today ? 'cal__cell--today' : '',
           stack ? 'cal__cell--stack' : '',
+          // The figure and the date read this one class. There is no way to
+          // give one of them the high band ink and not the other.
+          step.ink === 'ground' ? 'cal__cell--hi' : '',
         ].filter(Boolean).join(' ')}
         title={sentence}
       >
-        {alpha > 0 ? (
+        {step.alpha > 0 ? (
           <span
             className="cal__fill"
             aria-hidden="true"
-            style={{ background: `color-mix(in srgb, ${anchor} ${(alpha * 100).toFixed(1)}%, transparent)` }}
+            style={{ background: `color-mix(in srgb, ${anchor} ${(step.alpha * 100).toFixed(1)}%, transparent)` }}
           />
         ) : null}
 

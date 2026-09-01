@@ -5,8 +5,8 @@ import { THEMES, THEME_NAMES, DEFAULT_THEME } from '@/lib/themes';
 
 const CSS = readFileSync(new URL('../app/styles/tokens.css', import.meta.url), 'utf8');
 
-const PROFIT = '#86EFAC';
-const LOSS = '#FCA5A5';
+const PROFIT = '#7FE3A6';
+const LOSS = '#F5A3A3';
 
 function hsl(hex: string): { h: number; s: number; l: number } {
   const n = hex.replace('#', '');
@@ -27,17 +27,63 @@ function hsl(hex: string): { h: number; s: number; l: number } {
 
 const hueGap = (a: number, b: number) => { const d = Math.abs(a - b) % 360; return d > 180 ? 360 - d : d; };
 
+/*  Oklab, because hue distance is a crude proxy and it produced a false
+ *  alarm: bronze's accent measures 27 degrees from loss red on the hue wheel
+ *  and would have failed a 35 degree floor, while being a desaturated tan
+ *  next to a pale pink, which nobody confuses. Oklab distance is the measure
+ *  the palette itself was specified with: warn and gold are 0.120 apart and
+ *  the rule given for them is that under 0.08 two colours read as one at
+ *  small sizes. So that is the number this asserts, for every pair that must
+ *  not be mistaken for another. */
+function oklab(hex: string): [number, number, number] {
+  const n = hex.replace('#', '');
+  const lin = (v: number) => (v <= 0.04045 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4);
+  const [r, g, b] = [0, 2, 4].map((i) => lin(parseInt(n.slice(i, i + 2), 16) / 255));
+  const cb = (x: number) => (x > 0 ? Math.cbrt(x) : -Math.cbrt(-x));
+  const l = cb(0.4122214708 * r + 0.5363325363 * g + 0.0514459929 * b);
+  const m = cb(0.2119034982 * r + 0.6806995451 * g + 0.1073969566 * b);
+  const s = cb(0.0883024619 * r + 0.2817188376 * g + 0.6299787005 * b);
+  return [
+    0.2104542553 * l + 0.7936177850 * m - 0.0040720468 * s,
+    1.9779984951 * l - 2.4285922050 * m + 0.4505937099 * s,
+    0.0259040371 * l + 0.7827717662 * m - 0.8086757660 * s,
+  ];
+}
+
+function deltaE(a: string, b: string): number {
+  const [x1, y1, z1] = oklab(a);
+  const [x2, y2, z2] = oklab(b);
+  return Math.hypot(x1 - x2, y1 - y2, z1 - z2);
+}
+
+/** Under this, two colours read as one at the size a figure is set. */
+const SAME_COLOUR = 0.08;
+
 test('there are eight themes and the default is carbon', () => {
   assert.equal(THEMES.length, 8);
   assert.equal(DEFAULT_THEME, 'carbon');
   assert.deepEqual(THEME_NAMES, ['carbon', 'periwinkle', 'ink', 'graphite', 'slate', 'bronze', 'cinnabar', 'liquid']);
 });
 
-test('the two result colours are declared once, outside every theme block', () => {
-  const posMatches = CSS.match(/--pos:\s*#86EFAC/gi) ?? [];
-  const negMatches = CSS.match(/--neg:\s*#FCA5A5/gi) ?? [];
-  assert.equal(posMatches.length, 1, 'profit green must be defined exactly once');
-  assert.equal(negMatches.length, 1, 'loss red must be defined exactly once');
+test('the four semantic colours are declared once, outside every theme block', () => {
+  for (const [name, hex] of [['pos', PROFIT], ['neg', LOSS], ['warn', '#E8C34A'], ['gold', '#C79A3F']] as const) {
+    const found = CSS.match(new RegExp(`--${name}:\\s*${hex}`, 'gi')) ?? [];
+    assert.equal(found.length, 1, `--${name} must be defined exactly once`);
+  }
+});
+
+test('the four text colours are declared once, outside every theme block', () => {
+  /*  Text is identical in all eight themes now. Only surfaces and the accent
+   *  pair change, which is what keeps "the two result colours are fixed" true
+   *  of the ink as well. */
+  for (const [name, hex] of [['t1', '#E6EBF3'], ['t2', '#9AA6BB'], ['t3', '#8E97A8'], ['t4', '#545E6E']] as const) {
+    const found = CSS.match(new RegExp(`--${name}:\\s*${hex}`, 'gi')) ?? [];
+    assert.equal(found.length, 1, `--${name} must be defined exactly once`);
+  }
+  for (const t of THEME_NAMES) {
+    const body = new RegExp(`\\[data-theme='${t}'\\][\\s\\S]*?\\n\\}`, 'i').exec(CSS)?.[0] ?? '';
+    assert.ok(!/--t[1-4]:/.test(body), `${t} must not redefine a text colour`);
+  }
 });
 
 test('no theme block redefines the result colours', () => {
@@ -47,17 +93,35 @@ test('no theme block redefines the result colours', () => {
   }
 });
 
-test('no theme accent sits near profit green or loss red', () => {
-  // This is why there is no green theme and no red theme. A near-neutral
-  // accent is exempt: it cannot be mistaken for a result colour.
-  const p = hsl(PROFIT); const n = hsl(LOSS);
+test('no theme accent can be mistaken for a result colour', () => {
+  /*  This is why there is no green theme and no red theme. Measured in oklab
+   *  rather than on the hue wheel, and reported as a number. The closest of
+   *  the eight is bronze against loss red at 0.158, which is more than warn
+   *  and gold are apart from each other. */
+  const rows: string[] = [];
   for (const t of THEMES) {
-    const accent = t.swatch[2];
-    const a = hsl(accent);
-    if (a.s <= 0.25) continue;
-    assert.ok(hueGap(a.h, p.h) >= 40, `${t.name} accent ${accent} is ${hueGap(a.h, p.h).toFixed(0)} degrees from profit green`);
-    assert.ok(hueGap(a.h, n.h) >= 35, `${t.name} accent ${accent} is ${hueGap(a.h, n.h).toFixed(0)} degrees from loss red`);
+    for (const [what, hex] of [['profit', PROFIT], ['loss', LOSS]] as const) {
+      const d = deltaE(t.swatch[2], hex);
+      if (d < 0.12) rows.push(`${t.name} accent ${t.swatch[2]} is ${d.toFixed(3)} from ${what} in oklab`);
+    }
   }
+  assert.deepEqual(rows, [], rows.join('\n'));
+});
+
+test('the four semantic colours are four colours, not two pairs', () => {
+  /*  gold marks something new and warn asks for attention. At the size a pill
+   *  is set, two colours under 0.08 apart in oklab are one colour with two
+   *  names. */
+  const SEMANTIC = { profit: PROFIT, loss: LOSS, warn: '#E8C34A', gold: '#C79A3F' };
+  const names = Object.keys(SEMANTIC) as (keyof typeof SEMANTIC)[];
+  const rows: string[] = [];
+  for (let i = 0; i < names.length; i += 1) {
+    for (let j = i + 1; j < names.length; j += 1) {
+      const d = deltaE(SEMANTIC[names[i]], SEMANTIC[names[j]]);
+      if (d < SAME_COLOUR) rows.push(`${names[i]} and ${names[j]} are ${d.toFixed(3)} apart in oklab`);
+    }
+  }
+  assert.deepEqual(rows, [], rows.join('\n'));
 });
 
 test('every theme is dark: there is no light mode', () => {
@@ -80,8 +144,9 @@ test('the stylesheet carries no hardcoded hex outside the theme blocks', () => {
     .replace(/\/\*[\s\S]*?\*\//g, '')
     .replace(/\[data-theme='[a-z]+'\]\s*\{[\s\S]*?\n\}/g, '')
     .replace(/:root,\s*\[data-theme='carbon'\]\s*\{[\s\S]*?\n\}/g, '')
-    .replace(/--pos:\s*#86EFAC;/i, '')
-    .replace(/--neg:\s*#FCA5A5;/i, '');
+    // The fixed block is where the semantic and text colours live. Every
+    // other hex outside a theme block is a stray.
+    .replace(/:root \{[\s\S]*?\n\}/, '');
   const stray = withoutBlocks.match(/#[0-9a-f]{3,8}\b/gi) ?? [];
   assert.deepEqual(stray, [], `stray hex outside the theme blocks: ${stray.join(', ')}`);
 });
@@ -107,10 +172,10 @@ test('every picker chip is painted in its own theme, exactly', () => {
   const wrong: string[] = [];
   for (const t of THEMES) {
     const p = paletteOf(t.name);
-    const want = [p.bg, p.surface, p.accent, p.line];
+    const want = [p.bg, p.card, p.p, p.line];
     const got = t.swatch.map((c) => c.toUpperCase());
     for (let i = 0; i < 4; i++) {
-      const token = ['--bg', '--surface', '--accent', '--line'][i];
+      const token = ['--bg', '--card', '--p', '--line'][i];
       if (!want[i]) { wrong.push(`${t.name}: tokens.css has no ${token}`); continue; }
       if (want[i] !== got[i]) wrong.push(`${t.name} ${token}: the chip says ${got[i]}, tokens.css says ${want[i]}`);
     }

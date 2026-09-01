@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { Icon } from '@/components/Icon';
 import { Wordmark } from '@/components/Wordmark';
+import { Mark } from '@/components/Mark';
 import { MARKETING_NAV } from '@/lib/nav';
 
 /** Anything that navigates is an anchor with an href, never a button. */
@@ -9,7 +10,7 @@ export function MarketingHeader({ id = 'wm-head' }: { id?: string }) {
     <header className="mhead">
       <div className="wrap mhead__in">
         <Link href="/" className="brand" aria-label="Slippery, home">
-          <img src="/icon.svg" alt="" className="brand__mark" width={26} height={26} />
+          <Mark className="brand__mark" size={26} />
           <Wordmark id={id} height={17} className="hide-sm" />
           <span className="brand__word sr-only">Slippery</span>
         </Link>
@@ -65,7 +66,7 @@ export function MarketingFooter() {
         <div className="mfoot__cols">
           <div>
             <div className="brand" style={{ marginBottom: 'var(--s3)' }}>
-              <img src="/icon.svg" alt="" className="brand__mark" width={26} height={26} />
+              <Mark className="brand__mark" size={26} />
               <Wordmark id="wm-foot" height={17} />
               <span className="sr-only">Slippery</span>
             </div>

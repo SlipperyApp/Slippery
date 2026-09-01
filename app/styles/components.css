@@ -149,7 +149,15 @@
       a flex row at 320 it painted its own label across the row beside it. */
   flex: none;
 }
-.pill--accent { background: color-mix(in oklab, var(--accent) 15%, transparent); border-color: color-mix(in oklab, var(--accent) 34%, transparent); color: var(--accent); }
+/*  --s, the LIGHT accent, not --p. On a rowcard--on the row already carries
+    an 8% accent wash, and --p on that wash measured 3.4:1 in five themes: the
+    pill was the only thing on the page axe could still fault. --s is the
+    accent made for text. */
+.pill--accent {
+  background: color-mix(in oklab, var(--p) 15%, transparent);
+  border-color: color-mix(in oklab, var(--p) 34%, transparent);
+  color: var(--s);
+}
 .pill--pos { background: var(--pos-wash); border-color: var(--pos-line); color: var(--pos); }
 .pill--neg { background: var(--neg-wash); border-color: var(--neg-line); color: var(--neg); }
 .pill--lg { height: 28px; font-size: var(--t-small); text-transform: none; letter-spacing: 0; }
@@ -414,7 +422,7 @@
     worse than no colour at all. */
 .hero-net__target { margin-top: var(--s5); }
 .hero-net__targetline { display: flex; justify-content: space-between; gap: var(--s3); margin-bottom: 6px; }
-.hero-net__pctv { color: var(--accent); font-weight: var(--w-fig); }
+.hero-net__pctv { color: var(--s); font-weight: var(--w-fig); }
 .hero-net__bar {
   display: block;
   height: 7px;
@@ -791,7 +799,10 @@
       difference is dead space. */
   max-height: 108px;
   border-radius: 9px;
-  background: var(--surface-2);
+  /*  --elev, the lightest ground there is, so a faint fill still reads as a
+      fill and the composite the ramp test measures is the composite that
+      ships. */
+  background: var(--elev);
   border: 1px solid transparent;
   display: grid;
   place-items: center;
@@ -826,12 +837,26 @@
 .cal__n {
   position: relative; z-index: 1;
   font-weight: var(--w-label); line-height: 1;
-  color: var(--ink-2);
+  /*  --t1, not --t3. On a low band cell the tint lifts the ground enough that
+      the tertiary ink measures 2.21:1 in periwinkle. Primary ink measures
+      4.55 at the worst step of the worst theme. */
+  color: var(--t1);
   font-size: 10px;
   font-size: clamp(8px, 19cqi, 11px);
 }
 /* A day that was bet on and came out level is stated, not shouted. */
-.cal__v--flat { color: var(--ink-2); }
+.cal__v--flat { color: var(--t3); }
+
+/*  The high band. Above half a month's biggest day the fill is strong enough
+    to carry the page ground as ink, and BOTH the figure and the date take it:
+    the class is on the cell, so there is no way to give one of them the high
+    band colour and not the other. That is the bug this shape exists to make
+    impossible. */
+.cal__cell--hi .cal__v,
+.cal__cell--hi .cal__v.pos,
+.cal__cell--hi .cal__v.neg,
+.cal__cell--hi .cal__v--flat { color: var(--bg); }
+.cal__cell--hi .cal__n { color: color-mix(in srgb, var(--bg) 90%, transparent); }
 
 /*  A day with no bets is slashed corner to corner and outlined in a dash.
     The mark belongs to the day rather than to the digit: a slash reads across
@@ -955,7 +980,7 @@
 /* Confidence on a read. Deliberately NOT the profit and loss colours: those
    two mean money, and a screen that is about to write money into a ledger is
    the last place to give them a second meaning. */
-.readmark--ok { color: var(--accent); }
+.readmark--ok { color: var(--s); }
 .readmark--ask { color: var(--ink-2); }
 .readmark--gap { color: var(--ink); }
 /*  One call to action on the landing page, so it is allowed to be big. */

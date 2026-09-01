@@ -3,13 +3,13 @@ import type { Metadata } from 'next';
 import { Icon } from '@/components/Icon';
 import { SettleDemo } from '@/components/SettleDemo';
 import { SectionHead, RowList } from '@/components/MarketingChrome';
-import { BetTypeWall } from '@/components/marketing/BetTypeWall';
 import { SplitHeadline } from '@/components/marketing/SplitHeadline';
 import { ThemeStrip } from '@/components/marketing/ThemeStrip';
 import { Sequence } from '@/components/marketing/Sequence';
 import { WaveField } from '@/components/marketing/WaveField';
 import { Makers, MadeBy } from '@/components/marketing/Makers';
 import { StickyCta } from '@/components/marketing/StickyCta';
+import { Reveal } from '@/components/marketing/Reveal';
 import { Faq } from '@/components/marketing/Faq';
 import { QUESTIONS, TOP_QUESTIONS } from '@/lib/content/faq';
 import { money, spell } from '@/lib/format';
@@ -101,42 +101,6 @@ export default function Landing() {
         </div>
       </section>
 
-      {/* ------------------------------------------------------ the bet zoo */}
-      <section className="sect" id="reader">
-        <div className="wrap">
-          <SectionHead
-            badge="The reader"
-            setup="Most trackers read a single."
-            claim="This one reads a Lucky 15."
-          >
-            The bookmaker template is detected first, then the slip is parsed. Confidence is
-            scored per field, not per slip.
-          </SectionHead>
-          <BetTypeWall />
-          <div className="two" style={{ marginTop: 'var(--s7)' }}>
-            <RowList
-              rows={[
-                { title: 'High confidence', sub: 'Saves silently. Nothing to confirm.', icon: 'check', on: true },
-                { title: 'Medium confidence', sub: 'One targeted question. Never a whole form again.', icon: 'help' },
-                { title: 'Low confidence', sub: 'Held out of the aggregates until you settle it.', icon: 'alert' },
-              ]}
-            />
-            <div className="card">
-              <p className="label">Flag a misread</p>
-              <p style={{ marginTop: 'var(--s3)' }}>
-                Every read carries a flag. Press it and the slip goes back for a human look, and
-                the credit returns to your allowance.
-              </p>
-              <div className="card__foot">
-                <Link href="/how" className="btn btn--ghost btn--sm">
-                  How the reader works <Icon name="arrowRight" size={16} />
-                </Link>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
       {/* ------------------------------------------------- bonus vs real */}
       <section className="sect" id="offers">
         <div className="wrap">
@@ -182,6 +146,11 @@ export default function Landing() {
         <div className="wrap">
           <div className="two">
             <div>
+              {/*  The one pill above a heading anywhere in the product, and it
+                   is not a label restating the heading: it says this section
+                   is new. --gold has that single meaning and no other, which
+                   is why it is not --warn and not the accent. */}
+              <p className="newpill"><span>New</span></p>
               <SectionHead
                 badge="Slippers"
                 setup="Ranked in units."
@@ -309,6 +278,7 @@ export default function Landing() {
       </section>
 
       <StickyCta />
+      <Reveal />
     </>
   );
 }

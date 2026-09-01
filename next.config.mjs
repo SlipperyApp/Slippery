@@ -20,7 +20,23 @@ const nextConfig = {
       { key: 'X-Content-Type-Options', value: 'nosniff' },
       { key: 'Referrer-Policy', value: 'strict-origin-when-cross-origin' },
       { key: 'X-Frame-Options', value: 'SAMEORIGIN' },
-      { key: 'Content-Security-Policy', value: "frame-ancestors 'self'" },
+      {
+        key: 'Content-Security-Policy',
+        /*  Four directives that need no nonce and cost no rendering.
+         *
+         *  base-uri stops an injected <base> quietly repointing every
+         *  relative URL on the page. object-src closes plugins.
+         *  frame-ancestors is the clickjacking half.
+         *
+         *  NO form-action. It was here for one build and the sweep caught it
+         *  blocking the sign out form, whose action is same origin: Chromium
+         *  still enforces form-action across the redirect that follows the
+         *  post, so 'self' is not 'self' by the time it is checked. A
+         *  directive that breaks signing out is not a directive worth having,
+         *  and it took a browser to find that rather than a reading of the
+         *  spec. */
+        value: "base-uri 'self'; object-src 'none'; frame-ancestors 'self'",
+      },
       { key: 'Cross-Origin-Opener-Policy', value: 'same-origin' },
       {
         key: 'Permissions-Policy',

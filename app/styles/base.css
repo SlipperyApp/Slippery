@@ -78,7 +78,11 @@ h3 { font-size: var(--t-h3); line-height: var(--lh-h3); font-weight: var(--w-lab
 
 a { color: inherit; }
 a:where(:not([class])) {
-  color: var(--accent);
+  /*  --s, the light accent, is the link colour. --p is the SOLID accent, for
+      buttons and bars and active states, and as 13px text on a banner it
+      measures 4.47:1, which axe was right to fail. The palette ships two
+      accents for exactly this reason. */
+  color: var(--s);
   text-decoration: underline;
   text-underline-offset: 3px;
   text-decoration-thickness: 1px;

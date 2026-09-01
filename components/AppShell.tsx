@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { Icon } from '@/components/Icon';
 import { Wordmark } from '@/components/Wordmark';
+import { Mark } from '@/components/Mark';
 import { SIDE_NAV, TAB_NAV, isActive } from '@/lib/nav';
 import { money, type Currency } from '@/lib/format';
 
@@ -28,7 +29,7 @@ export function AppShell({ chrome, children }: { chrome: ShellChrome; children: 
     <div className="shell page">
       <aside className="side">
         <Link href="/" className="brand" aria-label="Slippery, home">
-          <img src="/icon.svg" alt="" className="brand__mark" width={26} height={26} />
+          <Mark className="brand__mark" size={26} />
           <Wordmark id="wm-side" height={17} />
           <span className="sr-only">Slippery</span>
         </Link>
@@ -75,7 +76,7 @@ export function AppShell({ chrome, children }: { chrome: ShellChrome; children: 
       <div style={{ minWidth: 0 }}>
         <header className="topbar">
           <Link href="/app" className="brand" aria-label="Slippery, dashboard" style={{ minWidth: 0 }}>
-            <img src="/icon.svg" alt="" className="brand__mark" width={26} height={26} />
+            <Mark className="brand__mark" size={26} />
           </Link>
 
           <div className="topbar__mid">

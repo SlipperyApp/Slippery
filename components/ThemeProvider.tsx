@@ -37,6 +37,13 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
     document.cookie = `${THEME_COOKIE}=${encodeURIComponent(next)}; path=/; max-age=31536000; samesite=lax`;
 
     root.setAttribute('data-theme', next);
+
+    /*  And the browser chrome. Read from the computed value after the
+     *  attribute is set, so the meta can never disagree with the stylesheet. */
+    const meta = document.querySelector('meta[name="theme-color"]');
+    const bg = getComputedStyle(root).getPropertyValue('--bg').trim();
+    if (meta && bg) meta.setAttribute('content', bg);
+
     setThemeState(next);
   }, []);
 
