@@ -75,6 +75,36 @@ console.log(`\n${paths.length - bad} of ${paths.length} routes answered with rea
  *  endpoint that crashes on a URL anybody can type is a defect whether or
  *  not anybody has typed it.
  */
+/*  Security headers, asserted over HTTP so this holds against the live origin
+ *  as well as a local build. The platform adds HSTS and nothing else. */
+const MUST_HAVE = {
+  'x-content-type-options': 'nosniff',
+  'referrer-policy': 'strict-origin-when-cross-origin',
+  'x-frame-options': 'SAMEORIGIN',
+  'content-security-policy': "frame-ancestors 'self'",
+  'cross-origin-opener-policy': 'same-origin',
+};
+let headerFails = 0;
+try {
+  const res = await fetch(`${BASE}/`, { signal: AbortSignal.timeout(30000) });
+  for (const [name, want] of Object.entries(MUST_HAVE)) {
+    const got = res.headers.get(name);
+    if (got !== want) {
+      headerFails += 1;
+      console.log(`FAIL header ${name}: ${got === null ? 'absent' : `"${got}"`}, wanted "${want}"`);
+    }
+  }
+  const pp = res.headers.get('permissions-policy') ?? '';
+  // The camera photographs a shop slip. Nothing else is any of our business.
+  for (const want of ['camera=(self)', 'microphone=()', 'geolocation=()']) {
+    if (!pp.includes(want)) { headerFails += 1; console.log(`FAIL permissions-policy is missing ${want}`); }
+  }
+} catch (e) {
+  headerFails += 1;
+  console.log('FAIL could not read the headers:', e.message);
+}
+console.log(`${Object.keys(MUST_HAVE).length + 3 - headerFails} of ${Object.keys(MUST_HAVE).length + 3} security headers set as intended.`);
+
 const POISON = ['toString', 'constructor', '__proto__', 'valueOf', 'hasOwnProperty', 'prototype'];
 const hostile = [];
 for (const k of POISON) {
@@ -103,4 +133,4 @@ for (const p of hostile) {
 }
 console.log(`${hostile.length - poisoned} of ${hostile.length} hostile query strings handled without a 5xx.`);
 
-process.exit(bad || poisoned ? 1 : 0);
+process.exit(bad || poisoned || headerFails ? 1 : 0);
