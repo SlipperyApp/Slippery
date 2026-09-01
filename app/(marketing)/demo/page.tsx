@@ -28,7 +28,6 @@ export default function Demo() {
 
   const all = select(bets, { ...DEFAULT_SCOPE, period: 'all' }, now);
   const s = summarise(all);
-  const monthRows = select(bets, { ...DEFAULT_SCOPE, period: 'month' }, now);
   const curve = cumulative(byDay(all));
   const offers = offerSplit(bets);
   const running = runningNow(bets);
@@ -73,7 +72,7 @@ export default function Demo() {
               <p className="card__title">{MONTH_LONG[p.month - 1]}</p>
               <p className="card__note">Europe/London days</p>
             </div>
-            <MonthCalendar days={byDay(monthRows)} now={now} weekStart={account.weekStart} currency={account.currency} />
+            <MonthCalendar days={byDay(all)} now={now} weekStart={account.weekStart} currency={account.currency} />
           </div>
 
           <div className="card col-4">

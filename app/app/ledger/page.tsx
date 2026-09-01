@@ -19,8 +19,8 @@ export default async function Ledger({
   searchParams,
 }: { searchParams: Promise<Record<string, string | string[] | undefined>> }) {
   const sp = await searchParams;
-  const { data, now } = await getViewer();
-  const scope = scopeFromParams(sp);
+  const { data, now, demo } = await getViewer();
+  const scope = scopeFromParams(sp, demo ? 'all' : undefined);
   const { account, bets } = data;
 
   // ONE query. Everything below counts what this returns, which is why the

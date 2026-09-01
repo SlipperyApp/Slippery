@@ -85,3 +85,45 @@ test('the stylesheet carries no hardcoded hex outside the theme blocks', () => {
   const stray = withoutBlocks.match(/#[0-9a-f]{3,8}\b/gi) ?? [];
   assert.deepEqual(stray, [], `stray hex outside the theme blocks: ${stray.join(', ')}`);
 });
+
+/*  ---------------------------------------------------------------------
+    The picker chip has to paint a theme that is NOT the one applied to the
+    page, so it cannot read var(--accent): the four colours are duplicated
+    into lib/themes.ts. Duplicated values drift, and a stale chip advertises
+    a theme that no longer looks like that. These two notice.
+    --------------------------------------------------------------------- */
+
+function paletteOf(theme: string): Record<string, string> {
+  const re = theme === 'carbon'
+    ? /:root,\s*\[data-theme='carbon'\]\s*\{([\s\S]*?)\n\}/
+    : new RegExp(`\\[data-theme='${theme}'\\]\\s*\\{([\\s\\S]*?)\\n\\}`);
+  const body = re.exec(CSS)?.[1] ?? '';
+  const out: Record<string, string> = {};
+  for (const m of body.matchAll(/--([a-z0-9-]+):\s*(#[0-9a-fA-F]{6})/g)) out[m[1]] = m[2].toUpperCase();
+  return out;
+}
+
+test('every picker chip is painted in its own theme, exactly', () => {
+  const wrong: string[] = [];
+  for (const t of THEMES) {
+    const p = paletteOf(t.name);
+    const want = [p.bg, p.surface, p.accent, p.line];
+    const got = t.swatch.map((c) => c.toUpperCase());
+    for (let i = 0; i < 4; i++) {
+      const token = ['--bg', '--surface', '--accent', '--line'][i];
+      if (!want[i]) { wrong.push(`${t.name}: tokens.css has no ${token}`); continue; }
+      if (want[i] !== got[i]) wrong.push(`${t.name} ${token}: the chip says ${got[i]}, tokens.css says ${want[i]}`);
+    }
+  }
+  assert.deepEqual(wrong, [], wrong.join('\n'));
+});
+
+test('no two themes look the same in the picker row', () => {
+  const seen = new Map<string, string>();
+  for (const t of THEMES) {
+    const key = t.swatch.join('|');
+    const other = seen.get(key);
+    assert.equal(other, undefined, `${t.name} and ${other} are the same four colours`);
+    seen.set(key, t.name);
+  }
+});

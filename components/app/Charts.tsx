@@ -93,6 +93,69 @@ export function Sparkline({ values, height = 34 }: { values: number[]; height?: 
   );
 }
 
+/** The row sparkline: a running total for ONE row of a breakdown, at a fixed
+ *  size, with no measurement.
+ *
+ *  Deliberately not the Sparkline above. That one measures its container,
+ *  which means a ResizeObserver per instance, and a breakdown with forty rows
+ *  would install forty of them to draw forty things that are all the same
+ *  width. Fixed width, no observer, one path.
+ *
+ *  The zero line is drawn whenever zero is inside the range, so a row that
+ *  went two hundred up and came back to level does not look identical to a
+ *  row that never moved. */
+export function RowSpark({
+  values, width = 74, height = 22, tone,
+}: {
+  values: number[];
+  width?: number;
+  height?: number;
+  /** Overrides the end-versus-start read, for rows whose printed figure is
+   *  the thing the colour has to agree with. */
+  tone?: 'pos' | 'neg';
+}) {
+  if (values.length < 2) return <span className="rspark" aria-hidden="true" />;
+
+  const min = Math.min(0, ...values);
+  const max = Math.max(0, ...values);
+  const span = max - min || 1;
+  const pad = 2.5;
+  const h = height - pad * 2;
+
+  const x = (i: number) => (i / (values.length - 1)) * width;
+  const y = (v: number) => pad + h - ((v - min) / span) * h;
+
+  const line = values
+    .map((v, i) => `${i === 0 ? 'M' : 'L'}${x(i).toFixed(1)},${y(v).toFixed(1)}`)
+    .join(' ');
+  const zeroY = y(0);
+  const area = `${line} L${x(values.length - 1).toFixed(1)},${zeroY.toFixed(1)} L0,${zeroY.toFixed(1)} Z`;
+
+  const last = values[values.length - 1];
+  const c = (tone ?? (last >= 0 ? 'pos' : 'neg')) === 'pos' ? 'var(--pos)' : 'var(--neg)';
+
+  return (
+    <svg
+      className="rspark"
+      viewBox={`0 0 ${width} ${height}`}
+      width={width}
+      height={height}
+      aria-hidden="true"
+      preserveAspectRatio="none"
+    >
+      <path d={area} fill={c} opacity="0.14" />
+      {min < 0 && max > 0 ? (
+        <line
+          x1="0" x2={width} y1={zeroY} y2={zeroY}
+          stroke="var(--line-2)" strokeWidth="1" strokeDasharray="2 2"
+        />
+      ) : null}
+      <path d={line} fill="none" stroke={c} strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" />
+      <circle cx={width} cy={y(last)} r="1.9" fill={c} />
+    </svg>
+  );
+}
+
 export function MonthBars({
   months, height = 150, currency = 'GBP',
 }: {

@@ -8,7 +8,7 @@ import { THEME_NAMES } from '@/lib/themes';
  *  Laying the semantic colour over the cell at an opacity that tracks the size
  *  of the day sweeps the cell through mid luminance, where nothing is
  *  readable. The fill therefore varies CHROMA rather than lightness: the
- *  semantic colour is mixed 45% into --bg, and that dark saturated anchor is
+ *  semantic colour is mixed 35% into --bg, and that dark saturated anchor is
  *  what fades in.
  *
  *  Test three keeps the naive version from coming back. Without it somebody
@@ -20,8 +20,14 @@ const CSS = readFileSync(new URL('../app/styles/tokens.css', import.meta.url), '
 const POS = '#86EFAC';
 const NEG = '#FCA5A5';
 /** The mix that keeps lightness almost still. Raising it drops --ink under
- *  4.5:1 at the top of the ramp. */
-const ANCHOR_MIX = 0.45;
+ *  4.5:1 at the top of the ramp.
+ *
+ *  35%, not 45%. The figure in a cell keeps its own semantic colour, so the
+ *  ceiling is set by green-on-green rather than by --ink-on-anything: at 40%
+ *  a profit figure measures 3.99:1 on its own cell and at 45% it measures
+ *  3.50:1. 35% is the most colour the cell can carry while the figure stays
+ *  readable, and the third test below pins that too. */
+const ANCHOR_MIX = 0.35;
 const FLOOR = 0.14;
 
 type RGB = [number, number, number];
@@ -128,4 +134,25 @@ test('the ramp floor keeps the smallest winning day visible', () => {
     const ratio = contrast(smallest, t['surface-2']);
     assert.ok(ratio > 1.0, `${theme}: the floor is invisible against an empty cell`);
   }
+});
+
+test('a figure keeps its own colour on its own cell', () => {
+  /*  The whole reason the anchor is 35% and not 45%. A profit figure sits on
+   *  a profit-tinted cell, so the ceiling is set by green on green, which is
+   *  a much tighter constraint than white on green. If someone deepens the
+   *  ramp for looks, this is what tells them what it cost. */
+  const failures: string[] = [];
+  for (const theme of THEME_NAMES) {
+    const t = palette(theme);
+    for (const [name, hex] of [['pos', POS], ['neg', NEG]] as const) {
+      const anchor = mix(rgb(hex), t.bg, ANCHOR_MIX);
+      for (let i = 0; i <= 100; i++) {
+        const a = FLOOR + (i / 100) * (1 - FLOOR);
+        const cell = mix(anchor, t['surface-2'], a);
+        const r = contrast(rgb(hex), cell);
+        if (r < 4.5) failures.push(`${theme} ${name} figure at alpha ${a.toFixed(2)}: ${r.toFixed(2)}:1`);
+      }
+    }
+  }
+  assert.deepEqual(failures.slice(0, 3), [], failures.slice(0, 3).join('\n'));
 });

@@ -34,11 +34,18 @@ export type Scope = {
 
 export const DEFAULT_SCOPE: Scope = { period: 'month', bookmakerId: 'all', sportId: 'all' };
 
-export function scopeFromParams(sp: Record<string, string | string[] | undefined>): Scope {
+export function scopeFromParams(
+  sp: Record<string, string | string[] | undefined>,
+  /** The example account opens on all time. It is a showcase, and on the
+   *  first of a month "this month" is one day: every module reads empty and
+   *  the product looks broken when it is working correctly. The scope bar
+   *  still says All time, so nothing is being hidden. */
+  fallback: Period = DEFAULT_SCOPE.period,
+): Scope {
   const get = (k: string) => (Array.isArray(sp[k]) ? sp[k]![0] : (sp[k] as string | undefined));
-  const period = (get('period') ?? DEFAULT_SCOPE.period) as Period;
+  const period = (get('period') ?? fallback) as Period;
   return {
-    period: PERIODS.some((p) => p.id === period) ? period : DEFAULT_SCOPE.period,
+    period: PERIODS.some((p) => p.id === period) ? period : fallback,
     bookmakerId: get('book') ?? 'all',
     sportId: (get('sport') ?? 'all') as SportId | 'all',
   };
@@ -204,7 +211,28 @@ export type BreakRow = {
   /** Rows under five bets are greyed: profit without volume ranks one lucky
    *  bet above forty disciplined ones. */
   thin: boolean;
+  /** Running total for this row alone, oldest first, resampled to at most
+   *  SPARK_POINTS. The net figure says where the row ended; this says whether
+   *  it got there steadily or on one Saturday, which is a different fact and
+   *  the more useful one. Empty when the row has fewer than two settled bets:
+   *  a line through one point is not a trend. */
+  spark: number[];
 };
+
+/** Enough to show a shape at 74px wide, few enough to stay one path. */
+export const SPARK_POINTS = 18;
+
+/** Downsample by picking evenly spaced members, always keeping the last: the
+ *  end of a running total is the figure printed beside it, and a sparkline
+ *  whose right hand end disagrees with the number next to it is a bug
+ *  somebody will spend an afternoon on. */
+function resample(series: number[], n = SPARK_POINTS): number[] {
+  if (series.length <= n) return series;
+  const out: number[] = [];
+  for (let i = 0; i < n - 1; i++) out.push(series[Math.floor((i * (series.length - 1)) / (n - 1))]);
+  out.push(series[series.length - 1]);
+  return out;
+}
 
 const SPORT_LABEL: Record<string, string> = {
   football: 'Football', tennis: 'Tennis', 'horse-racing': 'Horse racing',
@@ -225,17 +253,42 @@ function keyOf(b: DemoBet, dim: Dimension): { key: string; label: string } {
 
 export function breakdown(rows: DemoBet[], dim: Dimension): BreakRow[] {
   const map = new Map<string, BreakRow>();
-  for (const b of rows) {
+  /* Running totals are built in event order, not in the order the rows
+     happen to arrive. A sparkline off a shuffled list is noise that looks
+     like information, which is worse than no sparkline. */
+  const series = new Map<string, number[]>();
+  const running = new Map<string, number>();
+  const ordered = [...rows].sort((a, b) => +a.eventAt - +b.eventAt);
+
+  for (const b of ordered) {
     const { key, label } = keyOf(b, dim);
-    const cur = map.get(key) ?? { key, label, count: 0, netPence: 0, turnoverPence: 0, roi: 0, units: 0, thin: false };
+    const cur = map.get(key) ?? { key, label, count: 0, netPence: 0, turnoverPence: 0, roi: 0, units: 0, thin: false, spark: [] };
     cur.count += 1;
     cur.netPence += b.state.realisedPlPence;
     cur.turnoverPence += turnoverPence(b, b.state);
     cur.units += b.state.units;
     map.set(key, cur);
+
+    if (b.state.status !== 'open') {
+      const acc = (running.get(key) ?? 0) + b.state.realisedPlPence;
+      running.set(key, acc);
+      const list = series.get(key) ?? [];
+      list.push(acc);
+      series.set(key, list);
+    }
   }
+
   return [...map.values()]
-    .map((r) => ({ ...r, roi: r.turnoverPence > 0 ? (r.netPence / r.turnoverPence) * 100 : 0, thin: r.count < 5, units: Number(r.units.toFixed(2)) }))
+    .map((r) => {
+      const raw = series.get(r.key) ?? [];
+      return {
+        ...r,
+        roi: r.turnoverPence > 0 ? (r.netPence / r.turnoverPence) * 100 : 0,
+        thin: r.count < 5,
+        units: Number(r.units.toFixed(2)),
+        spark: raw.length > 1 ? resample(raw) : [],
+      };
+    })
     .sort((a, b) => b.netPence - a.netPence);
 }
 
@@ -244,9 +297,12 @@ export function breakdown(rows: DemoBet[], dim: Dimension): BreakRow[] {
 export function orderedBreakdown(rows: DemoBet[], kind: 'odds' | 'stake', unitPence: number): BreakRow[] {
   const bands = kind === 'odds' ? ODDS_BANDS : STAKE_BANDS;
   const base = new Map<string, BreakRow>(
-    bands.map((b) => [b.id, { key: b.id, label: b.label, count: 0, netPence: 0, turnoverPence: 0, roi: 0, units: 0, thin: true }]),
+    bands.map((b) => [b.id, { key: b.id, label: b.label, count: 0, netPence: 0, turnoverPence: 0, roi: 0, units: 0, thin: true, spark: [] }]),
   );
-  for (const b of rows) {
+  const series = new Map<string, number[]>();
+  const running = new Map<string, number>();
+
+  for (const b of [...rows].sort((a, c) => +a.eventAt - +c.eventAt)) {
     const id = kind === 'odds' ? oddsBand(effectiveOdds(b)) : stakeBand(riskPence(b), b.unitPenceAtPlacement || unitPence);
     const cur = base.get(id);
     if (!cur) continue;
@@ -254,10 +310,25 @@ export function orderedBreakdown(rows: DemoBet[], kind: 'odds' | 'stake', unitPe
     cur.netPence += b.state.realisedPlPence;
     cur.turnoverPence += turnoverPence(b, b.state);
     cur.units += b.state.units;
+
+    if (b.state.status !== 'open') {
+      const acc = (running.get(id) ?? 0) + b.state.realisedPlPence;
+      running.set(id, acc);
+      const list = series.get(id) ?? [];
+      list.push(acc);
+      series.set(id, list);
+    }
   }
   return bands.map((band) => {
     const r = base.get(band.id)!;
-    return { ...r, roi: r.turnoverPence > 0 ? (r.netPence / r.turnoverPence) * 100 : 0, thin: r.count < 5, units: Number(r.units.toFixed(2)) };
+    const raw = series.get(band.id) ?? [];
+    return {
+      ...r,
+      roi: r.turnoverPence > 0 ? (r.netPence / r.turnoverPence) * 100 : 0,
+      thin: r.count < 5,
+      units: Number(r.units.toFixed(2)),
+      spark: raw.length > 1 ? resample(raw) : [],
+    };
   });
 }
 

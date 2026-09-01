@@ -9,6 +9,10 @@
 .sect { padding-block: var(--s9); position: relative; }
 @media (min-width: 700px) { .sect { padding-block: var(--s10); } }
 .sect__head { max-width: 620px; }
+/*  A section whose content is a single centred row wants a centred head, or
+    the heading hangs off to one side of it. */
+.sect__head--mid { margin-inline: auto; text-align: center; }
+.sect__head--mid .sect__p { margin-inline: auto; }
 .sect__badge { margin-bottom: var(--s4); }
 .sect__h {
   font-size: clamp(26px, 5.2vw, 40px);
@@ -23,6 +27,32 @@
 .hero {
   padding-block: var(--s9) var(--s8);
   position: relative;
+  isolation: isolate;
+}
+/*  The canvas behind the hero. It reaches up behind the header and down past
+    the fold, and everything in the hero is lifted above it with z-index
+    rather than by source order, because a canvas with inset:0 covers its
+    siblings otherwise.
+
+    The mask is what stops it becoming a contrast problem: it is at full
+    strength across the middle and gone by the bottom edge, so no line ever
+    passes under the last paragraph of the section. */
+.wavefield {
+  position: absolute;
+  inset: calc(var(--topbar-h) * -1) 0 -42% 0;
+  width: 100%;
+  height: auto;
+  z-index: -1;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 900ms var(--ease);
+  -webkit-mask-image: linear-gradient(to bottom, transparent, #000 16%, #000 74%, transparent 99%);
+  mask-image: linear-gradient(to bottom, transparent, #000 16%, #000 74%, transparent 99%);
+}
+.wavefield[data-ready='1'] { opacity: 1; }
+@media (prefers-reduced-motion: reduce) {
+  /* Still drawn, still still. A static texture is not a motion problem. */
+  .wavefield { transition: none; }
 }
 @media (min-width: 700px) { .hero { padding-block: var(--s10) var(--s9); } }
 .hero__h {
@@ -53,8 +83,13 @@
   border-color: color-mix(in oklab, var(--accent) 42%, transparent);
   background: color-mix(in oklab, var(--accent) 8%, var(--surface));
 }
-.rowcard__t { font-weight: var(--w-label); font-size: var(--t-small); }
-.rowcard__s { font-size: var(--t-small); color: var(--ink-2); margin-top: 2px; }
+/*  display:block, because half the rows in the product build these out of
+    <span> and half out of <p>. On the span version the title and the blurb
+    ran together on one line — "AccountWho you are, how to reach you" — and
+    margin-top on an inline element does nothing, so the stylesheet looked
+    correct and the page was not. */
+.rowcard__t { display: block; font-weight: var(--w-label); font-size: var(--t-small); }
+.rowcard__s { display: block; font-size: var(--t-small); color: var(--ink-2); margin-top: 2px; }
 .rowcard__i { width: 20px; height: 20px; flex: none; margin-top: 1px; color: var(--ink-3); }
 .rowcard--on .rowcard__i { color: var(--accent); }
 
@@ -80,6 +115,70 @@
 .quote__w { font-size: var(--t-small); color: var(--ink-2); margin-top: var(--s2); }
 
 .logstrip { display: flex; flex-wrap: wrap; gap: var(--s2); }
+
+/* ------------------------------------------------------------ theme picker */
+/*  Eight chips on one line, each painted in its own theme. The selected one
+    gets a box rather than a colour change, because a colour change on a chip
+    that is already a colour is unreadable. */
+.tpick { margin-top: var(--s6); }
+.tpick__row {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: var(--s2);
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+.tpick__b {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  width: 84px;
+  padding: 10px 6px 8px;
+  border-radius: var(--r-ctl);
+  border: 1px solid transparent;
+  background: none;
+  color: var(--ink-2);
+  font-size: var(--t-micro);
+  line-height: var(--lh-micro);
+  cursor: pointer;
+  transition: border-color var(--dur-fast) var(--ease), background var(--dur-fast) var(--ease), color var(--dur-fast) var(--ease);
+}
+.tpick__b:hover { color: var(--ink); background: var(--surface); }
+.tpick__b[aria-pressed='true'] {
+  border-color: var(--accent);
+  background: var(--surface);
+  color: var(--ink);
+}
+.tpick__chip {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  border: 1px solid;
+  display: grid;
+  place-items: center;
+  flex: none;
+  transition: transform var(--dur-fast) var(--ease);
+}
+.tpick__b:hover .tpick__chip,
+.tpick__b[aria-pressed='true'] .tpick__chip { transform: scale(1.08); }
+.tpick__dot { width: 13px; height: 13px; border-radius: 50%; }
+.tpick__l { font-weight: var(--w-label); letter-spacing: 0.01em; }
+.tpick__blurb {
+  margin-top: var(--s5);
+  text-align: center;
+  color: var(--ink-2);
+  font-size: var(--t-small);
+  line-height: var(--lh-small);
+  /*  Two lines of the longest blurb, held open so switching themes does not
+      shunt everything underneath up and down. */
+  min-height: calc(var(--lh-small) * 2);
+}
+@media (max-width: 520px) {
+  .tpick__b { width: 72px; }
+}
 
 .themecard { cursor: pointer; text-align: left; width: 100%; }
 .themecard__swatches { display: flex; gap: 5px; margin-top: var(--s3); }
@@ -107,3 +206,21 @@
 .wall__n { font-weight: var(--w-label); font-size: var(--t-small); display: block; }
 .wall__l { display: block; font-size: var(--t-micro); letter-spacing: 0.04em; text-transform: uppercase; color: var(--ink-2); margin-top: 3px; }
 .wall__w { display: block; font-size: var(--t-small); color: var(--ink-2); margin-top: var(--s2); line-height: 1.45; }
+
+/* ------------------------------------------------------- touch target floor */
+/*  Last file in the import order on purpose: a floor that loses to source
+    order is not a floor. */
+@media (max-width: 699px), (pointer: coarse) {
+  .btn--sm { min-height: var(--tap); padding-inline: var(--s4); }
+  .iconbtn { width: var(--tap); height: var(--tap); }
+  .btn--link { min-height: var(--tap); }
+  .seg__btn { min-height: var(--tap); }
+  /*  A standalone link in a list, a nav or a footer is a target in its own
+      right. A link inside a sentence is left alone: padding it out would
+      break the line it sits in. */
+  .mfoot a, .rows a, .checks a, .card > ul > li > a, .stack > li > a {
+    display: inline-flex; align-items: center; min-height: var(--tap);
+  }
+}
+/* An icon button must not be squashed by a growing sibling. */
+.iconbtn { flex: none; }
