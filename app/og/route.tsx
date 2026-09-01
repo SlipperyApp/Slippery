@@ -1,3 +1,4 @@
+import { MARK_GRID, MARK_ALPHA, MARK_POS, MARK_NEG, MARK_GROUND } from '@/lib/brand';
 import { ImageResponse } from 'next/og';
 
 export const runtime = 'edge';
@@ -38,10 +39,25 @@ export async function GET(req: Request) {
           }}
         />
         <div style={{ display: 'flex', alignItems: 'center', gap: 18 }}>
-          <div style={{ display: 'flex', gap: 6 }}>
-            <div style={{ width: 22, height: 22, borderRadius: 6, background: '#86EFAC' }} />
-            <div style={{ width: 22, height: 22, borderRadius: 6, background: '#272A34' }} />
-            <div style={{ width: 22, height: 22, borderRadius: 6, background: '#FCA5A5' }} />
+          {/*  The mark, from lib/brand.ts, which is the grid public/icon.svg
+               actually contains. This drew three rounded squares in a row
+               before, which is not the mark: the largest surface the product
+               has was carrying a logo the product does not use. */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+            {MARK_GRID.map((row, y) => (
+              <div key={y} style={{ display: 'flex', gap: 3 }}>
+                {[...row].map((ch, x) => (
+                  <div
+                    key={x}
+                    style={{
+                      width: 8, height: 8, borderRadius: 2.2, display: 'flex',
+                      background: ch === 'p' ? MARK_POS : ch === 'n' ? MARK_NEG : MARK_GROUND,
+                      opacity: MARK_ALPHA[y][x],
+                    }}
+                  />
+                ))}
+              </div>
+            ))}
           </div>
           <div style={{ color: '#F4F3F0', fontSize: 30, fontWeight: 800, letterSpacing: -1 }}>SLIPPERY</div>
         </div>

@@ -1,3 +1,4 @@
+import { MARK_GRID, MARK_ALPHA, MARK_POS, MARK_NEG, MARK_GROUND } from '@/lib/brand';
 import { ImageResponse } from 'next/og';
 
 export const runtime = 'edge';
@@ -86,10 +87,6 @@ export async function GET(req: Request) {
    *  Satori renders a subset of CSS and no SVG file, and the icon IS a five
    *  by five grid of rounded squares: the calendar, which is what the product
    *  is. Drawing it here means the card cannot fail on a missing asset. */
-  const MARK = [
-    'pnpn p', ' p pn', 'np pp', 'p nn ', ' pp p',
-  ];
-
   return new ImageResponse(
     (
       <div
@@ -106,15 +103,15 @@ export async function GET(req: Request) {
       >
         <div style={{ display: 'flex', alignItems: 'center', gap: 18 }}>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-            {MARK.map((row, y) => (
+            {MARK_GRID.map((row, y) => (
               <div key={y} style={{ display: 'flex', gap: 4 }}>
                 {[...row].map((ch, x) => (
                   <div
                     key={x}
                     style={{
                       width: 9, height: 9, borderRadius: 2.5, display: 'flex',
-                      background: ch === 'p' ? POS : ch === 'n' ? NEG : LINE,
-                      opacity: ch === ' ' ? 1 : 0.85,
+                      background: ch === 'p' ? MARK_POS : ch === 'n' ? MARK_NEG : MARK_GROUND,
+                      opacity: MARK_ALPHA[y][x],
                     }}
                   />
                 ))}
@@ -126,7 +123,17 @@ export async function GET(req: Request) {
           </div>
         </div>
 
-        <div style={{ display: 'flex', flexDirection: 'column' }}>
+        {/*  A rule in the result's own colour, down the left of the figure it
+             belongs to. The card is a 1080 square holding three short blocks,
+             so it has more air than content; the rule gives the middle block
+             an edge to sit against instead of floating in the middle of a
+             field, and it carries the one colour that means something. */}
+        <div
+          style={{
+            display: 'flex', flexDirection: 'column',
+            borderLeft: `7px solid ${tone}`, paddingLeft: 40, marginLeft: -47,
+          }}
+        >
           <div style={{ display: 'flex', color: INK2, fontSize: 28, letterSpacing: 3 }}>
             {`NET · ${period.toUpperCase()}`}
           </div>
