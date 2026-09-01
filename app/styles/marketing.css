@@ -61,7 +61,7 @@
 .checks { display: grid; grid-template-columns: 1fr; gap: var(--s3) var(--s5); margin-top: var(--s5); }
 @media (min-width: 520px) { .checks { grid-template-columns: 1fr 1fr; } }
 .checkitem { display: flex; gap: var(--s2); align-items: flex-start; font-size: var(--t-small); color: var(--ink-2); }
-.checkitem svg { width: 16px; height: 16px; flex: none; margin-top: 2px; color: var(--pos); }
+.checkitem svg { width: 16px; height: 16px; flex: none; margin-top: 2px; color: var(--accent); }
 
 .pricegrid { display: grid; gap: var(--s4); }
 @media (min-width: 760px) { .pricegrid { grid-template-columns: 1fr 1fr; } }

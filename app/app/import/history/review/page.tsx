@@ -35,7 +35,7 @@ export default function HistoryReview() {
                     <td className="mono">{c.theirs}</td>
                     <td>{c.ours}</td>
                     <td>
-                      <span className={`pill ${c.sure ? 'pill--pos' : ''}`}>{c.sure ? 'Matched' : 'A guess'}</span>
+                      <span className={`pill ${c.sure ? 'pill--accent' : ''}`}>{c.sure ? 'Matched' : 'A guess'}</span>
                     </td>
                   </tr>
                 ))}

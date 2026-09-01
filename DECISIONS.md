@@ -234,6 +234,20 @@ deployed build IS that commit (via the sha in `/api/sources`) and that every
 route answers 200 with a real title, exactly one h1, real content and the
 compliance footer.
 
+## The two result colours mean money, or they mean nothing
+
+Nine places had drifted into using #86EFAC for "read cleanly", "stage done",
+"badge earned", "check passed" and "unchanged", and #FCA5A5 for "not on the
+slip" and "field missing". None of them is wrong on its own. Together they put
+seven meanings on two colours, on screens that are about to write money into a
+ledger.
+
+Confidence now takes `.readmark--ok`, `--ask` and `--gap`, which are the
+accent and two inks. `tests/contrast.test.ts` fails on any `.pos` or `.neg`
+class that is not deciding on an outcome, a money figure, the sign of a number,
+the calendar ramp, or one of the two places the brief explicitly specifies a
+result colour: the "Save £11.89 a year" pill and the destructive block.
+
 ## What is not finished, and what I would do next
 
 Written last, and honestly. Everything in the route map is live and every

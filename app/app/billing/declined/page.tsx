@@ -46,7 +46,7 @@ export default async function Declined() {
               ['Your export', 'Working, and it will keep working whatever happens next.', 'check'],
             ].map(([t, s, i]) => (
               <li key={t} className="brow" style={{ gridTemplateColumns: '20px minmax(0,1fr)', gap: 'var(--s3)' }}>
-                <Icon name={i as 'check'} size={16} className="pos" />
+                <Icon name={i as 'check'} size={16} className="readmark readmark--ok" />
                 <span>
                   <span className="brow__title" style={{ display: 'block' }}>{t}</span>
                   <span className="brow__sub">{s}</span>

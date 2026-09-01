@@ -28,9 +28,9 @@ export default function SaveFailed() {
             ['What you entered', money(9900), false],
           ].map(([t, v, ok]) => (
             <li key={String(t)} className="brow" style={{ gridTemplateColumns: '20px minmax(0,1fr) auto', gap: 'var(--s3)' }}>
-              <Icon name={ok ? 'check' : 'close'} size={16} className={ok ? 'pos' : 'neg'} />
+              <Icon name={ok ? 'check' : 'close'} size={16} className={`readmark readmark--${ok ? 'ok' : 'gap'}`} />
               <span className="brow__title">{t}</span>
-              <span className={`fig fig--s tnum ${ok ? '' : 'neg'}`}>{v}</span>
+              <span className="fig fig--s tnum">{v}</span>
             </li>
           ))}
         </ul>

@@ -578,3 +578,10 @@
   line-height: 1.5;
 }
 .slipstate__i { width: 18px; height: 18px; flex: none; margin-top: 2px; color: var(--ink-2); }
+
+/* Confidence on a read. Deliberately NOT the profit and loss colours: those
+   two mean money, and a screen that is about to write money into a ledger is
+   the last place to give them a second meaning. */
+.readmark--ok { color: var(--accent); }
+.readmark--ask { color: var(--ink-2); }
+.readmark--gap { color: var(--ink); }

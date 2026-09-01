@@ -140,3 +140,51 @@ test('nothing that has to be read is faded below legibility', () => {
   }
   assert.deepEqual(offences, []);
 });
+
+test('the two result colours are never used to mean anything but money', () => {
+  // They mean profit and loss. Letting green also mean "read cleanly" and red
+  // also mean "not on the slip" puts four meanings on two colours, on screens
+  // that are about to write money into a ledger.
+  const roots = [new URL('../components/', import.meta.url), new URL('../app/', import.meta.url)];
+  const offences: string[] = [];
+
+  // Where they legitimately appear: an outcome, a profit figure, a calendar
+  // fill, the swatches that explain the two colours, and the saving on the
+  // yearly plan, which the brief specifies as a green pill.
+  const ALLOWED = new RegExp([
+    // a real outcome
+    "outcome", "'won'", "'lost'", "'void'", "legResult", "plClass", "tone",
+    // a real money figure
+    "pl\\(", "money\\(", "netPence", "realisedPl", "units", "profit", "loss",
+    // the calendar ramp, the charts, and the swatches that explain the colours
+    "cal-", "cal__key", "swatch", "#86EFAC", "#FCA5A5", "meter__fill",
+    "OutcomePill", "ProfitCurve", "MonthBars", "Sparkline", "--pos\\b", "--neg\\b",
+    // the saving on the yearly plan, which the brief specifies as a green pill
+    "Save ",
+    // the destructive block, which the brief specifies is in the loss colour
+    "Destructive",
+    // and the general shape of "the sign of a number picks the colour", which
+    // is the correct use by definition
+    "> 0 \\? '(pos|neg)'", ">= 0 \\? '(pos|neg)'", "< 0 \\? '(pos|neg)'",
+    "startsWith\\('-'\\)", "startsWith\\('\\+'\\)",
+    // a ghosted empty state is a picture of a money figure
+    "ghost=", "\\+£",
+  ].join('|'));
+
+  const walk = (dir: URL) => {
+    for (const entry of readdirSync(dir, { withFileTypes: true })) {
+      const child = new URL(entry.name + (entry.isDirectory() ? '/' : ''), dir);
+      if (entry.isDirectory()) { walk(child); continue; }
+      if (!/\.tsx$/.test(entry.name)) continue;
+      readFileSync(child, 'utf8').split('\n').forEach((line, i) => {
+        if (!/\b(pos|neg)\b/.test(line)) return;
+        if (!/className|class=/.test(line)) return;
+        if (!/['"`\s](pos|neg)['"`\s]|pill--(pos|neg)|fill--(pos|neg)/.test(line)) return;
+        if (ALLOWED.test(line)) return;
+        offences.push(`${entry.name}:${i + 1} ${line.trim().slice(0, 84)}`);
+      });
+    }
+  };
+  roots.forEach(walk);
+  assert.deepEqual(offences, []);
+});

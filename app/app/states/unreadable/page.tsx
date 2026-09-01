@@ -34,9 +34,9 @@ export default function Unreadable() {
         <ul style={{ marginTop: 'var(--s3)' }}>
           {FIELDS.map(([t, v, c]) => (
             <li key={t} className="brow" style={{ gridTemplateColumns: '20px minmax(0,1fr) auto', gap: 'var(--s3)' }}>
-              <Icon name={c === 'high' ? 'check' : 'minus'} size={16} className={c === 'high' ? 'pos' : 'neg'} />
+              <Icon name={c === 'high' ? 'check' : 'minus'} size={16} className={`readmark readmark--${c === 'high' ? 'ok' : 'gap'}`} />
               <span className="brow__title">{t}</span>
-              <span className={`small ${c === 'high' ? 'mono' : 'neg'}`}>{v}</span>
+              <span className={`small ${c === 'high' ? 'mono' : 'muted'}`}>{v}</span>
             </li>
           ))}
         </ul>

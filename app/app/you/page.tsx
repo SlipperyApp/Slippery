@@ -106,7 +106,7 @@ export default async function You() {
           <ul style={{ marginTop: 'var(--s3)' }}>
             {badges.map((b) => (
               <li key={b.t} className={`brow${b.got ? '' : ' brow--faded'}`} style={{ gridTemplateColumns: '20px minmax(0,1fr)', gap: 'var(--s3)' }}>
-                <Icon name={b.got ? 'check' : 'minus'} size={16} className={b.got ? 'pos' : 'dim'} />
+                <Icon name={b.got ? 'check' : 'minus'} size={16} className={b.got ? 'readmark readmark--ok' : 'dim'} />
                 <span>
                   <span className="brow__title" style={{ display: 'block' }}>{b.t}</span>
                   <span className="brow__sub">{b.s}</span>

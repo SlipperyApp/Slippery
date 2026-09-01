@@ -6,11 +6,16 @@ import Link from 'next/link';
 import { Icon } from '@/components/Icon';
 import { CONFIDENCE_COPY, type Confidence, type SlipRead } from '@/lib/data/read';
 
+/** The icon carries the confidence. The VALUE never does.
+ *
+ *  #86EFAC and #FCA5A5 mean profit and loss. Letting green also mean "read
+ *  cleanly" and red also mean "not on the slip" puts four meanings on two
+ *  colours, on a screen that is about to write money into a ledger. */
 const TONE: Record<Confidence, { icon: 'check' | 'help' | 'alert' | 'minus'; cls: string }> = {
-  high: { icon: 'check', cls: 'pos' },
-  medium: { icon: 'help', cls: '' },
-  low: { icon: 'alert', cls: '' },
-  missing: { icon: 'minus', cls: 'neg' },
+  high: { icon: 'check', cls: 'ok' },
+  medium: { icon: 'help', cls: 'ask' },
+  low: { icon: 'alert', cls: 'ask' },
+  missing: { icon: 'minus', cls: 'gap' },
 };
 
 export function ReviewSlip({ read }: { read: SlipRead }) {
@@ -77,13 +82,13 @@ export function ReviewSlip({ read }: { read: SlipRead }) {
               const t = TONE[f.confidence];
               return (
                 <li key={f.key} className="brow" style={{ gridTemplateColumns: '20px minmax(0,1fr) auto', gap: 'var(--s3)' }}>
-                  <Icon name={t.icon} size={16} className={t.cls} />
+                  <Icon name={t.icon} size={16} className={`readmark readmark--${t.cls}`} />
                   <span style={{ minWidth: 0 }}>
                     <span className="brow__title" style={{ display: 'block' }}>{f.label}</span>
                     {f.saw ? <span className="brow__sub" style={{ display: 'block' }}>Saw: <span className="mono">{f.saw}</span></span> : null}
                     <span className="brow__sub">{CONFIDENCE_COPY[f.confidence].note}</span>
                   </span>
-                  <span className={`fig fig--s tnum ${t.cls}`}>{f.value}</span>
+                  <span className="fig fig--s tnum">{f.value}</span>
                 </li>
               );
             })}
@@ -117,7 +122,7 @@ export function ReviewSlip({ read }: { read: SlipRead }) {
             ))}
           </ul>
           {legs.some((l) => !l.odds) ? (
-            <p className="small neg card__foot">
+            <p className="small muted card__foot">
               One price was not on the slip and is not being guessed. A missing price is visible;
               a wrong one is not.
             </p>
