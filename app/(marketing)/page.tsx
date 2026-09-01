@@ -29,38 +29,48 @@ export default function Landing() {
   return (
     <>
       {/* ------------------------------------------------------------ hero */}
-      <section className="hero">
+      <section className="hero hero--mid">
         <WaveField />
         <div className="wrap">
-          <div className="two two--wide-right">
-            <div>
-              <span className="pill rise">
-                <span className="dot" style={{ background: 'var(--accent)' }} />
-                For UK and Irish bettors
-              </span>
-              <h1 className="hero__h rise rise-1" style={{ marginTop: 'var(--s4)' }}>
-                It all starts with a{' '}
-                <span className="slipword">
-                  <span className="slipword__glow" aria-hidden="true">slip.</span>
-                  <span className="slipword__text">slip.</span>
-                  <span className="slipword__sheen" aria-hidden="true" />
-                </span>
-              </h1>
-              <p className="hero__sub rise rise-2">
-                Screenshot the bookmaker slip when you place it, forward it, and it is in your
-                ledger before you know how it went. The bets you quietly forget to log are the
-                ones that cost you.
-              </p>
-              <div className="hero__cta rise rise-3">
-                <Link href="/signup" className="btn btn--primary">Start free for 14 days</Link>
-                <Link href="/demo" className="btn btn--link">See a real account</Link>
-              </div>
-              <p className="small dim rise rise-4" style={{ marginTop: 'var(--s4)' }}>
-                Card required. 14 days or 35 slips, whichever runs out first. Cancel in one tap.
-              </p>
-            </div>
+          <span className="pill rise">
+            <span className="dot" style={{ background: 'var(--accent)' }} />
+            Bet tracking for UK and Irish bettors
+          </span>
 
-            <div className="rise rise-2">
+          <h1 className="hero__h rise rise-1">
+            It all starts with a{' '}
+            <span className="slipword">
+              <span className="slipword__glow" aria-hidden="true">slip.</span>
+              <span className="slipword__text">slip.</span>
+              <span className="slipword__sheen" aria-hidden="true" />
+            </span>
+          </h1>
+
+          <p className="hero__sub rise rise-2">
+            Forward the slip when you place it. Slippery reads it, settles it, and keeps the
+            record you would not have kept.
+          </p>
+
+          <div className="hero__cta rise rise-3">
+            <Link href="/signup" className="btn btn--primary btn--lg">Start free for 14 days</Link>
+            <Link href="/demo" className="btn btn--link">or see a real account</Link>
+          </div>
+
+          <p className="small dim rise rise-4 hero__fine">
+            14 days or 35 slips. Card required, cancel in one tap.
+          </p>
+
+          {/*  The product, in a window.
+               A screenshot floating on a page reads as a picture of software;
+               the same thing in a frame reads as the software. It is chrome,
+               so it is aria-hidden, and the demo inside it is the real
+               component rather than an image of one. */}
+          <div className="frame rise rise-4">
+            <div className="frame__bar" aria-hidden="true">
+              <span className="frame__dot" /><span className="frame__dot" /><span className="frame__dot" />
+              <span className="frame__url">slippery.app</span>
+            </div>
+            <div className="frame__body">
               <SettleDemo />
             </div>
           </div>

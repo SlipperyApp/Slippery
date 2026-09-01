@@ -37,8 +37,7 @@ export default function How() {
             <span>The rest is the point of paying for it.</span>
           </h1>
           <p className="sect__p">
-            Capture happens at placement, not at settlement, because a record made before you know
-            how it went cannot quietly become only the bets you wanted to remember.
+            Capture happens at placement, not settlement. A record made before you know how it went cannot become only the bets you wanted to remember.
           </p>
         </div>
       </section>

@@ -44,8 +44,7 @@ export default function Demo() {
         </h1>
         <p className="sect__p">
           <span className="mono">@{account.handle}</span> has {count(s.count)} bets across six
-          months. Every figure below is folded by the same function your own ledger would use, from
-          the same append only settlement events, so nothing here can flatter itself.
+          months. Every figure below is folded by the function your own ledger uses, from the same append only events. Nothing here can flatter itself.
         </p>
 
         <div className="grid" style={{ marginTop: 'var(--s7)' }}>

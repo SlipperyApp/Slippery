@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { verifyStripeSignature, planStateAfterFailure } from '@/lib/server/stripe';
+import { verifyStripeSignature, planStateAfterFailure, accountRoutes } from '@/lib/server/stripe';
 import { verifySecret, callbackData, PREFIX } from '@/lib/server/telegram';
 import { authoriseCron } from '@/lib/server/cron';
 import { createHmac } from 'node:crypto';
@@ -111,4 +111,59 @@ test('an admin lever refuses without the secret, and refuses a wrong one', async
   assert.equal(authoriseAdmin(new Request('https://x')), false);
   assert.equal(authoriseAdmin(new Request('https://x', { headers: { 'x-admin-secret': 'admin-secret-value-more' } })), false);
   delete process.env.ADMIN_SECRET;
+});
+
+
+// ------------------------------------------- the webhook's route to an account
+
+/*  The shapes Stripe actually sends, trimmed to the fields that matter.
+ *  These are the four events the webhook handles, and the point of the test
+ *  is the asymmetry between them: two state the account and two do not. */
+
+const SESSION = {
+  object: 'checkout.session',
+  client_reference_id: 'acc-1',
+  customer: 'cus_1',
+  subscription: 'sub_1',
+};
+
+const SUBSCRIPTION = {
+  object: 'subscription',
+  id: 'sub_1',
+  customer: 'cus_1',
+  metadata: { account_id: 'acc-1' },
+};
+
+/*  An invoice. No client_reference_id, and its metadata is its OWN: Stripe
+ *  does not copy subscription metadata down onto invoices. This is the shape
+ *  that made two branches of the webhook dead code. */
+const INVOICE = {
+  object: 'invoice',
+  id: 'in_1',
+  customer: 'cus_1',
+  subscription: 'sub_1',
+  metadata: {},
+};
+
+test('a session and a subscription say which account they are for', () => {
+  assert.equal(accountRoutes(SESSION).stated, 'acc-1');
+  assert.equal(accountRoutes(SUBSCRIPTION).stated, 'acc-1');
+});
+
+test('an invoice does NOT, and this is why it must be looked up', () => {
+  const r = accountRoutes(INVOICE);
+  assert.equal(r.stated, '', 'if this ever has a value, Stripe changed and the lookup can be simplified');
+  // Which leaves these two, both stored on the account at checkout.
+  assert.equal(r.customer, 'cus_1');
+  assert.equal(r.subscription, 'sub_1');
+});
+
+test('every event the webhook handles offers at least one route back', () => {
+  for (const [name, object] of [['session', SESSION], ['subscription', SUBSCRIPTION], ['invoice', INVOICE]] as const) {
+    const r = accountRoutes(object);
+    assert.ok(
+      r.stated || r.subscription || r.customer,
+      `${name} gives the webhook no way to find the account, so its branch is dead`,
+    );
+  }
 });

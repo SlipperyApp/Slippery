@@ -78,8 +78,7 @@ export default async function ImportHome() {
           />
         </div>
         <p className="small dim card__foot">
-          Both halves of the trial are counted by one function, and it tells the app which one is
-          about to run out, so this figure cannot disagree with what blocks an upload.
+          One function counts both halves of the trial and says which will run out first, so this figure cannot disagree with what blocks an upload.
         </p>
       </div>
     </>

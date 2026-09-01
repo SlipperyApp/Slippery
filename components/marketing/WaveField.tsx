@@ -190,16 +190,20 @@ export function WaveField() {
       //  own: the field is rotated, so "left" inside that gradient is not the
       //  left of the screen and the copy ends up with lines through it.
       //
-      //  It is an ellipse over the words rather than a column, because a
-      //  column also erases the empty space BELOW the words, which is exactly
-      //  where there is room for the ribbon to show. Soft edged, so nothing
-      //  has a visible boundary.
+      //  It is an ellipse over the words rather than a band, because a band
+      //  also erases the empty space BELOW the words, which is exactly where
+      //  there is room for the ribbon to show. Soft edged, so nothing has a
+      //  visible boundary.
+      //
+      //  Centred, because the hero is. It was offset left for a two column
+      //  hero and left hairlines running straight through the headline when
+      //  that became one centred column.
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
       ctx.globalCompositeOperation = 'destination-out';
       const wide = w >= 900;
-      ctx.translate(w * (wide ? 0.30 : 0.5), h * (wide ? 0.40 : 0.30));
-      ctx.scale(1, wide ? 0.80 : 1.15);
-      const rad = wide ? w * 0.44 : w * 0.92;
+      ctx.translate(w * 0.5, h * (wide ? 0.30 : 0.26));
+      ctx.scale(1, wide ? 0.62 : 1.0);
+      const rad = wide ? w * 0.62 : w * 0.95;
       const keep = ctx.createRadialGradient(0, 0, rad * 0.42, 0, 0, rad);
       keep.addColorStop(0, 'rgba(0,0,0,1)');
       keep.addColorStop(0.7, 'rgba(0,0,0,0.55)');

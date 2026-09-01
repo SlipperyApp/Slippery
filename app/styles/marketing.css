@@ -55,6 +55,50 @@
   .wavefield { transition: none; }
 }
 @media (min-width: 700px) { .hero { padding-block: var(--s10) var(--s9); } }
+/*  The centred hero. One column, one call to action, and the product in a
+    window underneath rather than beside: a two column hero puts the copy and
+    the product in competition, and at 1440 the copy loses. */
+.hero--mid { text-align: center; }
+.hero--mid .wrap { display: flex; flex-direction: column; align-items: center; }
+.hero--mid .hero__h { max-width: 18ch; margin-top: var(--s5); }
+.hero--mid .hero__sub { max-width: 54ch; }
+.hero--mid .hero__cta { justify-content: center; }
+.hero__fine { margin-top: var(--s4); }
+
+/*  A browser window around the product. Chrome, so aria-hidden, and what is
+    inside is the working component rather than a picture of one. */
+.frame {
+  width: 100%;
+  max-width: 940px;
+  margin-top: var(--s8);
+  border-radius: var(--r-card);
+  border: 1px solid var(--line);
+  background: color-mix(in oklab, var(--surface) 70%, transparent);
+  overflow: hidden;
+  text-align: left;
+  box-shadow: 0 40px 90px -40px rgb(0 0 0 / 0.75);
+}
+.frame__bar {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 0 var(--s4);
+  height: 40px;
+  border-bottom: 1px solid var(--line);
+  background: color-mix(in oklab, var(--surface-2) 70%, transparent);
+}
+.frame__dot { width: 9px; height: 9px; border-radius: 50%; background: var(--line-2); flex: none; }
+.frame__url {
+  margin-inline: auto;
+  font-family: var(--f-mono);
+  font-size: var(--t-micro);
+  color: var(--ink-2);
+  /* Balances the three dots on the left so the label sits in the middle. */
+  padding-right: 45px;
+}
+.frame__body { padding: var(--s4); }
+@media (min-width: 700px) { .frame__body { padding: var(--s5); } }
+
 .hero__h {
   font-size: clamp(38px, 9vw, 76px);
   line-height: 1.02;

@@ -5,7 +5,8 @@ import {
   select, summarise, byDay, cumulative, byMonth, runningNow, settledToday,
   offerSplit, orderedBreakdown, scopeFromParams, scopeLabel, buildBreakdowns, type BreakRow,
 } from '@/lib/data/analytics';
-import { Breakdown, BreakList } from '@/components/app/Breakdown';
+import { Breakdown } from '@/components/app/Breakdown';
+import { NetHero } from '@/components/app/NetHero';
 import { ScopeBar } from '@/components/app/ScopeBar';
 import { Module, ModuleLink, Figure } from '@/components/app/Module';
 import { MonthCalendar } from '@/components/app/Calendar';
@@ -41,13 +42,12 @@ export default async function Dashboard({
   const wideCurve = cumulative(allDays);
   const curveIsWide = curve.length < 2 && wideCurve.length > 1;
   const shownCurve = curveIsWide ? wideCurve : curve;
-  const months = byMonth(bets);
   const running = runningNow(bets);
   const today = settledToday(bets, now);
   const offers = offerSplit(bets);
-  const oddsBands = orderedBreakdown(rows, 'odds', account.unitPence);
-  const stakeBands = orderedBreakdown(rows, 'stake', account.unitPence);
-  const breakdowns = buildBreakdowns(rows);
+  /*  Six dimensions in one module. Odds and stake used to be two more cards
+      beside it, drawing the same row with the same bar. */
+  const breakdowns = buildBreakdowns(rows, account.unitPence);
   /* Every settled day the account has: the calendar browses months itself,
      so scoping this to the current one would empty every earlier month. */
   const calendarDays = byDay(select(bets, { ...scope, period: 'all' }, now, account.weekStart));
@@ -68,41 +68,40 @@ export default async function Dashboard({
         </div>
       ) : null}
 
-      <ScopeBar scope={scope} />
-
       <div className="grid">
-        {/* -------------------------------------------------------- net */}
+        {/* ------------------------------------------------ net, the hero */}
+        <NetHero
+          summary={s}
+          scope={scope}
+          scopeLabel={scopeLabel(scope)}
+          currency={account.currency}
+          unitPence={account.unitPence}
+          handle={account.handle}
+        />
+
+        {/* --------------------------------------------------- calendar */}
         <Module
-          title="Net"
-          span={4}
-          size="m"
-          id="mod-net"
-          footer={
-            <p className="small dim">
-              {s.voidedStakePence > 0
-                ? `Turnover and ROI exclude ${money(s.voidedStakePence, account.currency)} of voided stakes.`
-                : `${scopeLabel(scope)}.`}
-            </p>
-          }
+          title="Calendar"
+          span={6}
+          size="xxl"
+          note="Any month, Europe/London days"
+          id="mod-calendar"
         >
-          <Figure
-            value={money(s.netPence, account.currency, { sign: true })}
-            label={scopeLabel(scope)}
-            tone={s.netPence > 0 ? 'pos' : s.netPence < 0 ? 'neg' : ''}
-            sub={`${fmtUnits(s.units, { sign: true })} on a ${money(account.unitPence, account.currency)} unit`}
+          <MonthCalendar
+            days={calendarDays}
+            now={now}
+            weekStart={account.weekStart}
+            show={account.calendarDates ? 'both' : 'amount'}
+            currency={account.currency}
           />
-          <div className="row row--wrap" style={{ marginTop: 'var(--s4)', gap: 'var(--s5)' }}>
-            <Figure value={pct(s.roi, { sign: true })} label="Return" size="sm" tone={s.roi > 0 ? 'pos' : s.roi < 0 ? 'neg' : ''} />
-            <Figure value={money(s.turnoverPence, account.currency)} label="Turnover" size="sm" />
-            <Figure value={count(s.count)} label="Bets" size="sm" />
-          </div>
         </Module>
+
 
         {/* ------------------------------------------------ running now */}
         <Module
           title="Running now"
-          span={4}
-          size="m"
+          span={6}
+          size="xxl"
           note="Live, so it ignores the scope"
           id="mod-running"
           footer={<ModuleLink href="/app/ledger">Open the ledger</ModuleLink>}
@@ -144,6 +143,24 @@ export default async function Dashboard({
           )}
         </Module>
 
+        {/* ------------------------------------------------ profit curve */}
+        <Module
+          title="Profit curve"
+          span={8}
+          size="m"
+          id="mod-curve"
+          note={curveIsWide ? 'All time, this scope has one day' : undefined}
+          footer={
+            <p className="small dim">
+              {shownCurve.length > 1
+                ? `${shownCurve.length} settled days, best ${money(Math.max(...(curveIsWide ? allDays : byDay(rows)).map((d) => d.netPence), 0), account.currency, { sign: true })} on a day.`
+                : 'A curve needs two settled days.'}
+            </p>
+          }
+        >
+          <ProfitCurve points={shownCurve} currency={account.currency} />
+        </Module>
+
         {/* --------------------------------------------- offers vs own */}
         <Module
           title="Offers versus own"
@@ -170,76 +187,15 @@ export default async function Dashboard({
           </div>
         </Module>
 
-        {/* ------------------------------------------------ profit curve */}
+        {/* --------------------------------------------------- breakdown */}
         <Module
-          title="Profit curve"
-          span={8}
-          size="xl"
-          id="mod-curve"
-          note={curveIsWide ? 'All time, this scope has one day' : undefined}
-          footer={
-            <p className="small dim">
-              {shownCurve.length > 1
-                ? `${shownCurve.length} settled days, best ${money(Math.max(...(curveIsWide ? allDays : byDay(rows)).map((d) => d.netPence), 0), account.currency, { sign: true })} on a day.`
-                : 'A curve needs two settled days.'}
-            </p>
-          }
-        >
-          <ProfitCurve points={shownCurve} currency={account.currency} />
-        </Module>
-
-        {/* --------------------------------------------------- calendar */}
-        <Module
-          title="Calendar"
-          span={4}
-          size="xl"
-          note="Any month, Europe/London days"
-          id="mod-calendar"
-        >
-          <MonthCalendar
-            days={calendarDays}
-            now={now}
-            weekStart={account.weekStart}
-            show={account.calendarDates ? 'both' : 'amount'}
-            currency={account.currency}
-          />
-        </Module>
-
-        <Module title="Breakdown" span={8} size="l" id="mod-breakdown">
-          <Breakdown rowsByDim={breakdowns} currency={account.currency} />
-        </Module>
-
-        {/* -------------------------------------------------- odds band */}
-        <Module
-          title="Odds band"
-          span={4}
+          title="Breakdown"
+          span={12}
           size="l"
-          id="mod-odds"
-          footer={<p className="small dim">Ordered by price, never by profit: the order is the read.</p>}
+          id="mod-breakdown"
+          footer={<p className="small dim">Odds and stake keep their band order. The order is the read, so they are never sorted by profit.</p>}
         >
-          <BandList rows={oddsBands} currency={account.currency} label="Profit by odds band" />
-        </Module>
-
-        {/* ---------------------------------------------- month by month */}
-        <Module
-          title="Month by month"
-          span={8}
-          size="m"
-          id="mod-months"
-          footer={<p className="small dim">Bars under five bets are faded. Volume outranks luck.</p>}
-        >
-          <MonthBars months={months} currency={account.currency} />
-        </Module>
-
-        {/* ------------------------------------------------ stake range */}
-        <Module
-          title="Stake range"
-          span={4}
-          size="m"
-          id="mod-stakes"
-          footer={<p className="small dim">Buckets are in units, not pounds, so changing your unit cannot break them.</p>}
-        >
-          <BandList rows={stakeBands} currency={account.currency} label="Profit by stake range" />
+          <Breakdown rowsByDim={breakdowns} currency={account.currency} />
         </Module>
 
         {/* -------------------------------------------------- all time */}
@@ -258,10 +214,3 @@ export default async function Dashboard({
   );
 }
 
-function BandList({ rows, currency, label }: { rows: BreakRow[]; currency: 'GBP' | 'EUR'; label: string }) {
-  return (
-    <div className="grow" style={{ overflowY: 'auto', minHeight: 0 }} tabIndex={0} role="region" aria-label={label}>
-      <BreakList rows={rows} currency={currency} ordered />
-    </div>
-  );
-}

@@ -16,8 +16,7 @@ export default function ImportDone() {
       <span className="pill pill--pos">Written</span>
       <h1 style={{ marginTop: 'var(--s4)' }}>{count(landed)} bets are in your ledger</h1>
       <p className="muted" style={{ marginTop: 'var(--s2)', maxWidth: '60ch' }}>
-        In one transaction, with every row marked as imported and not slip backed, so a group that
-        filters on slip backed bets sees these for what they are.
+        One transaction, every row marked imported and not slip backed, so a group filtering on slip backed bets sees these for what they are.
       </p>
 
       <div className="card" style={{ marginTop: 'var(--s5)' }}>

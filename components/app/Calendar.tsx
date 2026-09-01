@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import { Icon } from '@/components/Icon';
+import { ModuleMenu, MenuChoice } from '@/components/app/ModuleMenu';
 import { londonDay, londonParts, MONTH_LONG, money, cellFigure } from '@/lib/format';
 import type { Currency } from '@/lib/domain/types';
 
@@ -181,9 +182,15 @@ export function MonthCalendar({
     );
   }
 
-  // Six rows always, 42 cells. Some months need five and some six, and a grid
-  // that changes height between months moves every module in its row with it.
-  while (cells.length < 42) {
+  /*  Exactly the rows this month needs, five or six.
+   *
+   *  It used to render 42 cells always, so that a five row month could not
+   *  change the module's height and shove every module beside it. The module
+   *  has a fixed height now, so that cannot happen either way, and the always
+   *  six version left an empty row of dead space at the bottom of five months
+   *  out of seven. The rows stretch to fill instead. */
+  const rows = Math.ceil((lead + daysInMonth) / 7);
+  while (cells.length < rows * 7) {
     cells.push(<div key={`tail${cells.length}`} className="cal__cell cal__cell--out" aria-hidden="true" />);
   }
 
@@ -214,22 +221,22 @@ export function MonthCalendar({
           </button>
         </div>
 
-        <div className="seg seg--xs" role="group" aria-label="What each day shows">
-          {SHOW_OPTIONS.map((o) => (
-            <button
-              key={o.id}
-              type="button"
-              className="seg__btn"
-              aria-pressed={show === o.id}
-              onClick={() => choose(o.id)}
-            >
-              {o.label}
-            </button>
-          ))}
-        </div>
+        <ModuleMenu label="Calendar">
+          <MenuChoice
+            label="Each day shows"
+            value={show}
+            options={SHOW_OPTIONS}
+            onChange={choose}
+          />
+        </ModuleMenu>
       </div>
 
-      <div className="cal" role="group" aria-label={`${title}, one cell a day`}>
+      <div
+        className="cal"
+        role="group"
+        aria-label={`${title}, one cell a day`}
+        style={{ ['--cal-rows' as string]: String(rows) }}
+      >
         {DOW.map((l) => (
           <div key={l} className="cal__dow" aria-hidden="true">{l.slice(0, 1)}</div>
         ))}

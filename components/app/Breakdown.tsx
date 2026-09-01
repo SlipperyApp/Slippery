@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { DIMENSIONS, type Dimension, type BreakRow } from '@/lib/data/analytics';
+import { DIMENSIONS, ORDERED_DIMENSIONS, type Dimension, type BreakRow } from '@/lib/data/analytics';
 import { RowSpark } from '@/components/app/Charts';
 import { money, pct, units as fmtUnits } from '@/lib/format';
 import type { Currency } from '@/lib/domain/types';
@@ -52,7 +52,7 @@ export function Breakdown({
           role="region"
           aria-label={`Broken down by ${dim}, scrollable`}
         >
-          <BreakList rows={rows} currency={currency} showUnits={showUnits} />
+          <BreakList rows={rows} currency={currency} showUnits={showUnits} ordered={ORDERED_DIMENSIONS.has(dim)} />
         </div>
       )}
     </>

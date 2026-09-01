@@ -23,6 +23,7 @@
   .h-m { height: var(--h-mod-m); }
   .h-l { height: var(--h-mod-l); }
   .h-xl { height: var(--h-mod-xl); }
+  .h-xxl { height: var(--h-mod-xxl); }
 }
 
 .card__head {
@@ -38,6 +39,7 @@
   font-weight: var(--w-label);
   letter-spacing: var(--tr-tight);
 }
+.card__tools { display: flex; align-items: center; gap: var(--s3); flex: none; }
 .card__note { font-size: var(--t-micro); line-height: var(--lh-micro); color: var(--ink-2); font-weight: var(--w-label); letter-spacing: 0.02em; }
 
 /* The slip motif: a torn lower edge, used wherever a bet is shown as an
@@ -319,6 +321,116 @@
 .brow--faded .meter__fill { opacity: 0.45; }
 .brow--faded .brow__title { color: var(--ink-2); }
 
+/* ---------------------------------------------------------------- net hero */
+/*  The figure the dashboard exists to show, at the top, at size, carrying the
+    scope for everything under it. A separate scope strip above the grid said
+    the same thing twice. */
+.hero-net { gap: 0; }
+.hero-net__head { display: flex; align-items: flex-start; justify-content: space-between; gap: var(--s3); }
+.hero-net__tools { display: flex; align-items: center; gap: 2px; flex: none; }
+.hero-net__fig {
+  font-family: var(--f-mono);
+  font-size: clamp(38px, 7.5vw, 64px);
+  font-weight: 600;
+  line-height: 1.02;
+  letter-spacing: -0.045em;
+  margin-top: var(--s2);
+  font-variant-numeric: tabular-nums;
+}
+.hero-net__stats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s3) var(--s6);
+  margin-top: var(--s4);
+  list-style: none;
+  padding: 0;
+}
+.hero-net__stats li { display: flex; align-items: baseline; gap: var(--s2); font-size: var(--t-small); }
+.hero-net__stats .label { font-size: var(--t-micro); }
+
+/*  The target bar takes the theme accent, not a third semantic colour.
+    Profit green and loss red mean a RESULT; distance to a target is not a
+    result, and a second green on the same card meaning something else is
+    worse than no colour at all. */
+.hero-net__target { margin-top: var(--s5); }
+.hero-net__targetline { display: flex; justify-content: space-between; gap: var(--s3); margin-bottom: 6px; }
+.hero-net__pctv { color: var(--accent); font-weight: var(--w-fig); }
+.hero-net__bar {
+  display: block;
+  height: 7px;
+  border-radius: var(--r-pill);
+  background: var(--surface-3);
+  overflow: hidden;
+}
+.hero-net__barfill {
+  display: block;
+  height: 100%;
+  border-radius: var(--r-pill);
+  background: var(--accent);
+  animation: bar-grow 620ms var(--ease-out) both;
+}
+.hero-net .scopebar { margin-top: var(--s5); padding: 0; border: 0; background: none; }
+.hero-net__note { margin-top: var(--s3); }
+
+/* -------------------------------------------------------------- share card */
+.sheet--share { max-width: min(420px, calc(100vw - 32px)); }
+.sharecard {
+  display: block;
+  width: 100%;
+  height: auto;
+  aspect-ratio: 1 / 1;
+  border-radius: var(--r-ctl);
+  border: 1px solid var(--line);
+  background: var(--bg);
+}
+
+/* ------------------------------------------------------------ module menu */
+/*  The ⋯ in a module corner, and the panel it opens.
+    Anchored to the card rather than the viewport: a module is never so tall
+    that its own corner scrolls away, and a fixed popover would need position
+    tracking for nothing. */
+.modmenu { position: relative; flex: none; }
+.modmenu__btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  margin: -4px -4px -4px 0;
+  border-radius: 8px;
+  border: 1px solid transparent;
+  background: none;
+  color: var(--ink-2);
+  cursor: pointer;
+  transition: background var(--dur-fast) var(--ease), color var(--dur-fast) var(--ease);
+}
+.modmenu__btn:hover, .modmenu__btn[aria-expanded='true'] {
+  background: var(--surface-2);
+  color: var(--ink);
+}
+@media (max-width: 699px), (pointer: coarse) {
+  .modmenu__btn { width: var(--tap); height: var(--tap); margin: -8px -8px -8px 0; }
+}
+.modmenu__pop {
+  position: absolute;
+  top: calc(100% + 6px);
+  z-index: 20;
+  min-width: 210px;
+  padding: var(--s3);
+  border-radius: var(--r-ctl);
+  border: 1px solid var(--line-2);
+  background: var(--surface-2);
+  box-shadow: 0 14px 34px -12px rgb(0 0 0 / 0.6);
+  display: flex;
+  flex-direction: column;
+  gap: var(--s3);
+}
+.modmenu__pop--end { right: 0; }
+.modmenu__pop--start { left: 0; }
+.modmenu__row { display: flex; flex-direction: column; gap: 6px; }
+.modmenu__row .seg { width: 100%; }
+.modmenu__row .seg__btn { flex: 1 1 0; }
+
 /* -------------------------------------------------------------- breakdown */
 /*  Four columns on the first line and two spans under it:
 
@@ -536,7 +648,7 @@
 .cal {
   display: grid;
   grid-template-columns: repeat(7, minmax(0, 1fr));
-  grid-template-rows: auto repeat(6, minmax(0, 1fr));
+  grid-template-rows: auto repeat(var(--cal-rows, 6), minmax(0, 1fr));
   gap: 4px;
   flex: 1 1 auto;
   min-height: 0;
@@ -614,7 +726,10 @@
 .cal__cell {
   position: relative;
   min-height: 0;
-  max-height: 58px;
+  /*  A ceiling, not a size. Capping at 58 left a third of an xxl card empty
+      under the grid: the rows stretch and the cells did not, and the
+      difference is dead space. */
+  max-height: 108px;
   border-radius: 9px;
   background: var(--surface-2);
   border: 1px solid transparent;
@@ -783,3 +898,5 @@
 .readmark--ok { color: var(--accent); }
 .readmark--ask { color: var(--ink-2); }
 .readmark--gap { color: var(--ink); }
+/*  One call to action on the landing page, so it is allowed to be big. */
+.btn--lg { min-height: 54px; padding-inline: var(--s6); font-size: var(--t-body); border-radius: var(--r-pill); }

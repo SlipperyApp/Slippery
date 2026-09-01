@@ -101,6 +101,8 @@
   --h-mod-l: 408px;
   /* The two modules that are mostly picture: the calendar and the curve. */
   --h-mod-xl: 516px;
+  /* The calendar, which is the module the product is named for. */
+  --h-mod-xxl: 616px;
 
   --tap: 44px;
   --shell-max: 1240px;

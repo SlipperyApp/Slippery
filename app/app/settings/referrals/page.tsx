@@ -22,9 +22,7 @@ export default async function Referrals() {
       <div className="column column--wide" style={{ marginInline: 0 }}>
         <h1>Referrals</h1>
         <p className="muted" style={{ marginTop: 'var(--s2)', maxWidth: '58ch' }}>
-          Your code gives the person who uses it a longer trial. You get nothing for it, and that
-          is on purpose: paying people to recruit other people into a gambling product is exactly
-          the mechanic this product refuses to have.
+          Your code gives the person who uses it a longer trial. You get nothing for it, on purpose. Paying people to recruit people into a gambling product is the one mechanic this product refuses.
         </p>
 
         <div className="card" style={{ marginTop: 'var(--s5)' }}>

@@ -66,7 +66,8 @@ export function MarketingFooter() {
           <div>
             <div className="brand" style={{ marginBottom: 'var(--s3)' }}>
               <img src="/icon.svg" alt="" className="brand__mark" width={26} height={26} />
-              <span className="brand__word">Slippery</span>
+              <Wordmark id="wm-foot" height={17} />
+              <span className="sr-only">Slippery</span>
             </div>
             <p className="small muted" style={{ maxWidth: '34ch' }}>
               A bet tracker for UK and Irish bettors. Slippery never accepts bets, holds

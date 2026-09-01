@@ -19,7 +19,7 @@ const ENTRIES: { date: string; items: { t: string; s: string }[] }[] = [
     items: [
       { t: 'Your dashboard has one layout now', s: 'The modules stopped moving. Every one has a fixed place and a fixed height, so a figure is where it was yesterday. Nothing to arrange, nothing to lose.' },
       { t: 'One scope bar governs everything below it', s: 'Change the period once and every module follows, and the scope rides in the link so a shared dashboard arrives showing what you were looking at. Three modules deliberately ignore it and say so in their own header.' },
-      { t: 'Your headline is two numbers', s: 'Money you won, and money they gave you. Free bets, bonus funds and boosts are separated at the moment the slip is read, so a good year built on sign-up offers stops looking like a good year of betting.' },
+      { t: 'Your headline is two numbers', s: 'Money you won, and money they gave you. Free bets, bonus funds and boosts are separated as the slip is read. A good year built on sign-up offers stops looking like a good year of betting.' },
       { t: 'Four breakdowns became one', s: 'Sport, market, tipster and bookmaker share one module and one control. Rows under five bets are greyed, because profit without volume ranks one lucky bet above forty disciplined ones.' },
       { t: 'Closing line value is gone', s: 'It could not be sourced honestly. An average taken over whichever bets happened to have a closing price overstates itself, and a figure you cannot trust is worse than no figure.' },
     ],

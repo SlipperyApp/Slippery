@@ -79,9 +79,7 @@ export function PlanPicker({ stripeReady }: { stripeReady: boolean }) {
           </li>
         </ul>
         <p className="small muted card__foot">
-          The plan starts automatically when the trial ends. There is deliberately no reminder
-          email: a reminder would be a nudge, and you can cancel in one tap from Settings at any
-          point before it starts.
+          The plan starts automatically when the trial ends. No reminder email, deliberately: a reminder is a nudge. Cancel in one tap from Settings any time before it starts.
         </p>
       </div>
 

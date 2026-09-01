@@ -5,6 +5,7 @@ import { ALL } from './routes.mjs';
 const BASE = (process.env.E2E_BASE || 'http://127.0.0.1:3200').replace(/\/$/, '');
 const b = await chromium.launch({ executablePath: '/opt/pw-browsers/chromium' });
 const ctx = await b.newContext({ viewport: { width: 1280, height: 900 } });
+const LONG = Number(process.env.PROSE_LONG || 34);
 const seen = new Map();
 const long = [];
 for (const route of ALL) {
@@ -24,7 +25,7 @@ for (const route of ALL) {
     if (!seen.has(s)) seen.set(s, new Set());
     seen.get(s).add(route);
     const words = s.split(/\s+/).length;
-    if (words > 34) long.push({ route, words, s });
+    if (words > LONG) long.push({ route, words, s });
   }
 }
 await b.close();
@@ -32,5 +33,5 @@ const repeats = [...seen.entries()].filter(([, r]) => r.size >= 3).sort((a, c) =
 console.log(`REPEATED ON 3+ PAGES: ${repeats.length}`);
 for (const [s, r] of repeats.slice(0, 25)) console.log(`  ${r.size}x  ${[...r].slice(0,4).join(' ')}\n       "${s.slice(0, 150)}"`);
 const uniqLong = [...new Map(long.map((l) => [l.s, l])).values()].sort((a, c) => c.words - a.words);
-console.log(`\nOVER 34 WORDS: ${uniqLong.length}`);
+console.log(`\nOVER ${LONG} WORDS: ${uniqLong.length}`);
 for (const l of uniqLong.slice(0, 25)) console.log(`  ${l.words}w ${l.route}\n       "${l.s.slice(0, 190)}"`);

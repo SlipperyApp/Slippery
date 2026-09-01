@@ -153,3 +153,10 @@ input, select, textarea { font-size: 16px; line-height: 1.4; }
 .pending .card__title { color: var(--ink-2); }
 .pending .icon,
 .pending svg { color: var(--ink-3); }
+
+/*  The hidden attribute has to win.
+    It is a UA stylesheet rule, so ANY author `display` beats it: a popover
+    declared display:flex renders while hidden={true} is set, which is how
+    both dashboard menus shipped open. This is the one place !important is
+    the correct tool, because the whole point is that nothing may override it. */
+[hidden] { display: none !important; }

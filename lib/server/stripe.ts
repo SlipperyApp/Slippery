@@ -94,6 +94,28 @@ export function verifyStripeSignature(payload: string, header: string | null, to
   return a.length === b.length && timingSafeEqual(a, b);
 }
 
+/** How a webhook object routes back to an account, as three candidates in
+ *  order of directness. Pure, so the thing that was wrong is testable.
+ *
+ *  WHAT WAS WRONG: only a Session carries client_reference_id and only a
+ *  Subscription carries the metadata checkout put on it. An INVOICE carries
+ *  neither, because Stripe does not copy subscription metadata onto invoices.
+ *  Reading only those two fields made invoice.payment_succeeded and
+ *  invoice.payment_failed dead branches, so a paid invoice never activated an
+ *  account and a failed one never counted towards the two attempt rule. */
+export function accountRoutes(object: Record<string, unknown>): {
+  stated: string;
+  subscription: string;
+  customer: string;
+} {
+  const meta = object.metadata as Record<string, string> | undefined;
+  return {
+    stated: String((object.client_reference_id as string | undefined) ?? meta?.account_id ?? ''),
+    subscription: String(object.subscription ?? ''),
+    customer: String(object.customer ?? ''),
+  };
+}
+
 /** The two-attempt rule, in one place.
  *
  *  Attempt one fails: retry in three days, nothing changes.

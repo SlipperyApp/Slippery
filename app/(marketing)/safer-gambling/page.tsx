@@ -30,7 +30,7 @@ const CONSTRAINTS = [
   'Nothing is sent late at night, for any reason.',
   'A division change reads "Moving to League One next month", never "RELEGATED".',
   'Slippery celebrates app actions, such as a capture streak, and never a betting outcome.',
-  'There is a take a break control that pauses notifications and leagues without touching your ledger, and it does not try to talk you out of it.',
+  'A take a break control pauses notifications and leagues without touching your ledger. It does not try to talk you out of it.',
   'No copy anywhere implies guaranteed winnings, or that betting solves money problems.',
 ];
 
@@ -45,8 +45,7 @@ export default function SaferGambling() {
         </h1>
         <p className="sect__p">
           Slippery is built to tell you the truth about your record, and a truthful record is
-          sometimes an uncomfortable one. Nothing here is designed to make you bet more, and the
-          list below is a set of constraints on the product rather than a set of features.
+          sometimes an uncomfortable one. Nothing here is designed to make you bet more. The list below is constraints on the product, not features.
         </p>
 
         <div className="grid" style={{ marginTop: 'var(--s7)' }}>

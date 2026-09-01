@@ -250,6 +250,17 @@ const MEASURE = () => {
                page: .rowcard__t is a <p> in half the product and a <span> in
                the other half, and margin-top on an inline element does
                nothing. */
+  /*  hidden that is not hidden.
+   *
+   *  [hidden] is a UA stylesheet rule, so any author `display` beats it. A
+   *  popover styled display:flex renders while hidden={true} is set, and the
+   *  result is a menu that is permanently open, in the accessibility tree,
+   *  and covering the module underneath. Two of them shipped that way. */
+  const shown = [...document.querySelectorAll('[hidden]')]
+    .filter((el) => getComputedStyle(el).display !== 'none')
+    .map((el) => `${el.tagName.toLowerCase()}.${String(el.className).split(' ')[0]} is display:${getComputedStyle(el).display}`)
+    .slice(0, 4);
+
   const spill = [];
   for (const card of document.querySelectorAll('[class*="h-"]')) {
     if (!/(^|\s)h-(s|m|l|xl)(\s|$)/.test(card.className) || !visible(card)) continue;
@@ -335,6 +346,7 @@ const MEASURE = () => {
     smallInputs,
     hasMain: Boolean(document.querySelector('main#main')),
     hasSkip: Boolean(document.querySelector('a.skip')),
+    shown,
     spill,
     clipped,
     collide,
@@ -409,6 +421,7 @@ async function visit(ctx, route, vp, { runAxe = false, theme = null } = {}) {
   if (m.smallInputs > 0) note(route, label, 'input-size', `${m.smallInputs} under 16px`);
   if (!m.hasMain) note(route, label, 'landmark', 'no main#main');
   if (!m.hasSkip) note(route, label, 'skip-link', 'no skip link');
+  if (m.shown.length) note(route, label, 'hidden-not-hidden', m.shown.join(' | '));
   if (m.spill.length) note(route, label, 'module-overflows', m.spill.join(', '));
   if (m.clipped.length) note(route, label, 'text-clipped', m.clipped.join(' | '));
   if (m.collide.length) note(route, label, 'text-collision', m.collide.join(' | '));

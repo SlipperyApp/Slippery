@@ -9,22 +9,29 @@ import { Icon } from '@/components/Icon';
  *  label, with the figure leading: definition survives, interpretation does
  *  not. */
 export function Module({
-  title, span = 4, size = 'm', note, children, footer, id,
+  title, span = 4, size = 'm', note, children, footer, id, tools,
 }: {
   title: string;
   span?: 4 | 6 | 8 | 12;
-  size?: 's' | 'm' | 'l' | 'xl';
+  size?: 's' | 'm' | 'l' | 'xl' | 'xxl';
   /** Exactly three modules ignore the scope bar and say so here. */
   note?: string;
   children: React.ReactNode;
   footer?: React.ReactNode;
   id?: string;
+  /** The corner: a ⋯ menu, a share control, whatever this module needs.
+   *  Anything a module can be adjusted by lives HERE, not above its content,
+   *  so the module shows the thing it is for and nothing else. */
+  tools?: React.ReactNode;
 }) {
   return (
     <section className={`card col-${span} h-${size}`} aria-labelledby={id ? `${id}-t` : undefined} id={id}>
       <header className="card__head">
         <h2 className="card__title" id={id ? `${id}-t` : undefined}>{title}</h2>
-        {note ? <p className="card__note">{note}</p> : null}
+        <div className="card__tools">
+          {note ? <p className="card__note">{note}</p> : null}
+          {tools}
+        </div>
       </header>
       <div className="grow" style={{ minHeight: 0, display: 'flex', flexDirection: 'column' }}>{children}</div>
       {footer ? <div className="card__foot">{footer}</div> : null}

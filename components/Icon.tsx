@@ -48,6 +48,9 @@ const P: Record<string, React.ReactNode> = {
   eye: <><path d="M2.6 12s3.6-6 9.4-6 9.4 6 9.4 6-3.6 6-9.4 6-9.4-6-9.4-6Z" /><circle cx="12" cy="12" r="2.8" /></>,
   sliders: <><path d="M4 7h9" /><path d="M17 7h3" /><path d="M4 17h4" /><path d="M12 17h8" /><circle cx="15" cy="7" r="2" /><circle cx="10" cy="17" r="2" /></>,
   trophy: <><path d="M7.5 4h9v5.4a4.5 4.5 0 0 1-9 0Z" /><path d="M7.5 5.4H4.6v1.4a3 3 0 0 0 3 3" /><path d="M16.5 5.4h2.9v1.4a3 3 0 0 1-3 3" /><path d="M10 13.8V17h4v-3.2" /><path d="M7.6 20h8.8" /></>,
+  /* Filled, unlike everything else here: three hairline rings read as a
+     dotted line rather than as three dots. */
+  more: <><circle cx="5" cy="12" r="1.5" fill="currentColor" stroke="none" /><circle cx="12" cy="12" r="1.5" fill="currentColor" stroke="none" /><circle cx="19" cy="12" r="1.5" fill="currentColor" stroke="none" /></>,
   share: <><path d="M12 15V4.4" /><path d="m8.4 7.6 3.6-3.2 3.6 3.2" /><path d="M5 13v6.5h14V13" /></>,
   link: <><path d="M10.4 13.6a3.6 3.6 0 0 0 5.1 0l2.6-2.6a3.6 3.6 0 0 0-5.1-5.1l-1.1 1.1" /><path d="M13.6 10.4a3.6 3.6 0 0 0-5.1 0l-2.6 2.6a3.6 3.6 0 0 0 5.1 5.1l1.1-1.1" /></>,
   bell: <><path d="M6.4 10a5.6 5.6 0 0 1 11.2 0c0 4.2 1.4 5.6 1.4 5.6H5s1.4-1.4 1.4-5.6Z" /><path d="M10.2 19a2 2 0 0 0 3.6 0" /></>,

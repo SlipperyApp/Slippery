@@ -21,7 +21,7 @@ for (const { text } of sources) {
 }
 
 /** Properties set from the components rather than the stylesheets. */
-const SET_IN_TSX = ['--gap', '--s', '--blob-mask', '--grain-img', '--tear', '--sc'];
+const SET_IN_TSX = ['--gap', '--s', '--blob-mask', '--grain-img', '--tear', '--sc', '--cal-rows'];
 for (const n of SET_IN_TSX) declared.add(n);
 
 test('no stylesheet reads a custom property that is never defined', () => {

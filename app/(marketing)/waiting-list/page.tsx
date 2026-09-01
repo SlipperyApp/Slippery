@@ -36,10 +36,9 @@ export default function WaitingList() {
           <div className="banner" style={{ marginTop: 'var(--s5)' }}>
             <Icon name="info" size={18} className="banner__icon" />
             <span>
-              There is no App Store or Google Play badge on this site, and there will not be one
-              until there is a live listing. Both companies forbid redrawing or recolouring their
-              artwork, and neither permits a badge modified to say "coming soon", which is why this
-              is a line of text.
+              No App Store or Google Play badge until there is a live listing. Both forbid
+              redrawing their artwork, and neither permits one modified to say "coming soon".
+              So this is a line of text.
             </span>
           </div>
         </div>

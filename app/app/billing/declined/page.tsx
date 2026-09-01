@@ -31,8 +31,7 @@ export default async function Declined() {
       <span className="pill pill--neg">Attempt 1 of 2</span>
       <h1 style={{ marginTop: 'var(--s4)' }}>Your card was declined</h1>
       <p className="lead" style={{ marginTop: 'var(--s3)', maxWidth: '60ch' }}>
-        Your bank refused the payment. That is usually an expiry date, a spending limit or a bank
-        that blocks anything it has not seen before, and none of it is about your account here.
+        Your bank refused the payment. Usually an expiry date, a spending limit, or a bank blocking something it has not seen before. None of it is about your account here.
       </p>
 
       <div className="grid" style={{ marginTop: 'var(--s6)' }}>

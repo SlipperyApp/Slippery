@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { Icon } from '@/components/Icon';
+import { Wordmark } from '@/components/Wordmark';
 import { SIDE_NAV, TAB_NAV, isActive } from '@/lib/nav';
 import { money, type Currency } from '@/lib/format';
 
@@ -28,7 +29,8 @@ export function AppShell({ chrome, children }: { chrome: ShellChrome; children: 
       <aside className="side">
         <Link href="/" className="brand" aria-label="Slippery, home">
           <img src="/icon.svg" alt="" className="brand__mark" width={26} height={26} />
-          <span className="brand__word">Slippery</span>
+          <Wordmark id="wm-side" height={17} />
+          <span className="sr-only">Slippery</span>
         </Link>
 
         <Link href="/app/import" className="btn btn--primary btn--wide">

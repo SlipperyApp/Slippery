@@ -191,14 +191,26 @@ export function summarise(rows: DemoBet[]): Summary {
 
 // -------------------------------------------------------------- breakdowns
 
-export type Dimension = 'sport' | 'market' | 'tipster' | 'bookmaker';
+/*  Six ways to slice the record, in one module.
+ *
+ *  Odds and stake used to be two separate modules beside the breakdown, which
+ *  meant three cards on the dashboard doing the same job with the same row
+ *  and the same bar. They are dimensions, so they are dimensions.
+ *
+ *  The two ORDERED ones keep their band order and are never sorted by value:
+ *  the whole read of "which price range are you good at" is the order. */
+export type Dimension = 'sport' | 'market' | 'tipster' | 'bookmaker' | 'odds' | 'stake';
 
-export const DIMENSIONS: { id: Dimension; label: string }[] = [
+export const DIMENSIONS: { id: Dimension; label: string; ordered?: boolean }[] = [
   { id: 'sport', label: 'Sport' },
   { id: 'market', label: 'Market' },
-  { id: 'tipster', label: 'Tipster' },
   { id: 'bookmaker', label: 'Bookmaker' },
+  { id: 'tipster', label: 'Tipster' },
+  { id: 'odds', label: 'Odds', ordered: true },
+  { id: 'stake', label: 'Stake', ordered: true },
 ];
+
+export const ORDERED_DIMENSIONS = new Set<Dimension>(['odds', 'stake']);
 
 export type BreakRow = {
   key: string;
@@ -248,6 +260,10 @@ function keyOf(b: DemoBet, dim: Dimension): { key: string; label: string } {
     case 'market': { const g = marketGroupFor(b.marketRaw); return { key: g, label: marketGroupName(g) }; }
     case 'tipster': return { key: b.tipsterId ?? 'own', label: TIPSTER_LABEL[b.tipsterId ?? 'own'] ?? 'My own' };
     case 'bookmaker': return { key: b.bookmakerId, label: bookmakerName(b.bookmakerId) };
+    /*  Never reached: orderedBreakdown handles these two, because a band list
+     *  has to include the bands with no bets in them. A band that is missing
+     *  reads as a band you did not bet in only if it is still drawn. */
+    default: return { key: 'other', label: 'Other' };
   }
 }
 
@@ -334,12 +350,14 @@ export function orderedBreakdown(rows: DemoBet[], kind: 'odds' | 'stake', unitPe
 
 /** All four dimensions at once, so the segmented control switches without a
  *  round trip and every tab counts the same rows. */
-export function buildBreakdowns(rows: DemoBet[]): Record<Dimension, BreakRow[]> {
+export function buildBreakdowns(rows: DemoBet[], unitPence: number): Record<Dimension, BreakRow[]> {
   return {
     sport: breakdown(rows, 'sport'),
     market: breakdown(rows, 'market'),
     tipster: breakdown(rows, 'tipster'),
     bookmaker: breakdown(rows, 'bookmaker'),
+    odds: orderedBreakdown(rows, 'odds', unitPence),
+    stake: orderedBreakdown(rows, 'stake', unitPence),
   };
 }
 
