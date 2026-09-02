@@ -20,7 +20,7 @@ export default function Unreadable() {
   const read = FIELDS.filter((f) => f[2] === 'high').length;
   return (
     <div className="column column--wide">
-      <span className="pill pill--neg">UNREADABLE</span>
+      <span className="pill pill--warn">UNREADABLE</span>
       <h1 style={{ marginTop: 'var(--s4)' }}>
         {read} of {FIELDS.length} fields came off that slip
       </h1>

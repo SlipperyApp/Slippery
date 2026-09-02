@@ -74,7 +74,7 @@ const BASE = (process.env.E2E_BASE || 'http://127.0.0.1:3100').replace(/\/$/, ''
 const EXEC = process.env.CHROME_PATH || '/opt/pw-browsers/chromium';
 const OUT = process.env.SHOT_DIR || 'test-results';
 const ORIGIN = new URL(BASE).origin;
-const THEMES = ['carbon', 'periwinkle', 'ink', 'graphite', 'slate', 'bronze', 'cinnabar', 'liquid'];
+const THEMES = ['carbon', 'periwinkle', 'ink', 'graphite', 'slate', 'bronze', 'cinnabar', 'sage'];
 const AXE = readFileSync('node_modules/axe-core/axe.min.js', 'utf8');
 
 /** Against a remote origin every page load is a network round trip, so the

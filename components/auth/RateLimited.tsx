@@ -3,12 +3,15 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { Icon } from '@/components/Icon';
+import { stepHref } from '@/lib/signup-draft';
+import { useDraft } from '@/components/auth/useDraft';
 
 /** A real 429 branch with a real countdown.
  *
  *  The previous build put the raw rate limit string into a toast with no
  *  number in it, so nobody could tell whether to wait ten seconds or an hour. */
 export function RateLimited({ seconds, from }: { seconds: number; from: string }) {
+  const draft = useDraft();
   const [left, setLeft] = useState(seconds);
 
   useEffect(() => {
@@ -19,12 +22,15 @@ export function RateLimited({ seconds, from }: { seconds: number; from: string }
 
   const mm = Math.floor(left / 60);
   const ss = left % 60;
-  const back = from === 'login' ? '/login' : from === 'verify' ? '/signup/verify' : '/signup';
+  /*  With the draft on it. A wait is a wait, and losing an email address
+      and a handle to one is a second punishment for a limit on attempts. */
+  const path = from === 'login' ? '/login' : from === 'verify' ? '/signup/verify' : '/signup';
+  const back = from === 'login' ? path : stepHref(path, draft);
   const backLabel = from === 'login' ? 'Back to sign in' : from === 'verify' ? 'Back to the code' : 'Back to sign up';
 
   return (
     <>
-      <span className="pill pill--neg">429</span>
+      <span className="pill pill--warn">429</span>
       <h1 style={{ marginTop: 'var(--s4)' }}>Too many attempts from here</h1>
       <p className="muted" style={{ marginTop: 'var(--s2)' }}>
         This is a limit on attempts, not on you. Nothing was created and nothing was locked.

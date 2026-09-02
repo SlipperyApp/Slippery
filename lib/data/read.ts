@@ -334,9 +334,13 @@ export const REFUSAL_COPY: Record<SlipRefusal, RefusalCopy> = {
   },
   currency_mismatch: {
     tag: 'DIFFERENT CURRENCY',
-    title: 'That slip is not in your account currency',
+    title: 'That slip is not in the currency of the balance you have open',
+    /*  It said "your account currency" and pointed at Settings. A currency
+        belongs to a BALANCE now and never changes for the life of one, so
+        Settings is the wrong screen and changing it there is the wrong
+        answer: it would rewrite the meaning of every figure already counted. */
     message: 'Nothing was written. Pounds and euros are never summed into one figure, and this reader does not convert one into the other.',
-    fix: 'Change the account currency in Settings if you have moved bookmaker, or type this bet in against the right one. A converted stake would put an invented exchange rate into your return.',
+    fix: 'Switch to a balance kept in the slip’s own currency in the top bar and send it again. A converted stake would put an invented exchange rate into your return.',
   },
   trial_spent: {
     tag: 'TRIAL USED UP',

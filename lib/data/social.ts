@@ -16,7 +16,7 @@
  *  produced it. */
 
 import { demoData } from './demo';
-import { summarise, select, periodStart, DEFAULT_SCOPE } from './analytics';
+import { summarise, select, periodStart, DEFAULT_SCOPE, THIN_BETS } from './analytics';
 import { TRACKING_DEFAULT_ON } from './settings';
 import { bookmakerName } from './reference';
 
@@ -44,6 +44,26 @@ export type SlipperRecord = {
   units: number;
   roi: number;
 };
+
+/** WHETHER A RETURN IS A RETURN, in one place, counted over the right bets.
+ *
+ *  DECISIONS.md: "A return over fewer than five bets is left out. It is not
+ *  a return, it is the price of one of those bets." The league table
+ *  enforced it with its own literal 5 and the Social page's This month card
+ *  did not enforce it at all, so on the second of a month that card read
+ *  "+5.9u ... 1 won, 1 lost, over 7 bets. +66.9% return." beside a table
+ *  that had struck the same figure out.
+ *
+ *  IT COUNTS THE SETTLED ONES. The league's own literal was `bets < 5`,
+ *  which is every bet in the window including the five that have not run
+ *  yet, and the return is folded over the settled non void ones only: that
+ *  card had seven bets and a denominator of two. Wins plus losses is the
+ *  denominator the figure was actually divided by, so it is what the gate
+ *  has to look at. Voids are in neither, which is the same rule turnover
+ *  applies. */
+export function thinReturn(r: { wins: number; losses: number }): boolean {
+  return r.wins + r.losses < THIN_BETS;
+}
 
 export type Slipper = {
   handle: string;

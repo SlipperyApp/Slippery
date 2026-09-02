@@ -79,7 +79,7 @@ Optional, for local scripts. Not needed in the deployment.
 Eight. The names carry forward; nothing about their appearance does.
 
 `carbon` · `periwinkle` · `ink` · `graphite` · `slate` · `bronze` ·
-`cinnabar` · `liquid`
+`cinnabar` · `sage`
 
 ---
 

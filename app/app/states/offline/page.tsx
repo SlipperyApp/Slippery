@@ -17,7 +17,7 @@ export default function Offline() {
 
   return (
     <div className="column column--wide">
-      <span className="pill pill--neg">
+      <span className="pill pill--warn">
         <Icon name="offline" size={13} /> No connection
       </span>
       <h1 style={{ marginTop: 'var(--s4)' }}>Two slips are waiting, and nothing has been lost</h1>

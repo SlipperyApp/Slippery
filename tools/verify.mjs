@@ -23,7 +23,7 @@ import { ALL } from './routes.mjs';
 
 const BASE = (process.env.E2E_BASE || 'http://127.0.0.1:3200').replace(/\/$/, '');
 const CSS = readFileSync(new URL('../app/styles/tokens.css', import.meta.url), 'utf8');
-const THEMES = ['carbon', 'periwinkle', 'ink', 'graphite', 'slate', 'bronze', 'cinnabar', 'liquid'];
+const THEMES = ['carbon', 'periwinkle', 'ink', 'graphite', 'slate', 'bronze', 'cinnabar', 'sage'];
 
 const rgb = (hex) => [0, 2, 4].map((i) => parseInt(hex.replace('#', '').slice(i, i + 2), 16));
 const mix = (a, b, p) => [0, 1, 2].map((i) => a[i] * p + b[i] * (1 - p));

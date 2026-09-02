@@ -280,12 +280,28 @@ export function buildDemo(now = new Date()): DemoData {
      *  the screen has never been seen doing its job. Off the id, not off a
      *  draw, for the reason every other assignment in this file is. */
     const live = bet.legs.length <= 1 && fnv(`live-${bet.id}`) % 9 === 0;
+    /*  THE HEAD START, and without it the example account could not
+     *  demonstrate the one idea this product is built on.
+     *
+     *  Every bet in here was stamped `placedAt: partial.eventAt`, so every
+     *  slip in the record was captured at the exact second the event began.
+     *  Capture at placement is the core idea and the wedge against
+     *  auto-sync, the social feed refuses any bet whose capture is later
+     *  than the off on the recorded grounds that it is a claim rather than a
+     *  prediction, and the example account had not one bet that would pass
+     *  that gate. The slips page said "0 of 161 captured before the off".
+     *
+     *  Twenty minutes to about a day, off the id rather than off a draw for
+     *  the same reason as every other assignment in this file, so a
+     *  screenshot taken twice is the same screenshot. The in play ninth
+     *  still lands after the off, because that is what in play means. */
+    const lead = 20 + (fnv(`lead-${bet.id}`) % 1500);
     const placed: Bet = {
       ...bet,
       balanceId,
       currency: balanceId === BAL_EURO ? 'EUR' : 'GBP',
       closingOdds: closingFor(bet),
-      placedAt: live ? iso(new Date(Date.parse(bet.eventAt) + 40 * 60000)) : bet.placedAt,
+      placedAt: iso(new Date(Date.parse(bet.eventAt) + (live ? 40 : -lead) * 60000)),
     };
     const state = recompute(placed, events, iso(now));
     bets.push({ ...placed, state, events });

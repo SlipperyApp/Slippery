@@ -30,7 +30,7 @@ export function Makers({ tipUrl }: { tipUrl?: string }) {
             <span>Zhang and Aniket.</span>
           </h2>
           <p className="sect__p">
-            They designed every screen in it, including the calendar.
+            They designed every screen in it.
           </p>
 
           <ul className="makers__list">

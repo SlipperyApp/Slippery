@@ -5,9 +5,25 @@ import Link from 'next/link';
 import { Icon } from '@/components/Icon';
 import { money } from '@/lib/format';
 import { TRIAL_DAYS, TRIAL_SLIPS } from '@/lib/domain/trial';
+import { keepAnswers } from '@/lib/signup-draft';
+import { useDraft } from '@/components/auth/useDraft';
 
+/*  Two callers: step six of signup, where a plan chosen and then stepped away
+    from has to come back chosen, and the settings pane, which has no draft in
+    its address at all and reads the default out of an empty one. */
 export function PlanPicker({ stripeReady }: { stripeReady: boolean }) {
-  const [plan, setPlan] = useState<'yearly' | 'monthly'>('yearly');
+  const draft = useDraft();
+  const [plan, setPlan] = useState<'yearly' | 'monthly'>(draft.plan);
+
+  /*  The choice goes into the address as well as into state, by the same
+      mechanism every other step uses to leave its answers in the history
+      entry it is standing on. Without it, stepping back to the sports screen
+      and forward again lost the plan, which is the one thing the back button
+      was added to stop happening. */
+  function choose(next: 'yearly' | 'monthly') {
+    setPlan(next);
+    keepAnswers('/signup/plan', { ...draft, plan: next });
+  }
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
 
@@ -35,7 +51,7 @@ export function PlanPicker({ stripeReady }: { stripeReady: boolean }) {
         <div className="rows">
           <button
             type="button" className={`rowcard${plan === 'yearly' ? ' rowcard--on' : ''}`}
-            aria-pressed={plan === 'yearly'} onClick={() => setPlan('yearly')}
+            aria-pressed={plan === 'yearly'} onClick={() => choose('yearly')}
             style={{ cursor: 'pointer', textAlign: 'left' }}
           >
             <Icon name={plan === 'yearly' ? 'check' : 'minus'} size={20} className="rowcard__i" />
@@ -51,7 +67,7 @@ export function PlanPicker({ stripeReady }: { stripeReady: boolean }) {
 
           <button
             type="button" className={`rowcard${plan === 'monthly' ? ' rowcard--on' : ''}`}
-            aria-pressed={plan === 'monthly'} onClick={() => setPlan('monthly')}
+            aria-pressed={plan === 'monthly'} onClick={() => choose('monthly')}
             style={{ cursor: 'pointer', textAlign: 'left' }}
           >
             <Icon name={plan === 'monthly' ? 'check' : 'minus'} size={20} className="rowcard__i" />

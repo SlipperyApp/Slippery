@@ -500,13 +500,13 @@ a.card:active, button.card:active, button.rowcard:active { transform: translateY
     settle under a press; the things you navigate with did neither, so the
     sidebar, the tab bar and every segmented strip were the only surfaces in
     the product that took a click without acknowledging it. */
-.navrow, .seg__btn, .tab, .iconbtn, .icobtn {
+.rail__link, .roundbtn, .seg__btn, .tab, .iconbtn, .icobtn {
   transition:
     background var(--dur-fast) var(--ease),
     color var(--dur-fast) var(--ease),
     transform 110ms var(--ease);
 }
-.navrow:active, .seg__btn:active, .iconbtn:active, .icobtn:active { transform: scale(0.975); }
+.rail__link:active, .roundbtn:active, .seg__btn:active, .iconbtn:active, .icobtn:active { transform: scale(0.975); }
 /*  The tab bar presses on the icon rather than the whole cell: scaling a
     62px column scales the label with it, and a word that shrinks under a
     thumb reads as the page having moved. */
@@ -634,4 +634,63 @@ a.card:active, button.card:active, button.rowcard:active { transform: translateY
   /*  Not "slower". The bars keep their resting tint, which is what makes
       them readable as placeholders, and nothing moves. */
   .skel__bar::after { animation: none; opacity: 0; }
+}
+
+/* ------------------------------------------------------------ the menu */
+/*  Apple's liquid glass, as far as a browser can honestly go: the surface
+    grows out of the button that opened it while the scrim darkens under it,
+    and the rows settle down into place after it rather than arriving with it.
+ *
+ *  IT GREW OUT OF ITS OWN MIDDLE, WHICH IS A PANEL THAT APPEARS RATHER THAN
+ *  ONE THAT OPENS. transform-origin was left at 50% 50%, so the sheet
+ *  expanded evenly in every direction from a point in the centre of itself
+ *  and nothing about the motion said where it had come from. The reference
+ *  behaviour, on the Dribbble shot and in Revolut, is that the surface
+ *  unfolds from the control you pressed.
+ *
+ *  The origin is a CONSTANT and not a measurement, because the geometry
+ *  makes it one. .topbar__menu is the last control in the top bar and the
+ *  panel is pinned to the same right edge at every width it exists at: full
+ *  width between the --s3 gutters under 700, and 320px against a --s4 gutter
+ *  above it. So the panel's top right corner is the corner under the button
+ *  in both layouts, and anchoring the scale there costs no getBoundingClientRect
+ *  on open, no layout read in a useLayoutEffect, and nothing that can be
+ *  wrong on the first frame. The panel also starts eight pixels HIGHER than
+ *  it rests, so it comes down out of the bar rather than up off the floor.
+ *
+ *  NOTHING HERE ANIMATES A BLUR. Motion is transform and opacity, which is
+ *  the rule this whole file is built on, and a live filter: blur() is banned
+ *  outright: it is re-evaluated every scroll frame whether or not anything
+ *  moved, measured at 49.9ms p95 against 16.8ms without. What reads as the
+ *  page blurring on entry is the panel's own opacity coming up over a
+ *  backdrop-filter that was there from the first frame.
+ *
+ *  THE ROWS MOVE AND DO NOT FADE, and that is the lesson from the calendar:
+ *  a staggered fade from opacity 0 leaves everything the animation has not
+ *  reached yet invisible, and axe measured 46 figures at 1:1 and was right
+ *  to. An eight pixel offset has no such failure mode. If none of this ever
+ *  runs, every row is eight pixels low and completely readable.
+ *
+ *  Under prefers-reduced-motion the whole thing is absent rather than
+ *  shortened, which is what the enclosing query does. */
+@media (prefers-reduced-motion: no-preference) {
+  .navsheet__scrim { animation: fade 220ms var(--ease) both; }
+  /*  The corner under the menu button, so the sheet unfolds from the control
+      rather than from its own middle. It is inside this query with the
+      animation because a transform-origin with no transform under it changes
+      nothing, and a reader should find the two together. */
+  .navsheet { transform-origin: top right; animation: glass-in 320ms var(--ease-out) both; }
+  .navsheet > *,
+  .navsheet__group > * {
+    animation: settle-down 300ms var(--ease-out) both;
+    animation-delay: calc(70ms + var(--row) * 26ms);
+  }
+}
+@keyframes glass-in {
+  from { opacity: 0; transform: translate3d(0, -8px, 0) scale(0.9); }
+  to   { opacity: 1; transform: none; }
+}
+@keyframes settle-down {
+  from { transform: translate3d(0, 8px, 0); }
+  to   { transform: none; }
 }

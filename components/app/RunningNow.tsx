@@ -53,7 +53,16 @@ export function RunningNow({
       </header>
 
       {open > 0 ? (
-        <>
+        /*  THE EXPOSURE BESIDE THE POSITIONS, ONCE THERE IS ROOM FOR BOTH.
+            At 1920 this card is 1620 pixels wide and every open bet in it
+            was a name against the left edge with its return against the
+            right, thirteen hundred pixels away, which is the chat log shape
+            the table below this card stopped using. A wide screen holds two
+            things at once: what is at risk on the left, what it is riding on
+            on the right, and no row wider than a row wants to be. Under
+            1000 it is one column and the figures stay above the list, which
+            is right on a phone. See .runnow__body. */
+        <div className="runnow__body">
           {/*  AT RISK, before any individual bet. The three numbers somebody
                wants from a set of open positions are how much is on them,
                what that is as a share of the roll, and what comes back if
@@ -76,8 +85,12 @@ export function RunningNow({
             </div>
           </div>
 
+          <div className="runnow__lists">
+          {/*  Each group is one block, because from 1000 the three of them
+               are three columns across the card rather than three stacks
+               down the left of it. See .runnow__lists. */}
           {att.waiting.length > 0 ? (
-            <>
+            <div className="runnow__grp">
               {/*  Waiting first, because it is the half that needs a person.
                    Running is the half that needs a football match. */}
               <p className="label runnow__h">
@@ -96,16 +109,16 @@ export function RunningNow({
               <ul>
                 {att.waiting.slice(0, 4).map((b) => <BetRow key={b.id} bet={b} currency={currency} tz={tz} />)}
               </ul>
-            </>
+            </div>
           ) : null}
 
           {att.running.length > 0 ? (
-            <>
+            <div className="runnow__grp">
               <p className="label runnow__h">Running · {att.running.length}</p>
               <ul>
                 {att.running.slice(0, 4).map((b) => <BetRow key={b.id} bet={b} currency={currency} tz={tz} />)}
               </ul>
-            </>
+            </div>
           ) : null}
 
           {/*  Resting last, because it is the half of the exposure that is
@@ -113,23 +126,24 @@ export function RunningNow({
                nothing is happening to it yet, which is a different fact from
                money on a match in the eightieth minute. */}
           {att.resting.length > 0 ? (
-            <>
+            <div className="runnow__grp">
               <p className="label runnow__h">Not started yet · {att.resting.length}</p>
               <ul>
                 {att.resting.slice(0, 4).map((b) => <BetRow key={b.id} bet={b} currency={currency} tz={tz} />)}
               </ul>
-            </>
+            </div>
           ) : null}
 
           {/*  What is left over, counted rather than guessed at: the sum of
                what each list actually printed, so the sentence cannot promise
                a number the rows above it do not add up to. */}
           {open > shownRows ? (
-            <p className="small dim" style={{ marginTop: 'var(--s2)' }}>
+            <p className="small dim runnow__more">
               and {open - shownRows} more, in the rows below.
             </p>
           ) : null}
-        </>
+          </div>
+        </div>
       ) : (
         <p className="small dim">
           Nothing open. <Link href="/app/import">Forward a slip</Link> and it lands here.

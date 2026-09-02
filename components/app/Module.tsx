@@ -1,6 +1,3 @@
-import Link from 'next/link';
-import { Icon } from '@/components/Icon';
-
 /** One fixed layout. No edit overview, no packer, no pinning, no drag
  *  reorder. Every module has a fixed column span and a fixed height token,
  *  so rows match by construction rather than by stretching.
@@ -12,7 +9,7 @@ export function Module({
   title, span = 4, size = 'm', note, children, footer, id, tools,
 }: {
   title: string;
-  span?: 4 | 5 | 6 | 7 | 8 | 12;
+  span?: 3 | 4 | 5 | 6 | 7 | 8 | 12;
   /** A height token, or `auto` for a module that takes its content.
    *
    *  The tokens exist so that two modules side by side match by
@@ -21,6 +18,11 @@ export function Module({
    *  ends up 408px tall with two figures and a bar in it and 140px of
    *  measured nothing between them. */
   size?: 's' | 'm' | 'l' | 'xl' | 'xxl' | 'auto';
+  /*  THE DASHBOARD PASSES `auto` TO ALL OF THEM. Its grid rows are sized
+   *  from the window (see .dash in layout.css) so that the page is one
+   *  screen, and a min-height token on a card inside a row that already has
+   *  a height is a second opinion about the same measurement. Everywhere
+   *  else the tokens still do what they always did. */
   /** Exactly three modules ignore the scope bar and say so here. */
   note?: string;
   children: React.ReactNode;
@@ -43,14 +45,6 @@ export function Module({
       <div className="grow" style={{ minHeight: 0, display: 'flex', flexDirection: 'column' }}>{children}</div>
       {footer ? <div className="card__foot">{footer}</div> : null}
     </section>
-  );
-}
-
-export function ModuleLink({ href, children }: { href: string; children: React.ReactNode }) {
-  return (
-    <Link href={href} className="small" style={{ display: 'inline-flex', alignItems: 'center', gap: 'var(--s1)', minHeight: 44, textDecoration: 'none', color: 'var(--accent-2)' }}>
-      {children} <Icon name="arrowRight" size={14} />
-    </Link>
   );
 }
 

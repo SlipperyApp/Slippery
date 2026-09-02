@@ -17,6 +17,10 @@ const P: Record<string, React.ReactNode> = {
   social: <><circle cx="9" cy="8.5" r="3.2" /><path d="M3.4 19.5c.7-3 2.9-4.7 5.6-4.7s4.9 1.7 5.6 4.7" /><path d="M16.2 6.2a3 3 0 0 1 0 5.8" /><path d="M17.4 14.9c2 .5 3.4 2.1 3.9 4.6" /></>,
   upload: <><path d="M12 15.5V4.2" /><path d="m7.8 8.4 4.2-4.2 4.2 4.2" /><path d="M4.5 15v3.5A1.5 1.5 0 0 0 6 20h12a1.5 1.5 0 0 0 1.5-1.5V15" /></>,
   you: <><circle cx="12" cy="8" r="3.6" /><path d="M4.6 20c.6-3.7 3.5-5.9 7.4-5.9s6.8 2.2 7.4 5.9" /></>,
+  /* The way out of an account. A door with the arrow leaving it, which is
+     the shape every product uses for this and therefore the one nobody has
+     to learn. */
+  signout: <><path d="M9.6 4.6H5.2v14.8h4.4" /><path d="m14.6 8.2 3.9 3.8-3.9 3.8" /><path d="M18.1 12H9.4" /></>,
   plus: <><path d="M12 5v14" /><path d="M5 12h14" /></>,
   minus: <><path d="M5 12h14" /></>,
   check: <><path d="m4.5 12.5 5 5 10-11" /></>,
@@ -65,7 +69,6 @@ const P: Record<string, React.ReactNode> = {
   spark: <><path d="M12 3.4 13.9 9l5.6 1.9-5.6 1.9L12 18.4l-1.9-5.6L4.5 11l5.6-1.9Z" /></>,
   target: <><circle cx="12" cy="12" r="8.4" /><circle cx="12" cy="12" r="4.6" /><circle cx="12" cy="12" r="1" /></>,
   scissors: <><circle cx="6.4" cy="6.4" r="2.4" /><circle cx="6.4" cy="17.6" r="2.4" /><path d="m8.4 8 11 8.4M19.4 7.6 8.4 16" /></>,
-  google: <><path d="M20.5 12.2c0-.6 0-1.2-.2-1.8H12v3.5h4.8a4.1 4.1 0 0 1-1.8 2.7v2.2h2.9c1.7-1.6 2.6-3.9 2.6-6.6Z" /><path d="M12 21c2.4 0 4.4-.8 5.9-2.2l-2.9-2.2c-.8.5-1.8.9-3 .9-2.3 0-4.3-1.6-5-3.7H4v2.3A9 9 0 0 0 12 21Z" /><path d="M7 13.8a5.4 5.4 0 0 1 0-3.5V8H4a9 9 0 0 0 0 8.1Z" /><path d="M12 6.6c1.3 0 2.5.5 3.4 1.3l2.6-2.6A9 9 0 0 0 4 8l3 2.3c.7-2.1 2.7-3.7 5-3.7Z" /></>,
   menu: <><path d="M4 7h16" /><path d="M4 12h16" /><path d="M4 17h16" /></>,
   offline: <><path d="M3 3.5 21 20.5" /><path d="M5.4 10.4a10 10 0 0 1 3.4-2.2" /><path d="M2.4 7.2a14 14 0 0 1 4-2.6" /><path d="M17.6 7.6a14 14 0 0 1 4 .1" /><path d="M9.2 14.2a5.5 5.5 0 0 1 5.6-.4" /><path d="M12 18.6h.01" /></>,
   cash: <><rect x="2.6" y="6.4" width="18.8" height="11.2" rx="2.2" /><circle cx="12" cy="12" r="2.6" /><path d="M6 12h.01M18 12h.01" /></>,

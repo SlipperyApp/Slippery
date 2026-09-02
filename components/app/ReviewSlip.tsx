@@ -6,7 +6,9 @@ import Link from 'next/link';
 import { Icon } from '@/components/Icon';
 import { CONFIDENCE_COPY, type Confidence, type SlipRead } from '@/lib/data/read';
 import { useSlipFlow } from '@/components/app/SlipFlow';
-import { dateTime, money, parseMoneyMinor } from '@/lib/format';
+import { BalanceChoice } from '@/components/app/BalanceChoice';
+import { currencyAgrees } from '@/lib/domain/balances';
+import { CURRENCY_WORD, dateTime, money, parseMoneyMinor, type Currency } from '@/lib/format';
 
 /** The icon carries the confidence. The VALUE never does.
  *
@@ -29,10 +31,19 @@ function stakeOf(read: SlipRead, typed: string): number | null {
   return parseMoneyMinor(typed)?.minor ?? null;
 }
 
-export function ReviewSlip({ fallback }: { fallback: SlipRead }) {
+export function ReviewSlip({ fallback, balances, balanceId, unitMinor }: {
+  fallback: SlipRead;
+  /** Every balance on the account, and which one is open. A slip lands in the
+   *  open one, so the screen that writes it has to say which that is and let
+   *  it be changed before the write rather than after. */
+  balances: { id: string; name: string; currency: Currency }[];
+  balanceId: string;
+  unitMinor: number;
+}) {
   const router = useRouter();
   const flow = useSlipFlow();
   const read = flow.read ?? fallback;
+  const balance = balances.find((b) => b.id === balanceId) ?? balances[0] ?? null;
 
   const [legs, setLegs] = useState(read.legs);
   const [answers, setAnswers] = useState<Record<string, string>>({});
@@ -50,7 +61,18 @@ export function ReviewSlip({ fallback }: { fallback: SlipRead }) {
   const [duplicateOk, setDuplicateOk] = useState(false);
   const duplicate = read.duplicateOf;
 
-  const currency = read.currency ?? 'GBP';
+  /*  WHAT THE FIGURES ON THIS SCREEN ARE IN. It defaulted to GBP whenever the
+   *  reader had not found a currency on the slip, on a screen that then wrote
+   *  the stake into whichever balance was open: on a euro balance the review
+   *  showed a sterling total for a stake the ledger recorded in euro.
+   *
+   *  The slip's own currency comes first, because these figures are what was
+   *  READ and a stake seen as £1.00 is one pound whatever balance is open.
+   *  Where the reader found none, the balance decides, because the balance is
+   *  what the write will be denominated in. Where the two DISAGREE the write
+   *  is held rather than converted: see `wrongCurrency` below. */
+  const currency: Currency = read.currency ?? balance?.currency ?? 'GBP';
+  const wrongCurrency = !currencyAgrees(read.currency, balance?.currency ?? null);
   const stakeMinor = stakeOf(read, answers.stake ?? '');
   /*  THE ID GOES TO THE SERVER, NOT THE NAME. bookmaker_id is a key: the
       commission rate, the handicap convention and the breakdown row are all
@@ -80,7 +102,7 @@ export function ReviewSlip({ fallback }: { fallback: SlipRead }) {
   const heldOnDuplicate = Boolean(duplicate) && !duplicateOk;
 
   async function confirm() {
-    if (open > 0 || stakeMinor === null || heldOnDuplicate) return;
+    if (open > 0 || stakeMinor === null || heldOnDuplicate || wrongCurrency) return;
     setSaving(true);
     setNote('');
     try {
@@ -98,6 +120,11 @@ export function ReviewSlip({ fallback }: { fallback: SlipRead }) {
           lines: Math.max(1, read.lines),
           placedAt: read.placedAt ?? undefined,
           sha256: flow.sha256 ?? undefined,
+          /*  WHAT THE SLIP SAID IT WAS IN, so the route can refuse a euro
+              slip confirmed against a sterling balance rather than record
+              fifty euro as fifty pounds. It is not a request to write in that
+              currency: the balance decides that and always has. */
+          currency: read.currency ?? undefined,
           legs: legs.map((l) => ({
             selection: l.selection,
             eventName: l.fixture,
@@ -145,6 +172,24 @@ export function ReviewSlip({ fallback }: { fallback: SlipRead }) {
           <span>
             This is the worked example, not a read of one of your slips. Nothing here is yours and
             Confirm has nothing to write. <Link href="/app/import">Send a slip</Link> to see your own.
+          </span>
+        </div>
+      ) : null}
+
+      {/*  A EURO SLIP CANNOT BE CONFIRMED INTO A STERLING BALANCE. The
+           balance decides what a stake is denominated in, so writing this one
+           here would record the number off the slip as pounds and the person
+           would have no way of seeing it. Held rather than converted: nothing
+           in this product carries an exchange rate, and a rate would make the
+           figure change overnight without a bet being placed. */}
+      {wrongCurrency && balance && read.currency ? (
+        <div className="banner banner--neg col-12">
+          <Icon name="alert" size={18} className="banner__icon" />
+          <span>
+            This slip is in {CURRENCY_WORD[read.currency]} and <strong>{balance.name}</strong> is
+            kept in {CURRENCY_WORD[balance.currency]}. Confirm is off, because writing it here would
+            record the stake as {CURRENCY_WORD[balance.currency]} and nothing on any screen would
+            say otherwise. Open a {CURRENCY_WORD[read.currency]} balance below and confirm it there.
           </span>
         </div>
       ) : null}
@@ -334,6 +379,24 @@ export function ReviewSlip({ fallback }: { fallback: SlipRead }) {
       </div>
 
       <div className="col-4" style={{ display: 'grid', gap: 'var(--s4)', alignContent: 'start' }}>
+        {/*  WHICH BOOKS THIS SLIP LANDS IN, above the button that writes it.
+             A slip is filed against the balance that is open, and this screen
+             said nothing about which one that was: somebody keeping a matched
+             betting float apart from a football bank confirmed into whichever
+             one they last looked at. */}
+        <section className="card">
+          <h2 className="card__title">Where it lands</h2>
+          <BalanceChoice
+            balances={balances}
+            current={balanceId}
+            unitMinor={unitMinor}
+            /*  "Lands" is only true if it can be confirmed. With the banner
+                above saying Confirm is off, a line underneath saying the slip
+                lands here would be the screen contradicting itself. */
+            what={wrongCurrency ? 'A slip confirmed here' : 'This slip'}
+          />
+        </section>
+
         <section className="card">
           <h2 className="card__title">Money you won, or money they gave you</h2>
           <p className="small muted" style={{ marginTop: 'var(--s2)' }}>
@@ -365,20 +428,23 @@ export function ReviewSlip({ fallback }: { fallback: SlipRead }) {
             type="button"
             className="btn btn--primary btn--wide"
             onClick={confirm}
-            disabled={saving || open > 0 || heldOnDuplicate}
+            disabled={saving || open > 0 || heldOnDuplicate || wrongCurrency}
             aria-describedby="confirm-note"
           >
             {saving ? 'Writing'
-              : heldOnDuplicate ? 'One question about a duplicate'
-                : open > 0 ? `${open} field${open === 1 ? '' : 's'} still open`
-                  : 'Confirm and add to my ledger'}
+              : wrongCurrency ? 'The balance is in the wrong currency'
+                : heldOnDuplicate ? 'One question about a duplicate'
+                  : open > 0 ? `${open} field${open === 1 ? '' : 's'} still open`
+                    : balance ? `Confirm and add to ${balance.name}` : 'Confirm and add to my ledger'}
           </button>
           <p className="small dim" id="confirm-note" style={{ marginTop: 'var(--s3)' }}>
-            {heldOnDuplicate
-              ? 'A bet like this one is already in your ledger. Saving it again would count it twice in every figure, so this asks first.'
-              : open > 0
-                ? 'Confirm stays off until the gaps are filled. Nothing is written half read.'
-                : 'Writes the bet and its first settlement event in one transaction.'}
+            {wrongCurrency
+              ? 'A stake is denominated by the balance it lands in, so this one is held until a balance in the slip’s own currency is open.'
+              : heldOnDuplicate
+                ? 'A bet like this one is already in your ledger. Saving it again would count it twice in every figure, so this asks first.'
+                : open > 0
+                  ? 'Confirm stays off until the gaps are filled. Nothing is written half read.'
+                  : 'Writes the bet and its first settlement event in one transaction.'}
           </p>
           {note ? <p className="small muted" role="status" style={{ marginTop: 'var(--s3)' }}>{note}</p> : null}
         </section>

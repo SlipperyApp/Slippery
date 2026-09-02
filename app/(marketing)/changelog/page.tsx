@@ -22,7 +22,7 @@ const ENTRIES: { date: string; items: { t: string; s: string }[] }[] = [
       { t: 'One scope bar governs everything below it', s: 'Set the period once and every module follows. Three ignore it and say so in their header.' },
       { t: 'Your headline is two numbers', s: 'Money you won, and money they gave you. Free bets, bonus funds and boosts are split out as the slip is read.' },
       { t: 'Four breakdowns became one', s: 'Sport, market, tipster and bookmaker share one module and one control. Rows under five bets are greyed.' },
-      { t: 'Closing line value is gone', s: 'It could not be sourced honestly, and a figure you cannot trust is worse than none.' },
+      { t: 'A closing price is yours to record', s: 'Nothing works one out for you. The module counts only the bets you entered one against, and says how many that is.' },
     ],
   },
   {

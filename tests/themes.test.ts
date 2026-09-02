@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
-import { THEMES, THEME_NAMES, DEFAULT_THEME } from '@/lib/themes';
+import { THEMES, THEME_NAMES, DEFAULT_THEME, THEME_RENAMES, readTheme, themeWasChosen } from '@/lib/themes';
 
 const CSS = readFileSync(new URL('../app/styles/tokens.css', import.meta.url), 'utf8');
 
@@ -62,7 +62,57 @@ const SAME_COLOUR = 0.08;
 test('there are eight themes and the default is carbon', () => {
   assert.equal(THEMES.length, 8);
   assert.equal(DEFAULT_THEME, 'carbon');
-  assert.deepEqual(THEME_NAMES, ['carbon', 'periwinkle', 'ink', 'graphite', 'slate', 'bronze', 'cinnabar', 'liquid']);
+  assert.deepEqual(THEME_NAMES, ['carbon', 'periwinkle', 'ink', 'graphite', 'slate', 'bronze', 'cinnabar', 'sage']);
+});
+
+test('an account stored on liquid lands on sage, and not on nothing', () => {
+  /*  liquid was renamed to sage, and the name was stored in a cookie and in
+      accounts.theme. Both outlive the release. Against the old check the
+      cookie fell back to carbon, losing a choice somebody made, and the column
+      was not checked at all: it went out as data-theme='liquid', matched no
+      block in the stylesheet, and left the page on the :root fallback. */
+  assert.equal(readTheme('liquid'), 'sage');
+  assert.equal(readTheme(' liquid '), 'sage');
+  assert.ok(THEME_NAMES.includes(readTheme('liquid')));
+});
+
+test('readTheme is total, and never returns a name with no stylesheet block', () => {
+  for (const v of ['', 'nonsense', 'LIQUID', null, undefined, 42, {}, [], 'sage;--x:1']) {
+    const got = readTheme(v);
+    assert.ok(THEME_NAMES.includes(got), `readTheme(${JSON.stringify(v)}) returned ${got}`);
+  }
+  for (const t of THEME_NAMES) assert.equal(readTheme(t), t);
+});
+
+test('a renamed theme still counts as a theme somebody chose', () => {
+  /*  The getting started list asks whether a theme has been picked. An account
+      on liquid had picked one, and telling it to pick a theme it already
+      picked is the checklist nagging about a rename it caused itself. */
+  assert.equal(themeWasChosen('liquid'), true);
+  assert.equal(themeWasChosen('sage'), true);
+  assert.equal(themeWasChosen(''), false);
+  assert.equal(themeWasChosen('nonsense'), false);
+  assert.equal(themeWasChosen(undefined), false);
+});
+
+test('every rename points at a theme that exists, and no rename shadows a live name', () => {
+  for (const [was, now] of THEME_RENAMES) {
+    assert.ok(THEME_NAMES.includes(now), `${was} maps to ${now}, which is not a theme`);
+    /*  A name cannot be both current and renamed, or readTheme's answer would
+        depend on which check ran first. */
+    assert.ok(!(THEME_NAMES as string[]).includes(was), `${was} is both a live theme and a rename`);
+  }
+});
+
+test('the migration moves the stored value the same way the code reads it', () => {
+  /*  The SQL and lib/themes.ts are two statements of one fact, and the failure
+      mode if they disagree is silent: the column says one theme and the page
+      renders another. */
+  const sql = readFileSync(new URL('../migrations/0018_theme_rename_liquid_sage.sql', import.meta.url), 'utf8');
+  for (const [was, now] of THEME_RENAMES) {
+    const re = new RegExp(`update accounts set theme = '${now}' where theme = '${was}'`, 'i');
+    assert.match(sql, re, `no migration line moving ${was} to ${now}`);
+  }
 });
 
 test('the four semantic colours are declared once, outside every theme block', () => {
@@ -95,9 +145,16 @@ test('no theme block redefines the result colours', () => {
 
 test('no theme accent can be mistaken for a result colour', () => {
   /*  This is why there is no green theme and no red theme. Measured in oklab
-   *  rather than on the hue wheel, and reported as a number. The closest of
-   *  the eight is bronze against loss red at 0.158, which is more than warn
-   *  and gold are apart from each other. */
+   *  rather than on the hue wheel, and reported as a number.
+   *
+   *  sage is the closest of the eight, at 0.157 from profit green, and it is
+   *  the one that shows why the measure is oklab and not hue. Sage IS a
+   *  green: 31 degrees from profit on the wheel, which no hue floor worth
+   *  having would pass. It clears here because at 14.8% saturation it is a
+   *  grey with a green cast, and a grey green next to #86EFAC is not a
+   *  colour anybody reads as a profit. Second closest is bronze against loss
+   *  red at 0.164, which is more than warn and gold are apart from each
+   *  other. */
   const rows: string[] = [];
   for (const t of THEMES) {
     for (const [what, hex] of [['profit', PROFIT], ['loss', LOSS]] as const) {
@@ -206,8 +263,14 @@ test('no two themes look the same in the picker row', () => {
     prototype's own now, and this assertion is a FLOOR UNDER THE DESIGN rather
     than a target it was made to hit: it catches two themes collapsing into
     each other in a future edit, and it does not overrule the person who chose
-    them. The set measures 0.027 at its closest, carbon against periwinkle,
-    and 0.020 is the line. */
+    them.
+
+    Measured again and pulled apart since. Every surface in a theme now sits
+    at that theme's own hue, which four of them did not: bronze called itself
+    the only warm one and its --raise was pure grey and its --elev was blue,
+    cinnabar carried its red in the ground and its --elev was magenta. The
+    set measures 0.044 at its closest now, carbon against periwinkle, where
+    it was 0.027, and 0.020 is still the line. */
 test('no two themes are the same theme', () => {
   const KEYS = ['--bg', '--card', '--raise', '--elev', '--line', '--line2', '--p', '--s'];
   const FLOOR = 0.020;

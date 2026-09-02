@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import { units as fmtUnits, initials, pct, plural, position as fmtPosition } from '@/lib/format';
+import { thinReturn } from '@/lib/data/social';
 import type { LeagueRow } from '@/lib/data/social';
 
 /** One row of a table, and every figure on it folded from one record.
@@ -27,8 +28,12 @@ export function LeagueLine({
       bet above forty disciplined ones, and a hundred per cent return off a
       single winner is the loudest figure on the table. The bet count beside
       the name says the same thing in words; this is the version somebody
-      scanning a column sees. */
-  const thin = r.bets < 5;
+      scanning a column sees.
+
+      The rule moved into thinReturn() because a second surface needed it and
+      was not applying it, and because the literal 5 here counted every bet
+      in the window rather than the settled ones the return was divided by. */
+  const thin = thinReturn(r);
   return (
     <li className={`brow lb__row${thin ? ' brow--faded' : ''}${mine ? ' lb__row--you' : ''}`}>
       <span className={`small tnum medal medal--${row.position <= 3 ? row.position : 'none'}`} style={{ fontWeight: 600 }}>
@@ -81,7 +86,7 @@ export function League({
   /*  The note lives with the thing it explains rather than in each page's
       footer, so a board cannot grow a marked row and lose the sentence that
       says what the mark means. */
-  const anyThin = rows.some((r) => r.record.bets < 5);
+  const anyThin = rows.some((r) => thinReturn(r.record));
   return (
     <>
       <ul>
@@ -97,8 +102,8 @@ export function League({
       </ul>
       {anyThin ? (
         <p className="small dim lb__note">
-          A row marked down the left has fewer than five bets in this table, and its return is
-          left out rather than worked out over one of them.
+          A row marked down the left has fewer than five settled bets in this table, and its
+          return is left out rather than worked out over one of them.
         </p>
       ) : null}
     </>

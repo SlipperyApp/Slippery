@@ -464,15 +464,20 @@ export function buildBreakdowns(rows: DemoBet[], unitPence: number): Record<Dime
 
 // ------------------------------------------------------------------ series
 
-export type DayPoint = { day: string; netPence: number; count: number };
+export type DayPoint = { day: string; netPence: number; count: number; turnoverPence: number };
 
 export function byDay(rows: DemoBet[], tz: TimeZone = DEFAULT_TZ): DayPoint[] {
   const map = new Map<string, DayPoint>();
   for (const b of rows) {
     if (b.state.status === 'open') continue;
     const day = dayKey(b.eventAt, tz);
-    const cur = map.get(day) ?? { day, netPence: 0, count: 0 };
+    const cur = map.get(day) ?? { day, netPence: 0, count: 0, turnoverPence: 0 };
     cur.netPence += b.state.realisedPlPence;
+    /*  Carried per day for the same reason byMonth carries it: a return is a
+        ratio and a ratio needs its denominator. The dashboard's tiles draw a
+        running return, and computing the turnover a second time in the page
+        would be a second definition of it. */
+    cur.turnoverPence += turnoverPence(b, b.state);
     cur.count += 1;
     map.set(day, cur);
   }
@@ -482,6 +487,32 @@ export function byDay(rows: DemoBet[], tz: TimeZone = DEFAULT_TZ): DayPoint[] {
 export function cumulative(points: DayPoint[]): { day: string; netPence: number }[] {
   let acc = 0;
   return points.map((p) => { acc += p.netPence; return { day: p.day, netPence: acc }; });
+}
+
+/** A running total, as a plain series, for the shapes that only need numbers.
+ *
+ *  The tiles draw one of these each and none of them draws an axis, so what
+ *  they want is the arithmetic and not a second copy of a DayPoint. */
+export function runningTotal(values: number[]): number[] {
+  let acc = 0;
+  return values.map((v) => { acc += v; return acc; });
+}
+
+/** The return as it stood after each day, not the return of each day.
+ *
+ *  A per day ratio is noise: one settled bet on a Tuesday is plus or minus a
+ *  hundred per cent and says nothing. The running one is the figure the tile
+ *  prints, drawn as it arrived at it, and its last point IS that figure. */
+export function runningRoi(points: DayPoint[]): number[] {
+  let net = 0;
+  let turn = 0;
+  const out: number[] = [];
+  for (const p of points) {
+    net += p.netPence;
+    turn += p.turnoverPence;
+    out.push(turn > 0 ? (net / turn) * 100 : 0);
+  }
+  return out;
 }
 
 export type MonthPoint = { key: string; label: string; netPence: number; count: number; turnoverPence: number };

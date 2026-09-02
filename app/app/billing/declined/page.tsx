@@ -28,7 +28,7 @@ export default async function Declined() {
         </Link>
       </div>
 
-      <span className="pill pill--neg">Attempt 1 of 2</span>
+      <span className="pill pill--warn">Attempt 1 of 2</span>
       <h1 style={{ marginTop: 'var(--s4)' }}>Your card was declined</h1>
       <p className="lead" style={{ marginTop: 'var(--s3)' }}>
         Your bank refused the payment. Usually an expiry date, a spending limit, or a bank blocking something it has not seen before. None of it is about your account here.

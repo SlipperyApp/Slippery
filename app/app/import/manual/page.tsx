@@ -11,7 +11,12 @@ export const metadata: Metadata = {
 };
 
 export default async function Manual() {
-  const { data } = await getViewer();
+  /*  `balance` is the one that is open and `data.account` is already scoped to
+      it, so the unit and the currency this form is denominated in come from
+      the balance rather than the account. Choosing another one in the form
+      writes the same cookie and refreshes this page, which is what
+      re-denominates every figure below. */
+  const { data, balances, balance } = await getViewer();
   return (
     <>
       <div className="row" style={{ marginBottom: 'var(--gap-block)' }}>
@@ -30,6 +35,9 @@ export default async function Manual() {
           sports={SPORTS.map((s) => ({ id: s.id, name: s.name }))}
           unitPence={data.account.unitPence}
           currency={data.account.currency}
+          balances={balances.map((b) => ({ id: b.id, name: b.name, currency: b.currency }))}
+          balanceId={balance.id}
+          balanceName={balance.name}
         />
       </div>
     </>

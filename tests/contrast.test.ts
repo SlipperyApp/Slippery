@@ -224,8 +224,13 @@ test('nothing that has to be read is faded below legibility', () => {
  *  Comments are blanked, and their newlines are kept so a reported line
  *  number is still the line. The note above a fix naming the colour it took
  *  out is not the colour coming back. */
-function componentLines(): { at: string; line: string }[] {
-  const out: { at: string; line: string }[] = [];
+/*  Each entry carries the NEXT line too. A pill opens on one line and its
+ *  own label is on the one after it, so a green pill reading "Save £11.89 a
+ *  year" looked, to a rule reading one line at a time, like a green pill
+ *  with nothing in it. Judging an allowance on the opening tag alone means
+ *  every legitimate money pill has to be listed by class name instead. */
+function componentLines(): { at: string; line: string; next: string }[] {
+  const out: { at: string; line: string; next: string }[] = [];
   const walk = (dir: URL, rel: string) => {
     for (const entry of readdirSync(dir, { withFileTypes: true })) {
       const child = new URL(entry.name + (entry.isDirectory() ? '/' : ''), dir);
@@ -235,8 +240,8 @@ function componentLines(): { at: string; line: string }[] {
         .replace(/\/\*[\s\S]*?\*\//g, (m) => m.replace(/[^\n]/g, ' '))
         .replace(/^\s*\/\/.*$/gm, ' ')
         .split('\n')
-        .forEach((line, i) => {
-          out.push({ at: `${rel}${entry.name}:${i + 1}`, line });
+        .forEach((line, i, all) => {
+          out.push({ at: `${rel}${entry.name}:${i + 1}`, line, next: all[i + 1] ?? '' });
         });
     }
   };
@@ -251,6 +256,22 @@ test('the two result colours are never used to mean anything but money', () => {
   // that are about to write money into a ledger.
   const offences: string[] = [];
 
+  // IT READS INLINE STYLES NOW, AND THE HOLE IT HAD WAS TWO HOLES.
+  //
+  // It only looked at lines carrying className or class=, and it allowed any
+  // line mentioning --pos or --neg outright. Between them, five places had
+  // set the semantic colours through style={{ color: 'var(--pos)' }} and
+  // passed: profit green as "this email looks valid" on the login form and
+  // as "you are on the list" on the waiting list, loss red as "never sent"
+  // in settings, as "not available offline", and as "paused" on the billing
+  // screen where red already means a card was declined. A sixth, the signup
+  // form's password rules, had never been caught at all.
+  //
+  // So the line test takes style= and var(--pos) too, and the blanket
+  // --pos / --neg allowance is gone, replaced by the two places that
+  // genuinely paint an SVG with them: a bar whose fill is the sign of the
+  // month's net, and the calendar's own day fill.
+  //
   // Where they legitimately appear: an outcome, a profit figure, a calendar
   // fill, the swatches that explain the two colours, and the saving on the
   // yearly plan, which the brief specifies as a green pill.
@@ -260,8 +281,10 @@ test('the two result colours are never used to mean anything but money', () => {
     // a real money figure
     "pl\\(", "money\\(", "netPence", "realisedPl", "units", "profit", "loss",
     // the calendar ramp, the charts, and the swatches that explain the colours
-    "cal-", "cal__key", "swatch", "#86EFAC", "#FCA5A5", "meter__fill",
-    "OutcomePill", "ProfitCurve", "MonthBars", "Sparkline", "--pos\\b", "--neg\\b",
+    "cal-", "cal__", "swatch", "#86EFAC", "#FCA5A5", "meter__fill",
+    "OutcomePill", "ProfitCurve", "MonthBars", "Sparkline",
+    // an SVG painted by the sign of the figure it is drawing
+    "fill=\\{up \\?", "stroke=\\{up \\?",
     // the saving on the yearly plan, which the brief specifies as a green pill
     "Save ",
     // the destructive block, which the brief specifies is in the loss colour
@@ -270,17 +293,18 @@ test('the two result colours are never used to mean anything but money', () => {
     // is the correct use by definition
     "> 0 \\? '(pos|neg)'", ">= 0 \\? '(pos|neg)'", "< 0 \\? '(pos|neg)'",
     "startsWith\\('-'\\)", "startsWith\\('\\+'\\)",
+    "'var\\(--pos\\)' : 'var\\(--neg\\)'",
     // a boolean already named for the sign of the figure it colours
-    "\\bpos \\? '(pos|neg)'", "tone=\\{pos", "brk__fig",
+    "\\bpos \\? '(pos|neg)'", "tone=\\{pos", "brk__fig", "brk__barfill",
     // a ghosted empty state is a picture of a money figure
     "ghost=", "\\+£",
   ].join('|'));
 
-  for (const { at, line } of componentLines()) {
+  for (const { at, line, next } of componentLines()) {
     if (!/\b(pos|neg)\b/.test(line)) continue;
     if (!/className|class=/.test(line)) continue;
     if (!/['"`\s](pos|neg)['"`\s]|pill--(pos|neg)|fill--(pos|neg)/.test(line)) continue;
-    if (ALLOWED.test(line)) continue;
+    if (ALLOWED.test(`${line} ${next}`)) continue;
     offences.push(`${at} ${line.trim().slice(0, 84)}`);
   }
   assert.deepEqual(offences, [], offences.join('\n'));

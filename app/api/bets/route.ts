@@ -4,9 +4,12 @@ import { fail, limitOr429, ok, readJson, str } from '@/lib/server/respond';
 import { writeState } from '@/lib/server/bets';
 import { ALL_BOOKMAKERS, DEFAULT_BOOKMAKER_ID, marketGroupFor, resolveBookmakerId } from '@/lib/data/reference';
 import { fingerprintSource, identityOf } from '@/lib/data/read';
-import { currentBalance } from '@/lib/server/balances';
+import { ensureBalance } from '@/lib/server/balances';
+import { openBalanceId } from '@/lib/data/session';
 import { linkSlipToBet } from '@/lib/server/slips';
-import type { Bet } from '@/lib/domain/types';
+import { currencyAgrees } from '@/lib/domain/balances';
+import { CURRENCY_WORD } from '@/lib/format';
+import type { Bet, Currency } from '@/lib/domain/types';
 
 export const runtime = 'nodejs';
 
@@ -79,16 +82,34 @@ export async function POST(req: Request) {
       against their own balances rather than taken from the request: a client
       that could name a balance could name somebody else's, and a stake typed
       into the euro account and filed against the sterling one is a wrong
-      figure on two screens at once. */
-  const bal = await currentBalance(account.id);
+      figure on two screens at once. The id off the cookie travels; the
+      resolution happens inside the transaction, against this account's rows. */
+  const open = await openBalanceId();
+
+  /*  What the SLIP was denominated in, when a read found it. A euro slip
+      confirmed against a sterling balance would be written as pounds, because
+      the balance decides the currency and always has: fifty euro of stake
+      would appear in the ledger as fifty pounds. That is a wrong figure the
+      person cannot see, so it is refused here rather than converted. Nothing
+      in this product carries an exchange rate and nothing should. */
+  const slipCurrency: Currency | null = str(body.currency) === 'EUR' ? 'EUR'
+    : str(body.currency) === 'GBP' ? 'GBP' : null;
 
   try {
-    const betId = await transaction(async (client) => {
+    const write = await transaction(async (client) => {
+      /*  Created here if this account has none. Signup wrote no balance and
+          balance_id is not null, so the first bet on every account made after
+          migration 0011 failed on a constraint while the screens named a
+          balance called Main. See lib/server/balances.ts. */
+      const bal = await ensureBalance(client, account.id, open);
       const unit = await client.query<{ unit_pence: number; currency: string }>(
         'select unit_pence, currency from accounts where id = $1', [account.id],
       );
       const unitPence = bal?.unitPence ?? unit.rows[0]?.unit_pence ?? 2500;
       const currency = bal?.currency ?? unit.rows[0]?.currency ?? 'GBP';
+      if (!currencyAgrees(slipCurrency, currency as Currency)) {
+        return { kind: 'wrong_currency' as const, bal, currency: currency as Currency };
+      }
       const total = stakePence * lines;
 
       /*  THE RATE WAS A LITERAL ZERO IN THIS INSERT. Every bet written
@@ -104,9 +125,15 @@ export async function POST(req: Request) {
         ? Number(rate.rows[0].commission_pct)
         : (ALL_BOOKMAKERS.find((b) => b.id === bookmakerId)?.commissionPct ?? 0);
 
+      /*  balance_id WAS MISSING FROM THIS COLUMN LIST while its value was in
+          the parameters, so the statement offered twenty six values for
+          twenty five columns and every bet written through this route was
+          rejected by the parser. Nothing caught it because nothing here runs
+          without a database. The column and the parameter now sit in the same
+          position, and tests/entry-balance.test.ts counts them. */
       const inserted = await client.query<{ id: string }>(
         `insert into bets
-           (account_id, shape, side, stake_pence, liability_pence, odds, currency,
+           (account_id, balance_id, shape, side, stake_pence, liability_pence, odds, currency,
             bookmaker_id, sport_id, event_name, selection, market_raw, market_group_id,
             event_at, placed_at, is_free_bet, is_boosted, is_bonus_funds,
             is_each_way, places_paid, slip_backed, source, unit_pence_at_placement,
@@ -191,10 +218,34 @@ export async function POST(req: Request) {
         [account.id, id, str(body.source) || 'manual'],
       );
 
-      return id;
+      return { kind: 'written' as const, betId: id, bal };
     });
 
-    return ok({ betId, message: 'Written, with its bet_state folded in the same transaction.' });
+    /*  A EURO SLIP IS NEVER FILED INTO A STERLING BALANCE. The balance
+        decides what a stake is denominated in, so writing it would record the
+        figure off the slip in the wrong money with nothing on any screen
+        saying so. Refused rather than converted: a rate would make a settled
+        bet's return move overnight without anything happening. */
+    if (write.kind === 'wrong_currency') {
+      const slipWord = CURRENCY_WORD[slipCurrency as Currency];
+      return fail(409, 'wrong_currency',
+        `This slip is in ${slipWord} and ${write.bal ? write.bal.name : 'the balance you have open'} `
+        + `is kept in ${CURRENCY_WORD[write.currency]}. Nothing was written. Open a ${slipWord} balance `
+        + 'and confirm it there: a stake filed against the wrong balance is a wrong figure on two '
+        + 'screens at once, and converting it would need a rate that changes overnight.');
+    }
+
+    /*  THE ANSWER NAMES THE BALANCE. A write that lands somewhere the person
+        did not expect is only findable by opening the balance sheet and
+        disagreeing with it, so the route says where it went. */
+    return ok({
+      betId: write.betId,
+      balanceId: write.bal?.id ?? null,
+      balanceName: write.bal?.name ?? null,
+      message: write.bal
+        ? `Written into ${write.bal.name}, with its bet_state folded in the same transaction.`
+        : 'Written, with its bet_state folded in the same transaction.',
+    });
   } catch {
     return fail(500, 'write_failed',
       'That failed and nothing was saved: the bet, its legs and its state are written in one transaction.');

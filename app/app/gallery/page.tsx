@@ -3,8 +3,9 @@ import Link from 'next/link';
 import { getViewer } from '@/lib/data/session';
 import { SlipGallery } from '@/components/app/SlipGallery';
 import { Icon } from '@/components/Icon';
+import { Figure } from '@/components/app/Module';
 import { slipStatus, IMAGE_RETENTION_DAYS } from '@/lib/domain/slip';
-import { plural } from '@/lib/format';
+import { count, gap, plural } from '@/lib/format';
 
 export const metadata: Metadata = {
   title: 'Slips',
@@ -36,6 +37,18 @@ export default async function Gallery() {
   const expired = captured.length - held - unstored;
   const withoutSlips = bets.length - captured.length;
 
+  /*  HOW EARLY THEY WERE CAUGHT, which is the one thing this page can prove.
+      Capture at placement is the whole product, and the page that ought to
+      demonstrate it was showing a hundred and sixty one identical grey cards
+      instead. Every one of these was on the record before the event started,
+      and the median says by how long. */
+  const leads = captured
+    .map((b) => Date.parse(b.eventAt) - Date.parse(b.placedAt))
+    .filter((ms) => ms > 0)
+    .sort((a, b) => a - b);
+  const median = leads.length ? leads[Math.floor(leads.length / 2)] : 0;
+  const beforeOff = captured.filter((b) => Date.parse(b.placedAt) < Date.parse(b.eventAt)).length;
+
   return (
     <>
       <div className="spread" style={{ marginBottom: 'var(--gap-block)', flexWrap: 'wrap' }}>
@@ -48,6 +61,33 @@ export default async function Gallery() {
             <Icon name="plus" size={16} /> Add a bet
           </Link>
         </div>
+      </div>
+
+      {/*  THREE FIGURES THIS PAGE CAN PROVE, before the grid.
+           Capture at placement is the whole product, and the page that ought
+           to demonstrate it opened as a hundred and sixty one identical grey
+           cards. These three are the demonstration: how many of these slips
+           were on the record before the event started, by how long in the
+           middle case, and how many bets never had a slip at all. */}
+      <div className="figstrip slipstats">
+        <Figure
+          value={`${count(beforeOff)} of ${count(captured.length)}`}
+          label="Captured before the off"
+          size="md"
+          sub="A bet recorded after the start is not a prediction"
+        />
+        <Figure
+          value={median > 0 ? gap(new Date(0), new Date(median)) : 'None yet'}
+          label="Typical head start"
+          size="md"
+          sub="The middle slip, not the average, which one early slip would move"
+        />
+        <Figure
+          value={count(withoutSlips)}
+          label="Bets with no slip"
+          size="md"
+          sub="Typed in or imported, so they are not on this page"
+        />
       </div>
 
       {/*  The counts, and the reason the two numbers differ. A grid that

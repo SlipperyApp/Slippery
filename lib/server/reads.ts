@@ -13,15 +13,12 @@
  *  bound to a nullable refunded_at that can only be filled once, so it is
  *  idempotent by construction rather than by a rate limit. */
 
-import { hasDatabase, transaction } from './db';
+import { hasDatabase, transaction, type Runner } from './db';
 import type { ReadCost } from './vision';
 
-/** The smallest thing these need: something that runs a statement. A
- *  PoolClient satisfies it, and so does a fake, which is how the two rules
- *  that matter here are tested as rules rather than as queries. */
-export type Runner = {
-  query<R = Record<string, unknown>>(text: string, params?: unknown[]): Promise<{ rows: R[] }>;
-};
+/*  One definition of "something that runs a statement", in lib/server/db.ts,
+    re-exported here because this module's callers took it from here first. */
+export type { Runner };
 
 export type ReadRecord = {
   readId: string;

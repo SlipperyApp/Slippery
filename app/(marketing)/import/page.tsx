@@ -63,7 +63,7 @@ export default function ImportPage() {
                 ))}
               </ul>
               <p className="small muted card__foot">
-                Nothing is written by a dry run. The fourteen go to a resolve step, one at a time.
+                The fourteen go to a resolve step, one at a time.
               </p>
             </div>
           </div>
@@ -72,7 +72,6 @@ export default function ImportPage() {
             items={[
               'Duplicates matched on selection, stake, bookmaker and kick-off',
               'Multiples re-derived into real legs',
-              'Imported bets are marked and are not slip backed',
               'Every mutation writes an audit line with its source',
             ]}
           />
@@ -85,9 +84,7 @@ export default function ImportPage() {
                   Import a history <Icon name="arrowRight" size={16} />
                 </Link>
               }
-            >
-              A few thousand rows dry run in under a minute.
-            </EndCard>
+            />
           </div>
         </div>
       </section>

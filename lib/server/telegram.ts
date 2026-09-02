@@ -16,6 +16,7 @@
 
 import { timingSafeEqual } from 'node:crypto';
 import { has, read } from './env';
+import { CURRENCY_SYMBOL, CURRENCY_WORD, type Currency } from '@/lib/format';
 
 export function botReady(): boolean {
   return has('TELEGRAM_BOT_TOKEN') && has('TELEGRAM_WEBHOOK_SECRET');
@@ -86,15 +87,48 @@ export const REPLIES = {
   paused: 'PAUSED\nThe account is read only, so nothing was read. The ledger and the export still work.',
   help: [
     'Commands',
-    '/today  today’s figures',
-    '/week   this week’s figures',
-    '/open   what is running',
-    '/last   the last bet logged',
-    '/undo   remove the last bet from this chat, within 24 hours',
-    '/stop   unlink this chat',
+    '/today   today’s figures',
+    '/week    this week’s figures',
+    '/open    what is running',
+    '/last    the last bet logged',
+    '/balance which balance a bet from this chat is filed in',
+    '/undo    remove the last bet from this chat, within 24 hours',
+    '/stop    unlink this chat',
   ].join('\n'),
   unknown: 'Not a command I know. /help lists them.',
+  noBalance: 'This account has no balance yet. Open the app once and one is made, and this will say which.',
 };
+
+/** WHICH BALANCE A BET FROM THIS CHAT IS FILED IN.
+ *
+ *  An account keeps several balances now, each with its own currency, its own
+ *  unit and its own figures, and every entry path in the app asks which one a
+ *  bet lands in. A chat cannot be asked: a slip arrives as a photograph with
+ *  no room for a question, and a keyboard of balance buttons in front of every
+ *  forward would be four taps on the one route that exists to be nought.
+ *
+ *  So a chat files into the account's first balance, and this is where that
+ *  is said out loud. Somebody keeping a matched betting float apart from a
+ *  football bank has to be able to find out which one the bot uses without
+ *  placing a bet and reading the balance sheet afterwards. The list beside it
+ *  is the rest, so the answer is checkable rather than asserted.
+ *
+ *  It offers the app rather than an ordering control, because there is no
+ *  ordering control: the review screen asks before it writes, and that is the
+ *  way to put a slip somewhere else that this build actually keeps. */
+export function balanceReply(balances: { name: string; currency: Currency }[]): string {
+  const here = balances[0];
+  if (!here) return REPLIES.noBalance;
+  const lines = [
+    `${here.name}, kept in ${CURRENCY_WORD[here.currency]}.`,
+    'A bet from this chat is filed there. A chat cannot ask which balance you mean.',
+  ];
+  if (balances.length > 1) {
+    lines.push('', `All ${balances.length}: ${balances.map((b) => `${b.name} (${CURRENCY_SYMBOL[b.currency]})`).join(', ')}.`);
+    lines.push('', 'To put one in another balance, send it in the app instead. The review screen asks before it writes.');
+  }
+  return lines.join('\n');
+}
 
 export function trialExhausted(which: 'days' | 'slips', appUrl: string): string {
   return which === 'slips'

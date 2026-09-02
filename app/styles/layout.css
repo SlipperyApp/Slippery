@@ -94,87 +94,250 @@
 /* ------------------------------------------------------------------ shell */
 .shell { display: block; min-height: 100svh; }
 
+/*  The rail's column is the rail plus the air around it: it floats as a card
+    on the field rather than butting against the edge of the window, which is
+    the shape the layout reference draws and the reason the shadow under it
+    reads at all. */
 @media (min-width: 1000px) {
-  .shell { display: grid; grid-template-columns: var(--sidebar-w) minmax(0, 1fr); }
+  .shell { display: grid; grid-template-columns: calc(var(--rail-w) + var(--s3) * 2) minmax(0, 1fr); }
 }
 
-.side {
+/*  THE RAIL, AND WHY IT IS 72 PIXELS AND NOT 232.
+    It was a column of labelled rows, and below the last row there were five
+    hundred pixels of nothing on every route: a fifth of a 1440 screen spent
+    on four words that never change. Icon only, the same four destinations
+    fit in 72 and the width goes to the modules, which is where the reader is
+    looking. Every icon carries an accessible name from the link's own
+    aria-label, because an icon with no name is read out as "link". */
+.rail {
   display: none;
   position: sticky;
-  top: 0;
-  height: 100svh;
-  border-right: 1px solid var(--line);
-  padding: var(--s5) var(--s4);
-  background: color-mix(in oklab, var(--bg-2) 76%, transparent);
+  top: var(--s3);
+  height: calc(100svh - var(--s6));
+  width: var(--rail-w);
+  margin: var(--s3);
+  padding: var(--s3) 0;
+  border: 1px solid var(--line2);
+  border-radius: var(--r-card);
+  background:
+    linear-gradient(to bottom,
+      color-mix(in oklab, var(--ink) 4%, transparent) 0%,
+      transparent 30%),
+    color-mix(in oklab, var(--surface) 88%, transparent);
+  box-shadow:
+    inset 0 1px 0 color-mix(in oklab, var(--ink) 10%, transparent),
+    0 1px 2px color-mix(in oklab, #000 30%, transparent),
+    0 14px 30px -18px color-mix(in oklab, #000 76%, transparent);
   flex-direction: column;
-  gap: var(--s5);
-}
-@media (min-width: 1000px) { .side { display: flex; } }
-
-.side__nav { display: flex; flex-direction: column; gap: var(--s0); }
-
-.navrow {
-  display: flex;
   align-items: center;
-  gap: var(--s3);
-  min-height: var(--tap);
-  padding: 0 var(--s3);
+  gap: var(--s4);
+}
+@media (min-width: 1000px) { .rail { display: flex; } }
+
+/*  The mark loses the lockup's inline padding here: it is centred in a 72px
+    column, not sitting at the left edge of a header. */
+.rail__brand { justify-content: center; width: var(--tap); margin-inline: 0; padding-inline: 0; }
+
+.rail__nav { display: flex; flex-direction: column; align-items: center; gap: var(--s1); width: 100%; }
+/*  The four above are places. These are jobs, and the difference has to be
+    visible or they read as four more places. A hairline says it once. */
+.rail__nav--jobs { padding-top: var(--s3); border-top: 1px solid var(--line); }
+
+.rail__link {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: var(--tap);
+  height: var(--tap);
   border-radius: var(--r-ctl);
   color: var(--ink-2);
   text-decoration: none;
-  font-weight: var(--w-label);
-  font-size: var(--t-small);
-  position: relative;
+  cursor: pointer;
   transition: background var(--dur-fast) var(--ease), color var(--dur-fast) var(--ease);
 }
-.navrow:hover { background: var(--surface); color: var(--ink); }
-.navrow[aria-current='page'] { background: var(--surface-2); color: var(--ink); }
-.navrow[aria-current='page']::before {
-  content: '';
+.rail__link:hover { background: var(--surface-2); color: var(--ink); }
+/*  THE ACTIVE PILL. The old rail marked the current route with a 3px tick
+    against the window edge, which needs a row beside it to be a mark ON
+    something. At 72px wide there is no row, so the pill is the shape: the
+    accent behind the icon, which is the same accent the one filled tile and
+    the add button carry, and the only place it appears in the chrome. */
+.rail__link[aria-current='page'] { background: var(--accent); color: var(--accent-ink); }
+.rail__link--warn { color: var(--warn); }
+
+.rail__badge {
   position: absolute;
-  left: -1px; top: 50%;
-  width: 3px; height: 20px;
-  transform: translateY(-50%);
+  top: 1px;
+  right: 1px;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 var(--s1);
   border-radius: var(--r-pill);
-  background: var(--accent);
-}
-.navrow__icon { width: 18px; height: 18px; flex: none; }
-.navrow__badge {
-  margin-left: auto;
-  min-width: 22px;
-  height: 20px;
-  padding: 0 var(--s1h);
-  border-radius: var(--r-pill);
+  border: 1px solid var(--line-2);
   background: var(--surface-3);
   color: var(--ink-2);
   font-size: var(--t-micro);
+  line-height: 1;
   font-weight: var(--w-label);
   display: inline-flex;
   align-items: center;
   justify-content: center;
   font-variant-numeric: tabular-nums;
 }
-.navrow[aria-current='page'] .navrow__badge { background: color-mix(in oklab, var(--accent) 24%, transparent); color: var(--ink); }
+/*  The warn tint is on the BADGE and never on the row. A row in warn colour
+    reads as broken; a warn count reads as "this many are waiting". */
+.rail__badge--warn { background: var(--warn-wash); border-color: var(--warn-line); color: var(--warn); }
+.rail__link[aria-current='page'] .rail__badge {
+  background: var(--accent-ink);
+  border-color: transparent;
+  color: var(--ink);
+}
 
+.rail__foot {
+  margin-top: auto;
+  width: 100%;
+  padding-top: var(--s3);
+  border-top: 1px solid var(--line);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--s1);
+}
+.rail__out { display: block; }
+/*  Who you are, pinned to the bottom, which is where every rail with an
+    account on it puts it. It is a link to the account page and not a menu:
+    the two things a menu would hold are the two links above it. */
+.rail__me {
+  display: grid;
+  place-items: center;
+  width: var(--tap);
+  height: var(--tap);
+  margin-top: var(--s1);
+  border-radius: var(--r-pill);
+  text-decoration: none;
+}
+.rail__me .avatar { width: 34px; height: 34px; font-size: var(--t-small); }
+.rail__me:hover .avatar { border-color: var(--line-2); color: var(--ink); }
+.rail__me[aria-current='page'] .avatar { border-color: var(--accent); color: var(--ink); }
+
+/* --------------------------------------------------------- the app header */
+/*  A GREETING, A SEARCH AND ONE ACTION.
+    The bar carried a mark, an avatar, a handle, an Example pill and a
+    balance box: four ways of saying whose account this is and no way of
+    finding anything in it. The name says it once, and the line under it
+    carries the two facts that are true on every route. */
 .topbar {
   position: sticky;
   top: 0;
   z-index: var(--z-header);
-  height: var(--topbar-h);
-  display: grid;
-  grid-template-columns: auto 1fr auto;
+  min-height: var(--apphead-h);
+  display: flex;
   align-items: center;
   gap: var(--s3);
-  padding-inline: var(--s4);
+  padding-block: var(--s2);
+  padding-inline: clamp(16px, 1.1vw + 12px, 32px);
   border-bottom: 1px solid var(--line);
   background: color-mix(in oklab, var(--bg) 84%, transparent);
   -webkit-backdrop-filter: saturate(150%) blur(14px);
           backdrop-filter: saturate(150%) blur(14px);   /* 2 of at most 3 */
 }
-@media (min-width: 1000px) { .topbar { padding-inline: var(--s6); } }
 
-.topbar__mid { display: flex; align-items: center; justify-content: center; gap: var(--s2); min-width: 0; }
-.topbar__right { display: flex; align-items: center; gap: var(--s2); }
+/*  Only where there is no rail to carry it. Under 1000 the rail is display
+    none and the top of a phone screen would otherwise hold no way back to
+    the dashboard. */
+.topbar__mark { flex: none; }
+/*  .topbar .topbar__mark, not .topbar__mark: floors.css is imported last and
+    declares `.brand { display: inline-flex }`, so a one class rule here loses
+    to it and the mark drew twice, once in the rail and once in the header. */
+@media (min-width: 1000px) { .topbar .topbar__mark { display: none; } }
+
+.topbar__hello { flex: 1 1 auto; min-width: 0; }
+.topbar__greet {
+  display: flex;
+  align-items: center;
+  gap: var(--s2);
+  font-size: var(--t-h3);
+  line-height: var(--lh-h3);
+  font-weight: var(--w-label);
+  letter-spacing: var(--tr-tight);
+  min-width: 0;
+}
+.topbar__name { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+/*  See the note in AppShell: the phone's menu button costs the greeting 38
+    pixels and "Hello, Tester" had exactly none spare at 390. */
+.topbar__hi { display: none; }
+@media (min-width: 700px) { .topbar__hi { display: inline; } }
+.topbar__pill { flex: none; }
+/*  NOT ON A PHONE. It is two facts about the whole account and the phone
+    header has room for a name and a balance. Nothing is lost that was there
+    before: both of them lived in the desktop rail's footer.
+
+    max-width: none, because .small is capped at 54ch for reading and this is
+    a status line rather than prose: capped, it wrapped to a second line
+    inside a bar that is one line tall. */
+.topbar__sub { display: none; }
+@media (min-width: 700px) {
+  .topbar__sub {
+    display: block;
+    max-width: none;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+}
+
+/*  A SEARCH THAT SEARCHES. A GET form at the ledger's own ?q=, so it works
+    with scripting off and lands on a list that is really filtered and really
+    says so. A field that filtered nothing would be the third dead control
+    this build has had to delete. */
+.topbar__search { display: none; position: relative; flex: 0 1 300px; min-width: 172px; }
+@media (min-width: 760px) { .topbar__search { display: flex; align-items: center; } }
+.topbar__q {
+  width: 100%;
+  min-height: var(--tap);
+  /* Room on the right for the button that sits inside the field. */
+  padding: 0 calc(var(--tap) + var(--s1)) 0 var(--s4);
+  border-radius: var(--r-pill);
+  border: 1px solid var(--line-2);
+  background: var(--surface);
+  color: var(--ink);
+}
+.topbar__q::placeholder { color: var(--ink-2); }
+.topbar__q:hover { border-color: var(--ink-3); }
+.topbar__q:focus { border-color: var(--accent); background: var(--surface-2); }
+.topbar__go { position: absolute; right: 3px; }
+
+.topbar__right { display: flex; align-items: center; gap: var(--s2); flex: none; }
+
+/*  A round icon control. 38px of paint and 44px of target, the same trick
+    .iconbtn uses, so neighbours need their gap or the wrong one fires. */
+.roundbtn {
+  position: relative;
+  display: inline-grid;
+  place-items: center;
+  flex: none;
+  width: 38px;
+  height: 38px;
+  border-radius: var(--r-pill);
+  border: 1px solid var(--line-2);
+  background: var(--surface);
+  color: var(--ink-2);
+  cursor: pointer;
+  text-decoration: none;
+  transition: background var(--dur-fast) var(--ease), color var(--dur-fast) var(--ease);
+}
+.roundbtn::after { content: ''; position: absolute; inset: -3px; }
+.roundbtn:hover { background: var(--surface-2); color: var(--ink); }
+.roundbtn--go { background: var(--accent); border-color: transparent; color: var(--accent-ink); }
+.roundbtn--go:hover { background: var(--accent-2); }
+
+/*  The plus is the tab bar's raised button on a phone, and two links to the
+    same screen a thumb apart is the defect nav.ts records for Import.
+
+    AFTER .roundbtn, not before it. Declared above it this rule lost on
+    source order to .roundbtn's own display, and the button drew at 390 on
+    top of the Example pill, which is how the pill came to read "EXAN". */
+.topbar__add { display: none; }
+@media (min-width: 1000px) { .topbar__add { display: inline-grid; } }
 
 /*  THE BALANCE BOX IS A CONTROL NOW, and it is the same size it was.
     Its label used to be the literal word "Balance", which is the one thing
@@ -274,7 +437,10 @@
     calc(var(--bottombar-h) + env(safe-area-inset-bottom) + var(--s8));
   min-width: 0;
 }
-@media (min-width: 1000px) { .main { padding-bottom: var(--s10); } }
+/*  --s8, not --s10. The dashboard is sized to end exactly at the bottom of
+    the window (see .dash), and the seventy two pixels that used to sit under
+    every app page were seventy two pixels the modules could not have. */
+@media (min-width: 1000px) { .main { padding-bottom: var(--s8); } }
 
 /* -------------------------------------------------------------- bottom bar */
 .bottombar {
@@ -351,12 +517,20 @@
 @media (min-width: 1000px) { .grid { grid-template-columns: repeat(12, minmax(0, 1fr)); } }
 
 /* Fixed column spans. No packer, no pinning, no drag reorder. */
-.col-4, .col-5, .col-6, .col-7, .col-8, .col-12 { grid-column: span 4; }
+.col-3, .col-4, .col-5, .col-6, .col-7, .col-8, .col-12 { grid-column: span 4; }
+/*  A quarter of the row from 1000, a half from 700, and on a phone it
+    depends on what is in it: two TILES across 390 is a figure and a caption
+    each, which fits, and half a phone is not a list of months with money on
+    the right of it. The dial and the month list take the whole width there,
+    the way every other module in this product does. */
+@media (max-width: 699px) { .tile.col-3 { grid-column: span 2; } }
 @media (min-width: 700px) {
+  .col-3 { grid-column: span 4; }
   .col-4 { grid-column: span 4; }
   .col-5, .col-6, .col-7, .col-8, .col-12 { grid-column: span 8; }
 }
 @media (min-width: 1000px) {
+  .col-3 { grid-column: span 3; }
   .col-4 { grid-column: span 4; }
   .col-5 { grid-column: span 5; }
   .col-6 { grid-column: span 6; }
@@ -365,12 +539,86 @@
   .col-12 { grid-column: span 12; }
 }
 
-/*  The line between the first screen and everything under it. The three
-    modules above the fold are status; this is where analysis starts. */
-.dash__break {
-  border-top: 1px solid var(--line);
-  padding-top: var(--s5);
-  margin-top: var(--s2);
+/*  The getting started card sits above the grid rather than in it, and the
+    holder is what carries the gap under it. :empty, because the card draws
+    nothing at all once the four are done and a margin under nothing is a
+    gap nobody can explain. */
+.dash__onb { margin-bottom: var(--gap-block); }
+.dash__onb:empty { display: none; margin: 0; }
+
+/*  A module title never wraps on the dashboard: every one of them is one or
+    two short words, and what shares the row with them is a control that can
+    scroll or wrap instead. */
+.dash .card__title { white-space: nowrap; }
+/*  And on a phone the control takes its own line rather than squeezing the
+    title into sixteen pixels. Five period chips and a title do not fit
+    across 288 pixels, and the strip is the half that can move. */
+@media (max-width: 699px) {
+  .dash .card__head { flex-wrap: wrap; }
+  /*  min-width: 0, or the row is as wide as its own min-content and shrink
+      never runs: a flex item's automatic minimum is the width of everything
+      inside it, and inside this one is a strip of five chips that is
+      perfectly happy to scroll. At 320 that made the head 337 pixels wide
+      inside a 254 pixel card and the card clipped the difference. */
+  .dash .card__tools { flex: 1 1 100%; min-width: 0; justify-content: space-between; }
+}
+/*  AND THE STRIP SHRINKS BESIDE THE MENU IT SHARES A ROW WITH.
+    .seg carries max-width: 100%, which is 100% of the row and takes no
+    account of the 38px button next to it, so at 320 the pair came to the
+    card's width plus fifty and the card clipped the difference. The strip
+    scrolls its own chips, so giving up width costs it nothing. */
+.dash .card__tools .seg { flex: 0 1 auto; min-width: 0; }
+
+/*  THE DASHBOARD IS ONE SCREEN, AND THE ROWS ARE THE PROOF.
+ *
+ *  Everything else in this product is a page you scroll. This one is not: it
+ *  is the answer to "how am I doing", and an answer you have to scroll to
+ *  read is a report. It used to run 2,665 pixels at 1440 by 900, so two
+ *  thirds of it was never seen by anybody who did not go looking.
+ *
+ *  The height is the window less the header and the two paddings, so the
+ *  last card ends exactly where the window does. The rows then divide it:
+ *  the tiles take the height of their own content, and the two card rows
+ *  share what is left in a fixed ratio, with a floor under each so a short
+ *  window degrades by scrolling rather than by clipping a calendar in half.
+ *
+ *  Only from 1000. A phone stacks and scrolls, and always did. */
+@media (min-width: 1000px) {
+  /*  A DEFINITE HEIGHT, AND THAT IS THE WHOLE TRICK.
+      An `fr` row inside a grid that sizes itself from its content resolves
+      to the content, so min-height alone changed nothing at all: the curve
+      came out 468px tall and the page ran 713px past the bottom of the
+      window. The main column is given the window less the header, the grid
+      is the flex child that takes what is left of it, and the rows then
+      divide a number that is known before the cards are laid out.
+
+      There is no floor on this height and it does not need one: the row
+      floors below are what stop a short window crushing a month into eighty
+      pixels. Where the window cannot hold them the rows keep their minimums
+      and the page scrolls the difference, which is the honest failure and
+      the one the reader can act on. */
+  .main--fit {
+    display: flex;
+    flex-direction: column;
+    height: calc(100svh - var(--apphead-h));
+  }
+  .main--fit .dash { flex: 1 1 auto; min-height: 0; }
+  .dash {
+    min-height: calc(100svh - var(--apphead-h) - var(--gap-block) - var(--s8));
+    /*  minmax(min-content, auto) on the tiles, NOT auto. A definite grid
+        that cannot fit its rows takes the difference out of the auto track,
+        and at 1024 by 800 that squeezed the tile row from 127 to 68 and cut
+        the captions in half. min-content is the row's own wrapped height, so
+        it can no longer be the one that pays: where a window is too short
+        the page scrolls the difference instead. */
+    grid-template-rows: minmax(min-content, auto) minmax(200px, 1fr) minmax(348px, 1.62fr);
+  }
+  /*  THE HEAD GIVES WAY BEFORE THE TITLE DOES. The period strip is five
+      chips and the card is 437px at 1024, which left "Profit curve" 85 of
+      the 95 pixels it needs and broke it over two lines under a control.
+      The strip already scrolls when it has to; it just has to be allowed to
+      be narrower than its content first. */
+  .dash .card__tools { flex: 0 1 auto; min-width: 0; }
 }
 
 /* Single-purpose screens render as a centred column. */
@@ -385,12 +633,20 @@
 .spread { display: flex; align-items: center; justify-content: space-between; gap: var(--s3); }
 .grow { flex: 1 1 auto; min-width: 0; }
 
-/*  The app top bar at 320. Three things compete for the width: who you are,
-    that this is the example account, and the balance. The balance is the
-    one somebody opened the app to see, so it is the one that stays. */
-.topbar__handle { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+/*  The app header at 320. Three things compete for the width: the mark, the
+    greeting and the balance. The balance is the one somebody opened the app
+    to see and the mark is the only way back to the dashboard from the top of
+    the screen, so the greeting is what gives: it truncates by word rather
+    than by ellipsis, because a name with a dot dot dot through it takes the
+    width of a word and carries none of one.
+
+    The Example pill outranks the name at every width. It is the sentence
+    saying the ledger below is not yours. */
 @media (max-width: 379px) {
-  .topbar__handle { display: none; }
+  /*  The greeting is the one that gives. At 320 the bar holds the mark, the
+      Example pill and the balance and there are 36 pixels left over, which
+      is not a name, it is a name with a dot dot dot through it. */
+  .topbar__name { display: none; }
   .hide-xs { display: none; }
 }
 
@@ -414,38 +670,168 @@ a.brk__name {
   a.brk__name { min-height: var(--tap); }
 }
 
-/*  NEEDS YOU, a second nav under the first.
-    The five rows above it are places; these are jobs, and the difference has
-    to be visible or they read as five more places. A label, a hairline and a
-    gap say it once; a heavier treatment would make the jobs shout over the
-    navigation, which is backwards on every page except the one where
-    something is actually wrong. */
-.side__group {
-  display: flex;
-  flex-direction: column;
-  gap: var(--s0);
-  margin-top: var(--s4);
-  padding-top: var(--s4);
-  border-top: 1px solid var(--line);
-}
-.side__grouph {
-  padding: 0 var(--s3) var(--s1);
-  /*  --ink-2, not --ink-3. --ink-3 aliases --t4, which the palette ships as
-      a BORDER weight and never as a text colour, and a test enforces that.
-      A group heading is quiet, not invisible. */
-  color: var(--ink-2);
-}
-/*  The warn tint is on the BADGE, not the row. A row in warn colour reads as
-    broken; a warn count reads as "this many are waiting", which is what it
-    is. The row itself stays a link like any other. */
-.navrow__badge--warn {
-  background: var(--warn-wash);
-  border-color: var(--warn-line);
-  color: var(--warn);
-}
-.navrow--warn .navrow__icon { color: var(--warn); }
-
 /*  Auth headings take the display serif too, which is where the prototype
     puts it (.authh there). A sign-in page is the last marketing surface
     before the app, not the first app screen: it is still selling. */
 .column--narrow h1 { font-family: var(--f-display); font-weight: 700; letter-spacing: -0.012em; }
+
+/* ------------------------------------------------------------- the menu */
+/*  THE PHONE'S MENU, AND THE PRODUCT'S ONLY GLASS SURFACE.
+ *
+ *  ONE backdrop-filter, and the budget is about three per page. A previous
+ *  build shipped 79 and stuttered on a phone. On an app route at 390 the
+ *  three are the top bar, the bottom bar and, only while it is open, the
+ *  panel below: the scrim is a flat colour, the rim is a masked gradient and
+ *  not one row inside the panel carries a filter of its own. Rows drawn as
+ *  their own little glass cards is what the reference shots look like and it
+ *  is what costs seventy nine of them.
+ *
+ *  Both the -webkit- prefixed and the standard backdrop-filter and mask are
+ *  shipped, because iOS Safari is the primary target and it still wants the
+ *  prefix for the mask composite. */
+.topbar__menu { display: inline-grid; }
+@media (min-width: 1000px) { .topbar__menu { display: none; } }
+
+/*  44px OF ELEMENT, NOT 44px OF ::after.
+ *
+ *  .roundbtn is 38px of paint with a `::after { inset: -3px }` growing the
+ *  hit area to 44, and its own comment says so. That was never wrong and it
+ *  was never checked either, because until this button existed NO .roundbtn
+ *  was ever visible on a touch viewport: .topbar__go and .topbar__add both
+ *  live above 1000, where the floor is WCAG 2.5.8's 24px for a mouse. This
+ *  one is the opposite, it exists only below 1000, and the sweep caught it at
+ *  38px on every app route at 320, 390 and 430: 150 findings, all of them
+ *  this control.
+ *
+ *  A pseudo-element does not change the element's own rectangle, so a target
+ *  grown that way is 44px to a thumb and 38px to every measurement, including
+ *  the browser's own hit testing on a scrolled or transformed ancestor. The
+ *  box itself grows here instead, which is what .icobtn and .modmenu__btn
+ *  already do at exactly this breakpoint.
+ *
+ *  The ::after goes with it. At 44px the box is already at the floor, and
+ *  leaving a 50px hit area beside a balance switch is how the wrong control
+ *  fires: the .iconbtn comment records that defect and asks for 16px between
+ *  neighbours, and there is var(--s2) here. */
+@media (max-width: 999px), (pointer: coarse) {
+  .topbar__menu { width: var(--tap); height: var(--tap); }
+  .topbar__menu::after { content: none; }
+}
+
+/*  A button and not a div, because it closes the menu and a thing that does
+    something is a control. It carries no text, so it takes its name from
+    aria-label. */
+.navsheet__scrim {
+  position: fixed;
+  inset: 0;
+  z-index: var(--z-overlay);
+  border: 0;
+  cursor: pointer;
+  background: color-mix(in oklab, #000 46%, transparent);
+}
+
+.navsheet {
+  /*  The stagger's row index. Declared here so the property has a home in a
+      stylesheet and a default when a row forgets to set one; the components
+      set it per row. */
+  --row: 0;
+
+  position: fixed;
+  z-index: var(--z-sheet);
+  left: var(--s3);
+  right: var(--s3);
+  /*  Clear of the tab bar and of the home indicator under it. */
+  bottom: calc(var(--bottombar-h) + env(safe-area-inset-bottom) + var(--s3));
+  /*  svh, never dvh: dvh recalculates when the iOS toolbar shows or hides and
+      an open sheet visibly breathes while somebody is reading it. */
+  max-height: 68svh;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: var(--s4);
+  border-radius: 22px;
+  /*  The refraction. saturate and brightness are what make it read as glass
+      rather than as frosted plastic: the colour of whatever is behind it
+      comes through stronger, not weaker. */
+  background: color-mix(in oklab, var(--card) 52%, transparent);
+  -webkit-backdrop-filter: blur(30px) saturate(190%) brightness(1.14);
+          backdrop-filter: blur(30px) saturate(190%) brightness(1.14);
+  box-shadow: 0 24px 60px -18px color-mix(in oklab, #000 72%, transparent),
+              0 2px 0 0 color-mix(in oklab, #FFF 6%, transparent) inset;
+  outline: none;
+}
+@media (min-width: 700px) {
+  .navsheet { left: auto; right: var(--s4); width: 320px; }
+}
+
+/*  THE EDGE HIGHLIGHT. A one pixel rim that is bright where the light would
+    land and gone where it would not, drawn as a padding box masked out of
+    itself so it is a border and not a fill. Both mask syntaxes ship: iOS
+    Safari needs -webkit-mask-composite: xor where the standard says exclude,
+    and a rim that fills the whole panel white is what happens with one. */
+.navsheet::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  padding: 1px;
+  background: linear-gradient(150deg,
+    color-mix(in oklab, #FFF 46%, transparent),
+    color-mix(in oklab, #FFF 8%, transparent) 34%,
+    transparent 62%,
+    color-mix(in oklab, #FFF 18%, transparent));
+  -webkit-mask-image: linear-gradient(#000 0 0), linear-gradient(#000 0 0);
+          mask-image: linear-gradient(#000 0 0), linear-gradient(#000 0 0);
+  -webkit-mask-clip: content-box, border-box;
+          mask-clip: content-box, border-box;
+  -webkit-mask-composite: xor;
+          mask-composite: exclude;
+  pointer-events: none;
+}
+
+/*  The specular sheen, which is a gradient and not a second filter. */
+.navsheet::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: linear-gradient(155deg,
+    color-mix(in oklab, #FFF 9%, transparent),
+    transparent 46%);
+  pointer-events: none;
+}
+
+.navsheet > * { position: relative; }
+
+.navsheet__head { display: flex; align-items: center; gap: var(--s3); }
+.navsheet__who { display: grid; gap: 2px; min-width: 0; flex: 1 1 auto; }
+.navsheet__name {
+  font-size: var(--t-body);
+  font-weight: var(--w-label);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.navsheet__sub { margin-top: var(--s3); max-width: none; }
+
+.navsheet__group { margin-top: var(--s4); border-top: 1px solid var(--line-2); padding-top: var(--s2); }
+.navsheet__group .label { padding: var(--s2) var(--s2) 0; }
+
+.navsheet__row {
+  display: flex;
+  align-items: center;
+  gap: var(--s3);
+  width: 100%;
+  min-height: var(--tap);
+  padding: 0 var(--s2);
+  border-radius: var(--r-ctl);
+  color: var(--ink);
+  font-size: var(--t-small);
+  font-weight: var(--w-label);
+  text-align: left;
+  text-decoration: none;
+  background: none;
+  border: 0;
+  cursor: pointer;
+}
+.navsheet__row:hover { background: color-mix(in oklab, var(--ink) 8%, transparent); }
+.navsheet__i { color: var(--ink-2); flex: none; }

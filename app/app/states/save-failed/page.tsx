@@ -11,7 +11,7 @@ export const metadata: Metadata = {
 export default function SaveFailed() {
   return (
     <div className="column column--wide">
-      <span className="pill pill--neg">Nothing was written</span>
+      <span className="pill pill--warn">Nothing was written</span>
       <h1 style={{ marginTop: 'var(--s4)' }}>The arithmetic did not add up, so nothing was saved</h1>
       <p className="lead" style={{ marginTop: 'var(--s3)' }}>
         A cash out cannot return more than the bet could ever have returned, so rather than store

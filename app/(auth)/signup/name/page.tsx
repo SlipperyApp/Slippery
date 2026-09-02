@@ -9,6 +9,13 @@ export const metadata: Metadata = {
   robots: { index: false, follow: true },
 };
 
+/*  Rendered per request, and the reason is in components/auth/useDraft.ts:
+    the form is filled from the address, a client hook reading the address on
+    a prerendered page has to sit behind a Suspense boundary, and a boundary
+    around the form means the prerendered HTML is a spinner where the form
+    should be. */
+export const dynamic = 'force-dynamic';
+
 export default function NameStep() {
   return (
     <>

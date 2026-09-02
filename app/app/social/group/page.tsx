@@ -6,7 +6,7 @@ import { EmptySocial, SOCIAL_EXAMPLE_NOTE } from '@/components/app/EmptySocial';
 import {
   YOU, divisionMove, findGroup, groupMembers, groupSummaries, league, slipBackedExcluded,
 } from '@/lib/data/social';
-import { League } from '@/components/app/League';
+import { LeagueBoard } from '@/components/app/LeagueTable';
 import { Podium } from '@/components/app/Podium';
 import { CopyCode } from '@/components/app/CopyCode';
 import { GroupSettings, LeaveGroup } from '@/components/app/GroupControls';
@@ -136,57 +136,75 @@ export default async function GroupPage({
         </span>
       </div>
 
-      <div className="grid">
-        <section className="card col-8">
-          <div className="card__head">
-            <h2 className="card__title">Leaderboard</h2>
-            <p className="card__note">{periodLabel}, units to 1dp</p>
-          </div>
+      {/*  THE BOARD TAKES THE WHOLE ROW AND THE GROUP'S SETTINGS SIT UNDER
+           IT. They were a column of five cards down the right, which at 1920
+           was a 500 pixel stack two thousand pixels tall beside a table that
+           had finished after five rows: the page was mostly the scroll
+           between one fact and the next. What a wide screen has room for
+           beside a table is one row of it, so the right of the board is the
+           pane and the settings are three columns underneath. */}
+      <section className="card col-12" style={{ marginBottom: 'var(--gap-block)' }}>
+        <div className="card__head">
+          <h2 className="card__title">Leaderboard</h2>
+          <p className="card__note">{periodLabel}, units to 1dp</p>
+        </div>
 
-          {members.length <= 1 ? (
-            /*  A table of one is a list of one number. Saying so is better
-                than drawing a podium with two empty plinths beside it. */
-            <p className="small muted" style={{ marginTop: 'var(--s4)' }}>
-              {summary.youOwn
-                ? 'You are the only Slipper in this one. A table starts at two: share the code below and it fills in as they capture slips.'
-                : `${plural(members.length, 'Slipper')} so far. A table starts at two.`}
-            </p>
-          ) : (
-            <>
-              <Podium rows={board} you={YOU} period={periodLabel.toLowerCase()} />
-              <div style={{ marginTop: 'var(--s5)' }}>
-                <League rows={board} you={YOU} showEdits={summary.showEditAudit} showSlipBacked={!summary.slipBackedOnly} />
-              </div>
-            </>
-          )}
-
-          <p className="small dim card__foot">
-            {summary.showEditAudit
-              ? 'A late edit is a settlement entered after the result was known. Counted, not hidden.'
-              : 'Late edits are not shown here. They stay in each Slipper’s own change history.'}
+        {members.length <= 1 ? (
+          /*  A table of one is a list of one number. Saying so is better
+              than drawing a podium with two empty plinths beside it. */
+          <p className="small muted" style={{ marginTop: 'var(--s4)' }}>
+            {summary.youOwn
+              ? 'You are the only Slipper in this one. A table starts at two: share the code below and it fills in as they capture slips.'
+              : `${plural(members.length, 'Slipper')} so far. A table starts at two.`}
           </p>
-        </section>
+        ) : (
+          <>
+            <div>
+              <LeagueBoard
+                rows={board}
+                you={YOU}
+                period={periodLabel.toLowerCase()}
+                podium={<Podium rows={board} you={YOU} period={periodLabel.toLowerCase()} />}
+                showEdits={summary.showEditAudit}
+                showSlipBacked={!summary.slipBackedOnly}
+                now={now.toISOString()}
+                rest={
+                  <div className="dpane dpane--rest">
+                    <h3 className="card__title">Where you are</h3>
+                    {you ? (
+                      <>
+                        <p className="fig" style={{ marginTop: 'var(--s3)' }}>
+                          {fmtPosition(you.position, board.length)}
+                        </p>
+                        <p className="small muted" style={{ marginTop: 'var(--s3)' }}>
+                          {divisionMove(you.position, board.length, summary.division)}
+                        </p>
+                      </>
+                    ) : (
+                      <p className="small muted" style={{ marginTop: 'var(--s3)' }}>
+                        You are not in this group, so there is no position to show. Joining puts
+                        your units in the table from the next bet you capture.
+                      </p>
+                    )}
+                    <p className="small dim" style={{ marginTop: 'var(--s4)' }}>
+                      Press any row and that Slipper opens here.
+                    </p>
+                  </div>
+                }
+              />
+            </div>
+          </>
+        )}
 
+        <p className="small dim card__foot">
+          {summary.showEditAudit
+            ? 'A late edit is a settlement entered after the result was known. Counted, not hidden.'
+            : 'Late edits are not shown here. They stay in each Slipper’s own change history.'}
+        </p>
+      </section>
+
+      <div className="grid">
         <div className="col-4" style={{ display: 'grid', gap: 'var(--s4)', alignContent: 'start' }}>
-          <section className="card">
-            <h2 className="card__title">Where you are</h2>
-            {you ? (
-              <>
-                <p className="fig" style={{ marginTop: 'var(--s3)' }}>
-                  {fmtPosition(you.position, board.length)}
-                </p>
-                <p className="small muted" style={{ marginTop: 'var(--s3)' }}>
-                  {divisionMove(you.position, board.length, summary.division)}
-                </p>
-              </>
-            ) : (
-              <p className="small muted" style={{ marginTop: 'var(--s3)' }}>
-                You are not in this group, so there is no position to show. Joining puts your units
-                in the table from the next bet you capture.
-              </p>
-            )}
-          </section>
-
           <section className="card">
             <h2 className="card__title">What this group asks</h2>
             <ul style={{ marginTop: 'var(--s3)' }}>
@@ -221,6 +239,9 @@ export default async function GroupPage({
             </div>
           </section>
 
+        </div>
+
+        <div className="col-4" style={{ display: 'grid', gap: 'var(--s4)', alignContent: 'start' }}>
           {summary.youOwn ? (
             <GroupSettings id={summary.id} joinMode={summary.joinMode} showEditAudit={summary.showEditAudit} />
           ) : null}
@@ -249,6 +270,9 @@ export default async function GroupPage({
             </div>
           </section>
 
+        </div>
+
+        <div className="col-4" style={{ display: 'grid', gap: 'var(--s4)', alignContent: 'start' }}>
           <section className="card">
             <h2 className="card__title">Other groups</h2>
             <ul style={{ marginTop: 'var(--s3)' }}>

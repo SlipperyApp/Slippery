@@ -3,11 +3,15 @@
 import { useRouter } from 'next/navigation';
 import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
+import { stepHref } from '@/lib/signup-draft';
+import { useDraft } from '@/components/auth/useDraft';
 
 const LEN = 6;
 
-export function VerifyForm({ email }: { email: string }) {
+export function VerifyForm() {
   const router = useRouter();
+  const draft = useDraft();
+  const email = draft.email;
   const [digits, setDigits] = useState<string[]>(Array(LEN).fill(''));
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
@@ -56,12 +60,12 @@ export function VerifyForm({ email }: { email: string }) {
       });
       if (res.status === 429) {
         const b = await res.json().catch(() => ({}));
-        router.push(`/signup/rate-limited?wait=${Number(b.retryAfterSeconds) || 60}&from=verify`);
+        router.push(stepHref('/signup/rate-limited', draft, { wait: String(Number(b.retryAfterSeconds) || 60), from: 'verify' }));
         return;
       }
       const b = await res.json().catch(() => ({}));
       if (!res.ok) { setError(b.message || 'That code did not match. Check it and try again.'); setBusy(false); return; }
-      router.push('/signup/name');
+      router.push(stepHref('/signup/name', draft));
     } catch {
       setError('That did not go through. The code is still valid.');
       setBusy(false);
@@ -117,7 +121,7 @@ export function VerifyForm({ email }: { email: string }) {
         <button type="button" className="btn btn--link" onClick={resend} disabled={cooldown > 0}>
           {cooldown > 0 ? `Send again in ${cooldown}s` : 'Send it again'}
         </button>
-        <Link href="/signup" className="btn btn--link">Change the address</Link>
+        <Link href={stepHref('/signup', draft)} className="btn btn--link">Change the address</Link>
       </div>
     </form>
   );

@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
+import { TRIAL_DAYS } from '@/lib/domain/trial';
 
 /** The one thing to do, kept within thumb reach on a phone.
  *
@@ -13,7 +14,7 @@ import { useEffect, useState } from 'react';
  *  Phones only. On a desktop the header is always visible and already carries
  *  it. It sits above the safe area, and it adds bottom padding to the page so
  *  it can never cover the last line of the footer. */
-export function StickyCta({ href = '/signup', label = 'Start free for 14 days' }: { href?: string; label?: string }) {
+export function StickyCta({ href = '/signup', label = `Start free for ${TRIAL_DAYS} days` }: { href?: string; label?: string }) {
   const [show, setShow] = useState(false);
 
   useEffect(() => {

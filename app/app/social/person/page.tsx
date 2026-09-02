@@ -39,7 +39,13 @@ export default async function PersonPage({
         </Link>
       </div>
 
-      <div className="column column--wide" style={{ marginInline: 0 }}>
+      {/*  CENTRED, NOT PINNED LEFT. This is a single purpose screen and it is
+           held to 860 pixels because a profile is a reading width, but the
+           inline margin was zeroed, so at 1920 the whole page sat against the
+           left edge with eight hundred pixels of nothing beside it, which
+           reads as a layout that failed to fill rather than as a column
+           somebody chose. .column already centres itself. */}
+      <div className="column column--wide">
         <div className="card">
           <div className="row" style={{ gap: 'var(--s4)', alignItems: 'flex-start' }}>
             <span className="avatar avatar--lg" aria-hidden="true">{initials(person.name)}</span>

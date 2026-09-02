@@ -23,6 +23,7 @@ import type { Movement } from '@/lib/domain/movements';
 import type { Bet, BetLeg, BetState, EventType, SettlementEvent } from '@/lib/domain/types';
 import { DEFAULT_TZ } from '@/lib/format';
 import { TRIAL_DAYS, TRIAL_SLIPS } from '@/lib/domain/trial';
+import { readTheme } from '@/lib/themes';
 
 /*  A bet with a very long history is still one bet, but a whole book at once
  *  is the read behind every screen in the product, so it is bounded. Two
@@ -107,7 +108,11 @@ function toAccount(r: AccountRow, now: Date): DemoData['account'] {
     showProfitIn: (['currency', 'units', 'both'].includes(r.show_profit_in)
       ? r.show_profit_in : 'both') as DemoData['account']['showProfitIn'],
     calendarDates: r.calendar_dates !== false,
-    theme: r.theme || 'carbon',
+    /*  Through readTheme, because the column is free text with a default and
+        nothing constrains it: a theme that has been renamed since the row was
+        written went out as data-theme='liquid', matched no block in the
+        stylesheet, and left the page on the :root fallback. */
+    theme: readTheme(r.theme),
     linkCode: r.link_code ?? '',
     telegramLinked: Boolean(r.telegram_linked),
     /*  Five plan states in the column, three the product renders. past_due is

@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { Icon } from '@/components/Icon';
 import { EXAMPLE_READ } from '@/lib/data/read';
 import { ReviewSlip } from '@/components/app/ReviewSlip';
+import { getViewer } from '@/lib/data/session';
 
 export const metadata: Metadata = {
   title: 'Check what was read',
@@ -10,7 +11,12 @@ export const metadata: Metadata = {
 };
 
 /** The confirm screen every Slipper meets after every slip. */
-export default function Review() {
+export default async function Review() {
+  /*  The balances come from the server rather than the flow, because the flow
+      holds what was READ and this is a question about the account. The one
+      that is open is where the slip lands, and the screen has to say so
+      before the write rather than after it. */
+  const { balances, balance } = await getViewer();
   return (
     <>
       <div className="row" style={{ marginBottom: 'var(--gap-block)' }}>
@@ -27,7 +33,12 @@ export default function Review() {
       </p>
 
       <div style={{ marginTop: 'var(--s5)' }}>
-        <ReviewSlip fallback={EXAMPLE_READ} />
+        <ReviewSlip
+          fallback={EXAMPLE_READ}
+          balances={balances.map((b) => ({ id: b.id, name: b.name, currency: b.currency }))}
+          balanceId={balance.id}
+          unitMinor={balance.unitMinor}
+        />
       </div>
     </>
   );

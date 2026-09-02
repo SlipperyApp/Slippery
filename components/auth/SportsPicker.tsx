@@ -4,14 +4,20 @@ import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import { Icon } from '@/components/Icon';
 import { SPORTS, BOOKMAKER_GROUPS } from '@/lib/data/reference';
+import { keepAnswers, stepHref } from '@/lib/signup-draft';
+import { useDraft } from '@/components/auth/useDraft';
 
 export function SportsPicker() {
   const router = useRouter();
-  const [sports, setSports] = useState<string[]>(['football']);
-  const [books, setBooks] = useState<string[]>(['bet365']);
+  const draft = useDraft();
+  /*  null is "not answered yet" and an empty array is "answered, none of
+      them", and the two must not be confused: somebody who unticked every
+      sport on purpose has to find them all unticked when they step back. */
+  const [sports, setSports] = useState<string[]>(draft.sports ?? ['football']);
+  const [books, setBooks] = useState<string[]>(draft.bookmakers ?? ['bet365']);
   const [openGroups, setOpenGroups] = useState<string[]>(['Other']);
   const [customName, setCustomName] = useState('');
-  const [customs, setCustoms] = useState<string[]>([]);
+  const [customs, setCustoms] = useState<string[]>(draft.customBookmakers);
   const [busy, setBusy] = useState(false);
 
   const toggle = (list: string[], set: (v: string[]) => void, id: string) =>
@@ -31,7 +37,9 @@ export function SportsPicker() {
       method: 'POST', headers: { 'content-type': 'application/json' },
       body: JSON.stringify({ sports, bookmakers: books, customBookmakers: customs }),
     }).catch(() => null);
-    router.push('/signup/plan');
+    const answered = { ...draft, sports, bookmakers: books, customBookmakers: customs };
+    keepAnswers('/signup/sports', answered);
+    router.push(stepHref('/signup/plan', answered));
   }
 
   return (

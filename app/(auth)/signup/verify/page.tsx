@@ -4,6 +4,7 @@ import { Steps } from '@/components/auth/Steps';
 import { VerifyForm } from '@/components/auth/VerifyForm';
 import { Icon } from '@/components/Icon';
 import { canSendEmail } from '@/lib/server/mail';
+import { readDraft } from '@/lib/signup-draft';
 
 export const metadata: Metadata = {
   title: 'Check your email',
@@ -27,7 +28,8 @@ export default async function Verify({
   searchParams,
 }: { searchParams: Promise<Record<string, string | string[] | undefined>> }) {
   const sp = await searchParams;
-  const email = typeof sp.email === 'string' ? sp.email : '';
+  const draft = readDraft(sp);
+  const email = draft.email;
   const sending = canSendEmail();
 
   return (
@@ -64,7 +66,7 @@ export default async function Verify({
       )}
 
       <div style={{ marginTop: 'var(--s6)' }}>
-        <VerifyForm email={email} />
+        <VerifyForm />
       </div>
     </>
   );

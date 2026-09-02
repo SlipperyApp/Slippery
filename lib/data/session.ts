@@ -13,7 +13,7 @@ import { attention } from '@/lib/data/attention';
 import { demoData, type DemoData } from './demo';
 import { trialState, type TrialState } from '@/lib/domain/trial';
 import type { OnboardingSignals } from '@/lib/domain/onboarding';
-import { THEME_COOKIE, isTheme } from '@/lib/themes';
+import { THEME_COOKIE, themeWasChosen } from '@/lib/themes';
 import { balance } from './analytics';
 import { inBalance, resolveBalance, type Balance } from '@/lib/domain/balances';
 import { emptyBook, newAccountFacts, viewerSource, type ViewerSource } from './viewer';
@@ -76,6 +76,19 @@ export const STATE_COOKIE = 'slip_state';
  *  you, and it has to survive every link on the site the way the theme does.
  *  Never localStorage: iOS Safari is the primary target. */
 export const BALANCE_COOKIE = 'slip_balance';
+
+/** Which balance the browser says is open, straight off the cookie.
+ *
+ *  It sits here with the other cookie readers rather than beside the queries
+ *  in lib/server/balances.ts, so that module stays free of next/headers and
+ *  the seed and the resolution can be tested as rules against a fake. The
+ *  value is NEVER trusted as an id: every function that takes it matches it
+ *  against the account's own rows and falls to the first balance otherwise,
+ *  which is the whole authorisation check. */
+export async function openBalanceId(): Promise<string | null> {
+  const jar = await cookies();
+  return jar.get(BALANCE_COOKIE)?.value ?? null;
+}
 
 /** Read the display preferences a signed-out visitor may still have set.
  *  Cookies, never localStorage: iOS Safari is the primary target. */
@@ -182,8 +195,18 @@ export async function getViewer(): Promise<Viewer> {
       proposals: att.proposals,
       asks: att.asks,
     },
+    /*  The same fold the ledger's exposure rail reads, so the rail's footer
+        and that card cannot disagree about what is on the table. */
+    atRiskMinor: att.openStakePence,
+    openBets: att.openCount,
     readOnly,
     demo: source === 'example',
+    /*  WHETHER THE RAIL OFFERS A WAY OUT. The example account is a signed-out
+        visitor, so a sign out on it would post a session nobody has to
+        /api/auth/logout. Read off `source` rather than off `demo`, which has
+        two values where the viewer has three: a signed-in account with an
+        empty book is not the example account and does need the control. */
+    signedIn: source !== 'example',
   };
 
   /*  A THEME IS PICKED WHEN THE COOKIE SAYS SO, not when the account has a
@@ -196,7 +219,11 @@ export async function getViewer(): Promise<Viewer> {
     telegramLinked: data.account.telegramLinked,
     hasBet: data.bets.length > 0,
     unitSet: data.account.unitPence > 0,
-    themeSet: isTheme(themeCookie ? decodeURIComponent(themeCookie) : ''),
+    /*  themeWasChosen and not isTheme, because a theme that has been RENAMED
+        was still chosen by the person who chose it. Against isTheme, an
+        account holding the old name failed the check and the getting started
+        list grew a row telling them to pick a theme they had already picked. */
+    themeSet: themeWasChosen(themeCookie ? decodeURIComponent(themeCookie) : ''),
   };
 
   return {

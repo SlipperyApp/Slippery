@@ -28,7 +28,7 @@ export function EmptyDashboard({
     <>
       <h1>Dashboard</h1>
       <p className="muted" style={{ marginTop: 'var(--s2)', maxWidth: '62ch' }}>
-        {reason} Every module is here. They fill in as bets do.
+        {reason} Every module is here and fills in as bets do.
       </p>
 
       <div className="grid" style={{ marginTop: 'var(--s5)' }}>

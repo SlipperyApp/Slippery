@@ -26,8 +26,8 @@ export default function Themes() {
           <span>Pick one and this page changes.</span>
         </h1>
         <p className="sect__p">
-          Not a gallery of screenshots. Every card below applies its theme to the page you are
-          reading, including this sentence, the header and the footer.
+          Not a gallery of screenshots. Every chip below applies its theme to the page you are
+          reading.
         </p>
 
         <ThemeStrip />

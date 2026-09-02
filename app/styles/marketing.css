@@ -87,43 +87,23 @@
 .hero--mid .hero__cta { justify-content: center; }
 .hero__fine { margin-top: var(--s4); }
 
-/*  A browser window around the product. Chrome, so aria-hidden, and what is
-    inside is the working component rather than a picture of one. */
-.frame {
-  width: 100%;
-  max-width: 940px;
-  margin-top: var(--s8);
-  border-radius: var(--r-card);
-  border: 1px solid var(--line);
-  background: color-mix(in oklab, var(--surface) 70%, transparent);
-  overflow: hidden;
-  text-align: left;
-  box-shadow: 0 40px 90px -40px rgb(0 0 0 / 0.75);
-}
-.frame__bar {
-  --frame-dot: 9px;
-  display: flex;
-  align-items: center;
-  gap: var(--s1h);
-  padding: 0 var(--s4);
-  height: 40px;
-  border-bottom: 1px solid var(--line);
-  background: color-mix(in oklab, var(--surface-2) 70%, transparent);
-}
-.frame__dot { width: var(--frame-dot); height: var(--frame-dot); border-radius: 50%; background: var(--line-2); flex: none; }
-.frame__url {
-  margin-inline: auto;
-  font-family: var(--f-mono);
-  font-size: var(--t-micro);
-  color: var(--ink-2);
-  /*  Balances the three dots on the left so the label sits in the middle,
-      computed from the dots rather than guessed at: three of them, two gaps.
-      The literal 45 was already wrong by four pixels and nothing could say
-      so, because nothing tied it to what it was balancing. */
-  padding-right: calc(3 * var(--frame-dot) + 2 * var(--s1h));
-}
-.frame__body { padding: var(--s4); }
-@media (min-width: 700px) { .frame__body { padding: var(--s5); } }
+/*  THE PRODUCT UNDER THE HEADLINE, AND NOTHING PRETENDING TO BE A BROWSER.
+    This was a window: a 40px bar carrying three grey dots and slippery.app
+    in mono, above a padded box that held the demo. Three dots and an
+    address bar are the most recognisable template element on the web, and
+    on the page a stranger sees first that is the whole cost of them. They
+    were also a claim about what sits under them that is not true: the thing
+    inside is a settlement widget somebody can press through six outcomes,
+    not a page served at that address, and a real browser bar around it
+    invites the reading that it is a picture.
+
+    Taking the window also took a box. The demo's own root is a card, so the
+    frame was a second card drawn a few pixels outside the first, which is
+    the doubled container this page spent a pass removing everywhere else.
+    What is left is the lift and nothing else: the width the demo wants, the
+    space above it, and the shadow that separates it from the wave field. */
+.herolift { width: 100%; max-width: 940px; margin-top: var(--s8); text-align: left; }
+.herolift > .card { box-shadow: 0 40px 90px -40px rgb(0 0 0 / 0.75); }
 
 /*  THE SERIF, and the numbers around it change with it.
     A high contrast serif at 76px does not want the -0.035em a grotesk

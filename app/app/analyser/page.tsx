@@ -49,14 +49,18 @@ export default async function AnalyserPage({
 
       <ScopeBar scope={scope} />
 
-      <div className="card" style={{ marginBottom: 'var(--gap-block)' }}>
-        <p className="small muted">
-          {axisLabel(axis)}
-          {axis2 ? <> crossed with <strong>{axisLabel(axis2).toLowerCase()}</strong></> : null}
-          , over {plural(tab.total.bets, 'bet')} in {bal.name} · {scopeLabel(scope)}. Press any
-          column to sort by it.
-        </p>
-      </div>
+      {/*  NOT IN A CARD. Every small paragraph in this product is held to 54
+           characters, so a page wide card around one sentence is a border
+           round a third of a line and, at 1920, thirteen hundred pixels of
+           framed nothing between the scope bar and the table. What this line
+           says is which selection the table below is drawn from, which is a
+           caption on the table rather than a module of its own. */}
+      <p className="small muted" style={{ margin: 'var(--s4) 0 var(--gap-block)' }}>
+        {axisLabel(axis)}
+        {axis2 ? <> crossed with <strong>{axisLabel(axis2).toLowerCase()}</strong></> : null}
+        , over {plural(tab.total.bets, 'bet')} in {bal.name} · {scopeLabel(scope)}. Press any
+        column to sort by it.
+      </p>
 
       <div className="card">
         {tab.total.bets === 0 ? (

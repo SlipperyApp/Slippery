@@ -31,6 +31,17 @@ function getPool(): Pool {
   return pool;
 }
 
+/** The smallest thing a server module needs: something that runs a statement.
+ *
+ *  A PoolClient satisfies it, `pooled` below satisfies it, and so does a fake,
+ *  which is how the rules that matter get tested as rules rather than as
+ *  queries. It lives here rather than in each module so that a function
+ *  written for a transaction can be handed the pool without a second type
+ *  saying the same thing in a different file. */
+export type Runner = {
+  query<R = Record<string, unknown>>(text: string, params?: unknown[]): Promise<{ rows: R[] }>;
+};
+
 export async function query<T extends QueryResultRow = QueryResultRow>(
   text: string,
   params: unknown[] = [],

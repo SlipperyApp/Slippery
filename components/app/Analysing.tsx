@@ -136,7 +136,7 @@ export function Analysing() {
   if (failure) {
     return (
       <div className="card">
-        <span className="pill pill--neg">{failure.tag}</span>
+        <span className="pill pill--warn">{failure.tag}</span>
         <h2 className="card__title" style={{ marginTop: 'var(--s3)' }}>{failure.title}</h2>
         <p className="small muted" style={{ marginTop: 'var(--s2)' }} role="alert">
           {failure.detail ? `${failure.detail} ` : ''}{failure.message}

@@ -106,6 +106,34 @@ export function summariseClosing(bets: Priced[]): ClosingSummary {
   };
 }
 
+/** The average against the close AS IT ARRIVED AT ITSELF: one point per bet
+ *  that carries a price, each the mean of every price up to it, in the order
+ *  the caller passes them.
+ *
+ *  Not the per bet value. A single bet is plus or minus twenty per cent
+ *  against its close and a line of those is a comb: it says how volatile
+ *  prices are, which nobody asked, and hides whether the account is
+ *  consistently ahead of them, which is the whole question. The last point of
+ *  this line is the figure printed beside it, which is the property that
+ *  makes the shape and the number the same claim.
+ *
+ *  Bets with no closing price are skipped, not zeroed, exactly as in
+ *  summariseClosing: a zero would say the prices matched on a bet where
+ *  nobody ever looked. */
+export function closingRunning(bets: Priced[]): number[] {
+  const out: number[] = [];
+  let sum = 0;
+  let n = 0;
+  for (const b of bets) {
+    const v = closingValuePct(b);
+    if (v === null) continue;
+    sum += v;
+    n += 1;
+    out.push(sum / n);
+  }
+  return out;
+}
+
 /*  closingCoverage() was here. It wrote "79 of 259 bets carry a closing price
     you recorded" for the module's footer, next to a figure reading 79 of 259
     under the label "Bets with a price recorded". The coverage is a figure,

@@ -43,11 +43,6 @@ export function SplitHeadline() {
           </p>
         </div>
       )}
-
-      <p className="small muted card__foot">
-        Turnover and return exclude voided stakes. A free bet stake is excluded from turnover and
-        is not returned.
-      </p>
     </div>
   );
 }

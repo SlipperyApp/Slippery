@@ -1,11 +1,15 @@
 /** The Slippery wordmark, inlined so it takes the theme colour.
  *
- *  TWO TONE, LIKE THE MARK. The word is drawn twice and the second copy is
- *  cut by the same diagonal the icon uses, so SLI is ink and PPERY is the
- *  accent. This carried style={{'--s': 'currentColor'}}, which set the
- *  accent copy to the ink colour: both halves the same, the diagonal
- *  invisible, and the wordmark shipping as a plain mono word next to a
- *  two tone icon. The brand pack draws it two tone; so does this.
+ *  TWO TONE, LIKE THE MARK, AND BY THE SAME MEANS. One outline, drawn twice,
+ *  once in ink and once in the accent, with the accent copy cut by a rotated
+ *  clip path. It is a diagonal across the word and not a split between
+ *  letters: the cut runs through the first P, so SLI and most of that P are
+ *  ink and the rest of the word is the accent. Do not re split it per letter.
+ *
+ *  This carried style={{'--s': 'currentColor'}}, which set the accent copy to
+ *  the ink colour: both halves the same, the diagonal invisible, and the
+ *  wordmark shipping as a plain mono word next to a two tone icon. The brand
+ *  pack draws it two tone; so does this.
  *
  *  NO CLIPPATH ID, for the reason the mark gives: an id is a document wide
  *  name and this appears in a header and a footer on the same page. The cut

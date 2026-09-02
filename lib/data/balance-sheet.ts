@@ -131,6 +131,9 @@ export function balanceSheet(
   return { lines, perCurrency, counted: lines.reduce((a, l) => a + l.bets, 0) };
 }
 
-/** The word for a currency in a sentence, because "GBP" is a code and this
- *  is prose. */
-export const CURRENCY_WORD: Record<Currency, string> = { GBP: 'pounds', EUR: 'euro' };
+/*  The word for a currency in a sentence lives in lib/format.ts with every
+    other rendering of money, and is re-exported here because this page took
+    it from here first. It moved when the entry forms and the bot started
+    naming the currency a balance is kept in: a client component should not
+    pull the whole balance sheet in to print the word "euro". */
+export { CURRENCY_WORD } from '@/lib/format';

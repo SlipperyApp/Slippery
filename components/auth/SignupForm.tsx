@@ -4,7 +4,10 @@ import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import Link from 'next/link';
 import { Icon } from '@/components/Icon';
+import { GoogleMark } from '@/components/auth/GoogleMark';
 import { isEmail, PASSWORD_RULES, passwordOk } from '@/lib/server/codes';
+import { keepAnswers, stepHref } from '@/lib/signup-draft';
+import { useDraft } from '@/components/auth/useDraft';
 
 /** Step one. Email, password with live rule ticks, 18+ and terms, and Google
  *  BELOW the divider.
@@ -15,7 +18,12 @@ import { isEmail, PASSWORD_RULES, passwordOk } from '@/lib/server/codes';
  *  without the other turns every icon button into a submit. */
 export function SignupForm() {
   const router = useRouter();
-  const [email, setEmail] = useState('');
+  const draft = useDraft();
+  /*  The address comes off the URL, so somebody who walked back here from a
+      later step finds it still typed. The PASSWORD never rides in a URL and
+      is therefore the one field a back button cannot restore, which is the
+      correct trade and is why the rule ticks below start unmet again. */
+  const [email, setEmail] = useState(draft.email);
   const [password, setPassword] = useState('');
   const [show, setShow] = useState(false);
   const [age, setAge] = useState(false);
@@ -46,7 +54,7 @@ export function SignupForm() {
       if (res.status === 429) {
         const body = await res.json().catch(() => ({}));
         const secs = Number(body.retryAfterSeconds) || 60;
-        router.push(`/signup/rate-limited?wait=${secs}&from=signup`);
+        router.push(stepHref('/signup/rate-limited', { ...draft, email }, { wait: String(secs), from: 'signup' }));
         return;
       }
       const body = await res.json().catch(() => ({}));
@@ -55,7 +63,8 @@ export function SignupForm() {
         setBusy(false);
         return;
       }
-      router.push(`/signup/verify?email=${encodeURIComponent(email)}`);
+      keepAnswers('/signup', { ...draft, email });
+      router.push(stepHref('/signup/verify', { ...draft, email }));
     } catch {
       setError('That did not go through. Nothing was created.');
       setBusy(false);
@@ -138,8 +147,8 @@ export function SignupForm() {
         <span className="hr" style={{ flex: 1, margin: 0 }} />
       </div>
 
-      <a href="/api/auth/google" className="btn btn--ghost btn--wide">
-        <Icon name="google" size={18} /> Continue with Google
+      <a href="/api/auth/google" className="btn btn--ghost btn--wide gbtn">
+        <GoogleMark /> Continue with Google
       </a>
       <p className="small dim" style={{ marginTop: 'var(--s3)' }}>
         Google still asks you to confirm you are 18 or over before an account is created.

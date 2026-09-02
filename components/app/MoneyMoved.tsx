@@ -80,7 +80,9 @@ export function MoneyMoved({
           move that figure and nothing else: they are not in your return, your turnover, your win
           rate or any other figure about your betting.
         </p>
-        <div style={{ marginTop: 'var(--s3)' }}><RecordMovement /></div>
+        <div style={{ marginTop: 'var(--s3)' }}>
+          <RecordMovement balanceName={balanceName ?? 'this balance'} currency={currency} />
+        </div>
       </div>
     </section>
   );

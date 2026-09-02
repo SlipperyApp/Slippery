@@ -2,9 +2,10 @@ import { NextResponse } from 'next/server';
 import type { PoolClient } from 'pg';
 import {
   verifySecret, botReady, sendMessage, sendChatAction, answerCallbackQuery,
-  callbackData, PREFIX, REPLIES,
+  callbackData, balanceReply, PREFIX, REPLIES,
 } from '@/lib/server/telegram';
 import { hasDatabase, pooled, query, transaction } from '@/lib/server/db';
+import { listBalances } from '@/lib/server/balances';
 import { isLinkCode, normaliseLinkCode } from '@/lib/server/codes';
 import {
   LINK_CODE_TTL_MINUTES,
@@ -70,7 +71,7 @@ export async function POST(req: Request) {
  *  code belongs to: the chat that sent a guess is not entitled to know whose
  *  guess it nearly was. */
 const LINK_REPLY: Record<Exclude<RedeemResult['status'], 'needs_confirmation' | 'too_many'>, string> = {
-  linked: `${PREFIX.linked} yes\nForward a slip the moment you place it. /help lists the commands.`,
+  linked: `${PREFIX.linked} yes\nForward a slip the moment you place it. /balance says which balance one from here is filed in, and /help lists the commands.`,
   already_linked: `${PREFIX.linked} yes\nThis chat is already on that account. Nothing changed and the code is unspent.`,
   unknown: REPLIES.badCode,
   expired: `That code has expired. They last ${LINK_CODE_TTL_MINUTES} minutes. Issue another in the app under Add a bet.`,
@@ -118,10 +119,18 @@ async function handle(update: Update): Promise<void> {
     const [action, key] = String(cq.data ?? '').split(':', 2);
     try {
       if (action === 'confirm' && chatId) {
-        const already = await confirmPending(key ?? '');
-        await sendMessage(chatId, already
-          ? 'Already saved. Nothing was written twice.'
-          : `${PREFIX.tracking} saved. /open shows what is running.`);
+        /*  THE CONFIRM REPLY NAMES THE BALANCE. It said "saved" and stopped,
+            on an account that may keep three sets of books, so the one thing
+            somebody needed to know about a bet filed without being asked was
+            the one thing the bot did not say. It also said "already saved" to
+            a key that names nothing at all, which is two different answers
+            collapsed into the wrong one. */
+        const done = await confirmPending(key ?? '');
+        await sendMessage(chatId, done.state === 'missing'
+          ? 'That slip is no longer waiting to be confirmed. Nothing was written.'
+          : done.state === 'already'
+            ? `Already saved${done.balanceName ? ` in ${done.balanceName}` : ''}. Nothing was written twice.`
+            : `${PREFIX.tracking} saved${done.balanceName ? ` in ${done.balanceName}` : ''}. /open shows what is running.`);
       } else if (action === 'edit' && chatId) {
         await sendMessage(chatId, 'Open it in the app to change a field before it is saved.');
       } else if (action === 'tglink' && chatId && typeof pressedBy === 'number') {
@@ -201,9 +210,19 @@ async function handle(update: Update): Promise<void> {
   switch (command) {
     case '/start':
       await sendMessage(chatId, link
-        ? `${PREFIX.linked} yes\nForward a slip when you place it. /help lists the commands.`
+        ? `${PREFIX.linked} yes\nForward a slip when you place it. /balance says where one from here is filed, and /help lists the commands.`
         : REPLIES.askForCode);
       return;
+    /*  WHICH BALANCE A BET FROM THIS CHAT IS FILED IN. Every entry path in
+        the app asks; a chat cannot be asked, so it files into the first
+        balance and this is where that is said. The answer is a query against
+        the linked account's own rows rather than a sentence in a table. */
+    case '/balance': {
+      if (!link) { await sendMessage(chatId, REPLIES.askForCode); return; }
+      const balances = await listBalances(link.accountId);
+      await sendMessage(chatId, balanceReply(balances));
+      return;
+    }
     case '/stop': {
       if (!link) { await sendMessage(chatId, REPLIES.askForCode); return; }
       const removed = await write((client) => unlinkChat(client, { chatId }));
@@ -250,11 +269,35 @@ async function write<T>(fn: (client: PoolClient) => Promise<T>): Promise<T | nul
   return transaction(fn).catch(() => null);
 }
 
-async function confirmPending(key: string): Promise<boolean> {
-  if (!hasDatabase() || !key) return false;
-  const rows = await query<{ confirmed_at: string | null }>(
+type Confirmed = { state: 'saved' | 'already' | 'missing'; balanceName: string | null };
+
+/** Confirm a waiting read, and say which balance it belongs to.
+ *
+ *  Three answers, not two. `returning` after a guarded update yields a row
+ *  only when this call was the one that confirmed it, so a second press is
+ *  answered honestly; a key that names no row at all is a different thing
+ *  again and used to be reported as "already saved", which sends somebody to
+ *  look for a bet that was never there.
+ *
+ *  The balance is the account's first, which is what a chat files into,
+ *  looked up from the pending read's own account rather than from the chat:
+ *  a group chat can be linked, and the account on the row is the one whose
+ *  ledger this lands in. */
+async function confirmPending(key: string): Promise<Confirmed> {
+  if (!hasDatabase() || !key) return { state: 'missing', balanceName: null };
+  const found = await query<{ account_id: string | null; confirmed_at: string | null }>(
+    'select account_id, confirmed_at from pending_reads where id = $1',
+    [key],
+  ).catch(() => []);
+  if (!found.length) return { state: 'missing', balanceName: null };
+
+  const accountId = found[0].account_id;
+  const balanceName = accountId ? (await listBalances(accountId))[0]?.name ?? null : null;
+  if (found[0].confirmed_at) return { state: 'already', balanceName };
+
+  const rows = await query<{ confirmed_at: string }>(
     'update pending_reads set confirmed_at = now() where id = $1 and confirmed_at is null returning confirmed_at',
     [key],
   ).catch(() => []);
-  return rows.length === 0;
+  return { state: rows.length ? 'saved' : 'already', balanceName };
 }

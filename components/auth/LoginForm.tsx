@@ -3,6 +3,7 @@
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import { Icon } from '@/components/Icon';
+import { GoogleMark } from '@/components/auth/GoogleMark';
 import { isEmail } from '@/lib/server/codes';
 
 export function LoginForm({
@@ -135,8 +136,8 @@ export function LoginForm({
         <span className="hr" style={{ flex: 1, margin: 0 }} />
       </div>
 
-      <a href="/api/auth/google" className="btn btn--ghost btn--wide">
-        <Icon name="google" size={18} /> Continue with Google
+      <a href="/api/auth/google" className="btn btn--ghost btn--wide gbtn">
+        <GoogleMark /> Continue with Google
       </a>
     </form>
   );

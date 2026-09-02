@@ -23,6 +23,11 @@ export type Currency = 'GBP' | 'EUR';
 
 export const CURRENCY_SYMBOL: Record<Currency, string> = { GBP: '£', EUR: '€' };
 
+/** The word for a currency in a sentence, because "GBP" is a code and this
+ *  is prose. A form that asks which balance a bet lands in has to say what
+ *  the stake will be denominated in, and it says it in words. */
+export const CURRENCY_WORD: Record<Currency, string> = { GBP: 'pounds', EUR: 'euro' };
+
 /** Money is integer minor units plus a currency code. Never a float, and
  *  never two currencies summed into one net figure. */
 export function money(minor: number, currency: Currency = 'GBP', opts: { sign?: boolean; symbol?: boolean } = {}): string {

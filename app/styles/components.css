@@ -158,6 +158,28 @@
 .btn--sm { min-height: 36px; padding: 0 var(--s3); font-size: var(--t-small); }
 .btn--wide { width: 100%; }
 
+/*  THE GOOGLE BUTTON. The mark is the only thing in this product that does
+    not take the theme, because Google's guidelines say the logo may not be
+    recoloured, and all eight themes are dark: the blue arm of the G measures
+    2.0:1 on ink. So it gets a white chip, which is the arrangement Google's
+    own dark button uses, and the mark is legible in every theme without
+    being touched. The chip is a fixed white on purpose and is the one place
+    outside the theme blocks where that is correct.
+
+    The label is centred over the whole button rather than beside the chip,
+    which is what every sign in button on this page does; the chip is pulled
+    to the left edge so the two buttons in the column still line up. */
+.gbtn { position: relative; }
+.gbtn__chip {
+  display: inline-grid;
+  place-items: center;
+  flex: none;
+  width: 26px;
+  height: 26px;
+  border-radius: var(--r-sm);
+  background: #FFFFFF;
+}
+
 /* An icon-only control still has to clear 44px. Where the hit area is grown
    with an inset pseudo-element, neighbours need a 16px gap or the wrong one
    fires. */
@@ -206,6 +228,14 @@
   border-color: color-mix(in oklab, var(--p) 34%, transparent);
   color: var(--s);
 }
+/*  THESE TWO ARE FOR MONEY AND FOR AN OUTCOME, AND FOR NOTHING ELSE.
+    Ten pills were painted in them that were neither: 429, 500, UNREADABLE,
+    Late, Read only, Attempt 1 of 2, Nothing was written, No connection, a
+    reader's failure tag, and Written in the profit colour meaning a stage
+    finished. That is DECISIONS.md's "green means read cleanly, red means
+    field missing" back again, on the screens where red already means a card
+    was declined. They take .pill--warn and .pill--accent, which existed for
+    exactly this and were already carrying WAITING and TREBLE. */
 .pill--pos { background: var(--pos-wash); border-color: var(--pos-line); color: var(--pos); }
 .pill--neg { background: var(--neg-wash); border-color: var(--neg-line); color: var(--neg); }
 .pill--lg { height: 28px; font-size: var(--t-small); text-transform: none; letter-spacing: 0; }
@@ -455,18 +485,43 @@ select.scopebar__sel {
 
     Four backgrounds, no JavaScript. The two `local` gradients travel with the
     content and cover the shadows when you reach an end, so the shadow is
-    present exactly when there is more to see. */
+    present exactly when there is more to see.
+
+    AND STILL NOBODY COULD SEE THEM. --bg is #0C0E13 and --surface is
+    #14171F, so a shadow painted in --bg over a card is a difference of two
+    hundredths of a unit of lightness; the same is true of all eight themes,
+    because all eight are dark. At 390 the analyser still cut "116" dead
+    against the edge and still read as broken. A shadow is the wrong idea on
+    a dark ground: there is no light for it to take away. These four stay as
+    the resting state and the fade below is what actually says it. */
 .scroller {
   overflow-x: auto;
   -webkit-overflow-scrolling: touch;
   background:
     linear-gradient(to right, var(--surface), transparent) left center,
     linear-gradient(to left, var(--surface), transparent) right center,
-    radial-gradient(farthest-side at 0 50%, color-mix(in oklab, var(--bg) 55%, transparent), transparent) left center,
-    radial-gradient(farthest-side at 100% 50%, color-mix(in oklab, var(--bg) 55%, transparent), transparent) right center;
+    radial-gradient(farthest-side at 0 50%, color-mix(in oklab, var(--bg) 92%, transparent), transparent) left center,
+    radial-gradient(farthest-side at 100% 50%, color-mix(in oklab, var(--bg) 92%, transparent), transparent) right center;
   background-repeat: no-repeat;
-  background-size: 34px 100%, 34px 100%, 16px 100%, 16px 100%;
+  background-size: 34px 100%, 34px 100%, 26px 100%, 26px 100%;
   background-attachment: local, local, scroll, scroll;
+}
+/*  THE CONTENT DISSOLVES INTO THE EDGE IT CARRIES ON PAST.
+    Set by a scroller that has measured itself, so it is on the frame
+    exactly while there is something beyond it and off the moment the last
+    column arrives. The class name was free.
+
+    A mask rather than a pseudo element, because ::after inside an overflow
+    box is positioned against the CONTENT and scrolls away with the third
+    column; a mask is resolved against the border box and stays where the
+    frame is, which the scrolled screenshot confirms.
+
+    RIGHT ONLY. The left edge of this table is the sticky column that says
+    which row you are reading, and fading the one thing that was made to
+    stay put would undo the reason it sticks. */
+.scroller--r {
+  -webkit-mask-image: linear-gradient(to right, #000 calc(100% - 52px), transparent);
+  mask-image: linear-gradient(to right, #000 calc(100% - 52px), transparent);
 }
 /*  Room for the columns rather than crushing them. Below this the table
     scrolls, which is what the shadows are for. */
@@ -560,6 +615,18 @@ select.scopebar__sel {
 }
 .xtab thead .xtab__h { text-transform: uppercase; letter-spacing: var(--tr-micro); font-size: var(--t-micro); font-weight: var(--w-label); }
 .xtab thead .num .xtab__h { justify-content: flex-end; width: 100%; }
+/*  A TWO WORD HEADING TAKES TWO LINES RATHER THAN 44 PIXELS OF THE TABLE.
+    `.tbl th` is nowrap, which is right for a five column table and wrong
+    here: it held WIN RATE and AVERAGE PRICE on one line each, which made the
+    natural width of the table 1154px inside the 1110px it has at 1440, and
+    the last heading read "AVERAGE PRI" against the edge with the whole
+    column of prices beyond it. Two words over two lines is the cheapest
+    44 pixels in the build, and the table then fits the screen the demo
+    happens on. It still scrolls when it has to: a cross tab is wider than
+    any screen and the shadows below are what say so. */
+.xtab thead th { white-space: normal; }
+.xtab thead .xtab__h { align-items: flex-end; text-align: left; }
+.xtab thead .num .xtab__h { text-align: right; }
 .xtab__h:hover { color: var(--ink); }
 .xtab__sort { flex: none; color: var(--ink); }
 /*  The unsorted columns' marks are quieter by COLOUR rather than by opacity.
@@ -567,6 +634,34 @@ select.scopebar__sel {
     right to: a faded glyph lands at whatever contrast the theme happens to
     give it, while --ink-2 is a colour somebody chose and checked. */
 .xtab__sort--off { color: var(--ink-2); }
+/*  A ROW IS A CONTROL, from the width where there is a pane for it to open
+    into. Under that the handler is not attached at all, so a row on a phone
+    is a row and nothing about it suggests otherwise. */
+/*  The button around the group's name, styled to look like the text it
+    replaces: which of the two is drawn depends on whether there is a pane,
+    and nobody should be able to see the swap. */
+.xtab__open {
+  display: block;
+  width: 100%;
+  padding: 0;
+  border: 0;
+  background: none;
+  font: inherit;
+  color: inherit;
+  text-align: left;
+}
+@media (min-width: 1740px) {
+  /*  The pointer belongs to the name, and to nothing else. A hand over
+      eleven columns of figures is a hand over eleven things that are not
+      controls. */
+  button.xtab__open { cursor: pointer; }
+  .xtab__r:hover td, .xtab__r:hover .xtab__stick { background: var(--surface-2); }
+  .xtab__r--on td { background: color-mix(in oklab, var(--accent) 12%, var(--surface)); }
+  .xtab__r--on .xtab__stick {
+    background: color-mix(in oklab, var(--accent) 12%, var(--surface));
+    box-shadow: inset 2px 0 0 var(--accent);
+  }
+}
 .xtab tfoot th, .xtab tfoot td {
   border-top: 2px solid var(--line-2);
   font-weight: var(--w-fig);
@@ -577,27 +672,6 @@ select.scopebar__sel {
 /*  The box takes a price and nothing else, so it is sized for one: a full
     width input for "2.90" invites a sentence. */
 .clv__in { width: 8ch; min-width: 8ch; }
-/*  Four figures across the module rather than three in a row and a third of
-    the card empty. Two columns on a phone, four where there is room.
-
-    A HAIRLINE BETWEEN THEM at the width where the module is the widest thing
-    on the page. Four figures spread across 1152px with nothing between them
-    read as four things that happen to be near each other; a divided strip
-    reads as one measurement in four parts, which is what it is. The rule is
-    an inset shadow rather than a border so the first column needs no
-    override, the same way the ledger's summary strip does it. */
-.clvmod {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: var(--s5) var(--s6);
-  align-content: start;
-}
-@media (min-width: 700px) {
-  .clvmod { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 0; }
-  .clvmod > * { padding-inline: var(--s5); }
-  .clvmod > :first-child { padding-left: 0; }
-  .clvmod > * + * { box-shadow: inset 1px 0 0 var(--line2); }
-}
 .clv .field { margin-bottom: 0; }
 
 /* ----------------------------------------------------------- balance sheet */
@@ -626,12 +700,34 @@ select.scopebar__sel {
   white-space: normal;
 }
 .bsheet__name { min-width: 132px; max-width: 216px; }
+/*  THE NAME COLUMN STAYS PUT, the way the analyser's does and for the same
+    reason: seven money columns do not fit a phone, so the table scrolls, and
+    the first thing to leave the screen was the only column that says which
+    balance a row of figures belongs to.
+
+    ONLY WHILE THERE IS SOMETHING TO SCROLL. A sticky cell has to paint its
+    own ground or the figures slide under it, and a painted ground on a table
+    that fits is a lighter block down the first column of an otherwise flat
+    card: at 1920 it read as a highlight on a column nobody had selected. The
+    component measures whether the table is over its frame and puts the class
+    on, which is the same measurement that draws the fade at the right edge.
+
+    The ground is the card's own, mixed rather than taken from --surface
+    straight: .card paints 88% surface over the page, so a cell filled with
+    the token itself is visibly lighter than the card it sits in. */
+.bsheet--stuck th.bsheet__name {
+  position: sticky;
+  left: 0;
+  z-index: var(--z-content);
+  background: color-mix(in oklab, var(--surface) 88%, var(--bg));
+  box-shadow: inset -1px 0 0 var(--line);
+}
 /*  A figure never wraps. Squeezed to fit beside a wrapping name column,
     "+£2,631.37" broke after the plus and printed the sign on its own line,
     which reads as two cells. The table scrolls; the number does not. */
 .bsheet td.num { white-space: nowrap; }
 .bsheet__sub { display: block; margin-top: 2px; font-weight: 400; }
-.bsheet__name .pill { margin-left: var(--s2); vertical-align: middle; }
+.bsheet__nm .pill { margin-left: var(--s2); vertical-align: middle; }
 .bsheet tfoot th, .bsheet tfoot td {
   border-top: 2px solid var(--line-2);
   font-weight: var(--w-fig);
@@ -641,8 +737,90 @@ select.scopebar__sel {
 .bsheet tfoot th { text-align: left; }
 /*  The balance being read, marked in its own sheet. Without it the page is
     seven rows of figures with nothing saying which of them the rest of the
-    product is currently showing you. */
+    product is currently showing you. The sticky cell needs the mark spelled
+    out separately: it paints its own ground, so the row's background stops
+    at the second column. */
 .bsheet__here td, .bsheet__here th { background: var(--surface-2); }
+.bsheet--stuck .bsheet__here th.bsheet__name { background: var(--surface-2); }
+
+/*  A ROW IS A CONTROL. The whole row opens the balance for a mouse and the
+    button in the name cell does it for a keyboard, which is the shape the
+    ledger's table already uses: one action, two ways in, and no second tab
+    stop per row.
+
+    THE POINTER IS ON THE BUTTON AND NOT ON THE ROW. A hand cursor over a
+    line of figures that are not themselves controls is the defect this
+    codebase fixed once already, across two hundred and sixty eight
+    elements. The row says it is pressable by shading under the pointer. */
+.bsheet__r:hover td, .bsheet__r:hover th.bsheet__name { background: var(--surface-2); }
+.bsheet__r--on td, .bsheet__r--on th.bsheet__name {
+  background: color-mix(in oklab, var(--accent) 12%, var(--surface));
+}
+.bsheet__r--on th.bsheet__name { box-shadow: inset 2px 0 0 var(--accent); }
+.bsheet__open {
+  display: block;
+  width: 100%;
+  padding: 0;
+  border: 0;
+  background: none;
+  font: inherit;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.bsheet__nm { display: block; font-weight: 600; }
+/*  --ink-3 on the SVG rather than on the cell: it is the border token and
+    never a text colour, and a rule that paints a cell in it cannot know the
+    only thing in the cell is a chevron. */
+.bsheet__go { width: 1%; }
+.bsheet__go svg { display: inline-block; vertical-align: middle; color: var(--ink-3); }
+
+/* ------------------------------------------------------- change history */
+/*  The time under the date rather than beside it: a settlement is a moment
+    and the day alone does not identify one when four of them land on the
+    same afternoon. */
+.hist__time { display: block; font-size: var(--t-micro); }
+/*  The fixture truncates rather than holding the table open. It is the
+    longest thing on the row and the only one that can afford an ellipsis. */
+.hist__fix { max-width: 260px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+/* -------------------------------------------------- a row with a middle */
+/*  THE SHAPE THIS BRANCH KEEPS FINDING. A list row is a name on the left and
+    a figure on the right, which is exactly right at 390 and, in a card that
+    is 800 pixels wide, six hundred pixels of nothing between two things that
+    belong to each other. The fix is never to move the figure: a column of
+    right aligned figures is what makes a list scannable. It is to put
+    something true in the middle.
+
+    The middle cell is drawn from 1000 up and from nowhere else, so a phone
+    row is the row it always was, and every list that uses this has to supply
+    a fact rather than a spacer. */
+.wrow__mid { display: none; }
+/*  The narrow shapes, written here rather than inline on each list, because
+    an inline grid-template-columns beats a media query and the middle cell
+    would have had nowhere to go.
+
+    TWO CLASSES, for the third time on this branch. `.wrow` on its own is
+    exactly as specific as `.brow`, which is defined further down this file,
+    so the modifier lost and every list that took it drew the middle cell on
+    a line of its own with the figure under that. A modifier has to beat the
+    thing it modifies, and in CSS that is not a matter of writing it after. */
+.brow.wrow--av { grid-template-columns: 30px minmax(0, 1fr) auto; }
+.brow.wrow--go { grid-template-columns: minmax(0, 1fr) auto auto; }
+@media (min-width: 1000px) {
+  .brow.wrow { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) auto; }
+  .brow.wrow--av { grid-template-columns: 30px minmax(0, 1fr) minmax(0, 1fr) auto; }
+  .brow.wrow--go { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) auto auto; }
+  .wrow__mid {
+    display: block;
+    min-width: 0;
+    font-size: var(--t-small);
+    color: var(--ink-2);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+}
 
 /* -------------------------------------------------------------------- rows */
 .brow {
@@ -714,69 +892,149 @@ select.scopebar__sel {
 .brow--faded .meter__fill { opacity: 0.45; }
 .brow--faded .brow__title { color: var(--ink-2); }
 
-/* ---------------------------------------------------------------- net hero */
-/*  The figure the dashboard exists to show, at the top, at size, carrying the
-    scope for everything under it. A separate scope strip above the grid said
-    the same thing twice. */
-.hero-net { gap: 0; }
-.hero-net__head { display: flex; align-items: flex-start; justify-content: space-between; gap: var(--s3); }
-.hero-net__tools { display: flex; align-items: center; gap: var(--s0); flex: none; }
-.hero-net__fig {
-  font-family: var(--f-mono);
-  font-size: clamp(34px, 6vw, 52px);
-  font-weight: 600;
-  line-height: 1.02;
-  letter-spacing: -0.045em;
-  margin-top: var(--s1);
-  font-variant-numeric: tabular-nums;
+/* ------------------------------------------------------------- dash tiles */
+/*  THE FOUR FIGURES AT THE TOP OF THE DASHBOARD.
+ *
+ *  They replaced a hero card 234 pixels tall that carried one figure at 52px,
+ *  three small ones beside it and the scope bar. Four figures now stand in
+ *  less height than the one did, each with the line that got it there.
+ *
+ *  ONE OF THEM IS FILLED. The accent marks the figure the product is about,
+ *  and it is the only filled tile there will ever be: two would be two
+ *  answers to "which of these is the one", which is the failure the record's
+ *  eight peer figures were deleted for. */
+.tile {
+  padding: var(--s4);
+  gap: var(--s2);
+  justify-content: center;
+  /*  Sized against ITS OWN width, not the window's. Four tiles across a
+      1024 window are 200px each and four across a 1440 window are 303, and
+      the figure inside them is the same figure. */
+  container-type: inline-size;
 }
-.hero-net__stats {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--s3) var(--s6);
-  margin-top: var(--s4);
-  list-style: none;
-  padding: 0;
+@media (min-width: 700px) { .tile { padding: var(--s4) var(--s5); } }
+.tile__row { display: flex; align-items: center; justify-content: space-between; gap: var(--s3); }
+/*  A FIGURE NEVER WRAPS. At 1024 "+£2,631.37" broke across two lines as
+    "+£2,63" over "1.37", which is not a number that is hard to read, it is a
+    different number. */
+.tile__v { min-width: 0; white-space: nowrap; }
+.tile__sub { color: var(--ink-2); }
+/*  The line gives up its width before the figure does, and below 236px of
+    tile it goes entirely. That is the calendar's rule for the amount in a
+    narrow cell, for the same reason: a shape squeezed to nothing is not a
+    smaller shape, and the figure beside it is the thing somebody came for. */
+.tile__spark { flex: 0 1 78px; min-width: 44px; height: 26px; }
+.tile__spark .rspark { width: 100%; }
+@container (max-width: 236px) {
+  .tile__spark { display: none; }
 }
-.hero-net__stats li { display: flex; align-items: baseline; gap: var(--s2); font-size: var(--t-small); }
-.hero-net__stats .label { font-size: var(--t-micro); }
+/*  AND UNDER 160 THE FIGURE COMES DOWN A STEP. Two tiles across a 320px
+    phone leaves each of them 104 pixels of content box, and "+£2,631.37" at
+    24px is 130 of them: the card clipped the last digit, so the number read
+    as +£2,631.3, which is not a harder number to read, it is a different
+    one. --t-fig-s is the next size on the scale, not a size somebody chose
+    to make this fit. */
+@container (max-width: 160px) {
+  .tile__v { font-size: var(--t-fig-s); line-height: var(--lh-fig-s); }
+}
+/*  A running turnover is not a profit and a count of bets is not a profit,
+    so neither draws in the profit colour. --ink-2, which is a text colour
+    that clears 4.5:1 on every ground and is therefore far past the 3:1 a
+    graphical object is held to. */
+.tile__spark--ink { color: var(--ink-2); }
 
-/*  The target bar takes the theme accent, not a third semantic colour.
-    Profit green and loss red mean a RESULT; distance to a target is not a
-    result, and a second green on the same card meaning something else is
-    worse than no colour at all. */
-.hero-net__target { margin-top: var(--s5); }
-.hero-net__targetline { display: flex; justify-content: space-between; gap: var(--s3); margin-bottom: var(--s1h); }
-.hero-net__pctv { color: var(--s); font-weight: var(--w-fig); }
-.hero-net__bar {
-  display: block;
-  height: 7px;
-  border-radius: var(--r-pill);
-  background: var(--surface-3);
+.tile--on {
+  background:
+    linear-gradient(to bottom,
+      color-mix(in oklab, var(--ink) 12%, transparent) 0%,
+      transparent 46%),
+    var(--accent);
+  border-color: transparent;
+  color: var(--accent-ink);
+}
+/*  EVERY WORD ON THE FILLED TILE IS --accent-ink, and none of them is faded
+    to suggest hierarchy. That pair is the one contrast the palette test
+    guarantees at 4.5:1 in all eight themes, and a label at 70% of it is a
+    measurement nothing checks. The separation is size and weight, which is
+    how the rest of the product does it anyway. */
+.tile--on .label,
+.tile--on .tile__sub,
+.tile--on .tile__v { color: var(--accent-ink); }
+.tile--on .tile__spark { color: var(--accent-ink); }
+
+/* -------------------------------------------------------- the sub metrics */
+/*  A value and the signed percentage that belongs to it, under the chart
+    card's own head. Two of them: what the curve came to, and how much of it
+    was one day. */
+.submets { display: flex; flex-wrap: wrap; gap: var(--s2) var(--s6); margin-bottom: var(--s2); }
+.submet__row { display: flex; align-items: center; gap: var(--s2); margin-top: var(--s1); }
+
+/* -------------------------------------------------------------- the dial */
+.radial {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--s3);
+  flex: 1 1 auto;
+  min-height: 0;
+}
+.radial__dial { position: relative; width: 100%; max-width: 188px; }
+.radial__svg { width: 100%; height: auto; overflow: visible; }
+.radial__track { fill: none; stroke: var(--surface-3); stroke-width: 11; stroke-linecap: round; }
+/*  The accent, because a win rate is not money. Green here would put the
+    profit colour on a figure that says nothing about profit: a 70% strike
+    rate at odds-on is a losing account. */
+.radial__fill { fill: none; stroke: var(--accent); stroke-width: 11; stroke-linecap: round; }
+.radial__v { position: absolute; left: 0; right: 0; bottom: 0; text-align: center; }
+.radial__cap { text-align: center; }
+
+/* ---------------------------------------------------------- month by month */
+/*  ONE LINE A MONTH. The list row this product uses everywhere else is a
+    title with a caption under it at 62px tall, and five of those is 310px
+    inside a card that has 176. A month, its bet count and its net are three
+    short things that read across one line. */
+.mlist {
+  display: flex;
+  flex-direction: column;
+  /*  Measured against its own width: this card is 263px at 1440 and 164 at
+      1024, and the row inside it is the same row. */
+  container-type: inline-size;
+}
+.mlist__row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--s3);
+  padding: var(--s1h) 0;
+  border-top: 1px solid var(--line);
+}
+.mlist__row:first-child { border-top: 0; }
+/*  One line, and it truncates rather than wrapping: two of these wrapping
+    is a fifth row the card has no height for, and the card clips rather
+    than growing. */
+.mlist__k {
+  font-weight: var(--w-label);
+  font-size: var(--t-small);
+  min-width: 0;
+  white-space: nowrap;
   overflow: hidden;
+  text-overflow: ellipsis;
 }
-.hero-net__barfill {
-  display: block;
-  height: 100%;
-  border-radius: var(--r-pill);
-  background: var(--accent);
-  animation: bar-grow 620ms var(--ease-out) both;
-}
-/*  From 1180 the stats and the scope share one row: on a desktop there is
-    width for both, and stacking them cost the calendar the fold. Below that
-    they stack, which is what a phone needs anyway. */
-.hero-net .scopebar { margin-top: var(--s4); padding: 0; border: 0; background: none; }
-.hero-net__note { margin-top: var(--s2); }
-@media (min-width: 1180px) {
-  .hero-net__row {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: var(--s6);
-    flex-wrap: wrap;
-  }
-  .hero-net__row .hero-net__stats { margin-top: var(--s3); }
-  .hero-net__row .scopebar { margin-top: var(--s3); }
+.mlist__row .fig { white-space: nowrap; }
+.mlist__n { color: var(--ink-2); font-weight: var(--w-body); }
+/*  THE COUNT IS THE HALF THAT GOES. At 1024 the list is 164 pixels wide and
+    "Aug 2026 40 bets" beside a money figure wants 200, so the key truncated
+    and took the year with it: "Aug 2..." is a row that has lost the one
+    thing that tells it apart from the row under it. Dropping the count keeps
+    the month, the year and the figure whole. */
+@container (max-width: 200px) {
+  .mlist__n { display: none; }
+  /*  And the figure comes down with it. "+£1,601.25" at 18px is 110 of the
+      164 pixels this card has at 1024, which leaves 54 for a month and a
+      year and truncates them to "Aug 2...": a row that has lost the one
+      thing telling it apart from the row under it. */
+  .mlist__row .fig { font-size: var(--t-small); line-height: var(--lh-small); }
 }
 
 /* -------------------------------------------------------------- share card */
@@ -847,6 +1105,42 @@ select.scopebar__sel {
     The name is the only elastic column. Everything else is fixed, so the
     figures line up down the module however long the labels are, which is the
     thing that makes a list of numbers scannable. */
+/*  TWO LISTS, FROM 1280.
+    The grid exists at that width whether or not the second list has mounted,
+    so the first column is laid out at its final width on the first paint and
+    nothing reflows when the browser answers how wide the window is. */
+.brk__two {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--gap-grid);
+  /*  The module is one row of a dashboard sized to the window, so the list
+      inside it has to be allowed to be shorter than its own content and
+      scroll. Without min-height:0 a grid child takes its content height and
+      the card clips the last two bookmakers with nothing on screen to say
+      it has. */
+  flex: 1 1 auto;
+  min-height: 0;
+}
+.brk__col { display: flex; flex-direction: column; min-height: 0; }
+/*  The dimension strip does not shrink. It is a flex item in a column that
+    is being asked to fit a fixed height, so without this it gave up its own
+    height first and the chips were cut in half across the top of the list. */
+.brk__col > .seg { flex: none; }
+.brk__scroll { flex: 1 1 auto; min-height: 0; overflow-y: auto; scrollbar-width: thin; }
+/*  1840 AND NOT 1280, and TWO_AT in components/app/Breakdown.tsx carries the
+    same number for the same reason: this draws the columns and that decides
+    whether a second list exists to go in one, so a window between the two
+    thresholds would lay out a half width column with nothing beside it.
+    Which is exactly what 1280 here did once the module stopped being twelve
+    columns wide. */
+@media (min-width: 1840px) {
+  .brk__two { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--s7); }
+  /*  A rule between them rather than a gap alone. Two lists of names and
+      figures side by side with air between them read as one table with a
+      hole in it, and the eye carries a figure across from the wrong row. */
+  .brk__two > * + * { padding-left: var(--s7); box-shadow: inset 1px 0 0 var(--line2); }
+}
+.brk__col { min-width: 0; }
 .brk { display: block; }
 .brk__row {
   display: grid;
@@ -1098,6 +1392,10 @@ select.scopebar__sel {
 }
 
 /* ------------------------------------------------------------------- steps */
+/*  The way back out of a signup step. It is pulled left by its own padding so
+    the word lines up with the heading under it rather than sitting a button's
+    worth of air in from the edge. */
+.steps__back { margin-left: calc(var(--s3) * -1); }
 .steps { display: flex; gap: var(--s1h); align-items: center; }
 .steps__pip { height: 3px; flex: 1 1 0; border-radius: var(--r-pill); background: var(--surface-3); }
 .steps__pip--on { background: var(--accent); }
@@ -1143,6 +1441,11 @@ select.scopebar__sel {
     to be read as one. It is a minimum and not a size: inside a card that
     does give a height the rows still stretch to fill it. */
 .cal { grid-template-rows: auto repeat(var(--cal-rows, 6), minmax(40px, 1fr)); }
+/*  AND WHERE THE CARD HAS ONE, THE CARD WINS. See the `fit` prop: the floor
+    above is for a calendar in a box with no height, and on the dashboard the
+    box has one. 34, because the cell still has to hold an eleven pixel
+    figure over an eleven pixel date with a pixel between them. */
+.cal--fit { grid-template-rows: auto repeat(var(--cal-rows, 6), minmax(34px, 1fr)); }
 .calwrap { display: flex; flex-direction: column; flex: 1 1 auto; min-height: 0; }
 
 /*  Month nav on the left, what-each-day-shows on the right. They wrap onto
@@ -1156,7 +1459,13 @@ select.scopebar__sel {
   flex-wrap: wrap;
   margin-bottom: var(--s3);
 }
-.cal__nav { display: inline-flex; align-items: center; gap: var(--s0); }
+/*  IT WRAPS. The caption beside the arrows is nowrap, correctly, and this
+    row was not, so at 320 the nav wanted 316 pixels inside the 254 it has
+    and the card clipped the end of "Last month with bets" against its own
+    edge. The month and its two arrows keep the first line and the caption
+    takes the second, which is where a caption belongs when the thing it
+    captions has used the width. */
+.cal__nav { display: inline-flex; align-items: center; flex-wrap: wrap; gap: var(--s0); }
 .cal__month {
   font-size: var(--t-micro);
   font-weight: var(--w-label);
@@ -1475,23 +1784,6 @@ select.scopebar__sel {
  *  The gap between the tiers is what does the separating, and the last tier
  *  takes margin-top: auto so the module's fixed height is spent between the
  *  groups rather than left as a lake under all of them. */
-.record {
-  display: flex;
-  flex-direction: column;
-  gap: var(--s5);
-  flex: 1;
-  min-height: 0;
-}
-/*  auto-fit rather than a column count per breakpoint. This module is five
-    of twelve columns, so its width runs from about 270px at 1000 to 660 at
-    1920, and writing that out as three media queries is three numbers that
-    have to be kept in step with one. */
-.record__three {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(104px, 1fr));
-  gap: var(--s4) var(--s5);
-}
-.record__rows { margin-top: auto; }
 
 /*  Open positions at the top of the ledger. It is a card rather than a
     Module because the ledger has no module grid: it is a page of rows with
@@ -1514,6 +1806,50 @@ select.scopebar__sel {
 .risk__fig .fig { margin-top: var(--s0); }
 .risk__fig .small { margin-top: var(--s1); }
 
+/*  THE EXPOSURE BESIDE THE POSITIONS FROM 1000. Both class names were free.
+    At 1920 this card is 1620 wide and every open bet in it read as a name at
+    the left edge and a return at the right, which is the same defect the
+    ledger table was written to end and it was still on the screen directly
+    above that table. The figures take a rail and the bets take a column, so
+    the money on a row is beside the bet on it. Under 1000 there is no grid
+    and the figures sit above the list, which is right on a phone. */
+@media (min-width: 1000px) {
+  .runnow__body {
+    display: grid;
+    grid-template-columns: minmax(200px, 260px) minmax(0, 1fr);
+    gap: var(--s6);
+    align-items: start;
+  }
+  /*  AND THE THREE GROUPS ACROSS IT, not stacked down the left of it. A
+      single file of rows in a 1300 pixel column is the thousand pixel eye
+      movement all over again, the name at one edge and the return at the
+      other, and it was directly above the table written to end exactly
+      that. Waiting, Running and Not started are three different facts about
+      three different kinds of waiting, so a wide screen shows all three at
+      once and each row is narrow enough that the money is beside the bet it
+      belongs to. Two columns at 1024, three from about 1300. */
+  .runnow__lists {
+    min-width: 0;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+    gap: var(--s5) var(--s6);
+    align-items: start;
+  }
+  .runnow__grp { min-width: 0; }
+  /*  Each group starts at the top of its own column, so the first heading
+      in each one has nothing above it to be spaced from. */
+  .runnow__grp .runnow__h { margin-top: 0; }
+  .runnow__more { grid-column: 1 / -1; }
+  .risk {
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--s5);
+    padding: 0 var(--s5) 0 0;
+    margin: 0;
+    border-bottom: 0;
+    border-right: 1px solid var(--line);
+  }
+}
+
 .runnow ul { list-style: none; margin: 0; padding: 0; }
 .runnow__h {
   display: flex;
@@ -1524,6 +1860,7 @@ select.scopebar__sel {
 .runnow__h:first-of-type { margin-top: 0; }
 .runnow__hi { color: var(--warn); flex: none; }
 .runnow__note { margin: 0 0 var(--s2); max-width: 62ch; }
+.runnow__more { margin-top: var(--s2); }
 
 /*  ONE STRIP, NOT FOUR CARDS.
  *
@@ -1596,7 +1933,13 @@ p.statgrid__foot {
     short card is not short, it is a tall card with a hole under its content.
     This is the one place in the product where that hole was two hundred and
     fifty pixels. */
-.profile__figs { gap: var(--s7); margin-top: auto; padding-top: var(--s6); }
+/*  THE FIGURES ARE NOT PINNED TO THE FOOT ANY MORE. This card sits beside a
+    form card six months tall and a grid row takes its tallest, so the
+    figures were pushed to the bottom and two hundred and fifty pixels of
+    empty card sat between the name and them. A hole is a hole wherever it is
+    put; what closes it is the rest of the account's own record, which is
+    under them now. */
+.profile__figs { margin-top: var(--s6); padding-top: var(--s5); border-top: 1px solid var(--line); }
 
 /* --------------------------------------------------------------- nav list */
 /*  A COLUMN OF ROWS THAT PICK A PANE, on one surface.
@@ -1683,62 +2026,11 @@ p.statgrid__foot {
     and never for "you lost". */
 .pill--warn { background: var(--warn-wash); border-color: var(--warn-line); color: var(--warn); }
 
-/*  Where the profit came from, as a proportion rather than as a division the
-    reader has to do. The fill is --gold, not --pos: money from an offer is
-    not a better result than money from your own stake, it is a different
-    KIND of money, and painting it in the profit colour would say the wrong
-    thing about it. */
-.split__bar {
-  display: block;
-  height: 6px;
-  border-radius: var(--r-pill);
-  background: var(--surface-3);
-  overflow: hidden;
-}
-/*  --accent, not --gold. tokens.css declares --gold as a NEW marker "and
-    nothing else", 0.120 from --warn in oklab so the two do not read as one,
-    and this bar is neither new nor a warning: it is a proportion, which is
-    what the solid accent is for ("buttons, bars, active states"). */
-.split__fill {
-  display: block;
-  height: 100%;
-  border-radius: var(--r-pill);
-  background: var(--accent);
-}
-.split__say { margin-top: var(--s2); max-width: 44ch; }
-
-/*  OFFERS VERSUS OWN, AS A STRIP ACROSS THE PAGE.
- *
- *  It was four columns of a twelve column grid, 367 by 408, holding two
- *  figures and a bar: roughly 140px of measured nothing between them,
- *  because the row it sat in took its height from the profit curve beside it
- *  and every card in a grid row stretches to the tallest. Nothing below the
- *  fold is a pair any more. The two figures and the reading of them sit
- *  across one row and the module is as tall as they are.
- *
- *  The bar column is wider than the figures because it carries the sentence,
- *  and a sentence in a 300px column beside two 24px figures wraps to five
- *  lines and sets the height of the strip. */
-.offsplit { display: grid; gap: var(--s5); }
-@media (min-width: 900px) {
-  .offsplit {
-    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1.6fr);
-    gap: var(--s7);
-    align-items: center;
-  }
-}
-.offsplit__read { min-width: 0; }
-
 /*  A chart that fills its module rather than sitting in the top third of it.
     The height comes from the box, so the box has to have one: flex:1 inside
     the module's own column, and min-height:0 so a flex child is allowed to
     be shorter than its content wants. */
 .chartbox--fill { flex: 1 1 auto; min-height: 0; }
-
-/*  The offer split sits at the FOOT of its module. It is the conclusion the
-    two figures above it lead to, and a conclusion belongs under the thing it
-    concludes rather than floating in the middle of the space left over. */
-.split { margin-top: auto; padding-top: var(--s5); }
 
 /*  The conditions on a set of figures, at the foot of the set. heldOut and
     the imported-history caveat are not statistics, they are the terms the
@@ -1863,7 +2155,44 @@ p.statgrid__foot {
   color: var(--accent-2);
 }
 
+/* -------------------------------------------------------- a strip of figures */
+/*  N FIGURES ACROSS, DIVIDED, wherever a screen leads with a handful of them.
+    Three of these existed as three different pieces of markup and one of them
+    had no rule at all: the Slips page named a class on its wrapper, nothing
+    was ever written for it, and its three headline figures stacked in a
+    column down the left with thirteen hundred pixels of nothing beside them
+    at 1920. That is the defect the gallery's own comment warns about, a class
+    reserved against nothing, on the page that exists to prove the slip
+    reader.
+
+    A divided strip rather than figures with air between them, the way the
+    closing price module does it: figures spread across a page with nothing
+    between them read as things that happen to be near each other rather than
+    as one measurement in parts. */
+.figstrip {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--s5);
+}
+@media (min-width: 700px) {
+  .figstrip { grid-template-columns: repeat(var(--figs, 3), minmax(0, 1fr)); gap: 0; }
+  .figstrip > * { padding-inline: var(--s5); }
+  .figstrip > :first-child { padding-left: 0; }
+  .figstrip > * + * { box-shadow: inset 1px 0 0 var(--line2); }
+}
+
 /* ----------------------------------------------------------- slip gallery */
+.slipstats { margin-bottom: var(--gap-block); }
+
+/*  The pane's own copy of the lightbox body. A pane is about 340px wide, so
+    the slip cannot sit beside the bet inside it: it sits above.
+
+    Two classes, because the two column rule for .lbox__body lives in a media
+    query further down the file and a single-class modifier would lose to it
+    at exactly the widths the pane exists at. */
+.lbox__body.lbox__body--stacked { grid-template-columns: minmax(0, 1fr); gap: var(--s4); }
+.lbox__body--stacked .lbox__img { min-height: 150px; }
+
 
 /*  A grid of slips, sized so a phone shows two across and a desktop shows
     six. auto-fill rather than a fixed column count, because the number of
@@ -1891,6 +2220,14 @@ p.statgrid__foot {
   transition: border-color var(--dur-fast) var(--ease), transform var(--dur-fast) var(--ease);
 }
 .gal__tile:hover { border-color: var(--accent); }
+/*  THE TILE THE PANE IS SHOWING. A grid of ninety tiles with one of them
+    open beside it has to say which one, or the pane is a slip from nowhere.
+    A border rather than a wash, because the tile carries a photograph on a
+    real account and a tint over it would change the picture. */
+.gal__tile[aria-current='true'] {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 1px var(--accent);
+}
 /*  Transform only. Nothing here animates a width, a height or a position. */
 .gal__tile:active { transform: scale(0.985); }
 
@@ -1966,7 +2303,46 @@ p.statgrid__foot {
   line-clamp: 2;
   overflow: hidden;
 }
+/*  The fixture under the selection. A tile carrying "Roma" and nothing else
+    is a tile that could be any of four bets in the record; the match is what
+    tells one slip from another. One line, clipped, because a tile is a
+    thumbnail of a record rather than the record. */
+.gal__ev {
+  font-size: var(--t-micro);
+  line-height: var(--lh-micro);
+  color: var(--ink-2);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
 .gal__price { font-size: var(--t-micro); color: var(--ink-2); margin-top: auto; }
+
+/*  THE THREE FIGURES ABOVE THE GRID. What this page can prove, as figures,
+    where a paragraph used to make three claims about a file that is never
+    written. Same strip treatment as the ledger's summary: a grid says these
+    are peers, and a hairline between them says they are one measurement in
+    parts rather than three separate boxes. */
+.galsum {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 0;
+  margin-bottom: var(--gap-block);
+  border: 1px solid var(--line2);
+  border-radius: var(--r-card);
+  background: color-mix(in oklab, var(--surface) 72%, transparent);
+  box-shadow: inset 0 1px 0 color-mix(in oklab, var(--ink) 7%, transparent);
+  overflow: hidden;
+}
+.galsum > * { padding: var(--s4) var(--s5); min-width: 0; }
+.galsum .fig { margin-top: var(--s1); white-space: nowrap; }
+.galsum .small { margin-top: var(--s1); }
+@media (min-width: 760px) {
+  .galsum { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .galsum > * + * { box-shadow: inset 1px 0 0 var(--line2); }
+}
+@media (max-width: 759px) {
+  .galsum > * + * { box-shadow: inset 0 1px 0 var(--line2); }
+}
 
 .gal__state {
   display: flex;
@@ -1990,6 +2366,12 @@ p.statgrid__foot {
     quiet ink as the rest of the strip rather than as a caution. --ink-3 is a
     border token and is never a text colour. */
 .gal__state--unstored { color: var(--ink-2); }
+
+/*  A slip that reached the record after the event started takes the warn
+    colour and not the loss colour. Loss red means money in this product, and
+    a late capture cost nobody anything: it is a bet that cannot count as a
+    prediction, which is the same rule the social feed's gate applies. */
+.gal__state--late { color: var(--warn); }
 .gal__statet { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .gal__days { font-weight: var(--w-body); flex: none; letter-spacing: 0; }
 
@@ -2139,6 +2521,270 @@ p.statgrid__foot {
   border-radius: var(--r-sm);
 }
 
+/*  The name, when pressing it opens the pane rather than leaving for the
+    profile. A button reset: it has to look exactly like the link it replaces,
+    because which of the two is drawn depends on whether there is a pane and
+    nobody should be able to see the swap. */
+.lgt__open {
+  display: inline-flex;
+  align-items: center;
+  min-height: 24px;
+  padding: 0;
+  border: 0;
+  background: none;
+  font: inherit;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+/*  The rest of the field, under the podium on the Social hub. As many
+    columns as the card is wide, so nine names take two rows at 1920 and
+    three at 1440 rather than nine of anything. Off below 1000: a phone card
+    holds three plinths and a button, which is what it always held. */
+.lbrest { display: none; }
+@media (min-width: 1000px) {
+  .lbrest {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
+    gap: var(--s1) var(--s5);
+    margin-top: var(--s5);
+    padding-top: var(--s4);
+    border-top: 1px solid var(--line);
+  }
+}
+.lbrest__row {
+  display: grid;
+  grid-template-columns: 20px minmax(0, 1fr) auto;
+  align-items: baseline;
+  gap: var(--s2);
+  min-height: 24px;
+  font-size: var(--t-small);
+}
+.lbrest__pos { color: var(--ink-2); font-size: var(--t-micro); }
+.lbrest__nm {
+  color: var(--ink);
+  text-decoration: none;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  display: inline-flex;
+  align-items: center;
+  min-height: 24px;
+}
+.lbrest__nm:hover { color: var(--accent-2); }
+.lbrest__u { font-weight: var(--w-fig); white-space: nowrap; }
+
+/* ------------------------------------------------- the league, as a table */
+/*  A LEAGUE IS A TABLE AND IT WAS A CHAT LOG.
+    At 1920 a group's board was a name against the left edge and a units
+    figure against the right with nine hundred pixels between them, which is
+    the shape the ledger's own table was written to end, on the screen a
+    stranger sees the first time somebody sends them an invite. Comparing two
+    Slippers meant reading two run-on grey sentences rather than two columns.
+
+    ONE DOM, TWO LAYOUTS, the way .btbl does it, and the phone one is exactly
+    what it was: position, avatar, name, the facts running together
+    underneath, the units and the return stacked on the right. The cells are
+    in the order that sentence reads, because a table's column order is its
+    DOM order and the phone line is not allowed to change. The other way of
+    doing this is to render both and hide one, and a board that ships every
+    member twice is markup nobody can see. */
+.lgt { width: 100%; border-collapse: collapse; display: block; }
+.lgt caption { text-align: left; }
+.lgt__head { display: none; }
+.lgt__body { display: block; }
+.lgt__r {
+  display: block;
+  position: relative;
+  /*  Room reserved on both sides: the position numeral out on the left, the
+      units and the return out on the right. 108px holds "+183.1u" over
+      "+77.7% return" at the sizes they are drawn at. */
+  padding: var(--s3) 108px var(--s3) 30px;
+  min-height: 62px;
+  border-top: 1px solid var(--line);
+}
+.lgt__r:first-child { border-top: 0; }
+.lgt__c { display: block; padding: 0; border: 0; }
+.lgt__c--pos {
+  position: absolute;
+  left: 0;
+  top: var(--s3);
+  font-size: var(--t-small);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+/*  The avatar and the name are a flex pair inside the cell rather than the
+    cell itself being flex: over the breakpoint the cell is a table-cell, and
+    a table-cell cannot also be a flex container. */
+.lgt__whoin { display: flex; align-items: center; gap: var(--s2); min-width: 0; }
+.lgt__nm {
+  display: block;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+/*  The facts line. Each of these is its own column over the breakpoint and
+    they run together as one sentence under it, with the separators drawn by
+    CSS rather than written into the markup: at desktop a stray middle dot in
+    a cell is punctuation nobody put there. */
+.lgt__c--at, .lgt__c--num {
+  display: inline;
+  font-size: var(--t-small);
+  color: var(--ink-2);
+  font-variant-numeric: tabular-nums;
+}
+.lgt__c--won::before, .lgt__c--bets::before,
+.lgt__c--slip::before, .lgt__c--edits::before { content: ' · '; }
+.lgt__c--lost::before { content: ', '; }
+/*  A cell with nothing in it has nothing for its separator to join: a
+    Slipper with no late edits printed a bare middle dot at the end of the
+    line, and one with no bets at all printed four of them. */
+.lgt__c--num:empty::before { content: none; }
+/*  The unit word travels with the figure on a phone and is dropped in the
+    table, where the heading says it once. "1 bet" and "234 bets" are a
+    plural rule, so it is text in the cell rather than a ::after that cannot
+    inflect. */
+.lgt__u { color: inherit; }
+.lgt__c--units { position: absolute; right: 0; top: var(--s3); text-align: right; }
+.lgt__c--roi {
+  position: absolute;
+  right: 0;
+  bottom: var(--s3);
+  text-align: right;
+  font-size: var(--t-small);
+  color: var(--ink-2);
+  font-variant-numeric: tabular-nums;
+}
+/*  The bar is the one thing on the row that only exists over the
+    breakpoint. On a phone the units figure is the comparison and there is no
+    room for a second one; on a monitor the column that was empty is where
+    the size of the gap between two Slippers can actually be seen. */
+.lgt__c--bar { display: none; }
+/*  Too few settled bets to rank. The rule down the left is the treatment the
+    breakdown already uses, because fading a row takes its figure to about
+    2.9:1 and nothing that has to be read is ever faded. */
+.lgt__r--thin { border-left: 2px solid var(--line-2); padding-left: 28px; }
+.lgt__r--you { background: color-mix(in oklab, var(--accent) 7%, transparent); }
+
+/* ------------------------------------- from 1200, the league is a table */
+/*  1200 rather than 1000, and the number is measured. The eight fixed
+    columns take 508px and the card around them keeps its padding, so at
+    1024 the name and the handle would have had about seventy pixels
+    between them. Under this the row is the stacked one, which is right on
+    a phone and correct on a tablet. */
+@media (min-width: 1200px) {
+  .lgt { display: table; table-layout: fixed; }
+  .lgt__head { display: table-header-group; }
+  .lgt__body { display: table-row-group; }
+  .lgt__h2 {
+    text-align: left;
+    font-size: var(--t-micro);
+    letter-spacing: var(--tr-micro);
+    text-transform: uppercase;
+    color: var(--ink-2);
+    font-weight: var(--w-label);
+    padding: 0 var(--s2) var(--s2);
+    /*  A TWO WORD HEADING TAKES TWO LINES RATHER THAN 40 PIXELS OF THE
+        TABLE, which is the lesson the analyser's headings already carry. */
+    white-space: normal;
+    vertical-align: bottom;
+  }
+  .lgt__h2--num { text-align: right; }
+  .lgt__h2--pos { width: 36px; }
+  .lgt__h2--who { width: 172px; }
+  .lgt__h2--at { width: 132px; }
+  .lgt__h2--won, .lgt__h2--lost { width: 58px; }
+  .lgt__h2--bets { width: 62px; }
+  .lgt__h2--units { width: 92px; }
+  .lgt__h2--roi { width: 84px; }
+  .lgt__h2--slip { width: 76px; }
+  .lgt__h2--edits { width: 72px; }
+  /*  NO WIDTH. It is the column that absorbs whatever the fixed ones do
+      not use, which is the whole reason it exists. */
+  .lgt__h2--bar { width: auto; }
+  /*  NO POINTER ON THE ROW. A hand cursor over a row of figures is a hand
+      cursor over two hundred and sixty eight things that are not controls,
+      which is a defect this codebase has already fixed once. The row is a
+      click target for a mouse and says so by shading under the pointer; the
+      control is the name, which is a button when there is a pane for it to
+      open and a link to the profile when there is not. */
+  .lgt__r {
+    display: table-row;
+    position: static;
+    padding: 0;
+    min-height: 0;
+    background: none;
+  }
+  .lgt__c {
+    display: table-cell;
+    position: static;
+    padding: var(--s3) var(--s2);
+    border-top: 1px solid var(--line);
+    vertical-align: middle;
+    font-size: var(--t-small);
+    color: var(--ink);
+  }
+  .lgt__c--num, .lgt__c--at { text-align: right; white-space: nowrap; color: var(--ink-2); }
+  .lgt__c--at { text-align: left; }
+  .lgt__c--num::before, .lgt__c--at::before { content: none; }
+  .lgt__u { display: none; }
+  .lgt__c--units, .lgt__c--roi { text-align: right; }
+  .lgt__c--roi { color: var(--ink-2); }
+  .lgt__c--bar { display: table-cell; padding-inline: var(--s3); }
+  .lgt__r--live:hover .lgt__c { background: var(--surface-2); }
+  .lgt__r--you .lgt__c { background: color-mix(in oklab, var(--accent) 7%, transparent); }
+  .lgt__r--on .lgt__c { background: color-mix(in oklab, var(--accent) 12%, var(--surface)); }
+  .lgt__r--you.lgt__r--on .lgt__c { background: color-mix(in oklab, var(--accent) 16%, var(--surface)); }
+  /*  The thin mark is a rule on the first cell rather than on the row: a
+      border on a table-row is not painted at all under border-collapse. */
+  .lgt__r--thin { border-left: 0; padding-left: 0; }
+  .lgt__r--thin .lgt__c--pos { box-shadow: inset 2px 0 0 var(--line-2); }
+  .lgt__r--thin .lgt__c--who { color: var(--ink-2); }
+}
+/*  THE COLUMN THAT WAS THE VOID. Eight fixed columns and two names leave
+    several hundred pixels at 1920, and the honest thing to put in them is
+    the figure the table is ranked on, drawn: how far ahead the leader is,
+    and by how much, without reading two numbers and subtracting. Scaled to
+    the largest ABSOLUTE units in the table, so a big loss and a big win are
+    the same length in opposite directions and the eye can compare them. */
+.lgt__bar {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  align-items: center;
+  height: 8px;
+  border-radius: var(--r-pill);
+  background: var(--surface-3);
+  overflow: hidden;
+}
+.lgt__barfill { display: block; height: 100%; border-radius: var(--r-pill); }
+/*  The zero is the middle, because a league has losing rows in it and a bar
+    that starts at the left edge draws minus one and a half units as a stub
+    pointing the same way as plus a hundred and eighty three. */
+.lgt__barfill--pos { background: var(--pos); justify-self: start; grid-column: 2; }
+.lgt__barfill--neg { background: var(--neg); justify-self: end; grid-column: 1; }
+
+/* ------------------------------- the board, and one Slipper beside it */
+/*  1500, and it is measured too: the table wants 508px of fixed columns
+    plus about 300 for the two names and the bar, the pane wants 300 and
+    the gap is 26, and the card, the gutters and the rail take another
+    336. Under it the board is the full width of its card, which is what
+    1440 shows and what the demo happens on. */
+/*  TWO CLASSES, NOT ONE. `.dsplit--lgt` on its own is exactly as specific as
+    `.dsplit`, and the general rule is further down the file, so the modifier
+    lost and the board was split at 1280 after all: at 1440 the table was
+    laid out inside a 789px column with a pane beside it that its own
+    breakpoint had already said there was no room for. */
+@media (max-width: 1499px) {
+  .dsplit.dsplit--lgt { display: block; }
+  .dsplit.dsplit--lgt .dsplit__side { display: none; }
+}
+@media (min-width: 1500px) {
+  .dsplit.dsplit--lgt { display: grid; }
+  .dsplit.dsplit--lgt .dsplit__side { display: block; }
+}
+
 /* ------------------------------------------------------------------ podium */
 /*  Three plinths and no trophy. The heights carry the ranking, the numeral
     carries the place, and the units figure keeps the profit or loss colour
@@ -2148,6 +2794,16 @@ p.statgrid__foot {
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: var(--s2);
   align-items: end;
+  /*  A PODIUM IS THREE BLOCKS, NOT A ROW OF THE SAME WIDTH AS THE PAGE.
+      When the board took the whole twelve columns the three plinths spread
+      to five hundred pixels each and a thousand pixels of the card was the
+      space between second and third, which reads as three unrelated cards
+      rather than as a podium. Three steps only work next to each other.
+
+      900, not 660: the podium sits in the board's own left column, beside
+      the detail pane rather than above the whole card, so the width it is
+      being held back from is already the width the table under it has. */
+  max-width: 900px;
 }
 .podium__place {
   display: flex;
@@ -2231,20 +2887,56 @@ p.statgrid__foot {
     read their figure in the same units, the same colour and the same layout
     as the three above, or the block is three strangers and a footnote. */
 .podium__pin { margin-top: var(--s4); border-top: 1px solid var(--line); padding-top: var(--s3); }
+/*  The scope of every count on the block, under all of it. The class was
+    free. It reads as a footnote to the podium and the pinned row together,
+    which is what it is: both print bet counts folded across every balance. */
+.podium__scope { margin-top: var(--s3); }
 
 /* --------------------------------------------------------- tracking a bet */
 /*  An open bet somebody captured before the off. There is no result column
     because there is no result: the item ages out when the event starts and
     is never revisited. */
-.trk__row { grid-template-columns: 30px minmax(0, 1fr) auto; gap: var(--s3); align-items: start; }
-.trk__when { display: grid; justify-items: end; gap: var(--s0); text-align: right; }
-.trk__meta { display: flex; flex-wrap: wrap; gap: var(--s1) var(--s2); margin-top: var(--s1); }
+/*  THE TRACKING ROW, one stack under 1000 and five cells over it.
+    The cells are siblings in the markup, and which of the two shapes they
+    take is a grid template: on a phone the avatar keeps a column and
+    everything else runs down beside it, in the order it always ran. */
+.trk__row {
+  grid-template-columns: 30px minmax(0, 1fr);
+  grid-template-areas:
+    'av  who'
+    '.   bet'
+    '.   meta'
+    '.   lead'
+    '.   when';
+  gap: var(--s1) var(--s3);
+  align-items: start;
+}
+.trk__av { grid-area: av; }
+.trk__who { grid-area: who; min-width: 0; }
+.trk__bet { grid-area: bet; min-width: 0; }
+.trk__meta { grid-area: meta; display: flex; flex-wrap: wrap; gap: var(--s1) var(--s2); margin-top: var(--s1); }
+.trk__lead { grid-area: lead; margin-top: var(--s1); }
+.trk__when { grid-area: when; display: grid; gap: var(--s0); margin-top: var(--s1); }
+@media (min-width: 1000px) {
+  /*  Across, and the bet takes the slack. The three pills, the head start
+      and the countdown are all fixed-width facts; the selection and its
+      fixture are the one thing that wants the room. */
+  .trk__row {
+    grid-template-columns: 30px 140px minmax(0, 1fr) auto auto auto;
+    grid-template-areas: 'av who bet meta lead when';
+    align-items: center;
+    gap: var(--s4);
+  }
+  .trk__meta, .trk__lead, .trk__when { margin-top: 0; }
+  .trk__bet { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .trk__lead { white-space: nowrap; }
+  .trk__when { justify-items: end; text-align: right; }
+}
 @media (max-width: 359px) {
   /*  At 320 the price, the stake and the bookmaker do not fit beside the
       kick off time. The time drops under the selection rather than the
       selection wrapping to one word a line. */
-  .trk__row { grid-template-columns: 30px minmax(0, 1fr); }
-  .trk__when { grid-column: 2; justify-items: start; text-align: left; margin-top: var(--s1); }
+  .trk__when { justify-items: start; text-align: left; }
 }
 
 
@@ -2405,15 +3097,27 @@ p.statgrid__foot {
     border-top: 0;
     border-left: 0;
     background: none;
-    cursor: pointer;
     transition: background var(--dur-fast) var(--ease);
   }
   /*  IT SAYS IT IS PRESSABLE. The row carried no chevron, no hover treatment
       and nothing else suggesting that pressing it did anything, on the one
-      screen whose whole job is opening bets. */
-  .btbl__r:hover .btbl__c { background: var(--surface-2); }
-  .btbl__r:hover .btbl__sel { text-decoration: underline; text-underline-offset: 2px; }
-  .btbl__r:hover .btbl__c--go svg { color: var(--ink-2); }
+      screen whose whole job is opening bets. The whole row lights, the
+      selection underlines and the chevron comes up, all of which follow the
+      pointer without being painted on anything that is not a control.
+
+      THE HAND CURSOR IS NOT ONE OF THEM, and it used to be, set on the row.
+      A table row cannot be a button without giving up being a row, so the
+      control is the button on the name and the click on the row is a
+      convenience for a mouse on top of it. Painting the row with a pointer
+      put the hand over 268 spans that are not controls, which the sweep
+      reads as a press that goes nowhere, once per theme. The button keeps
+      its own.
+
+      A MONEY MOVEMENT DOES NOT LIGHT AT ALL. A deposit has no sheet to
+      open, so the hover was promising something that does not happen. */
+  .btbl__r:not(.btbl__r--mv):hover .btbl__c { background: var(--surface-2); }
+  .btbl__r:not(.btbl__r--mv):hover .btbl__sel { text-decoration: underline; text-underline-offset: 2px; }
+  .btbl__r:not(.btbl__r--mv):hover .btbl__c--go svg { color: var(--ink-2); }
   .btbl__r--on .btbl__c { background: var(--surface-2); }
   .btbl__r--on .btbl__c--res { box-shadow: inset 2px 0 0 var(--accent); }
 
@@ -2485,7 +3189,7 @@ p.statgrid__foot {
 .btbl__sort { flex: none; color: var(--ink); }
 .btbl__sort--off { color: var(--ink-2); }
 
-/* ---------------------------------------------------- the list and the bet */
+/* ---------------------------------------------------- a list and one of it */
 /*  From 1400 the ledger is two panes. Not before, and the number is
     measured rather than chosen: six fixed columns take 526px, the pane
     wants 300, and what is left is the room the selection and its fixture
@@ -2507,13 +3211,54 @@ p.statgrid__foot {
       the pane, so it scrolled away with the page and the whole point of
       putting it beside the list was lost. */
   .lgr__side { display: block; align-self: stretch; }
-  /*  Sticky under the top bar, with its own scroll. A working with fourteen
-      lines in it is taller than some ledgers are, and a pane that pushed the
-      page down to fit would move the row that opened it. */
+}
+
+/*  THE SAME SHAPE, ON EVERY SCREEN THAT HAS A LIST AND ONE OF SOMETHING.
+    The ledger had a detail pane and nothing else did, so a pattern that is
+    the whole argument for a wide window was a one-off on a single route:
+    the gallery threw a lightbox over the grid it came from, the analyser
+    could not open a row at all, and a group's table had no way to read one
+    Slipper. The container splits, the aside holds `.dpane`, and each screen
+    chooses the width at which its own content has room for both.
+
+    1280 is the general answer, because a 300px pane leaves a 1024px column
+    beside it at that width and everything using this shape reads in 1024.
+    The analyser is the exception and carries its own number, because its
+    table is 1110px wide and must not be made to scroll at 1440, which is
+    the width the demo happens on. */
+.dsplit { display: block; }
+.dsplit__side { display: none; }
+@media (min-width: 1280px) {
+  .dsplit {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) clamp(300px, 22vw, 400px);
+    gap: var(--gap-grid);
+  }
+  .dsplit__side { display: block; align-self: stretch; }
+}
+/*  The analyser's own threshold. Measured: the cross tab's natural width is
+    1110px, the pane wants 300 and the gap is 26, so the content column has
+    to hold 1436 before a pane can appear beside it without pushing the
+    table into a sideways scroll. Add the rail and the gutters and the
+    window has to be 1732 wide. Under it the analyser is what it was: one
+    table, fitting 1440 exactly, and the row detail opens under the table
+    instead of beside it. */
+@media (max-width: 1739px) {
+  .dsplit.dsplit--xtab { display: block; }
+  .dsplit.dsplit--xtab .dsplit__side { display: none; }
+}
+@media (min-width: 1740px) {
+  .dsplit.dsplit--xtab { display: grid; }
+  .dsplit.dsplit--xtab .dsplit__side { display: block; }
+}
+/*  Sticky under the top bar, with its own scroll. A working with fourteen
+    lines in it is taller than some ledgers are, and a pane that pushed the
+    page down to fit would move the row that opened it. */
+@media (min-width: 1280px) {
   .dpane {
     position: sticky;
-    top: calc(var(--topbar-h) + var(--gap-block));
-    max-height: calc(100svh - var(--topbar-h) - var(--s8));
+    top: calc(var(--apphead-h) + var(--gap-block));
+    max-height: calc(100svh - var(--apphead-h) - var(--s8));
     overflow-y: auto;
     background: var(--bg-2);
     border: 1px solid var(--line-2);
@@ -2527,4 +3272,14 @@ p.statgrid__foot {
   }
   .dpane__mark { color: var(--ink-2); margin-bottom: var(--s3); }
   .dpane--rest .card__title { margin-bottom: var(--s2); }
+  /*  A pane's own head: a title, and the control that puts it back to rest.
+      Every screen with one needs the same two things in the same place. */
+  .dpane__head {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: var(--s3);
+    margin-bottom: var(--s4);
+  }
+  .dpane__rows { margin-top: var(--s4); }
 }

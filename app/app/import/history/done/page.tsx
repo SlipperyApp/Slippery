@@ -13,7 +13,7 @@ export default function ImportDone() {
   const landed = DRY_RUN.wouldCreate + DRY_RUN.wouldMerge;
   return (
     <div className="column column--wide">
-      <span className="pill pill--pos">Written</span>
+      <span className="pill pill--accent">Written</span>
       <h1 style={{ marginTop: 'var(--s4)' }}>{plural(landed, 'bet')} {landed === 1 ? 'is' : 'are'} in your ledger</h1>
       <p className="muted" style={{ marginTop: 'var(--s2)' }}>
         One transaction, every row marked imported and not slip backed, so a group filtering on slip backed bets sees these for what they are.

@@ -34,8 +34,13 @@ export default async function Linked() {
       </div>
 
       <h1>The Telegram bot</h1>
+      {/*  What it is and what it is not. It said "Link a chat once. After
+           that, forwarding a slip takes about four seconds", which is true and
+           which, on the screen a new account is sent to first, reads as the
+           step before the product starts working. */}
       <p className="muted" style={{ marginTop: 'var(--s2)' }}>
-        Link a chat once. After that, forwarding a slip takes about four seconds.
+        One of the four ways in, and the only one you set up first. The other three need nothing
+        from this page.
       </p>
 
       <div className="grid" style={{ marginTop: 'var(--s5)' }}>
@@ -43,7 +48,7 @@ export default async function Linked() {
              accounts.link_code: one permanent code per account, never used up
              and identical every time anybody looked, which is a password to a
              ledger printed on a page. */}
-        <TelegramLink className="col-6" />
+        <TelegramLink className="col-6" skip={{ href: '/app/import', label: 'Add a bet another way' }} />
 
         <section className="card col-6">
           <h2 className="card__title">What the bot does</h2>

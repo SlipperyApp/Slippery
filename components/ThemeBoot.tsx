@@ -5,13 +5,18 @@
  *  cookie is read here rather than server side so that marketing pages stay
  *  static. */
 
-import { DEFAULT_THEME, THEME_COOKIE, THEME_NAMES } from '@/lib/themes';
+import { DEFAULT_THEME, THEME_COOKIE, THEME_NAMES, THEME_RENAMES } from '@/lib/themes';
 
+/*  The renames travel with the list, or this script is the one reader of the
+    cookie that does not know liquid became sage: it runs BEFORE paint and
+    before React, so an account on the old name would get a frame of carbon
+    and then the right theme, which is a flash on every page load. */
 const SRC = `(function(){try{
 var m=document.cookie.match(/(?:^|; )${THEME_COOKIE}=([^;]*)/);
 var t=m?decodeURIComponent(m[1]):'${DEFAULT_THEME}';
 var ok=${JSON.stringify(THEME_NAMES)};
-var name=ok.indexOf(t)>-1?t:'${DEFAULT_THEME}';
+var was=${JSON.stringify(Object.fromEntries(THEME_RENAMES))};
+var name=ok.indexOf(t)>-1?t:(was[t]||'${DEFAULT_THEME}');
 document.documentElement.setAttribute('data-theme',name);
 /*  The browser chrome follows the theme too. Without this the status bar on
     a phone stays carbon while the page is bronze, which on an installed PWA

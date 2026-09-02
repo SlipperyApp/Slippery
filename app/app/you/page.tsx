@@ -5,7 +5,8 @@ import { getViewer } from '@/lib/data/session';
 import { select, summarise, byMonth, DEFAULT_SCOPE } from '@/lib/data/analytics';
 import { groupSummaries } from '@/lib/data/social';
 import { SETTINGS_GROUPS } from '@/lib/data/settings';
-import { money, units as fmtUnits, pct, count, initials, position as fmtPosition, zonedParts } from '@/lib/format';
+import { TRIAL_DAYS } from '@/lib/domain/trial';
+import { money, units as fmtUnits, pct, count, initials, plural, position as fmtPosition, zonedParts } from '@/lib/format';
 import { isImported } from '@/lib/data/ledger-shape';
 
 export const metadata: Metadata = {
@@ -97,19 +98,52 @@ export default async function You() {
             </Link>
           </div>
 
-          {/*  At the FOOT of the card, not under the name.
-               The row this sits in takes the height of the form card beside
-               it, which is six months of rows and a footnote, so the profile
-               ended a screen-inch of content in and left two hundred and
-               fifty pixels of empty card under it. margin-top:auto turns
-               that hole into the space between who you are and what you have
-               done, which is where it belongs. */}
-          <div className="row row--wrap profile__figs">
+          {/*  UNDER THE NAME, AND THEN THE REST OF THE RECORD UNDER THEM.
+               This card sits beside a form card six months tall and a grid
+               row takes its tallest, so the four figures were pinned to the
+               foot with two hundred and fifty pixels of empty card between
+               the name and them. A hole is a hole wherever it is put. What
+               closes it is what the four figures leave out: which month this
+               is, how much of the record came off a slip rather than a
+               keyboard, and how far back it goes. */}
+          <div className="figstrip profile__figs" style={{ ['--figs' as string]: 4 }}>
             <div><p className="label">All time</p><p className={`fig fig--m ${all.netPence >= 0 ? 'pos' : 'neg'}`}>{money(all.netPence, account.currency, { sign: true })}</p></div>
             <div><p className="label">Units</p><p className="fig fig--m tnum">{fmtUnits(all.units, { sign: true })}</p></div>
             <div><p className="label">Return</p><p className={`fig fig--m ${all.roi >= 0 ? 'pos' : 'neg'}`}>{pct(all.roi, { sign: true })}</p></div>
             <div><p className="label">Bets</p><p className="fig fig--m tnum">{count(all.count)}</p></div>
           </div>
+
+          <ul style={{ marginTop: 'var(--s5)' }}>
+            <li className="brow">
+              <span style={{ minWidth: 0 }}>
+                <span className="brow__title">This month</span>
+                <span className="brow__sub">
+                  {thisMonth ? `${count(thisMonth.count)} settled` : 'Nothing settled yet'}
+                </span>
+              </span>
+              <span className={`fig fig--s tnum ${thisMonth && thisMonth.netPence < 0 ? 'neg' : thisMonth && thisMonth.netPence > 0 ? 'pos' : ''}`}>
+                {thisMonth ? money(thisMonth.netPence, account.currency, { sign: true }) : '–'}
+              </span>
+            </li>
+            <li className="brow">
+              <span style={{ minWidth: 0 }}>
+                <span className="brow__title">Slip backed</span>
+                <span className="brow__sub">
+                  {count(slipBackedCount)} of {count(bets.length)} came off a slip rather than a keyboard
+                </span>
+              </span>
+              <span className="fig fig--s tnum">{pct(slipBackedShare * 100)}</span>
+            </li>
+            <li className="brow">
+              <span style={{ minWidth: 0 }}>
+                <span className="brow__title">Records go back to</span>
+                <span className="brow__sub">
+                  {allMonths.length > 0 ? `${count(allMonths.length)} months of settled bets` : 'No settled month yet'}
+                </span>
+              </span>
+              <span className="fig fig--s">{allMonths.length > 0 ? allMonths[0].label : '–'}</span>
+            </li>
+          </ul>
         </section>
 
         <section className="card col-4">
@@ -153,10 +187,16 @@ export default async function You() {
           {groups.length ? (
             <ul style={{ marginTop: 'var(--s3)' }}>
               {groups.map((g) => (
-                <li key={g.id} className="brow">
+                <li key={g.id} className="brow wrow">
                   <span style={{ minWidth: 0 }}>
                     <Link href={`/app/social/group?id=${g.id}`} className="brow__title" style={{ textDecoration: 'none' }}>{g.name}</Link>
                     <span className="brow__sub">{g.division}</span>
+                  </span>
+                  {/*  What the group asks, in the middle, from 1000 up: a
+                       name and a position with six hundred pixels between
+                       them is the shape this branch exists to end. */}
+                  <span className="wrow__mid">
+                    {plural(g.members, 'Slipper')} · {g.slipBackedOnly ? 'slip backed only' : 'every bet counts'}
                   </span>
                   <span className="pill">{fmtPosition(g.yourPosition, g.members)}</span>
                 </li>
@@ -212,6 +252,37 @@ export default async function You() {
             {trial.active ? 'Free trial' : 'Trial over'}
           </p>
           <p className="small muted" style={{ marginTop: 'var(--s2)' }}>{trial.message}</p>
+
+          {/*  THE TWO HALVES OF THE TRIAL, as rows. It is fourteen days or
+               thirty five slips, whichever runs out first, and they fail
+               differently: the sentence above says which one is closest and
+               these say where each of them stands. This card sits beside a
+               settings list six rows tall and was a heading, a figure, a line
+               and three buttons pinned to the bottom, with the rest empty. */}
+          <ul style={{ marginTop: 'var(--s5)' }}>
+            <li className="brow">
+              <span style={{ minWidth: 0 }}>
+                <span className="brow__title">Days left</span>
+                <span className="brow__sub">Of the {TRIAL_DAYS} day trial</span>
+              </span>
+              <span className="fig fig--s tnum">{trial.daysLeft}</span>
+            </li>
+            <li className="brow">
+              <span style={{ minWidth: 0 }}>
+                <span className="brow__title">Slips left</span>
+                <span className="brow__sub">{count(trial.slipsUsed)} of {count(trial.slipsAllowed)} used</span>
+              </span>
+              <span className="fig fig--s tnum">{trial.slipsLeft}</span>
+            </li>
+            <li className="brow">
+              <span style={{ minWidth: 0 }}>
+                <span className="brow__title">After the trial</span>
+                <span className="brow__sub">Or £29.99 a year</span>
+              </span>
+              <span className="fig fig--s tnum">£3.49 a month</span>
+            </li>
+          </ul>
+
           <div className="card__foot row row--wrap" style={{ gap: 'var(--s2)' }}>
             <Link href="/app/settings/plan" className="btn btn--primary btn--sm">Plans</Link>
             <Link href="/app/settings/referrals" className="btn btn--ghost btn--sm">Referrals</Link>

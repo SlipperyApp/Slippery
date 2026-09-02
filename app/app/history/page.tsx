@@ -3,7 +3,8 @@ import Link from 'next/link';
 import { getViewer } from '@/lib/data/session';
 import { Icon } from '@/components/Icon';
 import { bookmakerName } from '@/lib/data/reference';
-import { dateTime, money, shortDate } from '@/lib/format';
+import { legLine } from '@/lib/domain/working';
+import { dateTime, money, shortDate, timeOfDay } from '@/lib/format';
 
 export const metadata: Metadata = {
   title: 'Change history',
@@ -39,12 +40,17 @@ export default async function History() {
         </Link>
       </div>
 
+      {/*  The three figures across the card rather than huddled in its left
+           third. A row of figures with a fluid gap puts them all against the
+           left edge of a 1620 pixel card and leaves the rest empty; a divided
+           strip says they are one measurement in three parts, which is what
+           they are. */}
       <div className="card" style={{ marginBottom: 'var(--gap-block)' }}>
         <p className="small muted">
           Append only: a correction is a new event, never an edit. Anything entered{' '}
           <strong>after a result was known</strong> is flagged.
         </p>
-        <div className="row row--wrap" style={{ gap: 'var(--s6)', marginTop: 'var(--s4)' }}>
+        <div className="figstrip" style={{ marginTop: 'var(--s5)' }}>
           <div><p className="label">Events shown</p><p className="fig fig--s tnum">{rows.length}</p></div>
           <div><p className="label">Entered by hand</p><p className="fig fig--s tnum">{byHand}</p></div>
           <div><p className="label">After a result was known</p><p className="fig fig--s tnum">{late}</p></div>
@@ -56,9 +62,18 @@ export default async function History() {
           <table className="tbl">
             <caption className="sr-only">Settlement events, newest first</caption>
             <thead>
+              {/*  SIX COLUMNS, NOT FIVE, and the fixture is the new one.
+                   At 1920 this table was five short columns spread across
+                   1620 pixels with five hundred of them between "system" and
+                   a dash, and it could not answer the question somebody comes
+                   to a change history with, which is which bet a correction
+                   belongs to. A selection and a bookmaker are not a bet; the
+                   match and the time it happened are what identify one. */}
               <tr>
                 <th scope="col">When</th>
                 <th scope="col">Bet</th>
+                <th scope="col">Fixture</th>
+                <th scope="col">Bookmaker</th>
                 <th scope="col">Event</th>
                 <th scope="col">By</th>
                 <th scope="col" className="num">Returned</th>
@@ -67,14 +82,24 @@ export default async function History() {
             <tbody>
               {rows.map(({ bet, event }) => (
                 <tr key={event.id}>
-                  <td className="nowrap dim">{shortDate(event.occurredAt)}</td>
+                  <td className="nowrap dim">
+                    {shortDate(event.occurredAt)}
+                    <span className="hist__time tnum">{timeOfDay(event.occurredAt)}</span>
+                  </td>
                   <td>
                     <span style={{ fontWeight: 600 }}>
                       {bet.legs.length > 1 ? `${bet.legs.length} fold` : bet.selection}
                     </span>
-                    <br />
-                    <span className="dim">{bookmakerName(bet.bookmakerId)}</span>
                   </td>
+                  {/*  A multi's eventName is the fold's own label, so the
+                       fixture column printed "3 fold" beside a bet column
+                       already reading "3 fold". The legs carry the matches,
+                       and lib/domain/working.ts owns the line so the ledger,
+                       the export and this table print the same one. */}
+                  <td className="dim hist__fix">
+                    {bet.legs.length > 1 ? legLine(bet.legs) : bet.eventName}
+                  </td>
+                  <td className="dim nowrap">{bookmakerName(bet.bookmakerId)}</td>
                   <td>
                     {LABEL[event.type] ?? event.type}
                     {event.fractionEighths ? <span className="dim"> · {event.fractionEighths}/8 of what remained</span> : null}
@@ -82,7 +107,7 @@ export default async function History() {
                     {event.afterResultKnown ? (
                       <>
                         {' '}
-                        <span className="pill pill--neg">Late</span>
+                        <span className="pill pill--warn">Late</span>
                       </>
                     ) : null}
                   </td>

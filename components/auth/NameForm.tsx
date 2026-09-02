@@ -5,12 +5,17 @@ import { useState } from 'react';
 import { Icon } from '@/components/Icon';
 import { isHandle } from '@/lib/server/codes';
 import { TRIAL_DAYS, TRIAL_SLIPS } from '@/lib/domain/trial';
+import { keepAnswers, stepHref } from '@/lib/signup-draft';
+import { useDraft } from '@/components/auth/useDraft';
 
 export function NameForm() {
   const router = useRouter();
-  const [name, setName] = useState('');
-  const [handle, setHandle] = useState('');
-  const [referral, setReferral] = useState('');
+  const draft = useDraft();
+  /*  Every field starts from the URL, so stepping back into this screen shows
+      what was typed rather than an empty form. */
+  const [name, setName] = useState(draft.displayName);
+  const [handle, setHandle] = useState(draft.handle);
+  const [referral, setReferral] = useState(draft.referral);
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
 
@@ -26,7 +31,9 @@ export function NameForm() {
       method: 'POST', headers: { 'content-type': 'application/json' },
       body: JSON.stringify({ displayName: name.trim(), handle: suggested, referral: referral.trim() }),
     }).catch(() => null);
-    router.push('/signup/unit');
+    const answered = { ...draft, displayName: name.trim(), handle: suggested, referral: referral.trim() };
+    keepAnswers('/signup/name', answered);
+    router.push(stepHref('/signup/unit', answered));
   }
 
   return (

@@ -79,7 +79,6 @@ export default function Social() {
               <Checks
                 items={[
                   'Members see each other’s unit size',
-                  'Outside a group, units only, never stakes',
                   'Late edits are visible where a group asks for it',
                 ]}
               />

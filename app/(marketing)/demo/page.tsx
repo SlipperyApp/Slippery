@@ -3,12 +3,17 @@ import Link from 'next/link';
 import { Icon } from '@/components/Icon';
 import { demoData } from '@/lib/data/demo';
 import { inBalance } from '@/lib/domain/balances';
-import { select, summarise, byDay, cumulative, offerSplit, runningNow, breakdown, DEFAULT_SCOPE } from '@/lib/data/analytics';
+import {
+  select, summarise, byDay, cumulative, offerSplit, buildBreakdowns, DEFAULT_SCOPE, scopeLabel,
+} from '@/lib/data/analytics';
 import { ProfitCurve } from '@/components/app/Charts';
 import { MonthCalendar } from '@/components/app/Calendar';
-import { timeZoneLabel } from '@/lib/data/reference';
-import { BetRow } from '@/components/app/BetRow';
-import { money, pct, count, plural, units as fmtUnits } from '@/lib/format';
+import { Module, Figure } from '@/components/app/Module';
+import { Breakdown } from '@/components/app/Breakdown';
+import { ledgerSummary, isImported, heldOutSentence } from '@/lib/data/ledger-shape';
+import { summariseClosing } from '@/lib/domain/closing';
+import { PctUp, UnitsUp } from '@/components/app/CountUp';
+import { money, pct, count, plural, longDate } from '@/lib/format';
 import { Breadcrumbs } from '@/components/marketing/Breadcrumbs';
 import { StickyCta } from '@/components/marketing/StickyCta';
 import { EndCard } from '@/components/MarketingChrome';
@@ -16,149 +21,296 @@ import { EndCard } from '@/components/MarketingChrome';
 export const metadata: Metadata = {
   title: 'The example account',
   description:
-    'A real, working account with six months of history: the ledger, the calendar, the curve and the split between money you won and money they gave you.',
+    'The dashboard itself, on six months of history: the net, the calendar, the record, the curve, the offer split and the breakdown.',
   alternates: { canonical: '/demo' },
   openGraph: {
     title: 'Slippery, the example account',
-    description: 'Six months of history, every figure folded by the same code your own ledger would use.',
+    description: 'The dashboard itself, on six months of history.',
     url: '/demo',
     images: [{ url: '/og?title=The+example+account&sub=%40tester123', width: 1200, height: 630, alt: 'The Slippery example account' }],
   },
 };
 
+/** The dashboard, on the marketing side, module for module.
+ *
+ *  WHAT THIS PAGE USED TO BE. Six cards of its own choosing, in its own order,
+ *  with a "Running now" module the dashboard has not had since that module
+ *  moved to the ledger, and a "By sport" list the dashboard draws as one of
+ *  six dimensions inside Breakdown. It looked like the product and it was not
+ *  the product, so the screen somebody decided on and the screen they got were
+ *  two different screens.
+ *
+ *  Every module below is the dashboard's own component, with the dashboard's
+ *  title, note and footer, in the dashboard's order, folded from the same
+ *  functions. app/app/page.tsx is the authority; this follows it.
+ *
+ *  TWO THINGS THE DASHBOARD HAS THAT THIS CANNOT. The net card there carries a
+ *  scope bar, a share control and a target you can set, and all three write to
+ *  an account. A control on a public page that changed nothing would be worse
+ *  than not drawing it, so the net card here is the same card with the tools
+ *  left off, and the page says which scope it is fixed at.
+ *
+ *  ONE BALANCE, AND IT IS THE MAIN ONE. The example account keeps three and
+ *  one is in euro. The dashboard reads whichever balance is open and never
+ *  sees a second currency; this reads the one the app opens on, which is the
+ *  same rule arrived at from the other side. */
 export default function Demo() {
   const now = new Date();
   const data = demoData(now);
   const { account } = data;
-  /*  ONE BALANCE, and it is the main one.
-   *
-   *  The example account keeps three, and one of them is in euro. This page
-   *  prints money, so showing "the account" would mean adding a euro account
-   *  to two sterling ones for a headline figure. It shows the balance the
-   *  app opens on and names it, which is the same thing the product does. */
   const main = data.balances[0];
   const bets = inBalance(data.bets, main.id);
 
-  const all = select(bets, { ...DEFAULT_SCOPE, period: 'all' }, now, account.weekStart, account.timeZone);
-  const s = summarise(all);
-  const curve = cumulative(byDay(all, account.timeZone));
+  /*  All time, the period the example account opens on. See scopeFromParams:
+      on the first of a month "this month" is one day and every module reads
+      empty, which is the product looking broken while working correctly. */
+  const scope = { ...DEFAULT_SCOPE, period: 'all' as const };
+  const tz = account.timeZone;
+  const rows = select(bets, scope, now, account.weekStart, tz);
+  const s = summarise(rows);
+  const curve = cumulative(byDay(rows, tz));
   const offers = offerSplit(bets);
-  const running = runningNow(bets);
-  const bySport = breakdown(all, 'sport');
+  const closing = summariseClosing(rows);
+  const breakdowns = buildBreakdowns(rows, account.unitPence);
+  const L = ledgerSummary(rows, tz);
+  const dayNets = byDay(rows.filter((b) => !isImported(b) && !b.arbGroupId), tz);
+  const best = dayNets.reduce((a, d) => (d.netPence > a.netPence ? d : a), { day: '', netPence: 0 });
+  const worst = dayNets.reduce((a, d) => (d.netPence < a.netPence ? d : a), { day: '', netPence: 0 });
 
   return (
     <>
-    <section className="sect">
-      <div className="wrap">
-        <Breadcrumbs trail={[{ href: '/', label: 'Slippery' }]} page="The example account" />
-        <h1 className="sect__h" style={{ fontSize: 'clamp(30px, 6vw, 48px)' }}>
-          <span className="setup">Not a screenshot.</span>
-          <span>The account, running, right now.</span>
-        </h1>
-        <p className="sect__p">
-          <span className="mono">@{account.handle}</span> has {plural(s.count, 'bet')} in
-          their {main.name} balance across six months. Every figure below is folded by the function your own ledger uses, from the same append only events. Nothing here can flatter itself.
-        </p>
+      <section className="sect">
+        <div className="wrap">
+          <Breadcrumbs trail={[{ href: '/', label: 'Slippery' }]} page="The example account" />
+          <h1 className="sect__h" style={{ fontSize: 'clamp(30px, 6vw, 48px)' }}>
+            <span className="setup">Not a screenshot.</span>
+            <span>The dashboard you get, on six months of bets.</span>
+          </h1>
+          <p className="sect__p">
+            <span className="mono">@{account.handle}</span> has {plural(s.count, 'bet')} in their{' '}
+            {main.name} balance. Every figure is folded by the function your own ledger uses, from
+            the same append only events.
+          </p>
 
-        <div className="grid" style={{ marginTop: 'var(--s7)' }}>
-          <div className="card col-4">
-            <p className="label">All time</p>
-            <p className={`fig ${s.netPence >= 0 ? 'pos' : 'neg'}`}>{money(s.netPence, main.currency, { sign: true })}</p>
-            <p className="small dim" style={{ marginTop: 4 }}>{fmtUnits(s.units, { sign: true })} on a {money(main.unitMinor, main.currency)} unit</p>
-            {/*  At the foot, because the profit curve beside this is taller
-                 and every card in a grid row stretches to the tallest. Under
-                 the figure these two left ninety pixels of empty card; at
-                 the bottom they close it. */}
-            <div className="row card__foot" style={{ gap: 'var(--s5)' }}>
-              <div><p className="label">Return</p><p className={`fig fig--s ${s.roi >= 0 ? 'pos' : 'neg'}`}>{pct(s.roi, { sign: true })}</p></div>
-              <div><p className="label">Turnover</p><p className="fig fig--s tnum">{money(s.turnoverPence)}</p></div>
+          <div className="grid" style={{ marginTop: 'var(--s7)' }}>
+            {/*  The net card, with the tools off. See the note at the top. */}
+            <section className="card col-12 hero-net" aria-labelledby="demo-net-t">
+              <div className="hero-net__head">
+                <p className="label" id="demo-net-t">Net, {scopeLabel(scope).toLowerCase()}</p>
+              </div>
+              {/*  UnitsUp and PctUp below, not the plain formatters, because
+                   they round at the hundredth in a way toFixed does not and
+                   the two pages printing 105.25u and 105.26u for one number
+                   is exactly the drift this page exists to close. The net
+                   itself is integer pence, so money() and the dashboard's
+                   count up land on the same string, and CountUp cannot be
+                   used here anyway: it takes a render function and this is a
+                   server component. */}
+              <p className={`hero-net__fig ${s.netPence > 0 ? 'pos' : s.netPence < 0 ? 'neg' : ''}`}>
+                {money(s.netPence, main.currency, { sign: true })}
+              </p>
+              <div className="hero-net__row">
+                <ul className="hero-net__stats">
+                  <li><span className="label">Units</span><span className="tnum"><UnitsUp value={s.units} sign /></span></li>
+                  <li>
+                    <span className="label">Return</span>
+                    <span className={`tnum ${s.roi > 0 ? 'pos' : s.roi < 0 ? 'neg' : ''}`}>
+                      <PctUp value={s.roi} sign />
+                    </span>
+                  </li>
+                  <li><span className="label">Bets</span><span className="tnum">{count(s.count)}</span></li>
+                </ul>
+              </div>
+            </section>
+
+            <Module title="Calendar" span={7} size="xl" id="demo-calendar">
+              <MonthCalendar
+                days={byDay(select(bets, scope, now, account.weekStart, tz), tz)}
+                now={now}
+                weekStart={account.weekStart}
+                show={account.calendarDates ? 'both' : 'amount'}
+                currency={main.currency}
+                tz={tz}
+              />
+            </Module>
+
+            <Module
+              title="The record"
+              span={5}
+              size="xl"
+              id="demo-record"
+              note="All time"
+              footer={
+                <p className="small dim">
+                  {heldOutSentence(L.heldOut)}
+                  {L.importedBets > 0
+                    ? ` Best day, worst day and the run count the ${plural(L.bets - L.importedBets, 'bet')} placed through Slippery, not imported history.`
+                    : ''}
+                </p>
+              }
+            >
+              <div className="record">
+                <div>
+                  <p className="label">Win rate</p>
+                  <p className="fig">{pct(s.winRate)}</p>
+                  <p className="small dim">
+                    {s.wins} won, {s.losses} lost
+                    {s.voids + s.placed === 0
+                      ? '.'
+                      : s.placed > 0
+                        ? `, ${count(s.voids + s.placed)} void or placed. Neither is a win or a loss.`
+                        : `, ${count(s.voids)} void. A void is neither.`}
+                  </p>
+                </div>
+
+                <div className="record__three">
+                  <Figure value={s.avgOdds.toFixed(2)} label="Average price" size="md" />
+                  <Figure value={money(s.avgStakePence, main.currency)} label="Average stake" size="md" sub={`${money(main.unitMinor, main.currency)} a unit`} />
+                  <Figure value={String(s.longestWin)} label="Longest win run" size="md" sub={`${s.longestLoss} is the longest losing one`} />
+                </div>
+
+                <ul className="record__rows">
+                  <li className="brow">
+                    <span style={{ minWidth: 0 }}>
+                      <span className="brow__title">Best day</span>
+                      <span className="brow__sub">{best.day ? longDate(best.day + 'T12:00:00Z', 'UTC') : 'No settled day yet'}</span>
+                    </span>
+                    <span className="fig fig--s tnum pos">{money(best.netPence, main.currency, { sign: true })}</span>
+                  </li>
+                  <li className="brow">
+                    <span style={{ minWidth: 0 }}>
+                      <span className="brow__title">Worst day</span>
+                      <span className="brow__sub">{worst.day ? longDate(worst.day + 'T12:00:00Z', 'UTC') : 'No settled day yet'}</span>
+                    </span>
+                    <span className={`fig fig--s tnum ${worst.netPence < 0 ? 'neg' : ''}`}>
+                      {money(worst.netPence, main.currency, { sign: true })}
+                    </span>
+                  </li>
+                </ul>
+              </div>
+            </Module>
+
+            <div className="col-12 dash__break spread" style={{ flexWrap: 'wrap' }}>
+              <h2 className="label">Analysis</h2>
             </div>
+
+            <Module
+              title="Profit curve"
+              span={12}
+              size="l"
+              id="demo-curve"
+              footer={
+                <p className="small dim">
+                  {curve.length > 1
+                    ? `${curve.length} settled days, best ${money(Math.max(...byDay(rows, tz).map((d) => d.netPence), 0), main.currency, { sign: true })} on a day.`
+                    : 'A curve needs two settled days.'}
+                </p>
+              }
+            >
+              <ProfitCurve points={curve} currency={main.currency} />
+            </Module>
+
+            <Module title="Offers versus own" span={12} size="auto" note="All time" id="demo-offers">
+              <div className="offsplit">
+                <Figure
+                  value={money(offers.ownNetPence, main.currency, { sign: true })}
+                  label="From your own stake"
+                  tone={offers.ownNetPence >= 0 ? 'pos' : 'neg'}
+                  size="md"
+                  sub={`${plural(offers.ownCount, 'bet')}`}
+                />
+                <Figure
+                  value={money(offers.offerNetPence, main.currency, { sign: true })}
+                  label="From offers and free bets"
+                  tone={offers.offerNetPence >= 0 ? 'pos' : 'neg'}
+                  size="md"
+                  sub={`${plural(offers.offerCount, 'bet')}`}
+                />
+                <div className="offsplit__read">
+                  <span
+                    className="split__bar"
+                    role="img"
+                    aria-label={`${pct(offers.offerSharePct)} of the net came from offers`}
+                  >
+                    <span className="split__fill" style={{ width: `${Math.max(0, Math.min(100, offers.offerSharePct))}%` }} />
+                  </span>
+                  <p className="small dim split__say">
+                    {offers.offerSharePct >= 50
+                      ? `${pct(offers.offerSharePct)} of this net came from offers. That is not a criticism, it is the number most trackers leave out.`
+                      : `${pct(100 - offers.offerSharePct)} of this net came from their own stake.`}
+                  </p>
+                </div>
+              </div>
+            </Module>
+
+            {closing.recorded > 0 && closing.meanPct !== null ? (
+              <Module
+                title="Closing price"
+                span={12}
+                size="auto"
+                id="demo-closing"
+                note="Prices they recorded"
+                footer={
+                  <p className="small dim">
+                    A plus means the price taken was the longer of the two. On a lay it is worked
+                    out the other way round, because a layer wants the shorter price. Nothing in
+                    Slippery works a closing price out: every one of these came from the account
+                    holder.
+                  </p>
+                }
+              >
+                <div className="clvmod">
+                  <Figure
+                    value={`${closing.recorded} of ${closing.of}`}
+                    label="Bets with a price recorded"
+                    size="md"
+                    sub="The rest are not counted as level"
+                  />
+                  <Figure
+                    value={pct(closing.meanPct, { sign: true })}
+                    label="Average against the close"
+                    tone={closing.meanPct > 0 ? 'pos' : closing.meanPct < 0 ? 'neg' : ''}
+                    size="md"
+                    sub={`across the ${plural(closing.recorded, 'bet')} that carry one`}
+                  />
+                  <Figure
+                    value={count(closing.beat)}
+                    label="Ahead of the close"
+                    size="md"
+                    sub={`${closing.matched} level, ${closing.missed} behind`}
+                  />
+                  <Figure
+                    value={closing.bestPct === null ? '' : pct(closing.bestPct, { sign: true })}
+                    label="Widest gap in their favour"
+                    size="md"
+                    sub={closing.worstPct === null ? '' : `${pct(closing.worstPct, { sign: true })} is the widest against`}
+                  />
+                </div>
+              </Module>
+            ) : null}
+
+            <Module title="Breakdown" span={12} size="auto" id="demo-breakdown">
+              <Breakdown rowsByDim={breakdowns} currency={main.currency} />
+            </Module>
           </div>
 
-          <div className="card col-8">
-            <div className="card__head">
-              <p className="card__title">Profit curve</p>
-              <p className="card__note">{curve.length} settled days</p>
-            </div>
-            <ProfitCurve points={curve} currency={main.currency} />
-          </div>
-
-          <div className="card col-4">
-            <div className="card__head">
-              {/*  "Calendar", not the month's own name: the control directly
-                   under this prints "September 2026" and a card headed
-                   September above it is the same word twice, one line apart,
-                   one of them without the year. The dashboard names this
-                   module the same way. */}
-              <p className="card__title">Calendar</p>
-              {/*  The account's own zone, not a literal. Every day boundary in the
-                   product takes it, and a caption that names one zone while the
-                   account keeps another is the disagreement the field exists
-                   to end. */}
-              <p className="card__note">{timeZoneLabel(account.timeZone)} days</p>
-            </div>
-            <MonthCalendar days={byDay(all, account.timeZone)} now={now} weekStart={account.weekStart} currency={main.currency} tz={account.timeZone} />
-          </div>
-
-          <div className="card col-4">
-            <div className="card__head">
-              <p className="card__title">Money you won</p>
-              <p className="card__note">All time</p>
-            </div>
-            <p className={`fig fig--m ${offers.ownNetPence >= 0 ? 'pos' : 'neg'}`}>{money(offers.ownNetPence, main.currency, { sign: true })}</p>
-            <p className="small dim">{plural(offers.ownCount, 'bet')} with your own stake</p>
-            <p className="label" style={{ marginTop: 'var(--s5)' }}>Money they gave you</p>
-            <p className="fig fig--m">{money(offers.offerNetPence, main.currency, { sign: true })}</p>
-            <p className="small dim">{pct(offers.offerSharePct)} of the total, from {count(offers.offerCount)} offers</p>
-          </div>
-
-          <div className="card col-4">
-            <div className="card__head">
-              {/*  The count IS beside each, in the rows below, so the note
-                   saying so was describing the layout to somebody looking
-                   straight at it. */}
-              <p className="card__title">By sport</p>
-            </div>
-            <ul>
-              {bySport.map((r) => (
-                <li key={r.key} className={`brow${r.thin ? ' brow--faded' : ''}`}>
-                  <span className="brow__title">{r.label} <span className="small dim tnum">{r.count}</span></span>
-                  <span className={`fig fig--s tnum ${r.netPence >= 0 ? 'pos' : 'neg'}`}>{money(r.netPence, main.currency, { sign: true })}</span>
-                </li>
-              ))}
-            </ul>
-          </div>
-
-          <div className="card col-12">
-            <div className="card__head">
-              <p className="card__title">Running now</p>
-              <p className="card__note">{running.length} open</p>
-            </div>
-            {running.length ? (
-              <ul>{running.slice(0, 5).map((b) => <BetRow key={b.id} bet={b} currency={main.currency} tz={account.timeZone} />)}</ul>
-            ) : (
-              <p className="small dim">Nothing running at this exact moment. The example account settles as the day goes on.</p>
-            )}
+          <div style={{ marginTop: 'var(--s6)' }}>
+            <EndCard
+              title="Walk around it properly"
+              actions={
+                <>
+                  <Link href="/app" className="btn btn--primary">Open the example account <Icon name="arrowRight" size={16} /></Link>
+                  <Link href="/signup" className="btn btn--link">Start your own</Link>
+                </>
+              }
+            >
+              The ledger, the slips, the groups and every setting, in the product itself.
+            </EndCard>
           </div>
         </div>
+      </section>
 
-        <div style={{ marginTop: 'var(--s6)' }}>
-          <EndCard
-            title="Walk around it properly"
-            actions={
-              <>
-                <Link href="/app" className="btn btn--primary">Open the example account <Icon name="arrowRight" size={16} /></Link>
-                <Link href="/signup" className="btn btn--link">Start your own</Link>
-              </>
-            }
-          >
-            Every module, the ledger, the groups and every setting, in the product itself.
-          </EndCard>
-        </div>
-      </div>
-    </section>
-
-    <StickyCta />
+      <StickyCta />
     </>
   );
 }

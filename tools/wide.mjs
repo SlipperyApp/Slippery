@@ -1,0 +1,48 @@
+/*  Four widths in one pass, because the defect this branch is chasing is only
+ *  visible by comparing them: a layout that is right at 390 and unchanged at
+ *  1920 is the defect. shot.mjs takes two and is kept for the normal loop. */
+import { chromium } from 'playwright-core';
+import { mkdirSync } from 'node:fs';
+
+const BASE = process.env.E2E_BASE || 'http://127.0.0.1:3309';
+const OUT = process.env.SHOT_DIR || 'test-results/wide';
+const EXEC = process.env.CHROME_PATH || '/opt/pw-browsers/chromium';
+const ONLY = (process.env.W || '').split(',').filter(Boolean);
+
+const SIZES = [[390, 844, 'm'], [1024, 800, 't'], [1440, 900, 'd'], [1920, 1080, 'w']]
+  .filter((s) => !ONLY.length || ONLY.includes(s[2]));
+
+const paths = process.argv.slice(2);
+mkdirSync(OUT, { recursive: true });
+
+const browser = await chromium.launch({ executablePath: EXEC, args: ['--no-sandbox', '--disable-dev-shm-usage'] });
+for (const p of paths) {
+  for (const [w, h, tag] of SIZES) {
+    const ctx = await browser.newContext({
+      viewport: { width: w, height: h },
+      deviceScaleFactor: 1,
+      isMobile: w < 700,
+      hasTouch: w < 700,
+      userAgent: w < 700
+        ? 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Mobile/15E148 Safari/604.1'
+        : undefined,
+    });
+    const page = await ctx.newPage();
+    const errors = [];
+    page.on('console', (m) => { if (m.type() === 'error') errors.push(m.text()); });
+    page.on('pageerror', (e) => errors.push(String(e)));
+    const res = await page.goto(BASE + p, { waitUntil: 'domcontentloaded', timeout: 45000 });
+    await page.waitForLoadState('load').catch(() => {});
+    await page.waitForTimeout(500);
+    const m = await page.evaluate(() => ({
+      sw: document.body.scrollWidth, cw: document.documentElement.clientWidth,
+      sh: document.body.scrollHeight,
+    }));
+    const name = (p === '/' ? 'home' : p.replace(/[^a-z0-9]+/gi, '-').replace(/^-|-$/g, '')) + '-' + tag;
+    await page.screenshot({ path: `${OUT}/${name}.png`, fullPage: process.env.FULL === '1' });
+    console.log(`${p} ${tag} ${res?.status()} overflow=${m.sw - m.cw} h=${m.sh} err=${errors.length}`);
+    if (errors.length) console.log('   ' + errors.slice(0, 3).join('\n   '));
+    await ctx.close();
+  }
+}
+await browser.close();

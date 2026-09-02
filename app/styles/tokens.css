@@ -5,8 +5,11 @@
    theme block, because they must never be theme dependent:
      --pos  #86EFAC  profit
      --neg  #FCA5A5  loss
-   No theme accent may sit near either. tests/themes.test.ts asserts the hue
-   distance, which is why there is no green theme and no red theme.
+   No theme accent may sit near either. tests/themes.test.ts measures the
+   oklab distance, which is why there is no green theme and no red theme.
+   sage is the near miss and it clears on the other arm: it is a green, and
+   it passes because at 14.8% saturation it is a grey with a green cast
+   rather than a green, 0.157 from profit where the floor is 0.120.
 
    Everything else flows through custom properties and color-mix(). There is
    no hardcoded hex outside the theme blocks in this file.
@@ -221,8 +224,17 @@
 
   --tap: 44px;
   --shell-max: 1240px;
-  --sidebar-w: 232px;
+  /*  THE RAIL, NOT A SIDEBAR. It was --sidebar-w: 232px, which is what its
+      longest label needed, and under the last row there were five hundred
+      pixels of nothing on every route. Icons only, one tap target wide plus
+      its air. */
+  --rail-w: 72px;
   --topbar-h: 60px;
+  /*  The app's own header is taller than the marketing one because it holds
+      two lines: the greeting and the one status sentence under it. Kept
+      apart from --topbar-h so the marketing header does not grow with it,
+      and read by .dpane, which sticks under this bar. */
+  --apphead-h: 76px;
   --bottombar-h: 62px;
 
   --ease: cubic-bezier(0.22, 0.61, 0.36, 1);
@@ -282,11 +294,11 @@
   --bg: #0C0E13;
   --card: #14171F;
   --raise: #191D27;
-  --elev: #222836;
+  --elev: #212735;
   --line: #181C26;
-  --line2: #1F2430;
-  --p: #6E86B8;
-  --s: #ACC0E8;
+  --line2: #1E232F;
+  --p: #7085B0;
+  --s: #AEBFE2;
 
   /* The names the rest of the stylesheet already reads, pointed at the eight
      above. Aliases rather than a rename, so one palette change does not touch
@@ -308,14 +320,14 @@
 }
 
 [data-theme='periwinkle'] {
-  --bg: #0A0F1E;
-  --card: #13182A;
-  --raise: #181F32;
-  --elev: #222B41;
-  --line: #171E31;
-  --line2: #1E263B;
-  --p: #6D86DB;
-  --s: #AFC3FF;
+  --bg: #080E20;
+  --card: #10162E;
+  --raise: #141C37;
+  --elev: #1D2649;
+  --line: #141B36;
+  --line2: #1A2242;
+  --p: #667CE2;
+  --s: #A9BCFE;
 
   /* The names the rest of the stylesheet already reads, pointed at the eight
      above. Aliases rather than a rename, so one palette change does not touch
@@ -337,14 +349,14 @@
 }
 
 [data-theme='ink'] {
-  --bg: #050508;
-  --card: #0E0F15;
-  --raise: #13151E;
-  --elev: #1E212E;
-  --line: #12141C;
-  --line2: #1A1D28;
-  --p: #8B84C4;
-  --s: #C5C1F4;
+  --bg: #05050A;
+  --card: #100D17;
+  --raise: #161220;
+  --elev: #231B31;
+  --line: #15111F;
+  --line2: #1E172A;
+  --p: #A07ACA;
+  --s: #D6BAF9;
 
   /* The names the rest of the stylesheet already reads, pointed at the eight
      above. Aliases rather than a rename, so one palette change does not touch
@@ -366,14 +378,14 @@
 }
 
 [data-theme='graphite'] {
-  --bg: #0A0C0B;
-  --card: #121517;
-  --raise: #171B1F;
-  --elev: #21272E;
-  --line: #171B1E;
-  --line2: #1D2329;
-  --p: #7E9188;
-  --s: #CFDBD5;
+  --bg: #040C09;
+  --card: #0C1714;
+  --raise: #111E1B;
+  --elev: #172623;
+  --line: #101D1A;
+  --line2: #142320;
+  --p: #528681;
+  --s: #96BDB8;
 
   /* The names the rest of the stylesheet already reads, pointed at the eight
      above. Aliases rather than a rename, so one palette change does not touch
@@ -395,14 +407,14 @@
 }
 
 [data-theme='slate'] {
-  --bg: #161A21;
-  --card: #1E232C;
-  --raise: #232934;
-  --elev: #282E3B;
-  --line: #222833;
-  --line2: #262C39;
-  --p: #7E93B5;
-  --s: #BCCDE9;
+  --bg: #151A21;
+  --card: #1D232C;
+  --raise: #222933;
+  --elev: #28303C;
+  --line: #212832;
+  --line2: #262E39;
+  --p: #8BA2C1;
+  --s: #CBDDF6;
 
   /* The names the rest of the stylesheet already reads, pointed at the eight
      above. Aliases rather than a rename, so one palette change does not touch
@@ -424,14 +436,14 @@
 }
 
 [data-theme='bronze'] {
-  --bg: #12100C;
-  --card: #1A1917;
-  --raise: #1F1F1F;
-  --elev: #292A2D;
-  --line: #1F1E1E;
-  --line2: #252628;
-  --p: #A8926A;
-  --s: #E7D5B6;
+  --bg: #1A1308;
+  --card: #251D0F;
+  --raise: #2D2313;
+  --elev: #392D1A;
+  --line: #2C2213;
+  --line2: #352918;
+  --p: #AF8F62;
+  --s: #EDD8BA;
 
   /* The names the rest of the stylesheet already reads, pointed at the eight
      above. Aliases rather than a rename, so one palette change does not touch
@@ -453,14 +465,14 @@
 }
 
 [data-theme='cinnabar'] {
-  --bg: #130D0B;
-  --card: #1B1617;
-  --raise: #211C1E;
-  --elev: #2A272D;
-  --line: #201B1D;
-  --line2: #272328;
+  --bg: #130705;
+  --card: #21100B;
+  --raise: #2B160F;
+  --elev: #3C2017;
+  --line: #29150F;
+  --line2: #361C14;
   --p: #C4643F;
-  --s: #FFD5C5;
+  --s: #FED8CB;
 
   /* The names the rest of the stylesheet already reads, pointed at the eight
      above. Aliases rather than a rename, so one palette change does not touch
@@ -481,15 +493,15 @@
   --glow-c: color-mix(in oklab, var(--s) 24%, var(--bg));
 }
 
-[data-theme='liquid'] {
-  --bg: #04171C;
-  --card: #0C2028;
-  --raise: #112630;
-  --elev: #1B323F;
-  --line: #11252F;
-  --line2: #182D39;
-  --p: #54AEBE;
-  --s: #B4E5EF;
+[data-theme='sage'] {
+  --bg: #0E1611;
+  --card: #17211A;
+  --raise: #1D281F;
+  --elev: #232F25;
+  --line: #1C271F;
+  --line2: #212D23;
+  --p: #9EB49A;
+  --s: #DDEDDA;
 
   /* The names the rest of the stylesheet already reads, pointed at the eight
      above. Aliases rather than a rename, so one palette change does not touch

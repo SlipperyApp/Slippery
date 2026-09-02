@@ -152,7 +152,7 @@ which is invisible. The eight names carry forward and nothing about their
 appearance does:
 
 `carbon` (default) · `periwinkle` · `ink` · `graphite` · `slate` · `bronze` ·
-`cinnabar` · `liquid`
+`cinnabar` · `sage`
 
 `#86EFAC` profit and `#FCA5A5` loss are LOCKED, semantic and declared exactly
 once, outside every theme block. No theme may redefine them and no theme accent

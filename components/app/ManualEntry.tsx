@@ -3,8 +3,9 @@
 import { useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Icon } from '@/components/Icon';
-import { money, units as fmtUnits } from '@/lib/format';
+import { money, units as fmtUnits, CURRENCY_WORD } from '@/lib/format';
 import { accaOdds, formatOdds } from '@/lib/odds';
+import { BalanceChoice } from '@/components/app/BalanceChoice';
 import type { Currency } from '@/lib/domain/types';
 
 type Leg = { selection: string; eventName: string; market: string; odds: string };
@@ -35,12 +36,18 @@ const LINES: Record<string, number> = {
 const blankLeg = (): Leg => ({ selection: '', eventName: '', market: 'Match result', odds: '' });
 
 export function ManualEntry({
-  bookmakers, sports, unitPence, currency,
+  bookmakers, sports, unitPence, currency, balances, balanceId, balanceName,
 }: {
   bookmakers: { id: string; name: string }[];
   sports: { id: string; name: string }[];
+  /** The OPEN BALANCE'S unit and currency, not the account's. The page reads
+   *  them off the viewer, which is already scoped to one balance, so choosing
+   *  another one re-denominates every figure in this form on the refresh. */
   unitPence: number;
   currency: Currency;
+  balances: { id: string; name: string; currency: Currency }[];
+  balanceId: string;
+  balanceName: string;
 }) {
   const router = useRouter();
   const [shape, setShape] = useState('single');
@@ -188,6 +195,17 @@ export function ManualEntry({
       <div className="col-4" style={{ display: 'grid', gap: 'var(--s4)', alignContent: 'start' }}>
         <section className="card">
           <h2 className="card__title">The bet</h2>
+
+          {/*  WHICH BALANCE, FIRST, above the stake it denominates. The stake
+               box below is in this balance's currency and the unit beside it
+               is this balance's unit, so the choice has to be made before the
+               figure is read rather than discovered after it is written. */}
+          <BalanceChoice
+            balances={balances}
+            current={balanceId}
+            unitMinor={unitPence}
+          />
+
           <div className="field">
             <label className="field__label" htmlFor="mn-stake">
               {lines > 1 ? 'Stake per line' : side === 'lay' ? 'Backer’s stake' : 'Stake'}
@@ -198,9 +216,16 @@ export function ManualEntry({
               {stakePence > 0 ? (
                 <>
                   {lines > 1 ? <>{money(totalPence, currency)} in total across {lines} lines. </> : null}
-                  {fmtUnits(totalPence / unitPence)} at your unit of {money(unitPence, currency)}.
+                  {unitPence > 0
+                    ? <>{fmtUnits(totalPence / unitPence)} at your unit of {money(unitPence, currency)}.</>
+                    : <>Set a unit in Settings and this says what the stake is worth in units.</>}
                 </>
-              ) : 'In pounds and pence.'}
+              ) : (
+                /*  IT SAID "In pounds and pence" ON A EURO BALANCE. The stake
+                    is denominated by the balance, so the sentence naming the
+                    money has to come from the balance too. */
+                <>In {CURRENCY_WORD[currency]}, into {balanceName}.</>
+              )}
             </span>
           </div>
 

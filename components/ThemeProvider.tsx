@@ -1,7 +1,7 @@
 'use client';
 
 import { createContext, useCallback, useContext, useEffect, useState } from 'react';
-import { DEFAULT_THEME, THEME_COOKIE, isTheme, type ThemeName } from '@/lib/themes';
+import { DEFAULT_THEME, THEME_COOKIE, readTheme, type ThemeName } from '@/lib/themes';
 
 type Ctx = { theme: ThemeName; setTheme: (t: ThemeName) => void };
 const ThemeCtx = createContext<Ctx>({ theme: DEFAULT_THEME, setTheme: () => {} });
@@ -9,8 +9,10 @@ const ThemeCtx = createContext<Ctx>({ theme: DEFAULT_THEME, setTheme: () => {} }
 function readCookie(): ThemeName {
   if (typeof document === 'undefined') return DEFAULT_THEME;
   const m = document.cookie.match(new RegExp(`(?:^|; )${THEME_COOKIE}=([^;]*)`));
-  const v = m ? decodeURIComponent(m[1]) : '';
-  return isTheme(v) ? v : DEFAULT_THEME;
+  /*  readTheme rather than isTheme, so a cookie naming a theme that has since
+      been renamed lands on the theme it became instead of silently on the
+      default. See the RENAMED table in lib/themes.ts. */
+  return readTheme(m ? decodeURIComponent(m[1]) : '');
 }
 
 /** Switching swaps the attribute and lets the COLOURS move.

@@ -61,6 +61,20 @@ export function Podium({ rows, you, period }: { rows: LeagueRow[]; you: string; 
           </ul>
         </div>
       ) : null}
+
+      {/*  WHY YOUR COUNT HERE IS BIGGER THAN THE ONE ON YOUR DASHBOARD.
+           The same account read 259 bets on the dashboard, 355 on the
+           balances page and 385 on this plinth. Each is right in its own
+           scope and the reason is written down in lib/data/social.ts, where
+           yourRecord deliberately folds the whole book because a league
+           ranks a person and not a pot. Nothing on the screen said so, so
+           three screens simply disagreed with each other about how many bets
+           somebody has placed, which is the one thing a tracker cannot do.
+           One line, on the component rather than on either page, so a third
+           board cannot appear without it. */}
+      <p className="small dim podium__scope">
+        Counted across every balance a Slipper keeps: a league ranks a person rather than a pot.
+      </p>
     </div>
   );
 }

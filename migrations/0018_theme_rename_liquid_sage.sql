@@ -1,0 +1,30 @@
+-- liquid became sage, and a rename is a migration.
+--
+-- The theme is stored in two places that outlive a release: a cookie, and this
+-- column. Renaming the theme in lib/themes.ts, tokens.css and the tooling took
+-- care of everything that reads the NAME and nothing that holds the old VALUE.
+--
+-- The cookie half degraded quietly and wrongly. Every reader validated against
+-- the list of theme names and fell back to carbon, so somebody who had chosen
+-- liquid was silently moved to the default, and the getting started list, which
+-- ticks "pick a theme" off the cookie, grew a row telling them to choose a
+-- theme they had already chosen. That is handled in code, in readTheme() and
+-- themeWasChosen() in lib/themes.ts, because a cookie cannot be migrated from
+-- here: it lives on the person's device and is only rewritten when they next
+-- pick a theme.
+--
+-- This column was worse, because nothing validated it at all. lib/server/book.ts
+-- read `r.theme || 'carbon'`, which passes any string through, so the value went
+-- out to the page as data-theme='liquid', matched no block in the stylesheet,
+-- and left the account rendering on the :root fallback: not carbon, and not a
+-- theme, but whichever aliases happened to be resolvable. That is the account on
+-- liquid ending up on no theme at all.
+--
+-- Code now reads this column through readTheme() as well, so an account is
+-- correct from the deploy rather than from the moment this file runs. The update
+-- is still worth doing: it means the stored value and the rendered theme agree,
+-- and the next person to read this table sees eight theme names rather than
+-- nine. Guarded on the value, so it is safe to re-run and touches no row that is
+-- already on a current theme.
+
+update accounts set theme = 'sage' where theme = 'liquid';

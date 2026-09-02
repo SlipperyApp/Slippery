@@ -22,7 +22,7 @@ export const metadata: Metadata = {
 };
 
 const NEXT = [
-  { href: '/demo', t: 'The example account', s: 'Six months of a real record, running now' },
+  { href: '/demo', t: 'The example account', s: 'The dashboard itself, on six months of bets' },
   { href: '/how', t: 'How it works', s: 'Slip in, ledger out, and what happens between' },
   { href: '/faq', t: 'Questions', s: `${spell(QUESTIONS.length)} of them, answered without the marketing` },
 ];

@@ -75,6 +75,24 @@ export function balanceById(balances: Balance[], id: string): Balance | null {
   return balances.find((b) => b.id === id) ?? null;
 }
 
+/** Whether a slip read in one currency may be written into this balance.
+ *
+ *  A BALANCE DECIDES WHAT A STAKE IS DENOMINATED IN, and always did: the
+ *  write path takes the currency off the balance and ignores whatever the
+ *  caller sends. So a euro slip confirmed while a sterling balance is open
+ *  goes into the ledger as the number off the slip in pounds, and there is
+ *  nothing on any screen that would show it. The review screen holds the
+ *  confirm on this and /api/bets refuses on it, both through this function,
+ *  because two implementations of one rule is how the button and the route
+ *  come to disagree about what is allowed.
+ *
+ *  Unknown agrees with everything. A reader that could not find a currency on
+ *  a slip has not found a disagreement, and refusing on a field that was
+ *  never read would block the ordinary case to catch the rare one. */
+export function currencyAgrees(slip: Currency | null, balance: Currency | null): boolean {
+  return !slip || !balance || slip === balance;
+}
+
 /** Which balances are in which currency, in the order the balances are in.
  *
  *  The balance sheet leads with this rather than leaving the reader to work

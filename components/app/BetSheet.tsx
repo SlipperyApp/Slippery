@@ -4,13 +4,13 @@ import { Fragment, useEffect, useMemo, useRef, useState } from 'react';
 import { Icon } from '@/components/Icon';
 import { recompute, effectiveOdds } from '@/lib/domain/fold';
 import { working, type WorkingLine } from '@/lib/domain/working';
-import { slipStatus, IMAGE_RETENTION_DAYS } from '@/lib/domain/slip';
+import { slipStatus, IMAGE_RETENTION_DAYS, IMAGES_STORED } from '@/lib/domain/slip';
 import type { SettlementEvent } from '@/lib/domain/types';
 import type { DemoBet } from '@/lib/data/demo';
 import type { Currency } from '@/lib/domain/types';
 import { formatOdds, type OddsFormat } from '@/lib/odds';
 import { bookmakerName } from '@/lib/data/reference';
-import { dateTime, money, units as fmtUnits, pct, DEFAULT_TZ, type TimeZone } from '@/lib/format';
+import { dateTime, gap, money, units as fmtUnits, pct, DEFAULT_TZ, type TimeZone } from '@/lib/format';
 import { OutcomePill } from './BetRow';
 import { ClosingPrice } from './ClosingPrice';
 import { Settle, newWriteKey } from './Settle';
@@ -97,6 +97,7 @@ export function BetSheet({
       surfaces keeps saying 90 and describes an image as held after it has
       been deleted. */
   const slip = slipStatus(bet);
+  const capturedBefore = Date.parse(bet.placedAt) < Date.parse(bet.eventAt);
   const ref = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
@@ -303,7 +304,7 @@ export function BetSheet({
                 way everywhere it appears, including a group that counts slip backed bets only.
               </span>
             </>
-          ) : slip.state === 'expired' ? (
+          ) : slip.state === 'expired' && IMAGES_STORED ? (
             <>
               <Icon name="clock" size={18} className="slipstate__i" />
               <span>
@@ -333,7 +334,15 @@ export function BetSheet({
             <>
               <Icon name="camera" size={18} className="slipstate__i" />
               <span>
-                <strong>Captured from a slip</strong> {slip.ageDays === 0 ? 'today' : `${slip.ageDays} days ago`}.
+                {/*  HOW FAR AHEAD OF THE OFF, not just how long ago. The
+                     age of the capture is a fact about the file; the head
+                     start is the fact the product is about, and it is the
+                     one thing a screenshot can prove that a typed row
+                     cannot. */}
+                <strong>
+                  Captured {capturedBefore ? `${gap(bet.placedAt, bet.eventAt)} before the off` : 'after the off'}
+                </strong>{' '}
+                {slip.ageDays === 0 ? 'today' : `${slip.ageDays} days ago`}.
                 The image is deleted after {IMAGE_RETENTION_DAYS} days, or now if you ask.{' '}
                 {/*  A REAL REQUEST. This used to set a React state variable
                      and nothing else: it relabelled itself "Requested", sent

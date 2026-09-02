@@ -5,6 +5,7 @@ import { SectionHead, Checks, RowList, EndCard } from '@/components/MarketingChr
 import { SettleDemo } from '@/components/SettleDemo';
 import { Breadcrumbs } from '@/components/marketing/Breadcrumbs';
 import { StickyCta } from '@/components/marketing/StickyCta';
+import { TRIAL_DAYS, TRIAL_SLIPS } from '@/lib/domain/trial';
 
 export const metadata: Metadata = {
   title: 'How Slippery works',
@@ -21,10 +22,10 @@ export const metadata: Metadata = {
 
 const STEPS = [
   { n: '01', t: 'You place the bet', s: 'On whatever app or shop you already use. Slippery is never between you and the bookmaker.' },
-  { n: '02', t: 'You send the slip', s: 'Forward the screenshot to the bot, upload it, photograph a shop slip, or type it in.' },
+  { n: '02', t: 'You send the slip', s: 'Forward the screenshot, upload it, photograph a shop slip, or type it in. Whenever you placed it, before the off or in play.' },
   { n: '03', t: 'The reader reads it', s: 'It detects the bookmaker template, then scores every field for confidence on its own.' },
   { n: '04', t: 'You confirm', s: 'You see what was read before anything is written. Low confidence fields are named, not guessed.' },
-  { n: '05', t: 'It settles itself', s: 'Ninety minute scores only. Anything uncertain asks you.' },
+  { n: '05', t: 'It settles itself', s: 'Nothing to press. The score arrives and the bet grades itself.' },
   { n: '06', t: 'It reports', s: 'Ledger, calendar, breakdowns, and the split between money you won and money they gave you.' },
 ];
 
@@ -68,7 +69,7 @@ export default function How() {
                 setup="Not per slip."
                 claim="A slip is right in parts."
               >
-                Each field is scored on its own, so one bad field cannot poison nineteen good ones.
+                One bad field cannot poison nineteen good ones.
               </SectionHead>
               <RowList
                 rows={[
@@ -90,30 +91,27 @@ export default function How() {
         </div>
       </section>
 
+      {/*  ONE SENTENCE, AND THE RULES ARE IN THE QUESTIONS.
+           Eight cards stood here: ninety minutes, whole lines, quarter lines,
+           handicaps by bookmaker, postponed, the markets that always ask,
+           accumulators and cash out. Every one of them is a rule somebody
+           looks up once and nobody reads on the way to deciding whether to
+           try this, and all eight are now in the settlement answer on /faq,
+           which is where a rule gets looked up. Nothing was dropped. */}
       <section className="sect" style={{ paddingTop: 0 }}>
         <div className="wrap">
           <SectionHead
-            badge="Settlement"
             setup="A wrong grade is worse"
             claim="than no grade at all."
-          />
-          <div className="grid" style={{ marginTop: 'var(--s6)' }}>
-            {[
-              { t: '90 minutes only', s: 'Extra time and penalties never count. If the feed cannot prove the score, it asks.' },
-              { t: 'Whole lines push', s: 'Over 2.0 on a 1-1 is a void. Your stake comes back and the bet leaves your return.' },
-              { t: 'Quarter lines split', s: 'Over 2.25 on a 1-1 loses half the stake and returns the other half.' },
-              { t: 'Handicaps by bookmaker', s: 'bet365 settles Asian, so a whole line pushes. Most others give the handicap draw its own outcome.' },
-              { t: 'Postponed is void', s: 'Cancelled too. Abandoned asks, because bookmakers differ.' },
-              { t: 'Some markets always ask', s: 'Player props, scorers, cards, corners, bet builders, same game multis, next goal.' },
-              { t: 'Accumulators wait', s: 'Every leg must grade or the bet defers. Void legs drop out and the price recalculates.' },
-              { t: 'Cash out is yours', s: 'Always your action. Full, or in eighths of what is left.' },
-            ].map((r) => (
-              <div key={r.t} className="card col-4">
-                <p className="card__title">{r.t}</p>
-                <p className="small muted" style={{ marginTop: 'var(--s2)' }}>{r.s}</p>
-              </div>
-            ))}
-          </div>
+          >
+            Ninety minute scores only, whole lines push, quarter lines split the stake, and
+            anything uncertain asks you rather than guessing.
+          </SectionHead>
+          <p style={{ marginTop: 'var(--s5)' }}>
+            <Link href="/faq" className="btn btn--ghost btn--sm">
+              Every settlement rule <Icon name="arrowRight" size={16} />
+            </Link>
+          </p>
         </div>
       </section>
 
@@ -128,8 +126,7 @@ export default function How() {
               </>
             }
           >
-            Fourteen days or thirty five slips, whichever runs out first. Your ledger and your
-            export stay live afterwards either way.
+            {TRIAL_DAYS} days or {TRIAL_SLIPS} slips, whichever runs out first.
           </EndCard>
         </div>
       </section>

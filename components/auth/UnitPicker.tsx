@@ -5,6 +5,8 @@ import { useState } from 'react';
 import { Icon } from '@/components/Icon';
 import { money, units as fmtUnits } from '@/lib/format';
 import type { Currency } from '@/lib/domain/types';
+import { keepAnswers, stepHref } from '@/lib/signup-draft';
+import { useDraft } from '@/components/auth/useDraft';
 
 const PRESETS = [200, 500, 1000, 2500, 5000, 10000];
 
@@ -14,10 +16,17 @@ const PRESETS = [200, 500, 1000, 2500, 5000, 10000];
  *  stakes and a £2,500 target nobody set. */
 export function UnitPicker() {
   const router = useRouter();
-  const [currency, setCurrency] = useState<Currency>('GBP');
-  const [unit, setUnit] = useState(2500);
-  const [custom, setCustom] = useState(false);
-  const [customText, setCustomText] = useState('25.00');
+  const draft = useDraft();
+  /*  A unit already chosen comes back as the chosen one, and a unit that was
+      not one of the six presets comes back in the box it was typed into. */
+  const chosen = draft.unitPence;
+  const preset = chosen !== null && PRESETS.includes(chosen);
+  const [currency, setCurrency] = useState<Currency>(draft.currency);
+  const [unit, setUnit] = useState(preset ? (chosen as number) : 2500);
+  const [custom, setCustom] = useState(chosen !== null && !preset);
+  const [customText, setCustomText] = useState(
+    chosen !== null && !preset ? (chosen / 100).toFixed(2) : '25.00',
+  );
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
 
@@ -33,7 +42,9 @@ export function UnitPicker() {
       method: 'POST', headers: { 'content-type': 'application/json' },
       body: JSON.stringify({ unitPence: effective, currency }),
     }).catch(() => null);
-    router.push('/signup/sports');
+    const answered = { ...draft, unitPence: effective, currency };
+    keepAnswers('/signup/unit', answered);
+    router.push(stepHref('/signup/sports', answered));
   }
 
   return (

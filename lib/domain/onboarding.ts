@@ -5,15 +5,23 @@
  *  figures, which is a screen that tells a new Slipper what the product looks
  *  like when it is working and not one thing about how to get there.
  *
- *  FOUR STEPS. Link the bot, send a slip, set the unit, pick a theme. Each of
- *  them changes what the product can do: without the link a slip takes a
- *  minute instead of four seconds, without a slip every figure is zero,
- *  without a unit no comparison in the product means anything, and the theme
- *  is here because it is the one that takes ten seconds and makes the app
- *  feel like the person's own. Joining a group was a fifth and it is not one
- *  of these: a group is a thing to do with a record, not a thing that makes a
- *  record work, and putting it in a list somebody is trying to finish is the
- *  product asking for engagement it has not earned.
+ *  THREE STEPS AND ONE THAT IS OPTIONAL. Send a slip, set the unit and pick a
+ *  theme are the three: without a slip every figure is zero, without a unit no
+ *  comparison in the product means anything, and the theme is here because it
+ *  takes ten seconds and makes the app feel like the person's own. Joining a
+ *  group was a fifth and it is not one of these: a group is a thing to do with
+ *  a record, not a thing that makes a record work, and putting it in a list
+ *  somebody is trying to finish is the product asking for engagement it has
+ *  not earned.
+ *
+ *  LINKING TELEGRAM IS THE OPTIONAL ONE, and it used to be the first of four
+ *  with a meter counting it, which is a required step wearing a tick box: an
+ *  account that will never link a chat could not finish the list and had a
+ *  bar on its dashboard that stopped at three quarters for ever. Nothing in
+ *  the product is gated on it. A screenshot uploads, a bet types in and a
+ *  history imports with no chat linked at all, so it does not count towards
+ *  the list, it does not hold the list open, and it is labelled Optional
+ *  where the others are labelled To do.
  *
  *  IT NEVER NAGS, and that is a rule rather than a preference. It appears on
  *  the dashboard while it is unfinished, it disappears the moment it is
@@ -55,6 +63,9 @@ export type OnboardingStep = {
   blurb: string;
   href: string;
   done: boolean;
+  /** Shown, never counted, and it never holds the list open. Nothing in the
+   *  product is gated on an optional step. */
+  optional?: boolean;
 };
 
 export function onboardingSteps(s: OnboardingSignals): OnboardingStep[] {
@@ -62,9 +73,13 @@ export function onboardingSteps(s: OnboardingSignals): OnboardingStep[] {
     {
       id: 'telegram',
       title: 'Link the Telegram bot',
-      blurb: 'One code, once. After it, sending a slip takes four seconds.',
+      /*  A plain statement of what it does and what it does not gate. It said
+          "After it, sending a slip takes four seconds", which reads next to a
+          To do label as a thing the reader is going without. */
+      blurb: 'One code, once. Uploading, typing and importing work without it.',
       href: '/app/import/linked',
       done: s.telegramLinked,
+      optional: true,
     },
     {
       id: 'slip',
@@ -92,25 +107,31 @@ export function onboardingSteps(s: OnboardingSignals): OnboardingStep[] {
 
 export type Onboarding = {
   steps: OnboardingStep[];
+  /** Counted over the steps that are NOT optional, because a count is a
+   *  measure of what is left to do and there is nothing left to do about a
+   *  step nothing is gated on. */
   done: number;
   total: number;
-  /** True when every step is done. The caller draws nothing at all in that
-   *  case: a finished checklist is furniture, and a finished checklist with a
-   *  tick against every row is furniture congratulating itself. */
+  /** True when every step that is not optional is done. The caller draws
+   *  nothing at all in that case: a finished checklist is furniture, and a
+   *  finished checklist with a tick against every row is furniture
+   *  congratulating itself. */
   complete: boolean;
   /** The step to do next, or null when there is none. One at a time is the
-   *  difference between a list and an instruction. */
+   *  difference between a list and an instruction, and an optional step is
+   *  never the one pointed at. */
   next: OnboardingStep | null;
 };
 
 export function onboarding(signals: OnboardingSignals): Onboarding {
   const steps = onboardingSteps(signals);
-  const done = steps.filter((x) => x.done).length;
+  const counted = steps.filter((x) => !x.optional);
+  const done = counted.filter((x) => x.done).length;
   return {
     steps,
     done,
-    total: steps.length,
-    complete: done === steps.length,
-    next: steps.find((x) => !x.done) ?? null,
+    total: counted.length,
+    complete: done === counted.length,
+    next: counted.find((x) => !x.done) ?? null,
   };
 }

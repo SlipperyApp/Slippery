@@ -23,7 +23,7 @@ export default async function ReadOnly() {
         </Link>
       </div>
 
-      <span className="pill pill--neg">Read only</span>
+      <span className="pill pill--warn">Read only</span>
       <h1 style={{ marginTop: 'var(--s4)' }}>Two payments failed, so new slips are paused</h1>
       <p className="lead" style={{ marginTop: 'var(--s3)' }}>
         Nothing has been deleted and nothing will be. Your {plural(all.count, 'bet')}, worth{' '}

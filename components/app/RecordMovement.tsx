@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { Icon } from '@/components/Icon';
 import { ALL_BOOKMAKERS } from '@/lib/data/reference';
 import { MOVEMENT_KINDS, type MovementKind } from '@/lib/domain/movements';
+import { CURRENCY_WORD, type Currency } from '@/lib/format';
 
 /** Recording money in or money out.
  *
@@ -14,8 +15,17 @@ import { MOVEMENT_KINDS, type MovementKind } from '@/lib/domain/movements';
  *
  *  The amount box has no minus in it and refuses one, because the direction
  *  is the segmented control. A minus typed into a deposit is a question about
- *  what somebody meant, and the ledger does not guess at money. */
-export function RecordMovement() {
+ *  what somebody meant, and the ledger does not guess at money.
+ *
+ *  IT SAYS WHICH BALANCE THE MONEY LANDS IN. An account keeps several and a
+ *  deposit goes into the one that is open, so a form that does not name it
+ *  files a top up against the football bank when it was meant for the matched
+ *  betting float, and the only way to find out is a balance sheet that
+ *  disagrees with your bank statement. */
+export function RecordMovement({ balanceName, currency }: {
+  balanceName: string;
+  currency: Currency;
+}) {
   const [open, setOpen] = useState(false);
   const [kind, setKind] = useState<MovementKind>('deposit');
   const [amount, setAmount] = useState('');
@@ -44,7 +54,8 @@ export function RecordMovement() {
         read, and two descriptions of one failure is how somebody gets sent
         back to fix the wrong thing. */
     setSaid(res.ok
-      ? `${kind === 'deposit' ? 'Deposit' : 'Withdrawal'} recorded. It moves your balance and no other figure.`
+      ? `${kind === 'deposit' ? 'Deposit' : 'Withdrawal'} recorded in ${String(body.balanceName ?? balanceName)}. `
+        + 'It moves that balance and no other figure.'
       : String(body.message ?? 'Nothing was written.'));
     if (res.ok) { setAmount(''); setNote(''); }
   }
@@ -81,7 +92,9 @@ export function RecordMovement() {
           placeholder="200.00"
         />
         <span className="field__hint">
-          No minus sign. Which way the money went is the choice above.
+          No minus sign. Which way the money went is the choice above. In{' '}
+          {CURRENCY_WORD[currency]}, into <strong>{balanceName}</strong>, which is the balance you
+          have open. Switch it in the top bar to record against another one.
         </span>
       </div>
 

@@ -46,7 +46,7 @@ export function NotFoundPane() {
 export function ServerErrorPane({ reset }: { reset?: () => void }) {
   return (
     <div className="column" style={{ paddingBlock: 'var(--s10)' }}>
-      <span className="pill pill--neg">500</span>
+      <span className="pill pill--warn">500</span>
       <h1 style={{ fontSize: 'clamp(28px, 6vw, 44px)' }}>
         That failed on our side, and nothing was saved.
       </h1>

@@ -20,6 +20,28 @@ import { isImportedSource } from './types';
  *  counts down to it. */
 export const IMAGE_RETENTION_DAYS = 90;
 
+/** WHETHER AN IMAGE IS KEPT AT ALL ON THIS DEPLOYMENT, and today it is not.
+ *
+ *  `slip_images` is selected from, updated and deleted, and there is no
+ *  INSERT anywhere in the repository. DECISIONS.md records it as open gap 6.
+ *  So the retention sweep has nothing to sweep, the image hash duplicate
+ *  path can never match, and three statements the interface was making about
+ *  a file were all false about a real account: "121 still have an image",
+ *  "IMAGE HELD 90D" on every tile, and a Delete the image now button that
+ *  set a React state and sent nothing anywhere.
+ *
+ *  A gallery of a hundred and sixty one identical grey cards promising a
+ *  picture that does not exist is the moment this product reads as a mock,
+ *  and it is on the screen that would otherwise prove the headline claim. So
+ *  the surfaces branch on this rather than pretending: the state machine
+ *  above is unchanged and correct, and the day the image is stored this
+ *  becomes true and every one of them says so again.
+ *
+ *  It is a constant rather than an environment read because it is a fact
+ *  about the code, not about the machine: no line in this repository writes
+ *  an image, on any deployment. */
+export const IMAGES_STORED = false;
+
 export type SlipState =
   /** Brought in from a file. There was never an image and it is never slip backed. */
   | 'imported'

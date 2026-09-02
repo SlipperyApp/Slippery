@@ -125,8 +125,13 @@ export function RowSpark({
   width?: number;
   height?: number;
   /** Overrides the end-versus-start read, for rows whose printed figure is
-   *  the thing the colour has to agree with. */
-  tone?: 'pos' | 'neg';
+   *  the thing the colour has to agree with.
+   *
+   *  `ink` is the third answer and it is not a result colour at all: it draws
+   *  in currentColor, for a line whose figure is NOT money won or lost. A
+   *  turnover that goes up is not a profit, and drawing it in the profit
+   *  green would be the one thing the two locked colours exist to prevent. */
+  tone?: 'pos' | 'neg' | 'ink';
 }) {
   if (values.length < 2) return <span className="rspark" aria-hidden="true" />;
 
@@ -146,7 +151,13 @@ export function RowSpark({
   const area = `${line} L${x(values.length - 1).toFixed(1)},${zeroY.toFixed(1)} L0,${zeroY.toFixed(1)} Z`;
 
   const last = values[values.length - 1];
-  const c = (tone ?? (last >= 0 ? 'pos' : 'neg')) === 'pos' ? 'var(--pos)' : 'var(--neg)';
+  /*  `ink` first and on its own line: what follows is the shape the two
+      result colours are allowed to be chosen by, which is the sign of the
+      figure, and tests/contrast.test.ts reads these lines to keep it that
+      way. A line that no longer mentions `tone` is a line that rule cannot
+      recognise. */
+  const plain = tone === 'ink';
+  const c = plain ? 'currentColor' : (tone ?? (last >= 0 ? 'pos' : 'neg')) === 'pos' ? 'var(--pos)' : 'var(--neg)';
 
   return (
     <svg

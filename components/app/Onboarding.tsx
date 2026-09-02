@@ -5,9 +5,16 @@ import type { TrialState } from '@/lib/domain/trial';
 
 /** The getting started card, on the dashboard, while it is unfinished.
  *
- *  It draws NOTHING when the four are done. A finished checklist is
+ *  It draws NOTHING when the counted ones are done. A finished checklist is
  *  furniture, and a finished checklist with a tick against every row is
  *  furniture congratulating itself.
+ *
+ *  Linking the bot is on the list and is not counted by it. It is labelled
+ *  Optional rather than To do, it is not in the "N of 3", and it does not
+ *  hold the card open, because nothing in the product is gated on it: a
+ *  screenshot uploads, a bet types in and a history imports with no chat
+ *  linked at all. A row saying Optional is a fact. The same row inside a
+ *  meter that will not fill is a nag.
  *
  *  THE TRIAL SENTENCE IS trialState()'s OWN. The trial is fourteen days or
  *  thirty five slips, whichever runs out first, and that function reports
@@ -31,8 +38,8 @@ export function Onboarding({
     <section className="card col-12 onb" aria-labelledby="onb-t" id="mod-onboarding">
       <div className="card__head">
         <h2 className="card__title" id="onb-t">Getting started</h2>
-        {/*  A count, not a percentage and not a word. "2 of 4" is a fact;
-             "50% there" is a claim about how much is left, and the four are
+        {/*  A count, not a percentage and not a word. "2 of 3" is a fact;
+             "50% there" is a claim about how much is left, and the three are
              not the same size. */}
         <p className="card__note tnum">{o.done} of {o.total}</p>
       </div>
@@ -63,7 +70,9 @@ export function Onboarding({
                 <span className="brow__sub">{step.blurb}</span>
               </Link>
             )}
-            <span className="small dim onb__state">{step.done ? 'Done' : 'To do'}</span>
+            <span className="small dim onb__state">
+              {step.done ? 'Done' : step.optional ? 'Optional' : 'To do'}
+            </span>
           </li>
         ))}
       </ul>
@@ -72,7 +81,8 @@ export function Onboarding({
         {/*  The trial's own sentence, from the one function that owns both
              halves of it. Nothing here counts slips or days itself. */}
         {trial.active ? `Trial: ${trial.message}` : trial.message}{' '}
-        This list disappears when the four are done, and nothing here will ever be sent to you.
+        This list disappears when the counted ones are done, and nothing here will ever be sent to
+        you.
       </p>
     </section>
   );

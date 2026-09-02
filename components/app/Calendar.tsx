@@ -51,7 +51,7 @@ export type CalDay = { day: string; netPence: number; count: number };
 
 export function MonthCalendar({
   days, now, weekStart = 1, show: initialShow = 'both', currency = 'GBP', tz = DEFAULT_TZ,
-  unitMinor = 0,
+  unitMinor = 0, fit = false,
 }: {
   /** Every settled day the account has. The calendar picks the month itself. */
   days: CalDay[];
@@ -71,6 +71,16 @@ export function MonthCalendar({
    *  which cells are still in the future are all answered in it, and they
    *  have to be the same answer the day keys in `days` were built from. */
   tz?: TimeZone;
+  /** INSIDE A CARD THAT ALREADY HAS A HEIGHT.
+   *
+   *  The row floor under the cells exists for the calendars that sit in a
+   *  card with no height of its own, where the grid would otherwise take its
+   *  content height and draw a month as six seventeen pixel lines of digits.
+   *  The dashboard's card is one row of a grid sized to the window, so it has
+   *  a height, and holding the cells to a floor 24px taller than that card
+   *  can give them is how the last week of a month ends up under the card's
+   *  own edge with nothing on screen to say so. */
+  fit?: boolean;
 }) {
   const [show, setShow] = useState<CalShow>(initialShow);
 
@@ -288,7 +298,7 @@ export function MonthCalendar({
       </div>
 
       <div
-        className="cal"
+        className={`cal${fit ? ' cal--fit' : ''}`}
         role="group"
         aria-label={`${title}, one cell a day`}
         style={{ ['--cal-rows' as string]: String(rows) }}

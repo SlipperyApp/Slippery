@@ -10,6 +10,8 @@ import {
   normaliseType, type SlipRead, type SlipRefusal,
 } from '@/lib/data/read';
 import { DEFAULT_BOOKMAKER_ID } from '@/lib/data/reference';
+import { currentBalance } from '@/lib/server/balances';
+import { openBalanceId } from '@/lib/data/session';
 import type { Currency } from '@/lib/domain/types';
 
 export const runtime = 'nodejs';
@@ -32,9 +34,18 @@ function refuse(status: number, reason: SlipRefusal, detail?: string, message?: 
 
 /** Which currency this ledger is kept in. A slip in another one is refused
  *  rather than converted, so this decides a refusal and has to be the
- *  account's own answer, not a default sitting in the reader. */
+ *  account's own answer, not a default sitting in the reader.
+ *
+ *  IT IS THE OPEN BALANCE'S, NOT THE ACCOUNT ROW'S. accounts.currency is what
+ *  a balance was seeded from and nothing reads it for a figure once a balance
+ *  exists, so an account whose row says GBP with the euro balance open had
+ *  every euro slip refused as a currency mismatch against a balance that is
+ *  kept in euro. The bet lands in the open balance, so the open balance is
+ *  what the slip has to agree with. */
 async function ledgerCurrency(accountId: string | null): Promise<Currency> {
   if (!accountId || !hasDatabase()) return 'GBP';
+  const bal = await currentBalance(accountId, await openBalanceId()).catch(() => null);
+  if (bal) return bal.currency;
   const rows = await query<{ currency: string }>(
     'select currency from accounts where id = $1 limit 1', [accountId],
   ).catch(() => []);

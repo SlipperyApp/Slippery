@@ -4,15 +4,13 @@ import { Icon } from '@/components/Icon';
 import { SettleDemo } from '@/components/SettleDemo';
 import { SectionHead, RowList } from '@/components/MarketingChrome';
 import { SplitHeadline } from '@/components/marketing/SplitHeadline';
-import { ThemeStrip } from '@/components/marketing/ThemeStrip';
-import { Sequence } from '@/components/marketing/Sequence';
 import { WaveField } from '@/components/marketing/WaveField';
 import { Makers, MadeBy } from '@/components/marketing/Makers';
 import { StickyCta } from '@/components/marketing/StickyCta';
 import { Reveal } from '@/components/marketing/Reveal';
-import { Faq } from '@/components/marketing/Faq';
-import { QUESTIONS, TOP_QUESTIONS } from '@/lib/content/faq';
-import { money, spell } from '@/lib/format';
+import { QUESTIONS } from '@/lib/content/faq';
+import { TRIAL_DAYS, TRIAL_SLIPS } from '@/lib/domain/trial';
+import { spell } from '@/lib/format';
 
 export const metadata: Metadata = {
   title: { absolute: 'Slippery, a bet tracker that captures at placement' },
@@ -49,48 +47,46 @@ export default function Landing() {
             </span>
           </h1>
 
-          {/*  "before kick off, in play, or after it settled" stood here, and
-               it gave away the only argument this product has.
-               A tracker that takes a slip after settlement has the defect of
-               the spreadsheet, and the product knows it: the feed refuses any
-               bet whose capture stamp is after the off, on the grounds that a
-               bet posted after the off is not a prediction but a claim. An
-               old bet can still be typed in or imported, which is where the
-               second half of that sentence went: the FAQ, marked as typed
-               rather than slip backed. */}
+          {/*  AT PLACEMENT, WHICH IS NOT THE SAME AS BEFORE THE OFF.
+               A version of this said the slip had to be in before the first
+               whistle, and that is a rule the product does not have: an in
+               play bet is placed in play and its slip is as good as any
+               other. The line the product actually draws is whether a bet
+               reached the record before its event started, and it draws it as
+               a fact about that bet, on the Slips page and in the tracking
+               feed, never as a limit on what you may send. */}
           <p className="hero__sub rise rise-2">
             Forward a slip to the bot when you place it, before you know how it went.
             Slippery reads it, settles it, keeps the record.
           </p>
 
           <div className="hero__cta rise rise-3">
-            <Link href="/signup" className="btn btn--primary btn--lg">Start free for 14 days</Link>
-            <Link href="/demo" className="btn btn--link">or see a real account</Link>
+            <Link href="/signup" className="btn btn--primary btn--lg">Start free for {TRIAL_DAYS} days</Link>
+            {/*  The example account, and it says so. It called itself "a real
+                 account", and the bets in it are generated: the Slips page
+                 says as much on every tile, so the landing page was the one
+                 surface claiming otherwise. */}
+            <Link href="/demo" className="btn btn--link">or see the example account</Link>
           </div>
 
           <p className="small dim rise rise-4 hero__fine">
-            14 days or 35 slips. Card required, cancel in one tap.
+            {TRIAL_DAYS} days or {TRIAL_SLIPS} slips. Card required, cancel in one tap.
           </p>
 
-          {/*  The product, in a window.
-               A screenshot floating on a page reads as a picture of software;
-               the same thing in a frame reads as the software. It is chrome,
-               so it is aria-hidden, and the demo inside it is the real
-               component rather than an image of one. */}
-          <div className="frame rise rise-4">
-            <div className="frame__bar" aria-hidden="true">
-              <span className="frame__dot" /><span className="frame__dot" /><span className="frame__dot" />
-              <span className="frame__url">slippery.app</span>
-            </div>
-            <div className="frame__body">
-              <SettleDemo />
-            </div>
+          {/*  The product, on the page. It used to be in a browser window:
+               a bar with three grey dots and slippery.app in mono, over a
+               padded box holding the demo. Both halves of that were wrong on
+               the page a stranger sees first. Three dots and an address bar
+               are the most recognisable template element on the web, and
+               they claimed something untrue about what is under them, which
+               is an interactive settlement widget rather than a page at that
+               address. It also drew a box around a box: the demo is a card
+               already. What is left is the lift. See .herolift. */}
+          <div className="herolift rise rise-4">
+            <SettleDemo />
           </div>
         </div>
       </section>
-
-      {/* ---------------------------------------------------- the sequence */}
-      <Sequence />
 
       {/* --------------------------------------------------------- capture */}
       <section className="sect" id="capture">
@@ -101,8 +97,8 @@ export default function Landing() {
               setup="A record you make afterwards"
               claim="is a record of your best days."
             >
-              Capture happens at placement. A ledger written before you know how it went cannot
-              become only the bets you wanted to remember.
+              Capture happens at placement, before the off or in play. A ledger written before you
+              know how it went cannot become only the bets you wanted to remember.
             </SectionHead>
             <RowList
               rows={[
@@ -125,154 +121,58 @@ export default function Landing() {
               setup="Nobody separates the two."
               claim="Your headline is two numbers."
             >
-              Free bets, bonus funds and boosts are flagged as the slip is read. Up {money(118400)}
-              means something different when {money(89000)} of it came from sign-up offers.
+              {/*  The second sentence here read "Up £1,184.00 means something
+                   different when £890.00 of it came from sign-up offers",
+                   which is both figures on the card beside it, in prose, one
+                   line above the card that prints them. */}
+              Free bets, bonus funds and boosts are flagged as the slip is read.
             </SectionHead>
             <SplitHeadline />
           </div>
         </div>
       </section>
 
-      {/* ------------------------------------------------------ settlement */}
-      <section className="sect" id="settlement">
-        <div className="wrap">
-          <div className="two">
-            <SectionHead
-              setup="Six outcomes, and a slider."
-              claim="Cash out included, twice if you like."
-            >
-              A bet is a container with a settlement ledger, not a row with a result. Anything
-              uncertain asks rather than guesses.
-            </SectionHead>
-            <RowList
-              rows={[
-                { title: 'Won and lost', sub: '90 minutes only. Extra time and penalties never count.', icon: 'check', on: true },
-                { title: 'Void', sub: 'Stake back, out of turnover and out of return.', icon: 'minus' },
-                { title: 'Push and split', sub: 'Whole lines push. Quarter lines split the stake.', icon: 'split' },
-                { title: 'Cash out, in eighths', sub: 'Of the stake still standing, repeatable.', icon: 'cash' },
-              ]}
-            />
-          </div>
-        </div>
-      </section>
-
-      {/* ---------------------------------------------------------- social */}
-      <section className="sect" id="groups">
-        <div className="wrap">
-          <div className="two">
-            <div>
-              {/*  The one pill above a heading anywhere in the product, and it
-                   is not a label restating the heading: it says this section
-                   is new. --gold has that single meaning and no other, which
-                   is why it is not --warn and not the accent. */}
-              <p className="newpill"><span>New</span></p>
-              <SectionHead
-                badge="Slippers"
-                setup="Ranked in units."
-                claim="Never in pounds."
-              >
-                Units, so a bigger balance is not a bigger score. Stakes are never visible
-                outside a group.
-              </SectionHead>
-              <Link href="/social" className="btn btn--ghost" style={{ marginTop: 'var(--s5)' }}>
-                Groups and monthly leagues <Icon name="arrowRight" size={16} />
-              </Link>
-            </div>
-            <div className="card">
-              <div className="card__head">
-                <p className="card__title">Thursday Coupon</p>
-                <span className="pill">12 Slippers</span>
-              </div>
-              <ul>
-                {[
-                  { n: 'Rowan', u: '+18.4', s: '94%', p: 1 },
-                  { n: 'Priya', u: '+11.2', s: '100%', p: 2 },
-                  { n: 'You', u: '+6.9', s: '88%', p: 3 },
-                  { n: 'Dev', u: '-2.1', s: '71%', p: 4 },
-                ].map((r) => (
-                  <li key={r.n} className="brow" style={{ gridTemplateColumns: '26px minmax(0,1fr) auto auto', gap: 'var(--s3)' }}>
-                    <span className="small dim tnum">{r.p}</span>
-                    <span className="brow__title">{r.n}</span>
-                    <span className="small dim hide-xs">{r.s} slip backed</span>
-                    <span className={`fig fig--s tnum ${r.u.startsWith('-') ? 'neg' : 'pos'}`}>{r.u}u</span>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* ---------------------------------------------------------- themes */}
-      <section className="sect" id="themes">
-        <div className="wrap">
-          <SectionHead
-            centred
-            badge="Eight themes"
-            setup="All of them dark."
-            claim="Pick a theme."
-          >
-            Profit green measures 1.07 to 1 on beige, so there is no light mode. The two result
-            colours are fixed, so none of the eight is green or red.
-          </SectionHead>
-          <ThemeStrip />
-        </div>
-      </section>
+      {/*  WHAT LEFT THIS PAGE, and why it is not a loss.
+           Groups and a league table, a live theme picker, and the top seven
+           questions with their answers open. Each was a screen, each has a
+           page of its own that says the same thing at length, and none of the
+           three is what somebody deciding whether to try a profit and loss
+           tracker is looking for. The header links two of them and the footer
+           links all three. What is left is what it is, how a bet gets in,
+           what the record then says, what it costs, and who made it. */}
 
       {/* --------------------------------------------------------- pricing */}
       <section className="sect" id="price">
         <div className="wrap">
-          <div className="two">
-            <SectionHead
-              badge="Pricing"
-              setup="One price, both platforms."
-              claim="£3.49 a month, £29.99 a year."
-            >
-              Free for 14 days or 35 slips. The yearly plan starts when the trial ends, and your
-              ledger and export stay live even if the card does not.
-            </SectionHead>
-            <div className="rows">
-              <div className="rowcard rowcard--on">
-                <Icon name="check" size={20} className="rowcard__i" />
-                <div className="grow">
-                  <p className="rowcard__t">Yearly, £29.99</p>
-                  <p className="rowcard__s">Struck through £34.99. Save £11.89 a year.</p>
-                </div>
-                <span className="pill pill--accent">Recommended</span>
-              </div>
-              <div className="rowcard">
-                <Icon name="check" size={20} className="rowcard__i" />
-                <div className="grow">
-                  <p className="rowcard__t">Monthly, £3.49</p>
-                  <p className="rowcard__s">Same product. Cancel any month.</p>
-                </div>
-              </div>
-              <Link href="/pricing" className="btn btn--ghost btn--wide" style={{ marginTop: 'var(--s2)' }}>
-                What is in it <Icon name="arrowRight" size={16} />
-              </Link>
-            </div>
-          </div>
+          <SectionHead
+            centred
+            setup="One price, both platforms."
+            claim="£3.49 a month, £29.99 a year."
+          >
+            Free for {TRIAL_DAYS} days or {TRIAL_SLIPS} slips. Your ledger and export stay live
+            even if the card does not.
+          </SectionHead>
+          <p style={{ marginTop: 'var(--s5)', textAlign: 'center' }}>
+            <Link href="/pricing" className="btn btn--ghost btn--sm">
+              What is in it <Icon name="arrowRight" size={16} />
+            </Link>
+          </p>
         </div>
       </section>
 
       {/* ------------------------------------------------------- questions */}
-      <section className="sect" id="questions">
+      <section className="sect" style={{ paddingTop: 0 }} id="questions">
         <div className="wrap">
           <SectionHead
             centred
-            badge="Questions"
-            setup={`${spell(TOP_QUESTIONS.length)} of them.`}
+            setup={`${spell(QUESTIONS.length)} questions.`}
             claim="Answered without the marketing."
           />
-          <div className="column column--wide" style={{ marginTop: 'var(--s6)' }}>
-            <Faq items={TOP_QUESTIONS} />
-            <p style={{ marginTop: 'var(--s5)', textAlign: 'center' }}>
-              <Link href="/faq" className="btn btn--ghost btn--sm">
-                The other {spell(QUESTIONS.length - TOP_QUESTIONS.length, { cap: false })}{' '}
-                <Icon name="arrowRight" size={16} />
-              </Link>
-            </p>
-          </div>
+          <p style={{ marginTop: 'var(--s5)', textAlign: 'center' }}>
+            <Link href="/faq" className="btn btn--ghost btn--sm">
+              Read them <Icon name="arrowRight" size={16} />
+            </Link>
+          </p>
         </div>
       </section>
 
@@ -282,9 +182,6 @@ export default function Landing() {
       <section className="sect" style={{ paddingTop: 0 }}>
         <div className="wrap column" style={{ textAlign: 'center' }}>
           <p className="card__title">iOS and Android coming soon. The web app works today.</p>
-          <p className="small muted" style={{ marginTop: 'var(--s2)' }}>
-            Add it to your home screen and it behaves like one.
-          </p>
           <p style={{ marginTop: 'var(--s5)' }}>
             <Link href="/waiting-list" className="btn btn--ghost btn--sm">Join the waiting list</Link>
           </p>

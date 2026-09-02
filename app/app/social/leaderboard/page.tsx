@@ -4,7 +4,7 @@ import { Icon } from '@/components/Icon';
 import { getViewer } from '@/lib/data/session';
 import { EmptySocial, SOCIAL_EXAMPLE_NOTE } from '@/components/app/EmptySocial';
 import { LEAGUE_PERIODS, YOU, league, slippers, type LeaguePeriod } from '@/lib/data/social';
-import { League } from '@/components/app/League';
+import { LeagueBoard } from '@/components/app/LeagueTable';
 import { Podium } from '@/components/app/Podium';
 import { position as fmtPosition, plural } from '@/lib/format';
 
@@ -73,21 +73,23 @@ export default async function Leaderboard({
         ))}
       </div>
 
+      {/*  ONE CARD, the way a group's board is one card. The podium and the
+           table are the same board read two ways, and two page wide cards
+           for them put a heading and a border between the three names at the
+           top and the twelve rows those three names came out of. */}
       <div className="grid" style={{ marginTop: 'var(--s4)' }}>
         <section className="card col-12">
           <div className="card__head">
-            <h2 className="card__title">The top three, {label}</h2>
-            <p className="card__note">Units, 1dp</p>
+            <h2 className="card__title">The table, {label}</h2>
+            <p className="card__note">{plural(board.length, 'Slipper')}, units to 1dp</p>
           </div>
-          <Podium rows={board} you={YOU} period={label} />
-        </section>
-
-        <section className="card col-12">
-          <div className="card__head">
-            <h2 className="card__title">The table</h2>
-            <p className="card__note">{plural(board.length, 'Slipper')}</p>
-          </div>
-          <League rows={board} you={YOU} />
+          <LeagueBoard
+            rows={board}
+            you={YOU}
+            period={label}
+            now={now.toISOString()}
+            podium={<Podium rows={board} you={YOU} period={label} />}
+          />
           <p className="small dim card__foot">
             {you
               ? `You are ${fmtPosition(you.position, board.length)} ${label}. `

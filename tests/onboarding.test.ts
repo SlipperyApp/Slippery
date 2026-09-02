@@ -11,7 +11,7 @@ const everything: OnboardingSignals = {
   telegramLinked: true, hasBet: true, unitSet: true, themeSet: true,
 };
 
-test('four steps, and they are the four that make the product work', () => {
+test('four rows, and they are the four the product is made of', () => {
   /*  Not five. Joining a group was on the old literal, and a group is a thing
    *  to do with a record rather than a thing that makes a record work.
    *  Putting it in a list somebody is trying to finish is the product asking
@@ -36,7 +36,41 @@ test('a half done list points at exactly one next step', () => {
   const o = onboarding({ ...nothing, unitSet: true });
   assert.equal(o.complete, false);
   assert.equal(o.done, 1);
-  assert.equal(o.next?.id, 'telegram', 'the first undone one, in order');
+  /*  The first undone one that is not optional. It used to be telegram, and
+   *  pointing a person at the one step nothing is gated on is the definition
+   *  of the nag this list is not allowed to be. */
+  assert.equal(o.next?.id, 'slip', 'the first undone one that is counted, in order');
+});
+
+test('linking the bot is on the list and is not counted by it', () => {
+  /*  An account that will never link a chat could not finish the list, and
+   *  had a meter on its dashboard stopping at three quarters for ever.
+   *  Nothing in the product is gated on the link: a screenshot uploads, a bet
+   *  types in and a history imports with no chat linked at all. */
+  const steps = onboardingSteps(nothing);
+  const telegram = steps.find((s) => s.id === 'telegram');
+  assert.equal(telegram?.optional, true, 'the bot step must be marked optional');
+  for (const s of steps.filter((x) => x.id !== 'telegram')) {
+    assert.notEqual(s.optional, true, `${s.id} is not optional`);
+  }
+
+  const allButTheBot = onboarding({ ...everything, telegramLinked: false });
+  assert.equal(allButTheBot.total, 3, 'the count is over the steps that are gated on');
+  assert.equal(allButTheBot.done, 3);
+  assert.equal(allButTheBot.complete, true, 'an unlinked account can finish the list');
+  assert.equal(allButTheBot.next, null, 'and is never pointed at the optional step');
+});
+
+test('the bot step never says what the reader is going without', () => {
+  /*  It read "One code, once. After it, sending a slip takes four seconds",
+   *  under a To do label, inside a meter that could not fill. Every word of
+   *  that is true and the arrangement of them is a nag. */
+  const telegram = onboardingSteps(nothing).find((s) => s.id === 'telegram');
+  const blurb = (telegram?.blurb ?? '').toLowerCase();
+  for (const phrase of ['four seconds', 'faster', 'fastest', 'instead of', 'miss', 'only way']) {
+    assert.ok(!blurb.includes(phrase), `the bot step's blurb says "${phrase}"`);
+  }
+  assert.match(blurb, /without it/, 'it has to say what still works without it');
 });
 
 test('every step is driven by its own signal and nothing else', () => {

@@ -83,16 +83,69 @@ export const ratio = (a, b) => { const x = lum(a), y = lum(b); return (Math.max(
  *    --s   #A8C2E8   is --p lifted 0.186 in oklab L at 0.75 of its chroma
  *  The per channel spread is the prototype leaning its surfaces bluer than a
  *  flat alpha would, and it is kept: a flat mix is a different, greyer set of
- *  cards, and the lean is most of why the surfaces read as surfaces. */
+ *  cards, and the lean is most of why the surfaces read as surfaces.
+ *
+ *  EIGHT THEMES THAT READ AS THREE. The owner's note was that they are too
+ *  similar, and the measurement agreed: at the previous values all 28 pairs
+ *  sat under 0.08 mean oklab, the line this codebase draws for two colours
+ *  reading as one, the closest pair of GROUNDS was bronze against cinnabar at
+ *  0.011, and the closest pair of ACCENTS was carbon against ink at 0.045.
+ *
+ *  The cause was in this file rather than in the grounds. Carbon's lean is
+ *  blue, and the alphas below were carbon's applied verbatim to all eight, so
+ *  every theme's surfaces were pulled toward carbon's hue no matter what its
+ *  ground was: bronze, the only warm theme in the set, worked out to a --raise
+ *  of #1F1F1F, which is a pure grey, and an --elev of #292A2D, which is blue.
+ *  Four of the eight carried surfaces from a hue family that was not their
+ *  own, and the surfaces are most of the screen.
+ *
+ *  So the lean is now ROTATED to each theme's own hue rather than copied (see
+ *  leanFor below), and the grounds and accents here take the small deliberate
+ *  moves that go with it. Nothing was redesigned: every ground keeps its
+ *  character and its lightness, and carbon, which is the hue the lean was
+ *  measured at, is unmoved and still reproduces the prototype exactly. */
 export const SPEC = [
-  { name: 'carbon',     bg: '#0C0E13', ink: '#E6EBF3', accent: '#6E86B8', note: 'Steel on near black. The default.' },
-  { name: 'ink',        bg: '#050508', ink: '#F3F1FA', accent: '#8B84C4', note: 'Near black, violet cast. The darkest.' },
-  { name: 'graphite',   bg: '#0A0C0B', ink: '#EAF0EC', accent: '#7E9188', note: 'Deep green grey. Almost black.' },
-  { name: 'slate',      bg: '#161A21', ink: '#EEF2F7', accent: '#7E93B5', note: 'Steel blue grey. The lightest dark.' },
-  { name: 'periwinkle', bg: '#0A0F1E', ink: '#F2F5FA', accent: '#6D86DB', note: 'Indigo on deep navy.' },
-  { name: 'bronze',     bg: '#12100C', ink: '#F2ECE0', accent: '#A8926A', note: 'Warm paper on dark. The only warm one.' },
-  { name: 'cinnabar',   bg: '#130D0B', ink: '#F6EAE4', accent: '#C4643F', note: 'Burnt red on near black.' },
-  { name: 'liquid',     bg: '#04171C', ink: '#E6F7FA', accent: '#54AEBE', note: 'Deep marine. The coldest.' },
+  /*  Carbon is the calibration and does not move: it is the theme the lean,
+      the alphas and the --s relationship were all read off. */
+  { name: 'carbon',     bg: '#0C0E13', ink: '#E6EBF3', accent: '#7085B0', note: 'Steel on near black. The default.' },
+  /*  The darkest, and it was 0.047 of ground from carbon while its accent was
+      0.045 from carbon's: the two closest accents in the set. Both ends take
+      their violet, which is the cast the theme is named for. */
+  { name: 'ink',        bg: '#05050A', ink: '#F3F1FA', accent: '#A07ACA', note: 'Near black, violet cast. The darkest.' },
+  /*  Named for a green grey and measured 0.018 of ground from carbon, which
+      is a second carbon. The ground takes its green and the accent takes the
+      teal grey of the prototype card, a tenth of a lightness step down and a
+      hundredth of chroma up: at the prototype's own #5E8783 this accent sits
+      0.078 from carbon's, and under 0.08 is where this codebase says two
+      colours are one. The hue does not move at all. */
+  { name: 'graphite',   bg: '#040C09', ink: '#EAF0EC', accent: '#528681', note: 'Deep green grey. Almost black.' },
+  /*  The lightest dark, and the one that only ever differed from carbon by
+      lightness. It keeps that job; the accent lifts so the pair reads as two
+      weights of the same idea on purpose rather than by accident. */
+  { name: 'slate',      bg: '#151A21', ink: '#EEF2F7', accent: '#8BA2C1', note: 'Steel blue grey. The lightest dark.' },
+  /*  The loudest, and it was 0.023 of ground from carbon. The navy deepens,
+      and the accent takes a hundredth of chroma at the same hue and the same
+      lightness, for the same reason graphite's does: against carbon it
+      measured 0.079. The loudest accent in the set can afford to be louder. */
+  { name: 'periwinkle', bg: '#080E20', ink: '#F2F5FA', accent: '#667CE2', note: 'Indigo on deep navy.' },
+  /*  THE ONLY WARM THEME, and it was 0.011 of ground from cinnabar and 0.024
+      from graphite: three near identical near blacks, one of which is meant
+      to be warm paper. The ground takes real amber and the accent warms with
+      it. This is the largest move in the set and it is the one the owner
+      would notice first. */
+  { name: 'bronze',     bg: '#1A1308', ink: '#F2ECE0', accent: '#AF8F62', note: 'Warm paper on dark. The only warm one.' },
+  /*  Burnt red, and the brief says the red is IN THE GROUND. It was not: the
+      ground was #130D0B, which is a warm near black, and the theme was
+      carried entirely by its accent. */
+  { name: 'cinnabar',   bg: '#130705', ink: '#F6EAE4', accent: '#C4643F', note: 'Burnt red, and it is in the ground.' },
+  /*  Sage, and the ground is the quiet half of it deliberately. A first pass
+      put it at #0F1B10 and, rendered on the dashboard in all eight, the
+      surfaces carried enough green that the whole screen read as a green
+      theme, which is the one thing none of the eight may be: profit green
+      means money, and a ground the colour of it takes the meaning out of the
+      calendar. The accent carries sage; the ground is as quiet as graphite's
+      at its own hue. */
+  { name: 'sage',       bg: '#0E1611', ink: '#E9F3E8', accent: '#9EB49A', note: 'Pastel sage on a quiet green grey. The softest.' },
 ];
 
 /*  The prototype's own per channel alphas, read off its carbon block. The
@@ -110,10 +163,91 @@ const A_RAISE = [0.0596, 0.0679, 0.0893];                       // the prototype
     4.28:1. The extension is taken as far as it can go and no further. */
 const ELEV_MAX = 1.9;
 const elevAt = (f) => A_RAISE.map((v, i) => v + (v - A_CARD[i]) * f);
-/*  The two borders, at the weight the prototype's rgba(150,178,220,.10) works
-    out to over a card. */
+/*  The first border, at the weight the prototype's rgba(150,178,220,.10) works
+    out to over a card. The second is derived inside surfaces() instead, off
+    whichever --elev that theme's search settled on, because a border against a
+    raised surface has to follow the surface it is drawn against. There was a
+    second constant here that said otherwise and nothing read it, which is the
+    worst kind of documentation: it named a rule the code did not follow. */
 const A_LINE  = A_CARD.map((v, i) => v + (A_RAISE[i] - v) * 0.86);
-const A_LINE2 = A_RAISE.map((v, i) => v + (elevAt(ELEV_MAX)[i] - v) * 0.55);
+
+/*  THE LEAN, TURNED TO THE THEME'S OWN HUE.
+ *
+ *  Every alpha triple above is carbon's, and a triple that is not flat is a
+ *  hue: carbon's says "put more ink into blue than into red", which is why its
+ *  cards read as cards and not as lighter rectangles of the ground. Applied
+ *  verbatim to the other seven it says the same thing about THEIR cards, and
+ *  that is the defect this fixes. Bronze is the case that names it: the only
+ *  warm theme in the set worked out to --raise #1F1F1F, a pure grey, and
+ *  --elev #292A2D, which is blue, because carbon's lean overwhelmed a warm
+ *  ground that is only a few counts off neutral to begin with.
+ *
+ *  A triple is split into how much ink (its MEAN, which is lightness) and
+ *  which way it leans (its DEVIATION, which is hue and saturation). The mean
+ *  is never touched. The deviation is rotated about the grey axis (1,1,1) by
+ *  the angle between carbon's accent and this theme's, and then scaled by how
+ *  much chroma this theme's accent carries against carbon's.
+ *
+ *  THE MEAN IS WHY THIS IS SAFE. A deviation sums to zero by construction, so
+ *  rotating it and scaling it move a surface around the grey axis without
+ *  moving it along it: every surface keeps the lightness the prototype gave
+ *  it, and lightness is what contrast is made of. Measured, the worst text on
+ *  any ground moved from 4.54:1 to 4.59:1 rather than down. The audit below
+ *  is still the thing that decides, and it throws rather than emitting a
+ *  sentinel, because #FF00FF once shipped into tokens.css and passed every
+ *  contrast rule by being a colour nobody had looked at.
+ *
+ *  THE SCALE IS THE ONLY PART THE PROTOTYPE DOES NOT GIVE US. It hands over
+ *  one lean, carbon's, and says nothing about how far a theme with twice the
+ *  chroma should lean. Proportional to the theme's own accent is the rule
+ *  with the fewest free numbers in it: cinnabar, whose brief is that the red
+ *  is IN THE GROUND, leans about twice as far as carbon and its surfaces come
+ *  out red; sage, which has to stay quiet enough not to read as profit green,
+ *  leans about half as far and its surfaces stay near grey. The clamp is so
+ *  that a very grey accent still gets some lean and a very loud one does not
+ *  run away with the whole surface set.
+ *
+ *  Carbon is unmoved by construction: the angle from carbon to carbon is zero
+ *  and the scale is one. Its four surfaces still come out at the prototype's
+ *  exact hex, which is the check that this did not quietly redesign the set. */
+const AXIS = 1 / Math.sqrt(3);
+const meanOf = (v) => (v[0] + v[1] + v[2]) / 3;
+const cross = (a, b) => [a[1] * b[2] - a[2] * b[1], a[2] * b[0] - a[0] * b[2], a[0] * b[1] - a[1] * b[0]];
+const dot3 = (a, b) => a[0] * b[0] + a[1] * b[1] + a[2] * b[2];
+/** A colour's hue as a unit vector in the plane perpendicular to grey. A
+ *  colour with no hue at all returns zero and rotates to nothing, which is
+ *  the honest answer for a pure grey accent. */
+function hueDir(hexStr) {
+  const c = chan(hexStr);
+  const d = c.map((v) => v - meanOf(c));
+  const n = Math.hypot(...d);
+  return n < 1e-9 ? [0, 0, 0] : d.map((v) => v / n);
+}
+/** How far off grey a colour sits, in the same units hueDir normalises away. */
+const chromaOf = (h) => { const c = chan(h); return Math.hypot(...c.map((v) => v - meanOf(c))); };
+const CARBON_ACCENT = '#7085B0';
+/*  A very grey accent still gets over half of carbon's lean, and the loudest
+    gets under twice it. Without the floor, sage's surfaces come out flat grey
+    and the theme is carried by one colour on the screen; without the ceiling,
+    periwinkle's --elev takes so much blue that the ramp's loss cells lose
+    their edge against it. */
+const LEAN_MIN = 0.55;
+const LEAN_MAX = 1.9;
+/** Carbon's alpha triple, leaning the way this theme's accent does and as far
+ *  as this theme's accent does. */
+function leanFor(triple, accentHex) {
+  const a = hueDir(CARBON_ACCENT);
+  const b = hueDir(accentHex);
+  if (Math.hypot(...a) < 1e-9 || Math.hypot(...b) < 1e-9) return triple;
+  const m = meanOf(triple);
+  const v = triple.map((x) => x - m);
+  /*  Rodrigues about the grey axis. v is perpendicular to it by construction,
+      so the term in (axis . v) is zero and drops out. */
+  const th = Math.atan2(dot3(cross(a, b), [AXIS, AXIS, AXIS]), dot3(a, b));
+  const kv = cross([AXIS, AXIS, AXIS], v);
+  const k = Math.min(LEAN_MAX, Math.max(LEAN_MIN, chromaOf(accentHex) / chromaOf(CARBON_ACCENT)));
+  return v.map((x, i) => (x * Math.cos(th) + kv[i] * Math.sin(th)) * k + m);
+}
 
 const over = (bg, ink, a) => toHex(chan(bg).map((v, i) => v + (chan(ink)[i] - v) * a[i]));
 
@@ -139,6 +273,43 @@ const chan = (h) => [1, 3, 5].map((i) => parseInt(h.slice(i, i + 2), 16));
 const toHex = (c) => '#' + c.map((v) => Math.round(Math.min(255, Math.max(0, v))).toString(16).padStart(2, '0')).join('').toUpperCase();
 const mixHex = (a, b, p) => toHex(chan(a).map((v, i) => v * p + chan(b)[i] * (1 - p)));
 
+/*  THE DEAD ZONE HAS TO STAY DEAD, and it is a property of the palette rather
+    than of the ramp.
+ *
+ *  The calendar ramp is two bands with a hole between them because at a middling
+ *  fill neither ink clears 4.5:1: the result colour has been washed out by the
+ *  fill and the page ground is not yet dark enough against it. One threshold on
+ *  alpha, which is what anybody writes first, lands inside that hole.
+ *  tests/calendar-ramp.test.ts proves the hole is real by measuring a naive mid
+ *  ramp in all eight themes and finding that none of them clears it.
+ *
+ *  A PALETTE CAN FILL THE HOLE IN WITHOUT ANYTHING SAYING SO. Rotating the
+ *  surface lean to each theme's own hue moved graphite's --elev far enough that
+ *  a naive mid cell measured 4.61:1 against its ground, and the only thing that
+ *  noticed was that test failing. The generator now refuses such a palette
+ *  instead, so the two band shape is never quietly left standing on a claim
+ *  about a palette that has since changed. Revisiting the bands is allowed; it
+ *  just has to be a decision somebody makes rather than a number that drifted. */
+const NAIVE_MID = 0.46;
+/*  4.42, not 4.50, and the margin is for a disagreement rather than for the
+    eye. This file linearises sRGB at 0.04045 and composites in whole channels;
+    tests/calendar-ramp.test.ts linearises at 0.03928 and composites in floats,
+    and the two thresholds are both in circulation. Measured across the eight,
+    they differ by up to 0.03, and a palette solved to exactly 4.49 here
+    measured 4.51 there, which is the failure that found this. */
+const DEAD_ZONE_MAX = 4.42;
+export function deadZoneHolds(v) {
+  for (const positive of [true, false]) {
+    const cell = mixHex(positive ? SEM.pos : SEM.neg, v.elev, NAIVE_MID);
+    const result = ratio(positive ? SEM.pos : SEM.neg, cell);
+    const ground = ratio(v.bg, cell);
+    if (result >= DEAD_ZONE_MAX || ground >= DEAD_ZONE_MAX) {
+      return { ok: false, at: `${positive ? 'profit' : 'loss'} result ${result.toFixed(2)} ground ${ground.toFixed(2)}` };
+    }
+  }
+  return { ok: true, at: '' };
+}
+
 /** The worst contrast the ramp reaches on this palette. */
 export function rampWorst(v) {
   let worst = { r: 99, at: '' };
@@ -157,8 +328,38 @@ export function rampWorst(v) {
   return worst;
 }
 
+/*  THE INKS AND THE TWO COLOURS THAT MEAN MONEY, READ OFF THE STYLESHEET.
+ *
+ *  They were copied here, and one of the copies was wrong: this file audited
+ *  every palette against a profit green of #7FE3A6 and a loss red of #F5A3A3
+ *  while tokens.css has shipped #86EFAC and #FCA5A5 throughout, which are the
+ *  two colours the LOCKED list in CLAUDE.md names. So the calendar ramp was
+ *  measured against a green the calendar has never drawn, and the rule that
+ *  keeps an accent away from the colour of a result was enforced against the
+ *  wrong result. tests/themes.test.ts used the real ones all along, which is
+ *  why the generator could pass while the tests failed.
+ *
+ *  Reading them is the same discipline the ramp constants already follow: a
+ *  palette measured against different numbers than the one that ships is not
+ *  a measurement. sync-themes.mjs only ever rewrites the theme blocks, never
+ *  :root, so there is nothing circular about taking them from here. */
+const ROOT_SRC = _read(new URL('../app/styles/tokens.css', import.meta.url), 'utf8');
+function rootVar(name) {
+  const body = /:root \{([\s\S]*?)\n\}/.exec(ROOT_SRC)?.[1] ?? '';
+  const m = new RegExp(`--${name}:\\s*(#[0-9a-fA-F]{6})`).exec(body);
+  /*  Throw, never a sentinel. #FF00FF once shipped into tokens.css and passed
+      every contrast rule, because a default that is a colour is a default
+      nobody notices. */
+  if (!m) throw new Error(`tokens.css :root has no --${name}, so nothing can be audited against it`);
+  return m[1].toUpperCase();
+}
+export const T = { t1: rootVar('t1'), t2: rootVar('t2'), t3: rootVar('t3'), t4: rootVar('t4') };
+export const SEM = { pos: rootVar('pos'), neg: rootVar('neg'), warn: rootVar('warn'), gold: rootVar('gold') };
+
 // ----------------------------------------------------------------- build
-const INKS_ON_GROUND = ['#8E97A8', '#C79A3F', '#E6EBF3', '#9AA6BB', '#7FE3A6', '#F5A3A3', '#E8C34A'];
+/*  Every ink that lands on a ground, from the stylesheet rather than copied.
+    t4 is not here: it is a border weight and never text. */
+const INKS_ON_GROUND = [T.t3, SEM.gold, T.t1, T.t2, SEM.pos, SEM.neg, SEM.warn];
 
 /** The lightest a surface may be and still hold every ink at 4.5:1. */
 function elevOk(elevHex) {
@@ -169,22 +370,25 @@ function elevOk(elevHex) {
  *
  *  Nothing here chooses a colour. The ground and the ink came from the
  *  prototype's own theme card and the alphas from its carbon block; this is
- *  only the interpolation that turns three surfaces into six. */
+ *  only the interpolation that turns three surfaces into six, with the lean
+ *  turned to this theme's hue rather than left at carbon's. */
 function surfaces(t) {
+  const lean = (triple) => leanFor(triple, t.accent);
   const base = {
     bg:    t.bg.toUpperCase(),
-    card:  over(t.bg, t.ink, A_CARD),
-    raise: over(t.bg, t.ink, A_RAISE),
-    line:  over(t.bg, t.ink, A_LINE),
+    card:  over(t.bg, t.ink, lean(A_CARD)),
+    raise: over(t.bg, t.ink, lean(A_RAISE)),
+    line:  over(t.bg, t.ink, lean(A_LINE)),
   };
   let f = ELEV_MAX;
-  let elev = over(t.bg, t.ink, elevAt(f));
+  let elev = over(t.bg, t.ink, lean(elevAt(f)));
   for (; f >= 0.5; f -= 0.05) {
-    elev = over(t.bg, t.ink, elevAt(f));
+    elev = over(t.bg, t.ink, lean(elevAt(f)));
     const trial = { ...base, elev };
-    if (elevOk(elev) && rampWorst(trial).r >= 4.55 && dE(base.raise, elev) >= 0.020) break;
+    if (elevOk(elev) && rampWorst(trial).r >= 4.55 && dE(base.raise, elev) >= 0.020
+        && deadZoneHolds(trial).ok) break;
   }
-  return { ...base, elev, line2: over(t.bg, t.ink, A_RAISE.map((v, i) => v + (elevAt(f)[i] - v) * 0.62)) };
+  return { ...base, elev, line2: over(t.bg, t.ink, lean(A_RAISE.map((v, i) => v + (elevAt(f)[i] - v) * 0.62))) };
 }
 
 /** The lighter accent, at the prototype's own relationship to the darker one.
@@ -228,8 +432,6 @@ export function build(t) {
 }
 
 // ------------------------------------------------------------------ audit
-export const T = { t1: '#E6EBF3', t2: '#9AA6BB', t3: '#8E97A8', t4: '#545E6E' };
-export const SEM = { pos: '#7FE3A6', neg: '#F5A3A3', warn: '#E8C34A', gold: '#C79A3F' };
 
 export function audit(themes) {
   const fail = [];
@@ -269,6 +471,13 @@ export function audit(themes) {
         composite differently: a palette solved to exactly 4.50 here measured
         4.49 there. The margin is for the disagreement, not for the eye. */
     if (rw.r < 4.55) fail.push(`${name}: calendar ramp reaches ${rw.r.toFixed(2)}:1 at ${rw.at}`);
+    /*  And the hole between the ramp's two bands is still a hole. The search
+        in surfaces() already prefers an --elev that keeps it, but a ground
+        this file does not choose can break it on its own, and a two band ramp
+        justified by a dead zone that is no longer dead is a design standing
+        on a measurement nobody re-took. */
+    const dz = deadZoneHolds(v);
+    if (!dz.ok) fail.push(`${name}: a naive mid ramp now clears 4.5:1 (${dz.at}), so the dead zone is not dead`);
     // an accent must not be mistakable for a result
     /*  --pos and --neg MEAN something, and an accent that reads as one of
         them is an accent that says "you won" on a button. --warn and --gold

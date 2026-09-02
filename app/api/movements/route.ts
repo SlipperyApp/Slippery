@@ -1,9 +1,10 @@
-import { hasDatabase, query } from '@/lib/server/db';
+import { hasDatabase, transaction } from '@/lib/server/db';
 import { currentAccount } from '@/lib/server/auth';
 import { fail, limitOr429, ok, readJson, str } from '@/lib/server/respond';
 import { parseMoneyMinor } from '@/lib/format';
 import { ALL_BOOKMAKERS } from '@/lib/data/reference';
-import { currentBalance } from '@/lib/server/balances';
+import { ensureBalance } from '@/lib/server/balances';
+import { openBalanceId } from '@/lib/data/session';
 
 export const runtime = 'nodejs';
 
@@ -64,19 +65,33 @@ export async function POST(req: Request) {
    *  into the euro account is not money in the sterling one: filing it
    *  against the wrong balance would be a wrong figure on two screens at
    *  once. The balance also decides which books the money lands in, and it
-   *  is the one the person has open rather than one the request named. */
-  const bal = await currentBalance(account.id);
-  const rows = await query<{ currency: string }>(
-    'select currency from accounts where id = $1 limit 1', [account.id],
-  ).catch(() => []);
-  const currency = bal ? bal.currency : (rows[0]?.currency === 'EUR' ? 'EUR' : 'GBP');
-
+   *  is the one the person has open rather than one the request named.
+   *
+   *  Both statements run in one transaction because the balance may have to
+   *  be created first: money_movements.balance_id is not null, and an account
+   *  that signed up after migration 0011 had no balance at all, so a deposit
+   *  on a new account failed on the constraint. */
+  const open = await openBalanceId();
   const id = `mv_${crypto.randomUUID()}`;
-  await query(
-    `insert into money_movements (id, account_id, balance_id, kind, amount_pence, currency, bookmaker_id, occurred_at, note)
-     values ($1, $2, $3, $4, $5, $6, $7, $8, $9)`,
-    [id, account.id, bal?.id ?? null, kind, parsed.minor, currency, bookmakerId || null, at, str(body.note) || null],
-  );
 
-  return ok({ id, kind, amountMinor: parsed.minor, currency, balanceId: bal?.id ?? null, occurredAt: at });
+  const bal = await transaction(async (client) => {
+    const b = await ensureBalance(client, account.id, open);
+    await client.query(
+      `insert into money_movements (id, account_id, balance_id, kind, amount_pence, currency, bookmaker_id, occurred_at, note)
+       values ($1, $2, $3, $4, $5, $6, $7, $8, $9)`,
+      [id, account.id, b?.id ?? null, kind, parsed.minor, b?.currency ?? 'GBP', bookmakerId || null, at, str(body.note) || null],
+    );
+    return b;
+  }).catch(() => null);
+
+  if (!bal) {
+    return fail(500, 'write_failed',
+      'That failed and nothing was saved. The movement and the balance it belongs to are written together.');
+  }
+
+  return ok({
+    id, kind, amountMinor: parsed.minor, currency: bal.currency,
+    balanceId: bal.id, balanceName: bal.name, occurredAt: at,
+    message: `Recorded in ${bal.name}.`,
+  });
 }

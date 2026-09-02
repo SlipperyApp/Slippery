@@ -1,6 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useRef, useState } from 'react';
+import Link from 'next/link';
 import { Icon } from '@/components/Icon';
 import { dateTime } from '@/lib/format';
 
@@ -22,7 +23,14 @@ import { dateTime } from '@/lib/format';
  *
  *  IT IS NOT A LIVE REGION. A countdown that announces itself every second is
  *  unusable with a screen reader on. The sentence above it is the live region
- *  and it speaks when the state changes, which is the part worth hearing. */
+ *  and it speaks when the state changes, which is the part worth hearing.
+ *
+ *  LINKING IS OPTIONAL AND THE CARD SAYS SO IN ITS OWN WORDS. It read as the
+ *  step a new account had to complete: one primary button, no way past it,
+ *  and a getting started meter on the dashboard that could not fill until it
+ *  was pressed. Nothing here is gated on a linked chat. The skip is the same
+ *  button as the continue, at the same size, because a skip drawn as a faint
+ *  link under a filled button is a skip that has already argued with you. */
 
 type Chat = { username: string | null; dormant: boolean; linkedAt: string };
 
@@ -41,7 +49,15 @@ const EXAMPLE = '/start SLIP-ABCD';
 /*  The heading is a prop with a default because this card sits under a page
     whose h1 is already "The Telegram bot", and a card repeating the title of
     the page it is on tells a reader nothing about what is inside it. */
-export function TelegramLink({ className = '', title = 'Your Telegram chat' }: { className?: string; title?: string }) {
+export function TelegramLink({
+  className = '', title = 'Your Telegram chat', skip,
+}: {
+  className?: string;
+  title?: string;
+  /** Where a person goes who is not linking a chat, and what that says. Given
+   *  by the caller because only the caller knows what screen this sits on. */
+  skip?: { href: string; label: string };
+}) {
   const [status, setStatus] = useState<Status | null>(null);
   const [refused, setRefused] = useState('');
   const [issued, setIssued] = useState<Issued | null>(null);
@@ -162,6 +178,21 @@ export function TelegramLink({ className = '', title = 'Your Telegram chat' }: {
             : `Open ${handle}, then send it the line below. The code works once and expires.`)}
       </p>
 
+      {/*  A fact, once, in the same ink as everything else on the card. Not a
+           warning, not a banner, and never a sentence about what a person
+           without a linked chat is going without.
+
+           Shown whenever the chat is not linked, INCLUDING when the status
+           could not be read at all: a deployment with no database is exactly
+           where somebody most needs to be told that the rest of the product
+           does not depend on this. */}
+      {!status?.linked ? (
+        <p className="small dim" style={{ marginTop: 'var(--s2)' }}>
+          Nothing here needs it. A screenshot uploads, a bet types in and a history imports with no
+          chat linked.
+        </p>
+      ) : null}
+
       {status?.botReady === false ? (
         <p className="small dim" style={{ marginTop: 'var(--s3)' }}>
           The bot is not configured on this deployment, so a code would go nowhere.
@@ -244,6 +275,18 @@ export function TelegramLink({ className = '', title = 'Your Telegram chat' }: {
               </div>
             </div>
           ) : null}
+        </div>
+      ) : null}
+
+      {/*  The skip, and it is the same button as the one beside it at the same
+           size, because a skip drawn as a faint link under a filled button is
+           a skip that has already argued with you. It is here rather than
+           inside the block above so that it survives a deployment whose link
+           status cannot be read: there is still a way onward from a page that
+           cannot do its own job. */}
+      {skip && !status?.linked && !confirming && !issued ? (
+        <div className="row" style={{ gap: 'var(--s3)', marginTop: 'var(--s4)', flexWrap: 'wrap' }}>
+          <Link href={skip.href} className="btn btn--primary">{skip.label}</Link>
         </div>
       ) : null}
     </section>

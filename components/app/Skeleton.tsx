@@ -13,21 +13,18 @@
  *  neither loop at you nor outlive its reason.
  *
  *  THE SHAPE IS THE POINT, AND IT IS BORROWED, NOT COPIED. Every block wears
- *  the real component's own classes, hero-net and hero-net__fig and card
- *  col-7 h-xl, so the placeholder is laid out by the same rules as the answer and
- *  cannot drift away from it when those rules change. The first draft used
- *  h-l for the hero because it looked about right: measured, it was 408px
- *  against the real 263, so the calendar row would have dropped 145px and
- *  then jumped back up the moment the data landed. A skeleton that moves the
- *  page is worse than no skeleton.
+ *  the real component's own classes, tile and card col-5 and grid dash, so
+ *  the placeholder is laid out by the same rules as the answer and cannot
+ *  drift away from it when those rules change. An earlier draft picked a
+ *  height token for the hero because it looked about right: measured, it was
+ *  408px against the real 263, so the calendar row dropped 145px and jumped
+ *  back the moment the data landed. A skeleton that moves the page is worse
+ *  than no skeleton.
  *
- *  The hero is the one block that cannot be exact, and it is worth saying
- *  why rather than tuning it until one screenshot agrees. The real hero
- *  carries a target bar only when the account has set a target, so it is
- *  263px tall with one and about 223 without, and nothing on the wire yet
- *  says which this account is. This matches the no-target case, which is
- *  what a new account is and therefore what a first load is most likely to
- *  become. Every other block here is exact.
+ *  The dashboard is now sized from the WINDOW rather than from height
+ *  tokens, which is what makes this exact for the first time: .dash gives
+ *  the three rows their heights, so the placeholder and the page it stands
+ *  in for are the same three rows whatever the window is.
  *
  *  ONE ANNOUNCEMENT, NOT FIFTY. The whole tree is aria-hidden and a single
  *  polite live region says "Loading". A screen reader should hear that the
@@ -57,30 +54,18 @@ function Rows({ n }: { n: number }) {
   );
 }
 
-/** The hero, in its own classes so its height follows the real one. */
-function HeroBlock() {
+/** One tile, in the tile's own classes so its height follows the real one.
+ *  The label, the figure and the caption are the three lines a tile has. */
+function TileBlock({ w }: { w: string }) {
   return (
-    <section className="card col-12 hero-net skel__b">
-      <div className="hero-net__head">
-        <Bar w="132px" h={13} />
-        {/* the ⋯ and share controls, which set the head's real height */}
-        <Bar w="28px" h={25} />
+    <div className="card tile col-3 skel__b">
+      <Bar w="46%" h={11} />
+      <div className="tile__row">
+        <Bar w={w} h={24} />
+        <span className="tile__spark"><Bar w="78px" h={26} /></span>
       </div>
-      {/*  1em inside .hero-net__fig, so the bar is exactly as tall as the
-           figure it stands in for at every width the clamp passes through. */}
-      <div className="hero-net__fig"><Bar w="42%" h="1em" /></div>
-      {/*  A baseline row of label + figure, five across, exactly as the real
-           stats are: measured at 20px tall, against 24 when they stacked. */}
-      <ul className="hero-net__stats">
-        {[52, 44, 56, 62, 40].map((w, i) => (
-          <li key={w}>
-            <Bar w={`${w}px`} h={11} />
-            <Bar w={`${44 + (i % 3) * 12}px`} h={13} />
-          </li>
-        ))}
-      </ul>
-      <div className="scopebar"><Bar w="332px" h={54} /><Bar w="178px" h={54} /><Bar w="142px" h={54} /></div>
-    </section>
+      <Bar w="58%" h={12} />
+    </div>
   );
 }
 
@@ -128,10 +113,13 @@ export function Skeleton({ shape = 'page' }: { shape?: SkeletonShape }) {
       <p className="sr-only" role="status">Loading</p>
       <div className="skel" aria-hidden="true">
         {shape === 'dashboard' ? (
-          <div className="grid">
-            <HeroBlock />
-            <div className="card col-7 h-xl skel__b"><Head /><CalendarBlock /></div>
-            <div className="card col-5 h-xl skel__b"><Head /><Rows n={6} /></div>
+          <div className="grid dash">
+            {['58%', '64%', '44%', '52%'].map((w) => <TileBlock key={w} w={w} />)}
+            <div className="card col-6 skel__b"><Head /><Bar w="100%" h="60%" /></div>
+            <div className="card col-3 skel__b"><Head /><Bar w="100%" h="52%" /></div>
+            <div className="card col-3 skel__b"><Head /><Rows n={4} /></div>
+            <div className="card col-5 skel__b"><Head /><CalendarBlock /></div>
+            <div className="card col-7 skel__b"><Head /><Rows n={5} /></div>
           </div>
         ) : shape === 'list' ? (
           <div className="grid">

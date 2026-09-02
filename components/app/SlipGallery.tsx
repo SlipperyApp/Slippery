@@ -3,19 +3,33 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { Icon } from '@/components/Icon';
+import { useWide } from './wide';
 import { effectiveOdds } from '@/lib/domain/fold';
 import { betTags } from '@/lib/domain/working';
-import { slipStatus, slipSentence, SLIP_STATE_LABEL, type SlipState } from '@/lib/domain/slip';
+import { slipStatus, slipSentence, SLIP_STATE_LABEL, IMAGES_STORED, type SlipState } from '@/lib/domain/slip';
 import { bookmakerName } from '@/lib/data/reference';
 import { formatOdds, type OddsFormat } from '@/lib/odds';
-import { money, dateTime, DEFAULT_TZ, type TimeZone } from '@/lib/format';
+import { money, dateTime, gap, DEFAULT_TZ, type TimeZone } from '@/lib/format';
 import type { DemoBet } from '@/lib/data/demo';
 import type { Currency } from '@/lib/domain/types';
+
+/** Whether the slip beat the off. It is a stamp against a stamp and nothing
+ *  is inferred: a bet placed after the event started is a claim rather than
+ *  a prediction, which the social feed's own gate already says out loud. */
+const lead = (b: DemoBet) => Date.parse(b.placedAt) < Date.parse(b.eventAt);
 
 /** Sixty tiles a page. The ledger loads fifty rows; a tile is smaller than a
  *  row and a grid shows more of them at once, so sixty is roughly the same
  *  amount of scrolling before the button. */
 const PAGE = 60;
+
+/*  The width at which a slip can be read BESIDE the grid rather than thrown
+    over it. A lightbox is right on a phone, where there is one thing on
+    screen at a time, and wrong on a monitor: it hides the ninety tiles
+    somebody was scanning to show them one of them, and closing it is the only
+    way back. Shared with the balance sheet and the group table through
+    .dsplit in components.css. */
+const SPLIT_AT = 1280;
 
 /** The slips, newest first, each opening beside the bet it belongs to.
  *
@@ -51,6 +65,8 @@ export function SlipGallery({
   now: string;
 }) {
   const at = new Date(now);
+  const wide = useWide(SPLIT_AT);
+  const total = bets.length;
   const [open, setOpen] = useState<number | null>(null);
   /*  Sixty at a time, the way the ledger loads fifty. A phone painting every
       tile in a two year record is a scroll nobody can profile, and the button
@@ -131,7 +147,8 @@ export function SlipGallery({
   const shown = open === null ? null : page[open];
 
   return (
-    <>
+    <div className="dsplit">
+      <div>
       <ul className="gal">
         {page.map((b, i) => {
           const st = slipStatus(b, at);
@@ -140,9 +157,29 @@ export function SlipGallery({
               <button
                 type="button"
                 ref={(el) => { tiles.current[i] = el; }}
-                className={`gal__tile gal__tile--${st.state}`}
+                /*  No state modifier. `gal__tile--held` and its three
+                    siblings had no rule anywhere in the stylesheet, so they
+                    were four class names reserved against nothing, which is
+                    how both of this codebase's class collisions started. */
+                className="gal__tile"
                 onClick={() => setOpen(i)}
-                aria-label={`${b.selection}, ${bookmakerName(b.bookmakerId)}, ${SLIP_STATE_LABEL[st.state].toLowerCase()}`}
+                /*  WHICH TILE THE PANE IS SHOWING. A grid of ninety with one
+                     open beside it and nothing marked is a slip from nowhere.
+                     It is also the only observable difference between two
+                     tiles whose bets happen to run to the same number of
+                     characters, which is how a sweep that watches the length
+                     of the page reported one of these as a dead control. */
+                /*  "false" rather than nothing on the tiles that are not
+                     open. aria-current is a global attribute and false is
+                     the documented way to say a thing is not the current
+                     one, which assistive technology ignores; what it buys is
+                     that every tile is in the page's observable state rather
+                     than only the open one. With one attribute appearing and
+                     disappearing, a sweep that reads the ordered aria state
+                     sees the same string whichever tile is open, and it
+                     reported this control as dead for that reason. */
+                aria-current={wide && open === i ? 'true' : 'false'}
+                aria-label={`${b.selection}, ${bookmakerName(b.bookmakerId)}, captured ${lead(b) ? `${gap(b.placedAt, b.eventAt)} before the off` : 'after the off'}`}
               >
                 <span className="gal__face">
                   {/*  THE PICTURE, WHEN THERE IS ONE. Lazy, so a record of two
@@ -161,17 +198,40 @@ export function SlipGallery({
                   <StateMark state={st.state} />
                   <span className="gal__book">{bookmakerName(b.bookmakerId)}</span>
                   <span className="gal__sel">{b.legs.length > 1 ? `${b.legs.length} fold` : b.selection}</span>
+                  {/*  A MULTI NAMES A MATCH TOO. "5 fold" over an empty line
+                       is the same hole the ledger row had, on a card a sixth
+                       of the width. The row and the export print every leg
+                       with its fixture; a tile is a thumbnail, so it takes
+                       the first one, which is what makes last Saturday's
+                       acca findable in a grid. No "and four more" after it:
+                       the line above already says five fold, and the count
+                       written twice is what pushed the fixture into an
+                       ellipsis. */}
+                  <span className="gal__ev">
+                    {b.legs.length > 1 ? (b.legs[0].eventName || b.legs[0].selection) : b.eventName}
+                  </span>
                   <span className="gal__price mono tnum">
                     {money(b.stakePence, currency)} at {formatOdds(effectiveOdds(b), oddsFormat)}
                   </span>
                 </span>
-                {/*  The state on the left and the countdown on the right, on
-                     one line. Written as one run of text it wrapped to two
-                     lines on almost every tile, and a two line strip under a
-                     three line face is a grid whose rows do not settle. */}
-                <span className={`gal__state gal__state--${st.state}`}>
-                  <span className="gal__statet">{SLIP_STATE_LABEL[st.state]}</span>
-                  {st.daysLeft !== null ? <span className="gal__days">{st.daysLeft}d</span> : null}
+                {/*  THE HEAD START, on every tile, where the retention
+                     countdown used to be.
+
+                     A hundred and sixty one tiles reading IMAGE HELD 90D
+                     were a hundred and sixty one identical tiles making the
+                     same false claim, and there was nothing on any of them
+                     that differed from the one beside it except a name. This
+                     differs on every slip, it is the fact the whole product
+                     turns on, and it is checkable: the capture is stamped
+                     and the kick off is stamped. On a deployment that keeps
+                     the image, the retention state goes back beside it. */}
+                <span className={`gal__state${lead(b) ? '' : ' gal__state--late'}`}>
+                  <span className="gal__statet">
+                    {lead(b) ? `${gap(b.placedAt, b.eventAt)} early` : 'After the off'}
+                  </span>
+                  {IMAGES_STORED && st.daysLeft !== null
+                    ? <span className="gal__days">{st.daysLeft}d</span>
+                    : null}
                 </span>
               </button>
             </li>
@@ -186,12 +246,62 @@ export function SlipGallery({
           </button>
         </div>
       ) : null}
+      </div>
 
-      {shown ? (
+      {/*  THE SLIP BESIDE THE GRID. The pane and the lightbox are the two
+           sides of one condition rather than both being drawn and one hidden,
+           because the slip and the bet inside them carry the same content and
+           a document holding two of everything is what a duplicate-id sweep
+           exists to catch. */}
+      <aside className="dsplit__side" aria-label="The slip you have open">
+        {shown && wide ? (
+          <div className="dpane">
+            <div className="dpane__head">
+              <div style={{ minWidth: 0 }}>
+                <h3 className="card__title">
+                  {shown.legs.length > 1 ? `${shown.legs.length} fold` : shown.selection}
+                </h3>
+                <p className="small dim">
+                  {(open as number) + 1} of {total} · {dateTime(shown.placedAt, at, tz)}
+                </p>
+              </div>
+              <button type="button" className="icobtn" onClick={close} aria-label="Close">
+                <Icon name="close" size={18} />
+              </button>
+            </div>
+            <SlipDetail bet={shown} currency={currency} oddsFormat={oddsFormat} now={at} stacked />
+            <div className="lbox__foot">
+              <button
+                type="button" className="btn btn--ghost btn--sm"
+                onClick={() => move(-1)} disabled={open === 0}
+              >
+                <Icon name="chevronLeft" size={16} /> Newer
+              </button>
+              <button
+                type="button" className="btn btn--ghost btn--sm"
+                onClick={() => move(1)} disabled={open === total - 1}
+              >
+                Older <Icon name="chevronRight" size={16} />
+              </button>
+            </div>
+          </div>
+        ) : (
+          <div className="dpane dpane--rest">
+            <Icon name="camera" size={22} className="dpane__mark" />
+            <p className="card__title">Press a slip</p>
+            <p className="small dim">
+              The slip and the bet it produced open here beside the grid. A slip on its own is a
+              photograph; the pair is the evidence.
+            </p>
+          </div>
+        )}
+      </aside>
+
+      {shown && !wide ? (
         <Lightbox
           bet={shown}
           index={open as number}
-          total={bets.length}
+          total={total}
           currency={currency}
           oddsFormat={oddsFormat}
           tz={tz}
@@ -201,7 +311,7 @@ export function SlipGallery({
           onMove={move}
         />
       ) : null}
-    </>
+    </div>
   );
 }
 
@@ -209,7 +319,12 @@ export function SlipGallery({
  *  from the system font, so it cannot take a theme colour and it differs per
  *  platform. */
 function StateMark({ state }: { state: SlipState }) {
-  const name = state === 'expired' ? 'clock'
+  /*  A clock for "the image was removed on the ninetieth day" is a
+      distinction that does not exist where no image was ever written (see
+      IMAGES_STORED): both states mean the same thing, that the bet came off
+      a photograph of a slip, and drawing two glyphs for one fact put a
+      countdown symbol on tiles that are counting down to nothing. */
+  const name = state === 'expired' && IMAGES_STORED ? 'clock'
     : state === 'imported' ? 'clipboard'
       : state === 'typed' ? 'edit'
         : state === 'unstored' ? 'slip' : 'camera';
@@ -230,10 +345,6 @@ function Lightbox({
   onClose: () => void;
   onMove: (delta: number) => void;
 }) {
-  const st = slipStatus(bet, now);
-  const tags = betTags(bet);
-  const s = bet.state;
-
   return (
     <>
       {/*  The scrim is a click target and nothing else, so it carries no role
@@ -252,49 +363,7 @@ function Lightbox({
           </button>
         </div>
 
-        <div className="lbox__body">
-          {/*  THE SLIP SIDE. It states what it knows rather than drawing a
-               picture it has not got: a deleted image and an image that was
-               never stored are different facts, and both of them are worse
-               served by a broken thumbnail than by a sentence. */}
-          <div className={`lbox__img lbox__img--${st.state}${st.imageId ? ' lbox__img--shot' : ''}`}>
-            {st.imageId ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img className="lbox__shot" src={`/api/slips/${st.imageId}`} alt={`The slip behind ${bet.selection}`} />
-            ) : (
-              <>
-                <StateMark state={st.state} />
-                <p className="fig fig--s" style={{ marginTop: 'var(--s2)' }}>{SLIP_STATE_LABEL[st.state]}</p>
-                <p className="small dim" style={{ marginTop: 'var(--s2)' }}>{slipSentence(st)}</p>
-              </>
-            )}
-          </div>
-
-          {/*  THE BET SIDE, beside it. A slip without the bet it produced is
-               a photograph; the pair is the evidence. */}
-          <div className="lbox__bet">
-            <ul>
-              <li className="brow"><span className="brow__title">Bookmaker</span><span className="fig fig--s">{bookmakerName(bet.bookmakerId)}</span></li>
-              <li className="brow"><span className="brow__title">{bet.side === 'lay' ? 'Liability' : 'Stake'}</span><span className="fig fig--s tnum">{money(bet.side === 'lay' ? (bet.liabilityPence ?? 0) : bet.stakePence, currency)}</span></li>
-              <li className="brow"><span className="brow__title">Price</span><span className="fig fig--s mono">{formatOdds(effectiveOdds(bet), oddsFormat)}</span></li>
-              <li className="brow"><span className="brow__title">Event</span><span className="fig fig--s">{bet.eventName}</span></li>
-              <li className="brow"><span className="brow__title">Market</span><span className="fig fig--s">{bet.marketRaw}</span></li>
-              <li className="brow">
-                <span className="brow__title">{s.status === 'open' ? 'Still open' : 'Profit'}</span>
-                <span className={`fig fig--s tnum ${s.realisedPlPence > 0 ? 'pos' : s.realisedPlPence < 0 ? 'neg' : ''}`}>
-                  {s.status === 'open' ? '–' : money(s.realisedPlPence, currency, { sign: true })}
-                </span>
-              </li>
-            </ul>
-            {tags.length ? (
-              <p className="small dim" style={{ marginTop: 'var(--s3)' }}>{tags.join(' · ')}</p>
-            ) : null}
-            <p className="small dim" style={{ marginTop: 'var(--s3)' }}>
-              The figures come from the settlement events, not from the image, which is why
-              deleting one changes nothing on this bet.
-            </p>
-          </div>
-        </div>
+        <SlipDetail bet={bet} currency={currency} oddsFormat={oddsFormat} now={now} />
 
         <div className="lbox__foot">
           <button type="button" className="btn btn--ghost btn--sm" onClick={() => onMove(-1)} disabled={index === 0}>
@@ -307,5 +376,72 @@ function Lightbox({
         </div>
       </div>
     </>
+  );
+}
+
+/** The slip and the bet it produced, side by side.
+ *
+ *  ONE COMPONENT, TWO FRAMES. It is the body of the lightbox on a phone and
+ *  the body of the detail pane on a monitor, because the pair is the same
+ *  evidence either way and two copies of it would drift the moment one of
+ *  them gained a field. `stacked` is the only difference: a 340px pane has
+ *  no room for two columns, so in it the slip sits above the bet. */
+function SlipDetail({
+  bet, currency, oddsFormat, now, stacked = false,
+}: {
+  bet: DemoBet;
+  currency: Currency;
+  oddsFormat: OddsFormat;
+  now: Date;
+  stacked?: boolean;
+}) {
+  const st = slipStatus(bet, now);
+  const tags = betTags(bet);
+  const s = bet.state;
+
+  return (
+    <div className={`lbox__body${stacked ? ' lbox__body--stacked' : ''}`}>
+      {/*  THE SLIP SIDE. It states what it knows rather than drawing a
+           picture it has not got: a deleted image and an image that was never
+           stored are different facts, and both of them are worse served by a
+           broken thumbnail than by a sentence. */}
+      <div className={`lbox__img lbox__img--${st.state}${st.imageId ? ' lbox__img--shot' : ''}`}>
+        {st.imageId ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img className="lbox__shot" src={`/api/slips/${st.imageId}`} alt={`The slip behind ${bet.selection}`} />
+        ) : (
+          <>
+            <StateMark state={st.state} />
+            <p className="fig fig--s" style={{ marginTop: 'var(--s2)' }}>{SLIP_STATE_LABEL[st.state]}</p>
+            <p className="small dim" style={{ marginTop: 'var(--s2)' }}>{slipSentence(st)}</p>
+          </>
+        )}
+      </div>
+
+      {/*  THE BET SIDE, beside it. A slip without the bet it produced is a
+           photograph; the pair is the evidence. */}
+      <div className="lbox__bet">
+        <ul>
+          <li className="brow"><span className="brow__title">Bookmaker</span><span className="fig fig--s">{bookmakerName(bet.bookmakerId)}</span></li>
+          <li className="brow"><span className="brow__title">{bet.side === 'lay' ? 'Liability' : 'Stake'}</span><span className="fig fig--s tnum">{money(bet.side === 'lay' ? (bet.liabilityPence ?? 0) : bet.stakePence, currency)}</span></li>
+          <li className="brow"><span className="brow__title">Price</span><span className="fig fig--s mono">{formatOdds(effectiveOdds(bet), oddsFormat)}</span></li>
+          <li className="brow"><span className="brow__title">Event</span><span className="fig fig--s">{bet.eventName}</span></li>
+          <li className="brow"><span className="brow__title">Market</span><span className="fig fig--s">{bet.marketRaw}</span></li>
+          <li className="brow">
+            <span className="brow__title">{s.status === 'open' ? 'Still open' : 'Profit'}</span>
+            <span className={`fig fig--s tnum ${s.realisedPlPence > 0 ? 'pos' : s.realisedPlPence < 0 ? 'neg' : ''}`}>
+              {s.status === 'open' ? '–' : money(s.realisedPlPence, currency, { sign: true })}
+            </span>
+          </li>
+        </ul>
+        {tags.length ? (
+          <p className="small dim" style={{ marginTop: 'var(--s3)' }}>{tags.join(' · ')}</p>
+        ) : null}
+        <p className="small dim" style={{ marginTop: 'var(--s3)' }}>
+          The figures come from the settlement events, not from the image, which is why deleting
+          one changes nothing on this bet.
+        </p>
+      </div>
+    </div>
   );
 }

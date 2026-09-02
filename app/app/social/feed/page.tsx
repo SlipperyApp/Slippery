@@ -109,28 +109,34 @@ export default async function Feed({
                      bet into your bet is a tip with an extra step, and this
                      product does not give tips. There is no affordance on
                      this row but the person's name. */}
+                {/*  FIVE CELLS FROM 1000 UP, ONE STACK BELOW IT.
+                     At 1920 this row was a name against the left edge of a
+                     1620 pixel card with a countdown against the right and
+                     everything that matters about the bet stacked underneath
+                     in the left third. The cells are siblings now, so a wide
+                     window lays them out across and a phone lays them down,
+                     and the phone's line order is the one it always had. */}
                 {tracking.map((t) => (
                   <li key={t.id} className="brow trk__row">
-                    <span className="avatar" aria-hidden="true">{initials(t.name)}</span>
-                    <span style={{ minWidth: 0 }}>
+                    <span className="avatar trk__av" aria-hidden="true">{initials(t.name)}</span>
+                    <span className="trk__who">
                       <Link href={`/app/social/person?handle=${t.handle}`} className="brow__title" style={{ textDecoration: 'none' }}>
                         {t.name}
                       </Link>
-                      <span className="brow__sub" style={{ display: 'block' }}>
-                        {t.selection} · {t.eventName}
-                      </span>
-                      <span className="trk__meta">
-                        <span className="pill pill--asis mono">{formatOdds(t.price, 'decimal')}</span>
-                        <span className="pill pill--asis tnum">{fmtUnits(t.stakeUnits)}</span>
-                        <span className="pill">{t.bookmaker}</span>
-                      </span>
-                      {/*  How far ahead of the off it was captured is the
-                           whole claim this row makes, so it sits under the
-                           bet in the wide column rather than wrapping to
-                           three lines in the narrow one. */}
-                      <span className="small dim" style={{ display: 'block', marginTop: 'var(--s1)' }}>
-                        captured {gap(t.capturedAt, t.startsAt)} before the off
-                      </span>
+                    </span>
+                    <span className="brow__sub trk__bet">
+                      {t.selection} · {t.eventName}
+                    </span>
+                    <span className="trk__meta">
+                      <span className="pill pill--asis mono">{formatOdds(t.price, 'decimal')}</span>
+                      <span className="pill pill--asis tnum">{fmtUnits(t.stakeUnits)}</span>
+                      <span className="pill">{t.bookmaker}</span>
+                    </span>
+                    {/*  How far ahead of the off it was captured is the whole
+                         claim this row makes, so it has a cell of its own
+                         rather than a fourth line under everything else. */}
+                    <span className="small dim trk__lead">
+                      captured {gap(t.capturedAt, t.startsAt)} before the off
                     </span>
                     <span className="trk__when">
                       <span className="small">in {gap(now, t.startsAt)}</span>
