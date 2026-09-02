@@ -83,7 +83,7 @@ Server only, every one of them. None may appear in a client component.
 | `STRIPE_PRICE_MONTHLY` / `STRIPE_PRICE_YEARLY` | The plan cannot be started |
 | `TELEGRAM_BOT_TOKEN` / `TELEGRAM_WEBHOOK_SECRET` | The webhook 401s everything, which is the safe direction |
 | `VISION_API_KEY` | Slip reading is down. `ANTHROPIC_API_KEY` is read as a fallback. |
-| `EMAIL_API_KEY` | Codes are not sent, and are still never logged |
+| `EMAIL_API_KEY` | Codes are not sent, and are still never logged. Gmail over SMTP with an App Password: `docs/EMAIL.md` |
 | `ADMIN_SECRET` | The admin levers refuse |
 | `CRON_SECRET` | The sweep accepts unsigned calls. Set it. |
 

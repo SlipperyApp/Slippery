@@ -129,12 +129,28 @@ input, select, textarea { font-size: 16px; line-height: 1.4; }
 .dim { color: var(--ink-2); }
 .small { font-size: var(--t-small); line-height: var(--lh-small); }
 
-/* Focus ring: no radius, because outline follows the element's own
-   border-radius and a pill would give a pill-shaped ring. */
+/*  THE FOCUS RING FOLLOWS THE SHAPE IT IS AROUND.
+ *
+ *  It used to carry `border-radius: 0`, with a comment saying an outline
+ *  follows the element's own radius and a pill would therefore get a pill
+ *  shaped ring. Both halves of that are true and the conclusion is
+ *  backwards: a pill shaped ring around a pill is the correct ring, and a
+ *  square one around it is the thing that reads as unfinished.
+ *
+ *  Worse, that declaration does not set the OUTLINE's radius, it sets the
+ *  ELEMENT's. Every rounded control in the product squared off its own
+ *  corners the instant it took keyboard focus: the add button, every pill,
+ *  every card. A keyboard user saw a different product from a mouse user.
+ *
+ *  Two rings, because one is not enough on eight different grounds. The
+ *  outline is the accent and carries the contrast; the halo is the accent
+ *  at 18% spreading outward, which is what makes it read as light around
+ *  the control rather than as a line drawn near it. box-shadow costs no
+ *  layout and the offset means neither ring can touch the glyphs. */
 :focus-visible {
   outline: 2px solid var(--accent);
   outline-offset: 2px;
-  border-radius: 0;
+  box-shadow: 0 0 0 5px color-mix(in oklab, var(--accent) 18%, transparent);
 }
 :focus:not(:focus-visible) { outline: none; }
 
@@ -151,7 +167,7 @@ input, select, textarea { font-size: 16px; line-height: 1.4; }
 .skip {
   position: absolute;
   top: 0; left: 0;
-  z-index: 200;
+  z-index: var(--z-toast);
   transform: translateY(-140%);
   background: var(--accent);
   color: var(--accent-ink);

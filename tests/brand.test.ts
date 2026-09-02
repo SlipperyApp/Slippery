@@ -84,11 +84,11 @@ test('the two tone cut survives in both marks', () => {
 });
 
 test('the mark does not use the two locked result colours', () => {
-  /*  #7FE3A6 and #F5A3A3 mean profit and loss and nothing else. A logo drawn
+  /*  #86EFAC and #FCA5A5 mean profit and loss and nothing else. A logo drawn
    *  in them would be a third meaning on two colours the product keeps to one
    *  each. */
   for (const c of [MARK_TILE, MARK_INK, MARK_ACCENT]) {
-    assert.notEqual(c.toUpperCase(), '#7FE3A6');
-    assert.notEqual(c.toUpperCase(), '#F5A3A3');
+    assert.notEqual(c.toUpperCase(), '#86EFAC');
+    assert.notEqual(c.toUpperCase(), '#FCA5A5');
   }
 });

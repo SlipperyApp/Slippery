@@ -2,7 +2,7 @@ import { hasDatabase, query, transaction } from '@/lib/server/db';
 import { currentAccount } from '@/lib/server/auth';
 import { fail, limitOr429, ok } from '@/lib/server/respond';
 import { settleBet } from '@/lib/settlement/engine';
-import { appendEvent, loadBet } from '@/lib/server/bets';
+import { appendResult, loadBet } from '@/lib/server/bets';
 import type { LegResult } from '@/lib/domain/types';
 
 export const runtime = 'nodejs';
@@ -44,7 +44,9 @@ export async function POST(req: Request) {
         const legs: LegResult[] = bet.legs.length ? bet.legs.map((l) => l.legResult) : ['open'];
         const outcome = settleBet(legs);
         if (!outcome.type) return false;
-        await appendEvent(client, {
+        /*  appendResult, not appendEvent: a winner on an exchange owes
+         *  commission on its net winnings, and this route never charged it. */
+        await appendResult(client, {
           accountId: account.id, betId: row.id, type: outcome.type,
           enteredBy: 'system', note: outcome.why,
         });

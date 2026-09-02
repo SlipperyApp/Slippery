@@ -31,7 +31,8 @@ const CONSTRAINTS = [
   'No notification is ever framed as losing your place in a league.',
   'Nothing is sent late at night, for any reason.',
   'A division change reads "Moving to League One next month", never "RELEGATED".',
-  'Slippery celebrates app actions, such as a capture streak, and never a betting outcome.',
+  'Slippery celebrates app actions, such as importing a history, and never a betting outcome.',
+  'Nothing counts how many days you have bet on, and no badge is earned by betting on more of them. A reward for volume is a reward for volume whatever it is called.',
   'A take a break control pauses notifications and leagues without touching your ledger. It does not try to talk you out of it.',
   'No copy anywhere implies guaranteed winnings, or that betting solves money problems.',
 ];

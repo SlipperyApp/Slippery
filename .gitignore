@@ -9,7 +9,20 @@ next-env.d.ts
 test-results
 .DS_Store
 
+# a local server's log and pid, from running the built app to look at it
+.next-*.log
+.srv.pid
+
 # scratch measuring scripts: dot prefixed, kept out of the tree
 tools/.*.mjs
 .chrome.mjs
 .sections.mjs
+.shot-open.mjs
+.shot-sheet.mjs
+.shot-mod.mjs
+.shot-scroll.mjs
+.axe-check.mjs
+.server.log
+
+# The audit writes here; the findings live in test-results/.
+.audit.log

@@ -37,7 +37,9 @@ export function WaitingListForm() {
   if (state === 'done') {
     return (
       <div className="row" style={{ alignItems: 'flex-start' }}>
-        <Icon name="check" size={20} style={{ color: 'var(--pos)', flex: 'none', marginTop: 2 }} />
+        {/*  readmark, not the profit colour: this tick means an address was
+             saved, and the two result colours mean money. */}
+        <Icon name="check" size={20} className="readmark readmark--ok" style={{ flex: 'none', marginTop: 2 }} />
         <div>
           <p className="card__title">On the list</p>
           <p className="small muted" style={{ marginTop: 'var(--s2)' }}>

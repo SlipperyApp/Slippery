@@ -217,11 +217,38 @@ test('nothing that has to be read is faded below legibility', () => {
   assert.deepEqual(offences, []);
 });
 
+/** Every component, as lines, once. Both of the tests below read the same
+ *  files, and they read them line by line because that is where the meaning
+ *  is: the colour and the thing it is being applied to sit together.
+ *
+ *  Comments are blanked, and their newlines are kept so a reported line
+ *  number is still the line. The note above a fix naming the colour it took
+ *  out is not the colour coming back. */
+function componentLines(): { at: string; line: string }[] {
+  const out: { at: string; line: string }[] = [];
+  const walk = (dir: URL, rel: string) => {
+    for (const entry of readdirSync(dir, { withFileTypes: true })) {
+      const child = new URL(entry.name + (entry.isDirectory() ? '/' : ''), dir);
+      if (entry.isDirectory()) { walk(child, `${rel}${entry.name}/`); continue; }
+      if (!/\.tsx$/.test(entry.name)) continue;
+      readFileSync(child, 'utf8')
+        .replace(/\/\*[\s\S]*?\*\//g, (m) => m.replace(/[^\n]/g, ' '))
+        .replace(/^\s*\/\/.*$/gm, ' ')
+        .split('\n')
+        .forEach((line, i) => {
+          out.push({ at: `${rel}${entry.name}:${i + 1}`, line });
+        });
+    }
+  };
+  walk(new URL('../components/', import.meta.url), 'components/');
+  walk(new URL('../app/', import.meta.url), 'app/');
+  return out;
+}
+
 test('the two result colours are never used to mean anything but money', () => {
   // They mean profit and loss. Letting green also mean "read cleanly" and red
   // also mean "not on the slip" puts four meanings on two colours, on screens
   // that are about to write money into a ledger.
-  const roots = [new URL('../components/', import.meta.url), new URL('../app/', import.meta.url)];
   const offences: string[] = [];
 
   // Where they legitimately appear: an outcome, a profit figure, a calendar
@@ -249,20 +276,58 @@ test('the two result colours are never used to mean anything but money', () => {
     "ghost=", "\\+£",
   ].join('|'));
 
-  const walk = (dir: URL) => {
-    for (const entry of readdirSync(dir, { withFileTypes: true })) {
-      const child = new URL(entry.name + (entry.isDirectory() ? '/' : ''), dir);
-      if (entry.isDirectory()) { walk(child); continue; }
-      if (!/\.tsx$/.test(entry.name)) continue;
-      readFileSync(child, 'utf8').split('\n').forEach((line, i) => {
-        if (!/\b(pos|neg)\b/.test(line)) return;
-        if (!/className|class=/.test(line)) return;
-        if (!/['"`\s](pos|neg)['"`\s]|pill--(pos|neg)|fill--(pos|neg)/.test(line)) return;
-        if (ALLOWED.test(line)) return;
-        offences.push(`${entry.name}:${i + 1} ${line.trim().slice(0, 84)}`);
-      });
-    }
-  };
-  roots.forEach(walk);
-  assert.deepEqual(offences, []);
+  for (const { at, line } of componentLines()) {
+    if (!/\b(pos|neg)\b/.test(line)) continue;
+    if (!/className|class=/.test(line)) continue;
+    if (!/['"`\s](pos|neg)['"`\s]|pill--(pos|neg)|fill--(pos|neg)/.test(line)) continue;
+    if (ALLOWED.test(line)) continue;
+    offences.push(`${at} ${line.trim().slice(0, 84)}`);
+  }
+  assert.deepEqual(offences, [], offences.join('\n'));
+});
+
+/*  THE OTHER WAY A COLOUR REACHES A SCREEN.
+ *
+ *  The test above reads className, and only className: `if (!/className|
+ *  class=/.test(line)) return`. Six components had put the two result colours
+ *  on through an inline style instead, and every one of them passed. Profit
+ *  green meant "that email address is well formed" on the login form, which
+ *  is the second screen anybody sees; loss red meant "paused" on the billing
+ *  screen, four inches from where red means a card was declined.
+ *
+ *  This reads the other channel: var(--pos), var(--neg) and the two hexes,
+ *  which in a .tsx file means a style prop, an SVG paint attribute or a
+ *  constant holding one of the colours.
+ *
+ *  It keeps its OWN list of legitimate uses rather than sharing the one
+ *  above. That one has to allow the substring --pos so that a class named
+ *  pill--pos gets through, and an allowance for --pos matches var(--pos)
+ *  as well, which is exactly how these six passed. A rule that cannot see
+ *  half the ways a colour is applied is a rule that passes while the defect
+ *  comes back, and it cannot be fixed by widening the rule that has the
+ *  hole in it. */
+test('the two result colours are never applied inline to mean anything but money', () => {
+  const offences: string[] = [];
+
+  const APPLIED = /var\(--(pos|neg)\)|#86EFAC|#FCA5A5/i;
+
+  const ALLOWED_INLINE = new RegExp([
+    // the charts and the calendar ramp, which are pictures of money
+    "tone", "cal__fill", "meter__fill", "ProfitCurve", "MonthBars", "Sparkline",
+    // the sign of a number picking the colour, which is the correct use by
+    // definition, and a boolean already named for that sign
+    "[<>]=? 0 \\? 'var\\(--(pos|neg)\\)'", "\\b(up|pos) \\? 'var\\(--(pos|neg)\\)'",
+    // a money figure, including the two on the share and open graph cards
+    "money\\(", "netPence", "[-+]£\\d",
+    // the swatches on /themes, which exist to show what the two colours are,
+    // and the two constants the share card names them in
+    "themecard__sw", "mono (pos|neg)", "const (POS|NEG) =",
+  ].join('|'));
+
+  for (const { at, line } of componentLines()) {
+    if (!APPLIED.test(line)) continue;
+    if (ALLOWED_INLINE.test(line)) continue;
+    offences.push(`${at} ${line.trim().slice(0, 84)}`);
+  }
+  assert.deepEqual(offences, [], offences.join('\n'));
 });

@@ -9,7 +9,7 @@ import { StickyCta } from '@/components/marketing/StickyCta';
 export const metadata: Metadata = {
   title: 'Groups and monthly leagues',
   description:
-    'Ranked in units, never in pounds, so a bigger bankroll is not a bigger score.',
+    'Ranked in units, never in pounds, so a bigger balance is not a bigger score.',
   alternates: { canonical: '/social' },
   openGraph: {
     title: 'Groups and monthly leagues',
@@ -34,7 +34,7 @@ export default function Social() {
         <div className="wrap">
           <Breadcrumbs trail={[{ href: '/', label: 'Slippery' }]} page="Groups and leagues" />
           <h1 className="sect__h" style={{ fontSize: 'clamp(30px, 6vw, 52px)' }}>
-            <span className="setup">A bigger bankroll</span>
+            <span className="setup">A bigger balance</span>
             <span>should not be a bigger score.</span>
           </h1>
           <p className="sect__p">
@@ -103,7 +103,8 @@ export default function Social() {
                 { title: 'No notification about not betting', sub: 'Never "you have not logged a slip this week". Never framed as losing your place.', icon: 'bell', on: true },
                 { title: 'Nothing late at night', sub: 'No push after the last fixture of the evening, for any reason.', icon: 'clock' },
                 { title: '"Moving to League One next month"', sub: 'Never "RELEGATED". State the number and stop.', icon: 'trophy' },
-                { title: 'Celebrate app actions, never outcomes', sub: 'A capture streak is worth marking. A winning bet is not.', icon: 'check' },
+                { title: 'Celebrate app actions, never outcomes', sub: 'Importing a history is worth marking. A winning bet is not, and neither is a run of days with a bet on them.', icon: 'check' },
+                { title: 'No tips, and nothing to tail', sub: 'What other Slippers are tracking shows only bets captured before kick off, never a result, and no button turns one of theirs into one of yours.', icon: 'shield' },
                 { title: 'Take a break, one control', sub: 'Pauses notifications and leagues. Touches nothing in your ledger.', icon: 'pause' },
               ]}
             />

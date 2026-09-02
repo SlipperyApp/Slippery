@@ -1,98 +1,34 @@
 import type { Metadata } from 'next';
-import Link from 'next/link';
-import { Icon } from '@/components/Icon';
-import { EmptyState } from '@/components/app/BetRow';
+import { EmptyDashboard } from '@/components/app/EmptyDashboard';
+import { trialState } from '@/lib/domain/trial';
+import { emptyReason } from '@/lib/data/viewer';
 
 export const metadata: Metadata = {
   title: 'A new dashboard',
   description: 'What the dashboard looks like before there is anything in it: the thing ghosted, with the action on top.',
 };
 
-const CHECKLIST = [
-  { t: 'Link the Telegram bot', s: 'One code, once. Then a slip takes four seconds.', href: '/app/import/linked', done: false },
-  { t: 'Log your first bet', s: 'Forward it, upload it or type it in.', href: '/app/import', done: false },
-  { t: 'Set your unit', s: 'One unit is one normal bet for you.', href: '/app/settings', done: true },
-  { t: 'Pick a theme', s: 'Eight, all dark.', href: '/app/settings', done: true },
-  { t: 'Join a group', s: 'Ranked in units, never in pounds.', href: '/app/social/discover', done: false },
-];
-
+/*  THE REAL COMPONENT, with a new account's own answers.
+ *
+ *  This page carried its own copy of the layout as well as its own five item
+ *  literal, so the state screen and the dashboard were two screens that could
+ *  disagree about what a new Slipper is shown, and for a long time they did:
+ *  the real dashboard could not reach this state at all. One component now,
+ *  rendered by both, and this page supplies the booleans a fresh account
+ *  actually has. */
 export default function NewDashboard() {
-  const done = CHECKLIST.filter((c) => c.done).length;
+  const now = new Date();
+  const trial = trialState({
+    trialEndsAt: new Date(now.getTime() + 14 * 86400000).toISOString(),
+    trialSlipsAllowed: 0,
+    trialSlipsUsed: 0,
+  }, now);
+
   return (
-    <>
-      <h1>Dashboard</h1>
-      <p className="muted" style={{ marginTop: 'var(--s2)' }}>
-        Every module is here. They fill in as bets do.
-      </p>
-
-      <div className="card" style={{ marginTop: 'var(--s5)' }}>
-        <div className="spread">
-          <p className="card__title">Getting started</p>
-          <span className="small dim tnum">{done} of {CHECKLIST.length}</span>
-        </div>
-        <div className="meter" style={{ marginTop: 'var(--s3)' }}>
-          <span className="meter__fill" style={{ width: `${(done / CHECKLIST.length) * 100}%` }} />
-        </div>
-        <ul style={{ marginTop: 'var(--s4)' }}>
-          {CHECKLIST.map((c) => (
-            <li key={c.t} className="brow brow--field">
-              <Icon name={c.done ? 'check' : 'minus'} size={16} className={c.done ? 'readmark readmark--ok' : 'dim'} />
-              <span style={{ minWidth: 0 }}>
-                <Link href={c.href} className="brow__title" style={{ textDecoration: 'none' }}>{c.t}</Link>
-                <span className="brow__sub" style={{ display: 'block' }}>{c.s}</span>
-              </span>
-              {!c.done ? <Icon name="chevronRight" size={16} className="dim" /> : null}
-            </li>
-          ))}
-        </ul>
-      </div>
-
-      <div className="grid" style={{ marginTop: 'var(--s4)' }}>
-        <section className="card col-4 h-m">
-          <p className="card__title">Net</p>
-          <EmptyState
-            title="Your first figure lands here"
-            action="Add a bet"
-            href="/app/import"
-            ghost={<><p className="label">This month</p><p className="fig pos">+£1,240.00</p><p className="small dim">+49.60u on a £25.00 unit</p></>}
-          />
-        </section>
-
-        <section className="card col-4 h-m">
-          <p className="card__title">Running now</p>
-          <EmptyState
-            title="Nothing running yet"
-            action="Forward a slip"
-            href="/app/import/linked"
-            ghost={
-              <ul>
-                {['Arsenal to win', 'Over 2.5 goals', 'State Man'].map((s) => (
-                  <li key={s} className="brow"><span className="brow__title">{s}</span><span className="fig fig--s">£38.25</span></li>
-                ))}
-              </ul>
-            }
-          />
-        </section>
-
-        <section className="card col-4 h-m">
-          <p className="card__title">This month</p>
-          <EmptyState
-            title="Days fill in as bets settle"
-            action="Add a bet"
-            href="/app/import"
-            ghost={
-              <div className="cal" aria-hidden="true">
-                {Array.from({ length: 35 }).map((_, i) => (
-                  <span key={i} className="cal__cell">
-                    {i % 5 === 0 ? <span className="cal__fill" style={{ background: 'var(--pos)', opacity: 0.4 }} /> : null}
-                  </span>
-                ))}
-              </div>
-            }
-          />
-        </section>
-      </div>
-
-    </>
+    <EmptyDashboard
+      signals={{ telegramLinked: false, hasBet: false, unitSet: true, themeSet: false }}
+      trial={trial}
+      reason={emptyReason(true)}
+    />
   );
 }

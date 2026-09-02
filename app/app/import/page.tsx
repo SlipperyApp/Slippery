@@ -18,7 +18,7 @@ const WAYS = [
 ];
 
 export default async function ImportHome() {
-  const { trial, readOnly } = await getViewer();
+  const { trial, readOnly, slips } = await getViewer();
   const readerReady = Boolean(visionKey());
 
   return (
@@ -48,8 +48,23 @@ export default async function ImportHome() {
         </div>
       ) : null}
 
+      {/*  THE SAME ANSWER THE ROUTE GIVES. The dropzone was live for an
+           account whose trial had run out, so the refusal arrived after the
+           upload rather than before it. The sentence is trialState()'s own,
+           which is the one place the trial numbers live. */}
+      {!slips.allowed && !readOnly ? (
+        <div className="banner" style={{ marginTop: 'var(--s5)' }}>
+          <Icon name="clock" size={18} className="banner__icon" />
+          <span className="grow">
+            {slips.message} New slips are paused until there is a plan on the account. Typing a bet
+            in still works and so does an import.
+          </span>
+          <Link href="/app/settings/plan" className="btn btn--ghost btn--sm">See plans</Link>
+        </div>
+      ) : null}
+
       <div style={{ marginTop: 'var(--s5)' }}>
-        <Dropzone enabled={readerReady && !readOnly} />
+        <Dropzone enabled={readerReady && slips.allowed} />
       </div>
 
       <div className="grid" style={{ marginTop: 'var(--s5)' }}>

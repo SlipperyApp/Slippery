@@ -62,7 +62,7 @@ export function HistoryUpload() {
             <li key={t} className="brow" style={{ gridTemplateColumns: '24px 1fr' }}>
               <span className="mono dim small">{i + 1}</span>
               <span>
-                <span className="brow__title" style={{ display: 'block' }}>{t}</span>
+                <span className="brow__title">{t}</span>
                 <span className="brow__sub">{s}</span>
               </span>
             </li>

@@ -4,7 +4,8 @@ import { useEffect, useState } from 'react';
 import { ModuleMenu } from '@/components/app/ModuleMenu';
 import { ScopeBar } from '@/components/app/ScopeBar';
 import { ShareButton } from '@/components/app/ShareButton';
-import { money, pct, units as fmtUnits, count } from '@/lib/format';
+import { CountUp, PctUp, UnitsUp } from '@/components/app/CountUp';
+import { money, count } from '@/lib/format';
 import type { Scope, Summary } from '@/lib/data/analytics';
 import type { Currency } from '@/lib/domain/types';
 
@@ -32,13 +33,12 @@ function readTarget(): number {
 }
 
 export function NetHero({
-  summary, scope, scopeLabel, currency, unitPence, books, handle, id = 'mod-net',
+  summary, scope, scopeLabel, currency, books, handle, id = 'mod-net',
 }: {
   summary: Summary;
   scope: Scope;
   scopeLabel: string;
   currency: Currency;
-  unitPence: number;
   books?: string[];
   handle?: string;
   id?: string;
@@ -114,22 +114,32 @@ export function NetHero({
         </div>
       </div>
 
+      {/*  IT COUNTS. This is the one figure on the dashboard that answers the
+           question somebody opened the app to ask, and it is the one figure
+           that genuinely moves: changing the period rolls it from the old
+           answer to the new one rather than swapping it. See CountUp for why
+           it starts before the first paint. */}
       <p className={`hero-net__fig ${net > 0 ? 'pos' : net < 0 ? 'neg' : ''}`}>
-        {money(net, currency, { sign: true })}
+        <CountUp to={net} render={(v) => money(v, currency, { sign: true })} duration={560} />
       </p>
 
       <div className="hero-net__row">
+      {/*  THREE FIGURES AND THE COUNT THEY ARE OVER. It was five, and two of
+           the five were printed again a screen-inch below in The record:
+           turnover has its own tile there with the voided-stake caption that
+           makes it readable, and the unit is the caption under average stake.
+           A figure in two places on one screen is a figure somebody has to
+           check against itself, and the hero is the one card on this page
+           that should be readable without reading. */}
       <ul className="hero-net__stats">
-        <li><span className="label">Bets</span><span className="tnum">{count(summary.count)}</span></li>
-        <li><span className="label">Units</span><span className="tnum">{fmtUnits(summary.units, { sign: true })}</span></li>
+        <li><span className="label">Units</span><span className="tnum"><UnitsUp value={summary.units} sign /></span></li>
         <li>
           <span className="label">Return</span>
           <span className={`tnum ${summary.roi > 0 ? 'pos' : summary.roi < 0 ? 'neg' : ''}`}>
-            {pct(summary.roi, { sign: true })}
+            <PctUp value={summary.roi} sign />
           </span>
         </li>
-        <li><span className="label">Turnover</span><span className="tnum">{money(summary.turnoverPence, currency)}</span></li>
-        <li className="hide-sm"><span className="label">Unit</span><span className="tnum">{money(unitPence, currency)}</span></li>
+        <li><span className="label">Bets</span><span className="tnum">{count(summary.count)}</span></li>
       </ul>
 
       {targetPence > 0 ? (

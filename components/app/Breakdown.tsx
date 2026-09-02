@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { DIMENSIONS, ORDERED_DIMENSIONS, type Dimension, type BreakRow } from '@/lib/data/analytics';
+import { DIMENSIONS, ORDERED_DIMENSIONS, SHAPE_UNIT_CAP, type Dimension, type BreakRow } from '@/lib/data/analytics';
 import { RowSpark } from '@/components/app/Charts';
 import { Seg } from '@/components/app/Seg';
 import { ModuleMenu, MenuChoice } from '@/components/app/ModuleMenu';
@@ -18,6 +18,13 @@ import type { Currency } from '@/lib/domain/types';
  *    the SPARKLINE   how it got there. Steady, or one Saturday?
  *    the BAR         how big it is next to the biggest row here
  *    the FIGURE      what it came to
+ *
+ *  THE SPARKLINE IS NOT THE RECORD, and the row says so when it is not. It
+ *  draws units with each bet's contribution clamped to plus or minus three,
+ *  because one forty unit bet in a row draws a wall and a flat line and every
+ *  other bet in it becomes a pixel. A row that had to clamp anything carries
+ *  a marker and the note under the list explains it. The figure beside the
+ *  line, and every total anywhere in this product, is the true one.
  *
  *  The bar is scaled to the largest ABSOLUTE net in the list, so a big loss
  *  and a big win are the same length in opposite colours and the eye can
@@ -38,7 +45,16 @@ export function Breakdown({
   currency?: Currency;
   showUnits?: boolean;
 }) {
-  const [dim, setDim] = useState<Dimension>('sport');
+  /*  BOOKMAKER FIRST, not sport.
+   *
+   *  Every bet has exactly one bookmaker and most accounts keep several, so
+   *  it is the dimension with the most rows in it on any real record. Sport
+   *  opened with two rows, Football and Tennis, in a module 1152 by 408,
+   *  which is the widest thing on the page showing the shortest list it has.
+   *  It is also the least interesting first cut: a bettor already knows
+   *  which sports they bet on and does not know which book is taking their
+   *  money. Sport is one press away. */
+  const [dim, setDim] = useState<Dimension>('bookmaker');
   /*  Money or units, in the corner menu rather than as a second row of
       buttons over the rows. A £500 staker and a £5 staker read the same list
       differently and both are right, so it is a preference and it is kept the
@@ -103,9 +119,11 @@ export function BreakList({
   ordered?: boolean;
 }) {
   const peak = Math.max(1, ...rows.map((r) => Math.abs(r.netPence)));
+  const anyCapped = rows.some((r) => r.capped);
 
   return (
-    <ul className="brk">
+    <>
+      <ul className={`brk${anyCapped ? ' brk--noted' : ''}`}>
       {rows.map((r) => {
         const pos = r.netPence >= 0;
         const empty = ordered && r.count === 0;
@@ -117,6 +135,9 @@ export function BreakList({
 
             <span className="brk__spark">
               <RowSpark values={r.spark} tone={pos ? 'pos' : 'neg'} />
+              {r.capped ? (
+                <span className="brk__cap" aria-hidden="true">*</span>
+              ) : null}
             </span>
 
             <span className={`brk__fig tnum ${empty ? 'dim' : pos ? 'pos' : 'neg'}`}>
@@ -142,10 +163,24 @@ export function BreakList({
               {r.label}: {r.count} bet{r.count === 1 ? '' : 's'},{' '}
               {money(r.netPence, currency, { sign: true })}, {pct(r.roi, { sign: true })} return
               on {money(r.turnoverPence, currency)} turnover.
+              {r.capped
+                ? ` The shape beside this row draws a bet over ${SHAPE_UNIT_CAP} units at ${SHAPE_UNIT_CAP}. The figure is the real one.`
+                : ''}
             </span>
           </li>
         );
       })}
-    </ul>
+      </ul>
+      {anyCapped ? (
+        /*  Named where it applies rather than in a settings page nobody
+            opens. A chart the reader cannot tell apart from the record is
+            worse than no chart. */
+        <p className="small dim brk__note">
+          <span aria-hidden="true">*</span> A bet over {SHAPE_UNIT_CAP} units is drawn at{' '}
+          {SHAPE_UNIT_CAP} on these shapes, so one heavy stake cannot flatten the rest of the
+          line. Every figure is the real one.
+        </p>
+      ) : null}
+    </>
   );
 }

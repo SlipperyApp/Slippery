@@ -1,4 +1,9 @@
 User-agent: *
 Allow: /
 Disallow: /app/
+# A shared balance lives at an unguessable address and its whole security is
+# that the address cannot be guessed. A crawler that has indexed one has made
+# it guessable, so the whole prefix is out. The pages carry noindex as well:
+# a crawler that ignores one may honour the other.
+Disallow: /b/
 Sitemap: https://slippery-iota.vercel.app/sitemap.xml

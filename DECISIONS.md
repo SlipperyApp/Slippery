@@ -323,10 +323,11 @@ account", and several things below are the difference.
    what it can see and to return null rather than infer, and the review screen
    is built around per-field confidence, but the whole path from image to
    fields is untested against an actual bookmaker screenshot.
-5. **Duplicate detection has no UI.** `/api/extract` returns `duplicate: true`
-   with the existing bet, and the bot's reply table has the wording, but the
-   web upload path does not yet show "here is the one you already have, add
-   anyway or ignore".
+5. ~~**Duplicate detection has no UI.**~~ Closed, and the check underneath it
+   was wrong as well. See "The profit and loss was wrong in three places"
+   below: the match is on the parsed bet rather than on the image file, and
+   both the analysing screen and the review screen now ask rather than
+   deciding.
 6. **The slip image is a state, not a file.** The bet sheet says honestly
    whether an image exists, was typed in, or was deleted after 90 days, and the
    retention sweep does the deleting. What is missing is the storage: images
@@ -344,3 +345,311 @@ account", and several things below are the difference.
   the demo is ever used in a screenshot, freeze the seed.
 - **`/404` is the one route in the map that answers 404 rather than 200**, and
   the reason is written above. It serves the real designed page.
+
+## The profit and loss was wrong in three places
+
+This product is a profit and loss tracker first and everything else second,
+and three separate defects each put a wrong number on the screen.
+
+### Commission is charged, and it rounds up
+
+- **The fold has understood a `commission` event since the first migration and
+  nothing ever appended one.** `bets.commission_pct` was on the table, the
+  bookmakers carried their rates, and neither `/api/settle` nor the cron sweep
+  contained the word. Every winner on Betfair Exchange, Smarkets, BETDAQ or
+  Matchbook was reported 1.5 to 2 per cent above what the exchange paid, and
+  it compounded through return, units, the calendar and every breakdown,
+  because they all read the same realised figure. The example account builds
+  its own events and DID charge commission, which is why the screenshots
+  looked right while real ledgers did not.
+- **`appendResult()` in `lib/server/bets.ts` is the one place that decides.**
+  Both settlement paths go through it. It appends the graded result, asks
+  `commissionDue()` whether a charge is owed, and appends a second event if it
+  is. A second event rather than a smaller first one: the ledger is append
+  only, and somebody looking at a bet that returned £150 and paid £98 is owed
+  the line that says where the other £2 went.
+- **The base is net winnings, never turnover.** £50 at 3.00 returns £150, of
+  which £100 is winnings, and 2% of that is £2.00. Not 2% of the £150 back and
+  not 2% of the £50 staked. A losing bet owes nothing, which is why nothing is
+  appended for one: a zero row in somebody's settlement history is a line they
+  have to ask about.
+- **A part penny rounds UP, away from the person.** £5.10 at 3.00 on Matchbook
+  wins £10.20 and 1.5% of that is 15.3 pence, so the charge is 16 pence.
+  Betfair rounds its own charges up, and it is the only direction that cannot
+  overstate profit: rounding a charge down reports money the exchange never
+  paid out, which is the same defect as never charging it, one penny smaller.
+  The rate is taken in thousandths, which is the precision the column stores,
+  so a rate with no exact binary form cannot push an exact charge a penny high
+  through the multiply. `tests/fold.test.ts` pins all of it.
+- **`POST /api/bets` had a literal `0` in the insert for `commission_pct`**, so
+  even once settlement learned to charge, every bet had nothing to charge. It
+  reads the account's own rate for that bookmaker and freezes it on the bet,
+  like the unit beside it, so changing a rate later never rewrites history.
+
+### A place is a place, and it counts as neither a win nor a loss
+
+- **`placed` is the seventh outcome.** There were six and none of them was
+  this one, so the fold collapsed a place to `realised >= 0 ? 'won' : 'lost'`.
+  A £10 each way at 4.00 on a fifth the odds, third of twelve, is a win part
+  that loses £10 and a place part that wins £6: the bet is £4 down, and the
+  ledger said Lost on one row and Won on the other. Both are true about the
+  cash and neither is the race.
+- **THE RULING: a place is neither a win nor a loss.** It is out of the win
+  rate on both sides, exactly like a void, and it has its own count, its own
+  facet and its own pill. Two reasons, and the second decided it. A place is
+  not a claim about winning, so calling it one puts a horse that came third in
+  the same column as one that came first. And an each way bet is TWO rows
+  here: count the place as a win and one bet lands in both columns at once, so
+  one horse, third of twelve, would read as a 50% win rate off a single bet.
+  Out of both, the pair reads 0 wins and 1 loss, which is the true statement
+  that the selection did not win, and the money is reported by net, return and
+  units, which is where money belongs.
+- **The pill takes neither colour.** A place can land either side of zero
+  depending on the terms, and the figure on the right of the row already
+  carries the profit green or the loss red. A green pill on a place that cost
+  £4 is a row arguing with itself.
+- **`places_paid` sits beside `ew_place_fraction`.** Both halves or neither:
+  a fifth the odds means nothing without knowing how many places were paid,
+  and a place count means nothing without knowing what a place was worth.
+  `ewTerms()` prints the pair the way a slip prints it, and whichever half was
+  not read is left out rather than guessed at.
+
+### A duplicate is the same BET, not the same file
+
+- **`slip_images.sha256` was the only check.** Two screenshots of one slip are
+  two different files: crop a pixel, share it through a chat that recompresses
+  it, or take the shot twice, and both saved. The bet was then in the ledger
+  twice and every aggregate counted it twice, with nothing on any screen
+  saying so.
+- **The fingerprint is over the parsed bet**: bookmaker, selection, stake,
+  price, event and event time, normalised for casing, punctuation and seconds,
+  and versioned so a change of recipe cannot silently pair up bets taken under
+  the old one. `identityOf()` builds it, and both `/api/extract` and
+  `/api/bets` use that one recipe, because a fingerprint taken one way at
+  upload and another way at save would never match itself.
+- **The window is 24 hours.** Two shots of one slip arrive within hours; the
+  same fingerprint a week later is a different occasion. The query is handed
+  the cutoff `duplicateCutoff()` returns, so the boundary the test pins at 23
+  and 25 hours is the boundary the database applies.
+- **It ASKS, both times.** The image hash stays in front as a fast path,
+  because an identical file can be caught before the reader is called and that
+  saves a slip off somebody's allowance, but it now offers "read it anyway"
+  instead of ending the journey. The fingerprint match rides back attached to
+  the read, and Confirm on the review screen stays off until the person says
+  whether it is the same bet. Silently skipping loses a real second bet and
+  silently saving is the defect being replaced.
+- **The index is not unique, deliberately.** Two genuinely separate bets on one
+  fixture at one price DO collide, and a unique index would refuse the second
+  one instead of asking about it.
+
+## The social side, and the one rule the feed has
+
+Three things were asked for after a look at a competitor: a leaderboard, a
+groups system that works end to end, and a feed of what people are tracking.
+The last of those is the one with a rule in it, so it is first here.
+
+### Only bets captured before kick off, and never a result
+
+- **The gate is two clauses and both are absolute.** An item is a bet whose
+  capture timestamp is before its event's start, whose event has not started,
+  from somebody who turned this on. A bet posted after the off is not a
+  prediction, it is a claim, and this product exists because a record written
+  afterwards is a record of the bets somebody felt like writing down.
+- **The TYPE carries no outcome and no money**, which is the enforcement.
+  `TrackedBet` has no field a result could go in and no field a stake in
+  pounds could go in, so no screen reading it can print either, and a future
+  session cannot add one to a component without adding it to the type first.
+  A test asserts the exact key list.
+- **It ages out and is never revisited.** When the event starts the item
+  goes. There is no list anywhere of things that have started, which is what
+  makes a result impossible rather than merely absent.
+- **No tail button, no copy this bet, nothing counting who looked at what.**
+  A control that turns somebody else's bet into your bet is a tip with an
+  extra step. A test fails if the words appear on the page.
+- **Opt in, off by default**, and the default is one constant,
+  `TRACKING_DEFAULT_ON` in `lib/data/settings.ts`, that both the settings pane
+  and the feed read. A default of true would have disclosed every account's
+  open bets on the day it shipped, which cannot be taken back.
+- **Capped at twelve.** A list that never ends is an engagement mechanic.
+- **Two tabs rather than two sections**, and the reason is in a comment on the
+  page: only one of the two lists expires, and the boundary between them is
+  what carries the rule. Stacked as sections, somebody scrolling past the
+  first reads the second as a continuation of it.
+- **The example data deliberately contains what the gate has to refuse**: one
+  bet per opted-in Slipper captured a quarter of an hour after the off. A gate
+  with nothing to refuse in the data is a gate nobody can see working, and the
+  test asserts those candidates exist before asserting they are absent.
+
+### One list of bets per Slipper, counted many ways
+
+- The old `Slipper` carried `unitsMonth` and `unitsAllTime` drawn straight
+  from a seed. A leaderboard row needs a return, a win and loss record and a
+  count beside those units, and drawing each of them from its own seed
+  produces a row saying plus eighteen units beside a return that could not
+  have produced it. Each Slipper now has one generated list of bets and
+  `recordOver()` folds it; every figure on every row is one pass over one
+  array. That is rule 5 of the codebase applied to a table.
+- **The viewer's own row is folded by `select()` and `summarise()`**, the
+  product's one query and one count, so the leaderboard cannot disagree with
+  the dashboard that produced it.
+- **`seeded()` is linear in its salt** and that mattered. Two salts a fixed
+  distance apart give values a fixed distance apart, so the price of a bet and
+  the roll that settled it were the same number plus a constant: every Slipper
+  won nearly everything or lost nearly everything, and the table read plus
+  forty nine per cent against minus fifty six. The salt now goes through one
+  round of an integer hash first.
+
+### All time is the default, and This month is a tab
+
+- A monthly table on the second of a month is a table of two days. Eleven of
+  twelve rows read no bets and 0.0u and the twelfth read plus four hundred and
+  ninety two per cent off one winner. It is all true and it looks broken
+  twelve times a year for reasons that have nothing to do with the reader.
+  The month is one tap away and a group still ranks over whatever period the
+  group chose, so nothing is hidden.
+- **A return over fewer than five bets is left out.** It is not a return, it
+  is the price of one of those bets. The row is marked down the left edge,
+  which is the treatment the breakdown already uses for the same reason, and
+  the note explaining the mark lives inside the table component so it cannot
+  drift away from the rows it explains.
+- **Ties break on bets, then on handle.** Everybody with nothing in the window
+  sits on exactly 0.0u, and ranking them above a Slipper who is a unit down
+  for having played would be a table that rewards not turning up.
+
+### The podium
+
+- Three plinths, a numeral in the medal colour and the bet count under it. No
+  cup, no laurel, no emoji: an emoji rasterises out of the system font, so it
+  cannot take the profit or the loss colour, and a leaderboard drawn with them
+  would print a losing figure in a colour that says nothing at all.
+- DOM order is rank order and CSS `order` puts second, first, third on the
+  screen, so anything reading the list in sequence reads it correctly.
+- **The pinned row appears only when the podium is not already carrying you.**
+  Shown either way, a viewer in the top three was on the page three times.
+  `pinnedRow()` is the rule and a test pins it.
+
+### Groups
+
+- Every route works: the group page, joining by code, leaving, and a group
+  that does not exist. A missing id used to fall through to the first group in
+  the list, so a stale link showed somebody a different group's table under
+  the name they clicked.
+- **The three join modes are three different answers** and every surface says
+  which before anything is pressed. "Joined" and "Asked to join" are not the
+  same event, and printing the first when the second happened puts somebody in
+  a table they are not in.
+- **A slip backed group says what it left out, with the number.** Quietly
+  counting fewer bets than the profile behind each row is how a member ends up
+  asking why the table disagrees with their own ledger.
+- **Leaving takes nothing with it**, and the screen says so: units are folded
+  from your own ledger, so they were never the group's to keep. An admin
+  cannot leave and take the group with them; handing it over comes first.
+- **`POST /api/social/groups` did not exist.** `CreateGroup` has been posting
+  to it since it was written and getting a 404, falling back to its own local
+  code. That fallback is right for a signed out visitor and was covering a
+  missing route for everybody else. It exists now, with `PATCH` for the two
+  things an admin may change, and `/api/social/membership` for join and leave.
+- **The create screen issued codes from its own alphabet**, which contained an
+  L that `isInviteCode()` rejects. A code that screen handed somebody would
+  have been refused by the join screen it was made for. One alphabet now, and
+  a test asserts the two literals stay the same string.
+- **Matching a code happens on the server.** The obvious version hands the
+  browser every group and its code, which is a directory of every group's key.
+  The form is a plain GET, so the only code the browser holds is the one
+  somebody typed.
+
+### Responsible gambling
+
+- `divisionMove()` states the move and stops: "Moving to League One next
+  month", never a word for going down, and nothing at all about what to do
+  next. Under four Slippers nothing moves and it says so rather than promoting
+  the only member of a group of one.
+- The sharing switches in settings were hardcoded to render pressed whatever
+  the account said. That is a picture of a control, not a control, and one of
+  them now discloses an open bet to strangers.
+
+### Still open
+
+- **The example account is up 55.9% over 385 bets**, which no plausible
+  Slipper matches, so the viewer tops every all time table by a factor of two.
+  That is the demo ledger's shape rather than the leaderboard's, and changing
+  it would move every screenshot and several tests, so it is left alone and
+  written down here.
+
+## Two regulatory questions, and neither of them is mine to answer
+
+`CLAUDE.md` has a FLAG, DO NOT DECIDE list, and the Gambling Commission
+position on the leaderboard is on it. It is recorded there as five words. This
+section states both questions in the form somebody can take to a solicitor:
+what is actually being asked, what would settle it, and what the product does
+in the meantime. Neither is answered here, and the flag stays where it is.
+
+### The leaderboard, and whether the Gambling Commission has a view on it
+
+**The question.** Slippery ranks real people by their real betting returns,
+in monthly divisions, and publishes the table to everybody in the group. It
+accepts no stakes, holds no money, pays no winnings and gives no tips, so it
+is not a facility for gambling under section 33 of the Gambling Act 2005 and
+no licence is being applied for. The question is the next one along: whether a
+ranked table of betting performance, published by an unlicensed third party,
+is something the Commission expects to be designed a particular way, and
+whether the advertising codes treat a league position as an inducement to
+gamble. A related question sits underneath it: whether the mitigations in the
+design, ranking in units rather than pounds and moving divisions quietly,
+count as mitigations to a regulator or only to us.
+
+**What would settle it.** Written advice from a gambling law solicitor on a
+description of the mechanic as built, obtained before any launch that includes
+the leagues, covering the three points above. The Commission's own view, if
+its advice line will give one on a product it does not license, is worth
+having beside that advice rather than instead of it.
+
+**What the product does in the meantime.** The leagues are live and the
+mechanics are the ones the brief specifies. Ranking is in units so a larger
+balance is not a higher score, and stakes are never visible outside a group. A
+division change reads "Moving to League One next month" and never uses a word
+for going down. No notification is sent about not having bet, none is framed
+around a league position, and none is sent late at night. What other Slippers
+are tracking is opt in and off by default, shows only bets captured before
+kick off, never shows a result, and carries no control that turns one of their
+bets into one of yours. Age is confirmed at 18 and stored with the time it was
+confirmed, the take a break control pauses notifications and the leagues
+without touching a ledger, and BeGambleAware and the National Gambling
+Helpline are in the footer of every public page.
+
+### The trial that converts with no reminder, under the DMCC Act 2024
+
+**The question.** `SPEC.md` specifies, and the plan step repeats on screen,
+that the plan starts automatically when the trial ends and that there is no
+trial end reminder, deliberately, because a reminder is a nudge. The
+subscription contract regime in the Digital Markets, Competition and Consumers
+Act 2024 is built the other way round: pre contract information, reminder
+notices before a renewal or before a free trial converts, and cooling off
+rights. So the question is whether a card required free trial that converts
+silently is lawful under that regime as commenced, and, if a notice is
+required, what it has to say and how far in advance it has to be sent. Behind
+that is the question the product has to answer for itself either way: whether
+a notice about money is a nudge in the responsible gambling sense at all, or
+whether it is a contractual notice that happens to arrive by email.
+
+**What would settle it.** Advice from a consumer law solicitor on the
+subscription provisions of the 2024 Act and their commencement regulations,
+applied to this trial: card required, fourteen days or thirty five slips,
+converting to the yearly plan. The same conversation should cover the
+struck through £34.99 on the pricing card, because that price has never been
+charged to anybody and a reference price that was never the selling price is
+the kind of thing the advertising codes and the unfair trading rules are
+about. It is recorded here rather than fixed because `SPEC.md` specifies both
+numbers, so changing them is a change to the specification.
+
+**What the product does in the meantime.** "A reminder that the trial is about
+to end" is in the list of things Slippery never sends, which is on screen in
+the notification pane. Billing notices are the exception in that pane and are
+locked on, because an account that cannot be told its card failed is an
+account that goes read only without warning, so the mechanism a reminder would
+use already exists and is already exempt from the no nudging rule. Every
+surface that shows the trial says which of the two limits is about to run out
+rather than making anybody count. Nothing has been charged to anybody on this
+deployment: the Stripe price and webhook variables are not set, `/api/sources`
+says so, and the plan step says payments are not configured rather than
+spinning.

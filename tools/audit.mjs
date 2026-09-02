@@ -61,6 +61,10 @@
  *
  *  Rules nine through eleven cost 93 of the 95 collision findings on the
  *  first run. The two that survived were both real.
+ *
+ *  13. Nothing is measured while the page is still arriving. Every check
+ *      here reads a coordinate and every coordinate is wrong about an
+ *      element on its way somewhere. See settle(), below.
  */
 import { chromium } from 'playwright-core';
 import { readFileSync, mkdirSync, writeFileSync, readdirSync } from 'node:fs';
@@ -347,7 +351,7 @@ const MEASURE = () => {
    *  The scale bottoms out at --t-micro, 11px. Four places had drifted under
    *  it and none of them said so out loud: two calendar clamps whose lower
    *  bound was set to whatever stopped the text wrapping (8.0px at 320 and
-   *  8.3px at 1440, thirty cells each), a 9px bankroll label in the top bar,
+   *  8.3px at 1440, thirty cells each), a 9px balance label in the top bar,
    *  a 10px day-of-week row and a 10px chart axis. Nobody chose eight
    *  pixels; it is what 19cqi came out as, and a computed size is not a
    *  decision.
@@ -482,6 +486,40 @@ function watch(page) {
   return errors;
 }
 
+/** EVERY CHECK BELOW ASSUMES A PAGE THAT HAS STOPPED MOVING.
+ *
+ *  Rule 13, and it is the general form of a defect this file already
+ *  records: a scale on an entrance animation had the sweep measuring 66
+ *  controls at 43px against a 44px floor, every one of them caught mid
+ *  animation. The fix then was to take the scale off. The fix that holds is
+ *  to stop measuring a page while it is still arriving, because collision,
+ *  clipping and overflow all read coordinates and every one of them is wrong
+ *  about an element that is on its way somewhere.
+ *
+ *  A fixed wait cannot do it: the server's HTML paints and starts the
+ *  entrance, then hydration restarts it, so the finish line moves with how
+ *  long the JavaScript took. This waits for the animations themselves and
+ *  ignores the three that never end, which are the background blobs.
+ *
+ *  The cap is a ceiling, not a promise. A page that will not settle inside
+ *  it is measured anyway and its findings stand: an animation that never
+ *  ends under content is a finding of its own. */
+async function settle(page, cap = 1200) {
+  await page.evaluate(async (ms) => {
+    const forever = new Set(['drift-a', 'drift-b', 'drift-c', 'pulse-dot', 'spin', 'skel-sweep']);
+    const deadline = performance.now() + ms;
+    for (;;) {
+      const running = document.getAnimations().filter(
+        (a) => a.playState === 'running' && !forever.has(a.animationName));
+      if (running.length === 0 || performance.now() > deadline) return;
+      await Promise.race([
+        Promise.allSettled(running.map((a) => a.finished)),
+        new Promise((r) => setTimeout(r, 120)),
+      ]);
+    }
+  }, cap);
+}
+
 async function visit(ctx, route, vp, { runAxe = false, theme = null } = {}) {
   const page = await ctx.newPage();
   const errors = watch(page);
@@ -493,6 +531,7 @@ async function visit(ctx, route, vp, { runAxe = false, theme = null } = {}) {
     status = res ? res.status() : 0;
     await page.waitForLoadState('load').catch(() => {});
     await page.waitForTimeout(600);
+    await settle(page);
   } catch (err) {
     note(route, `${vp.w}`, 'navigation', String(err).slice(0, 140));
     await page.close();
@@ -598,6 +637,7 @@ console.log('\nControls');
       await page.goto(BASE + route, { waitUntil: 'domcontentloaded', timeout: 45000 });
       await page.waitForLoadState('load').catch(() => {});
       await page.waitForTimeout(400);
+      await settle(page);
     } catch { await page.close(); continue; }
 
     // Rule five: compare against the LANDED url, not the requested one.
@@ -670,6 +710,7 @@ try {
     try {
       await page.goto(BASE + route, { waitUntil: 'domcontentloaded', timeout: 45000 });
       await page.waitForTimeout(600);
+      await settle(page);
     } catch {
       console.log(`  ${route}: could not be opened, skipped`);
       await page.close();
@@ -712,6 +753,7 @@ try {
     const page = await ctx.newPage();
     await page.goto(BASE + route, { waitUntil: 'domcontentloaded' }).catch(() => {});
     await page.waitForTimeout(900);
+    await settle(page).catch(() => {});
     const name = route === '/' ? 'home' : route.replace(/[^a-z0-9]+/gi, '-').replace(/^-|-$/g, '');
     await page.screenshot({ path: `${OUT}/${name}-390.png` }).catch(() => {});
     await page.close();

@@ -50,7 +50,7 @@ export default function ThankYou() {
               {NEXT.map((l) => (
                 <li key={l.href} className="brow">
                   <Link href={l.href} style={{ textDecoration: 'none', minWidth: 0 }}>
-                    <span className="brow__title" style={{ display: 'block' }}>{l.t}</span>
+                    <span className="brow__title">{l.t}</span>
                     <span className="brow__sub">{l.s}</span>
                   </Link>
                   <Icon name="chevronRight" size={16} />

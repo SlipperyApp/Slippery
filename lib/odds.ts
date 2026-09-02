@@ -70,6 +70,24 @@ export function accaOdds(legOdds: number[]): number {
   return Number(legOdds.reduce((a, b) => a * b, 1).toFixed(4));
 }
 
+/** The place terms of an each way bet, as a board writes them.
+ *
+ *  Stored as the fraction of the win price the place part pays, because that
+ *  is what the fold multiplies by. A bettor has never said "0.2 odds a
+ *  place": they say a fifth, so the fraction is turned back into one here
+ *  rather than in each of the three places that show it.
+ *
+ *  Anything that is not a unit fraction is printed as it was stored. Some
+ *  bookmakers price a place at 0.3 on a big field, and inventing "3/10" for
+ *  it would be this function guessing at terms it was not given. */
+export function placeTerms(fraction: number | null | undefined): string {
+  if (!fraction || !Number.isFinite(fraction) || fraction <= 0 || fraction >= 1) return '';
+  const denominator = 1 / fraction;
+  const rounded = Math.round(denominator);
+  if (Math.abs(denominator - rounded) < 1e-6) return `1/${rounded}`;
+  return String(fraction);
+}
+
 /** A Rule 4 deduction is pence in the pound off net winnings. */
 export function rule4Multiplier(deductionPencePerPound: number): number {
   const p = Math.max(0, Math.min(90, deductionPencePerPound));

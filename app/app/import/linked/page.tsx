@@ -1,9 +1,8 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { Icon } from '@/components/Icon';
-import { getViewer } from '@/lib/data/session';
 import { has } from '@/lib/server/env';
-import { CopyCode } from '@/components/app/CopyCode';
+import { TelegramLink } from '@/components/app/TelegramLink';
 
 export const metadata: Metadata = {
   title: 'The Telegram bot',
@@ -24,7 +23,6 @@ const REPLIES: [string, string][] = [
 ];
 
 export default async function Linked() {
-  const { data } = await getViewer();
   const botReady = has('TELEGRAM_BOT_TOKEN') && has('TELEGRAM_WEBHOOK_SECRET');
 
   return (
@@ -41,17 +39,11 @@ export default async function Linked() {
       </p>
 
       <div className="grid" style={{ marginTop: 'var(--s5)' }}>
-        <section className="card col-6">
-          <h2 className="card__title">Your link code</h2>
-          <p className="small muted" style={{ marginTop: 'var(--s2)' }}>
-            Open <span className="mono">@SlipperyAppBot</span>, send <span className="mono">/start</span>,
-            then send this code.
-          </p>
-          <CopyCode code={data.account.linkCode} />
-          <p className="small dim card__foot">
-            A code used somewhere else asks you to confirm the move in the app first.
-          </p>
-        </section>
+        {/*  The real control, not a printed code. What was here was
+             accounts.link_code: one permanent code per account, never used up
+             and identical every time anybody looked, which is a password to a
+             ledger printed on a page. */}
+        <TelegramLink className="col-6" />
 
         <section className="card col-6">
           <h2 className="card__title">What the bot does</h2>

@@ -48,6 +48,52 @@ export default function Pricing() {
         </div>
       </section>
 
+      {/*  WHY THIS COSTS ANYTHING, and it goes ABOVE the prices.
+           The page opened with "One price. Every feature. No tier that hides
+           the useful half", which answers "why not the cheaper tier" to
+           somebody who has not decided to pay for a tracker at all. The
+           question they are actually asking is why not a spreadsheet, and
+           seventeen FAQ answers and four marketing pages never put it. */}
+      <section className="sect" style={{ paddingTop: 0, paddingBottom: 'var(--s7)' }}>
+        <div className="wrap">
+          <div className="two">
+            <SectionHead
+              setup="A spreadsheet is what you typed."
+              claim="This is what the slip said."
+            >
+              Every figure in a spreadsheet is one you entered about yourself, after the event.
+              A bet you would rather not think about is a bet that is easy not to type, and the
+              file has no way of knowing it is missing. Slippery reads the stake, the price, the
+              selection and the bookmaker off the slip as you place it, which is the one version
+              of a betting record that was not curated by the person it is about.
+            </SectionHead>
+            <div className="rows">
+              <div className="rowcard rowcard--on">
+                <Icon name="camera" size={20} className="rowcard__i" />
+                <div>
+                  <p className="rowcard__t">The figures are read, not typed</p>
+                  <p className="rowcard__s">Off the slip, field by field, and anything it could not read is named rather than guessed.</p>
+                </div>
+              </div>
+              <div className="rowcard">
+                <Icon name="clock" size={20} className="rowcard__i" />
+                <div>
+                  <p className="rowcard__t">Before the result exists</p>
+                  <p className="rowcard__s">A record written afterwards can only hold the bets you chose to write down.</p>
+                </div>
+              </div>
+              <div className="rowcard">
+                <Icon name="cash" size={20} className="rowcard__i" />
+                <div>
+                  <p className="rowcard__t">One bet stays one bet</p>
+                  <p className="rowcard__s">Cash out twice and it is one bet still, in eighths of the stake left standing.</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
       <section className="sect" style={{ paddingTop: 0 }}>
         <div className="wrap">
           <div className="pricegrid">

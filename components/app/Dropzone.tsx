@@ -1,35 +1,49 @@
 'use client';
 
-import { useRef, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Icon } from '@/components/Icon';
+import { useSlipFlow } from '@/components/app/SlipFlow';
+import { PICKABLE_TYPES, REFUSAL_COPY, checkPick, normaliseType } from '@/lib/data/read';
 
 /** The upload path. A file that is not an image or a PDF is refused by name
- *  rather than silently ignored, and nothing is read until a file is
- *  actually chosen. */
+ *  rather than silently ignored, and the file that is chosen is HELD: before
+ *  this it was measured, named on screen, and then dropped on the floor as
+ *  the router moved to the next screen. */
 export function Dropzone({ enabled }: { enabled: boolean }) {
   const router = useRouter();
-  const input = useRef<HTMLInputElement | null>(null);
+  const flow = useSlipFlow();
   const [over, setOver] = useState(false);
-  const [name, setName] = useState('');
-  const [error, setError] = useState('');
+  const [error, setError] = useState<{ title: string; message: string; fix: string } | null>(null);
 
-  const ACCEPT = ['image/png', 'image/jpeg', 'image/webp', 'image/heic', 'application/pdf'];
-
-  function take(file: File | undefined) {
+  const take = useCallback((file: File | undefined | null) => {
     if (!file) return;
-    if (!ACCEPT.includes(file.type) && !/\.(png|jpe?g|webp|heic|pdf)$/i.test(file.name)) {
-      setError(`That is a ${file.type || 'file'} and the reader takes a PNG, JPEG, WebP, HEIC or PDF.`);
+    const bad = checkPick(file);
+    if (bad) {
+      const copy = REFUSAL_COPY[bad];
+      setError({ title: copy.title, message: copy.message, fix: copy.fix });
       return;
     }
-    if (file.size > 12 * 1024 * 1024) {
-      setError('That file is over 12MB. A screenshot from a phone is usually well under one.');
-      return;
-    }
-    setError('');
-    setName(file.name);
+    setError(null);
+    flow.setPending(file, normaliseType(file.type, file.name) ?? file.type);
     router.push('/app/import/crop');
-  }
+  }, [flow, router]);
+
+  /*  Paste. A screenshot on a laptop lives on the clipboard and nowhere else
+   *  until it is pasted, and every person who tried Cmd+V here got nothing.
+   *  The listener is on the document because a paste has no focused target
+   *  when nothing is focused, so a dropzone listening to itself never hears
+   *  one. */
+  useEffect(() => {
+    if (!enabled) return;
+    const onPaste = (e: ClipboardEvent) => {
+      const item = [...(e.clipboardData?.items ?? [])].find((i) => i.kind === 'file');
+      const file = item?.getAsFile();
+      if (file) { e.preventDefault(); take(file); }
+    };
+    document.addEventListener('paste', onPaste);
+    return () => document.removeEventListener('paste', onPaste);
+  }, [enabled, take]);
 
   return (
     <div>
@@ -49,16 +63,15 @@ export function Dropzone({ enabled }: { enabled: boolean }) {
       >
         <Icon name="camera" size={28} style={{ color: 'var(--ink-3)' }} />
         <p className="card__title" style={{ marginTop: 'var(--s3)' }}>
-          {name || 'Drop a slip here'}
+          {flow.pending ? flow.pending.name : 'Drop a slip here'}
         </p>
         <p className="small muted" style={{ marginTop: 'var(--s2)' }}>
-          A screenshot from the bookmaker app, a photograph of a shop slip, or a PDF. The template
-          is detected before anything is parsed.
+          A screenshot from the bookmaker app, a photograph of a shop slip, or a PDF. Paste one
+          straight in with Ctrl or Cmd and V.
         </p>
         <input
-          ref={input}
           type="file"
-          accept=".png,.jpg,.jpeg,.webp,.heic,.pdf,image/*,application/pdf"
+          accept={[...PICKABLE_TYPES, '.heic', '.heif'].join(',')}
           className="sr-only"
           id="slip-file"
           onChange={(e) => take(e.target.files?.[0])}
@@ -68,7 +81,15 @@ export function Dropzone({ enabled }: { enabled: boolean }) {
           <Icon name="upload" size={16} /> Choose a file
         </label>
       </div>
-      {error ? <p className="field__err" role="alert" style={{ marginTop: 'var(--s3)' }}>{error}</p> : null}
+
+      {error ? (
+        <div className="banner banner--neg" role="alert" style={{ marginTop: 'var(--s3)' }}>
+          <Icon name="alert" size={18} className="banner__icon" />
+          <span>
+            <strong>{error.title}.</strong> {error.message} {error.fix}
+          </span>
+        </div>
+      ) : null}
     </div>
   );
 }

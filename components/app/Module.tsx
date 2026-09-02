@@ -13,7 +13,14 @@ export function Module({
 }: {
   title: string;
   span?: 4 | 5 | 6 | 7 | 8 | 12;
-  size?: 's' | 'm' | 'l' | 'xl' | 'xxl';
+  /** A height token, or `auto` for a module that takes its content.
+   *
+   *  The tokens exist so that two modules side by side match by
+   *  construction rather than by stretching. A module that has the row to
+   *  itself has nothing to match, and giving it a floor anyway is how a card
+   *  ends up 408px tall with two figures and a bar in it and 140px of
+   *  measured nothing between them. */
+  size?: 's' | 'm' | 'l' | 'xl' | 'xxl' | 'auto';
   /** Exactly three modules ignore the scope bar and say so here. */
   note?: string;
   children: React.ReactNode;
@@ -25,7 +32,7 @@ export function Module({
   tools?: React.ReactNode;
 }) {
   return (
-    <section className={`card col-${span} h-${size}`} aria-labelledby={id ? `${id}-t` : undefined} id={id}>
+    <section className={`card col-${span}${size === 'auto' ? '' : ` h-${size}`}`} aria-labelledby={id ? `${id}-t` : undefined} id={id}>
       <header className="card__head">
         <h2 className="card__title" id={id ? `${id}-t` : undefined}>{title}</h2>
         <div className="card__tools">

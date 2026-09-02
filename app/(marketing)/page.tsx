@@ -49,8 +49,17 @@ export default function Landing() {
             </span>
           </h1>
 
+          {/*  "before kick off, in play, or after it settled" stood here, and
+               it gave away the only argument this product has.
+               A tracker that takes a slip after settlement has the defect of
+               the spreadsheet, and the product knows it: the feed refuses any
+               bet whose capture stamp is after the off, on the grounds that a
+               bet posted after the off is not a prediction but a claim. An
+               old bet can still be typed in or imported, which is where the
+               second half of that sentence went: the FAQ, marked as typed
+               rather than slip backed. */}
           <p className="hero__sub rise rise-2">
-            Forward a slip to the bot before kick off, in play, or after it settled.
+            Forward a slip to the bot when you place it, before you know how it went.
             Slippery reads it, settles it, keeps the record.
           </p>
 
@@ -162,7 +171,7 @@ export default function Landing() {
                 setup="Ranked in units."
                 claim="Never in pounds."
               >
-                Units, so a bigger bankroll is not a bigger score. Stakes are never visible
+                Units, so a bigger balance is not a bigger score. Stakes are never visible
                 outside a group.
               </SectionHead>
               <Link href="/social" className="btn btn--ghost" style={{ marginTop: 'var(--s5)' }}>

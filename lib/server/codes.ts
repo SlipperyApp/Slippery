@@ -32,6 +32,36 @@ export function generateInviteCode(): string {
   return pick(randomBytes(6), 6);
 }
 
+/*  ------------------------------------------------------- the share token
+ *
+ *  A balance's public link. Its whole security is that the token cannot be
+ *  guessed, so it is not a code somebody reads out: it is twenty characters
+ *  from a thirty one letter alphabet, which is about ninety nine bits, and
+ *  it is only ever copied. Lower case because it lives in a URL and a URL
+ *  full of capitals is a URL people retype wrongly.
+ *
+ *  A four character link code would have been catastrophic here. It is fine
+ *  for a code somebody types into a bot once, with a rate limit in front of
+ *  it, and it is a public directory of everybody's ledger if it opens a page.
+ *
+ *  Revoking is setting the column to null. There is no second flag that could
+ *  disagree with it and no expiry to get wrong: the token is the permission. */
+const SHARE_ALPHABET = '23456789abcdefghjkmnpqrstuvwxyz';   // no 0/o, no 1/i/l
+export const SHARE_TOKEN_RE = /^sb-[23456789abcdefghjkmnpqrstuvwxyz]{20}$/;
+
+export function generateShareToken(): string {
+  const bytes = randomBytes(20);
+  let out = '';
+  for (let i = 0; i < 20; i++) out += SHARE_ALPHABET[bytes[i] % SHARE_ALPHABET.length];
+  return `sb-${out}`;
+}
+
+/** The only validator, and the generator is tested against it. A previous
+ *  build seeded codes in a shape its own bot rejected. */
+export function isShareToken(v: unknown): v is string {
+  return typeof v === 'string' && SHARE_TOKEN_RE.test(v);
+}
+
 /** The only validator. The bot, the web form and the seed all call this. */
 export function isLinkCode(v: string): boolean {
   return LINK_CODE_RE.test(v.trim().toUpperCase());
@@ -56,6 +86,24 @@ export function isEmail(v: string): boolean {
   if (!m) return false;
   const tld = m[2].split('.').pop() ?? '';
   return tld.length >= 2 && /^[A-Za-z]+$/.test(tld);
+}
+
+/** The bare address out of a From header, so `Slippery <post@example.com>`
+ *  yields `post@example.com`.
+ *
+ *  A From header may legitimately carry a display name, and MAIL_FROM is the
+ *  kind of variable somebody sets that way. The envelope and the SMTP username
+ *  cannot: `MAIL FROM:<Slippery <post@example.com>>` is a syntax error that
+ *  Gmail answers 555 to, and AUTH LOGIN with a display name attached
+ *  authenticates as an account that does not exist. One parser, so the header
+ *  and the envelope cannot disagree about who is sending.
+ *
+ *  Lives here rather than in smtp.ts because env.ts needs it too and env.ts
+ *  must not pull node:tls into a server component's module graph. */
+export function bareAddress(v: string): string {
+  const t = v.trim();
+  const angled = /<([^<>]*)>\s*$/.exec(t);
+  return (angled ? angled[1] : t).trim();
 }
 
 /** Password rules, shown live as ticks on the signup form. One source, so

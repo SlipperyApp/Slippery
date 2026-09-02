@@ -1,6 +1,6 @@
 /* Shell, navigation, grid. */
 
-.page { position: relative; z-index: 1; }
+.page { position: relative; z-index: var(--z-content); }
 
 /*  The gutter is fluid for the same reason the rhythm is: it stepped once
     at 700px, so a 320px phone and a 690px tablet had the same 16px, and
@@ -16,7 +16,7 @@
 .mhead {
   position: sticky;
   top: 0;
-  z-index: 60;
+  z-index: var(--z-header);
   background: color-mix(in oklab, var(--bg) 82%, transparent);
   -webkit-backdrop-filter: saturate(150%) blur(14px);
           backdrop-filter: saturate(150%) blur(14px);   /* 1 of at most 3 */
@@ -159,7 +159,7 @@
 .topbar {
   position: sticky;
   top: 0;
-  z-index: 50;
+  z-index: var(--z-header);
   height: var(--topbar-h);
   display: grid;
   grid-template-columns: auto 1fr auto;
@@ -176,6 +176,13 @@
 .topbar__mid { display: flex; align-items: center; justify-content: center; gap: var(--s2); min-width: 0; }
 .topbar__right { display: flex; align-items: center; gap: var(--s2); }
 
+/*  THE BALANCE BOX IS A CONTROL NOW, and it is the same size it was.
+    Its label used to be the literal word "Balance", which is the one thing
+    on the screen that could not stay true once an account keeps a football
+    bank, a horses bank and a euro account: one figure under a category. The
+    label became the name and the box became the switcher, so nothing was
+    added to a 60px bar that already has three things in it at 390. */
+.balsw { position: relative; flex: none; }
 .balance {
   display: inline-flex;
   flex-direction: column;
@@ -185,8 +192,69 @@
   border-radius: var(--r-ctl);
   border: 1px solid var(--line);
   background: var(--surface);
+  font: inherit;
+  color: inherit;
+  cursor: pointer;
+  text-align: right;
+  max-width: 46vw;
 }
+.balance:hover, .balance[aria-expanded='true'] { border-color: var(--line-2); background: var(--surface-2); }
+.balsw__chev { margin-left: 2px; opacity: 0.75; }
+.balsw__pop {
+  position: absolute;
+  right: 0;
+  top: calc(100% + 6px);
+  z-index: var(--z-sticky);
+  min-width: 224px;
+  padding: var(--s3);
+  border-radius: var(--r-ctl);
+  border: 1px solid var(--line-2);
+  background: var(--surface-2);
+  box-shadow: 0 14px 34px -12px rgb(0 0 0 / 0.6);
+  display: flex;
+  flex-direction: column;
+  gap: var(--s1);
+}
+.balsw__item {
+  display: flex;
+  align-items: center;
+  gap: var(--s2);
+  width: 100%;
+  min-height: var(--tap);
+  padding: var(--s2) var(--s2h);
+  border: 1px solid transparent;
+  border-radius: var(--r-sm);
+  background: none;
+  color: var(--ink-2);
+  font: inherit;
+  font-size: var(--t-small);
+  text-align: left;
+  cursor: pointer;
+}
+.balsw__item:hover { background: var(--surface); color: var(--ink); }
+.balsw__item[aria-pressed='true'] { color: var(--ink); border-color: var(--line-2); background: var(--surface); }
+.balsw__name { flex: 1 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.balsw__cur { color: var(--ink-2); font-variant-numeric: tabular-nums; }
+.balsw__all {
+  display: flex;
+  align-items: center;
+  gap: var(--s2);
+  min-height: var(--tap);
+  padding: var(--s2) var(--s2h);
+  margin-top: var(--s1);
+  border-top: 1px solid var(--line);
+  font-size: var(--t-small);
+  color: var(--accent-2);
+  text-decoration: none;
+}
+/*  The name and its chevron on one line. The label was a bare span and is
+    now a row, because the chevron is what says the box does something. */
 .balance__k {
+  display: inline-flex;
+  align-items: center;
+  max-width: 100%;
+  overflow: hidden;
+  white-space: nowrap;
   /*  This was 9px. Nine pixels of uppercase at 0.08em tracking is a texture,
       not a word: at 320 the measuring pass caught it as the last thing on the
       site rendering under ten. The scale bottoms out at --t-micro and so does
@@ -212,7 +280,7 @@
 .bottombar {
   position: fixed;
   left: 0; right: 0; bottom: 0;
-  z-index: 70;
+  z-index: var(--z-header);
   display: grid;
   grid-template-columns: repeat(5, 1fr);
   align-items: center;
@@ -318,7 +386,7 @@
 .grow { flex: 1 1 auto; min-width: 0; }
 
 /*  The app top bar at 320. Three things compete for the width: who you are,
-    that this is the example account, and the bankroll. The bankroll is the
+    that this is the example account, and the balance. The balance is the
     one somebody opened the app to see, so it is the one that stays. */
 .topbar__handle { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 @media (max-width: 379px) {

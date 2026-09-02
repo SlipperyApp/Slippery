@@ -21,11 +21,13 @@ export default function Review() {
 
       <h1>Check what was read</h1>
       <p className="muted" style={{ marginTop: 'var(--s2)' }}>
-        Nothing is written until you confirm. Each field is scored on its own.
+        Nothing is written until you confirm. Each field is scored on its own, and anything the
+        reader was not sure of arrives as a question with an empty box rather than a plausible
+        number already filled in.
       </p>
 
       <div style={{ marginTop: 'var(--s5)' }}>
-        <ReviewSlip read={EXAMPLE_READ} />
+        <ReviewSlip fallback={EXAMPLE_READ} />
       </div>
     </>
   );

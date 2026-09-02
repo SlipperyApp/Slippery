@@ -37,7 +37,10 @@ export default async function ReadOnly() {
           <ul style={{ marginTop: 'var(--s3)' }}>
             {READ_ONLY_PAUSES.map((t) => (
               <li key={t} className="checkitem" style={{ padding: 'var(--s2) 0' }}>
-                <Icon name="pause" size={15} style={{ color: 'var(--neg)' }} />
+                {/*  Not the loss colour. This is the billing screen, where
+                     red already means a card was declined, and these rows
+                     mean a feature is paused rather than money lost. */}
+                <Icon name="pause" size={15} className="readmark readmark--gap" />
                 <span style={{ textTransform: 'capitalize' }}>{t}</span>
               </li>
             ))}

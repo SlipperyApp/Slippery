@@ -99,8 +99,14 @@ export function SignupForm() {
           {PASSWORD_RULES.map((r) => {
             const ok = r.test(password);
             return (
-              <li key={r.id} className="small" style={{ display: 'flex', gap: 'var(--s2)', alignItems: 'center', color: ok ? 'var(--pos)' : 'var(--ink-3)' }}>
-                <Icon name={ok ? 'check' : 'minus'} size={14} strokeWidth={2.2} />
+              /*  A password rule that is met is not a profit. The green went
+                  on the whole row and the unmet rows took --ink-3, which is a
+                  border token: one line applied both a semantic colour with a
+                  meaning it does not have and a colour that fails 4.5 to 1 as
+                  text. The mark carries the state now and the words stay
+                  legible either way. */
+              <li key={r.id} className={`small${ok ? '' : ' muted'}`} style={{ display: 'flex', gap: 'var(--s2)', alignItems: 'center' }}>
+                <Icon name={ok ? 'check' : 'minus'} size={14} strokeWidth={2.2} className={ok ? 'readmark readmark--ok' : 'readmark readmark--ask'} />
                 <span>{r.label}</span>
                 <span className="sr-only">{ok ? 'met' : 'not yet met'}</span>
               </li>

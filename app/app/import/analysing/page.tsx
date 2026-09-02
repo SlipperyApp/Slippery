@@ -11,8 +11,8 @@ export default function AnalysingPage() {
     <div className="column">
       <h1>Reading the slip</h1>
       <p className="muted" style={{ marginTop: 'var(--s2)' }}>
-        The bookmaker template is detected first and the slip is parsed second. Generic text
-        recognition falls over on a permed bet; a per-book template does not.
+        Every field is scored on its own, and any number the reader cannot also quote off the
+        image is dropped rather than written. Nothing reaches your ledger until you have seen it.
       </p>
       <div style={{ marginTop: 'var(--s6)' }}><Analysing /></div>
     </div>

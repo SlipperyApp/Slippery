@@ -47,7 +47,7 @@ export default async function Declined() {
               <li key={t} className="brow" style={{ gridTemplateColumns: '20px minmax(0,1fr)', gap: 'var(--s3)' }}>
                 <Icon name={i as 'check'} size={16} className="readmark readmark--ok" />
                 <span>
-                  <span className="brow__title" style={{ display: 'block' }}>{t}</span>
+                  <span className="brow__title">{t}</span>
                   <span className="brow__sub">{s}</span>
                 </span>
               </li>
@@ -60,7 +60,7 @@ export default async function Declined() {
             <li className="brow" style={{ gridTemplateColumns: '24px 1fr' }}>
               <span className="mono small dim">1</span>
               <span>
-                <span className="brow__title" style={{ display: 'block' }}>
+                <span className="brow__title">
                   We try again on {longDate(retryAt.toISOString())}
                 </span>
                 <span className="brow__sub">Three days from now. You do not have to do anything for that to happen.</span>
@@ -69,7 +69,7 @@ export default async function Declined() {
             <li className="brow" style={{ gridTemplateColumns: '24px 1fr' }}>
               <span className="mono small dim">2</span>
               <span>
-                <span className="brow__title" style={{ display: 'block' }}>If that fails too, the account goes read only</span>
+                <span className="brow__title">If that fails too, the account goes read only</span>
                 <span className="brow__sub">
                   New slips, imports and the bot pause. Your ledger and your export stay fully live,
                   and nothing is deleted. Ever, for any reason.
@@ -79,7 +79,7 @@ export default async function Declined() {
             <li className="brow" style={{ gridTemplateColumns: '24px 1fr' }}>
               <span className="mono small dim">3</span>
               <span>
-                <span className="brow__title" style={{ display: 'block' }}>A working card undoes all of it immediately</span>
+                <span className="brow__title">A working card undoes all of it immediately</span>
                 <span className="brow__sub">There is no penalty, no reactivation fee and no gap in your record.</span>
               </span>
             </li>

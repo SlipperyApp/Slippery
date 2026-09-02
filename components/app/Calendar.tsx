@@ -3,12 +3,15 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Icon } from '@/components/Icon';
 import { ModuleMenu, MenuChoice } from '@/components/app/ModuleMenu';
-import { londonDay, londonParts, MONTH_LONG, money, cellFigure } from '@/lib/format';
-import { rampStep } from '@/lib/calendar-ramp';
+import {
+  dayKey, zonedParts, DEFAULT_TZ, MONTH_LONG, money, cellFigure,
+  units as fmtUnits, type TimeZone,
+} from '@/lib/format';
+import { rampStep, newestMonthBack } from '@/lib/calendar-ramp';
 import type { Currency } from '@/lib/domain/types';
 
-/** The calendar. Day boundaries are Europe/London, or a 23:00 bet lands on
- *  the wrong day.
+/** The calendar. Day boundaries are the ACCOUNT'S OWN zone, or a 23:40 bet
+ *  lands on the wrong day.
  *
  *  FOUR CELL STATES, and the middle two are the whole point:
  *    a past day WITH bets       filled, and the depth carries the size of the day
@@ -47,7 +50,8 @@ function readCookie(): CalShow | null {
 export type CalDay = { day: string; netPence: number; count: number };
 
 export function MonthCalendar({
-  days, now, weekStart = 1, show: initialShow = 'both', currency = 'GBP',
+  days, now, weekStart = 1, show: initialShow = 'both', currency = 'GBP', tz = DEFAULT_TZ,
+  unitMinor = 0,
 }: {
   /** Every settled day the account has. The calendar picks the month itself. */
   days: CalDay[];
@@ -55,6 +59,18 @@ export function MonthCalendar({
   weekStart?: 0 | 1;
   show?: CalShow;
   currency?: Currency;
+  /** DRAW UNITS INSTEAD OF MONEY, and how many minor units make one.
+   *
+   *  Set only by the public shared page, which has no currency to draw in
+   *  and must not print one: a shared record says how somebody has done, not
+   *  what they stake. When it is set, money() is not reached on any path
+   *  through this component, including the sentence a screen reader gets and
+   *  the month total in the footer. Zero, the default, is money as before. */
+  unitMinor?: number;
+  /** The account's zone. Which month is on screen, which cell is today and
+   *  which cells are still in the future are all answered in it, and they
+   *  have to be the same answer the day keys in `days` were built from. */
+  tz?: TimeZone;
 }) {
   const [show, setShow] = useState<CalShow>(initialShow);
 
@@ -69,13 +85,35 @@ export function MonthCalendar({
     document.cookie = `${SHOW_COOKIE}=${next}; path=/; max-age=31536000; samesite=lax`;
   };
 
-  const nowParts = londonParts(now);
-  const today = londonDay(now);
-  /** Months back from the current one. 0 is this month; the state is an
-   *  offset rather than a date so "this month" survives a midnight tick. */
-  const [back, setBack] = useState(0);
-
+  const nowParts = zonedParts(now, tz);
+  const today = dayKey(now, tz);
   const byDay = useMemo(() => new Map(days.map((d) => [d.day, d])), [days]);
+
+  /*  WHICH MONTH IT OPENS ON, and it was always this one whatever was in it.
+   *
+   *  Today is the second of the month. The example account's records run
+   *  February to August, so the largest module on the dashboard, 661 by 444
+   *  pixels, opened as twenty eight empty cells, two struck through dates
+   *  and the words "Nothing settled". The same empty grid is the second
+   *  module on the shared balance page, which is the link people send to
+   *  friends. That happens twelve times a year, to every account, for the
+   *  first days of every month, and on the first weekend of a new month it
+   *  is the first thing a new customer sees.
+   *
+   *  It opens on the most recent month that has anything in it instead, and
+   *  the header says so rather than leaving somebody to notice the month
+   *  name is not this one. Pressing forward still reaches today: this is
+   *  where it starts, not where it stops.
+   *
+   *  The arithmetic is `newestMonthBack` in lib/calendar-ramp.ts rather than
+   *  a copy of it here, because two sessions wrote this fix independently
+   *  and the second copy was inline. A year end crossing is the kind of
+   *  thing one copy gets right and the other does not. */
+  const startBack = useMemo(() => newestMonthBack(days, nowParts), [days, nowParts]);
+
+  /** Months back from the one it opened on. The state is an offset rather
+   *  than a date so "this month" survives a midnight tick. */
+  const [back, setBack] = useState(startBack);
 
   /** How far back there is anything to look at. One extra month past the
    *  earliest record, so the first month is not a wall. */
@@ -107,6 +145,16 @@ export function MonthCalendar({
     ? ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
     : ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
+  /*  One formatter, used by the cell, the sentence and the month total, so
+      a units calendar cannot print money in one of the three. */
+  const inUnits = unitMinor > 0;
+  const fig = (net: number) => (inUnits
+    ? fmtUnits(net / unitMinor, { league: true, sign: true })
+    : cellFigure(net, currency));
+  const full = (net: number) => (inUnits
+    ? fmtUnits(net / unitMinor, { sign: true })
+    : money(net, currency, { sign: true }));
+
   const showDate = show === 'date' || show === 'both';
   const showValue = show === 'amount' || show === 'both';
   const stack = show === 'both';
@@ -131,7 +179,7 @@ export function MonthCalendar({
     const sentence = future
       ? `${d} ${label}, not yet`
       : bet
-        ? `${d} ${label}, ${money(net, currency, { sign: true })} from ${rec!.count} bet${rec!.count === 1 ? '' : 's'}`
+        ? `${d} ${label}, ${full(net)} from ${rec!.count} bet${rec!.count === 1 ? '' : 's'}`
         : `${d} ${label}, no bets`;
 
     cells.push(
@@ -162,7 +210,7 @@ export function MonthCalendar({
             className={`cal__v ${net > 0 ? 'pos' : net < 0 ? 'neg' : 'cal__v--flat'}`}
             aria-hidden="true"
           >
-            {cellFigure(net, currency)}
+            {fig(net)}
           </span>
         ) : null}
 
@@ -187,6 +235,10 @@ export function MonthCalendar({
   }
 
   const title = `${MONTH_LONG[month - 1]} ${year}`;
+  /*  Only while it is still showing the month it opened on. Once somebody
+      has pressed an arrow the month on screen is their choice and a note
+      explaining it is the page talking over them. */
+  const rewound = startBack > 0 && back === startBack;
 
   return (
     <div className="calwrap">
@@ -211,16 +263,28 @@ export function MonthCalendar({
           >
             <Icon name="chevronRight" />
           </button>
+          {/*  Why it is not on this month. Without it the reader has to
+               notice the month name is wrong, and the likelier reading is
+               that the product has lost their September. */}
+          {rewound ? <span className="cal__why">Last month with bets</span> : null}
         </div>
 
-        <ModuleMenu label="Calendar">
-          <MenuChoice
-            label="Each day shows"
-            value={show}
-            options={SHOW_OPTIONS}
-            onChange={choose}
-          />
-        </ModuleMenu>
+        {/*  Into the card's own corner, beside the title, the way Breakdown
+             already does it. Left in this row it sat one line below every
+             other module's menu and staggered the top right of the grid.
+             The calendar is a client component and the header above it is
+             not, so the menu is positioned into the header rather than
+             passed up through a prop. */}
+        <div className="cal__tools">
+          <ModuleMenu label="Calendar">
+            <MenuChoice
+              label="Each day shows"
+              value={show}
+              options={SHOW_OPTIONS}
+              onChange={choose}
+            />
+          </ModuleMenu>
+        </div>
       </div>
 
       <div
@@ -245,7 +309,7 @@ export function MonthCalendar({
         </ul>
         <p className="small tnum cal__sum">
           {monthBets > 0
-            ? <>{monthBets} bet{monthBets === 1 ? '' : 's'}, <span className={monthNet >= 0 ? 'pos' : 'neg'}>{money(monthNet, currency, { sign: true })}</span></>
+            ? <>{monthBets} bet{monthBets === 1 ? '' : 's'}, <span className={monthNet >= 0 ? 'pos' : 'neg'}>{full(monthNet)}</span></>
             : 'Nothing settled'}
         </p>
       </div>

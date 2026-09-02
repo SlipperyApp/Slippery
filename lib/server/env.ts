@@ -9,6 +9,8 @@
  *  reading down on production" is one request rather than an hour of
  *  guessing. */
 
+import { bareAddress } from './codes';
+
 export const ENV_NAMES = [
   'DATABASE_URL',
   'AUTH_SECRET',
@@ -71,9 +73,20 @@ export function has(name: EnvName): boolean {
   return typeof v === 'string' && v.trim().length > 0;
 }
 
+/*  Trimmed on the way out, not only on the way in.
+ *
+ *  The first version tested `v.trim()` for emptiness and then returned `v`,
+ *  so a variable pasted into the Vercel dashboard with a trailing newline
+ *  came back carrying it. That is invisible everywhere except the two places
+ *  it matters: a newline in EMAIL_FROM is a header injection refusal on every
+ *  send, and a newline on EMAIL_SMTP_HOST is a DNS lookup that never
+ *  resolves. Neither error names the whitespace, so both read as "email is
+ *  broken and the settings look right". */
 export function read(name: EnvName): string | undefined {
   const v = READERS[name]();
-  return typeof v === 'string' && v.trim().length > 0 ? v : undefined;
+  if (typeof v !== 'string') return undefined;
+  const t = v.trim();
+  return t.length > 0 ? t : undefined;
 }
 
 /** VISION_API_KEY and ANTHROPIC_API_KEY are the same kind of key. The
@@ -103,8 +116,35 @@ export function emailCredentials(): { key: string; from: string; user: string } 
   if (!key || !from) return null;
   /*  Gmail's SMTP username is the full address and is usually the same as the
    *  from address, but GMAIL_USER wins when both exist: it is the account
-   *  the app password belongs to, and that is what authenticates. */
-  return { key, from, user: read('GMAIL_USER') ?? from };
+   *  the app password belongs to, and that is what authenticates.
+   *
+   *  bareAddress, because MAIL_FROM is exactly the variable somebody sets to
+   *  `Slippery <post@example.com>`. That is a correct From header and a
+   *  username that authenticates as nobody. */
+  return { key: normaliseAppPassword(key), from, user: bareAddress(read('GMAIL_USER') ?? from) };
+}
+
+/*  A Google App Password is sixteen lowercase letters and Google's dialog
+ *  shows it in four groups of four with spaces between them. Copying what is
+ *  on the screen is the normal thing to do, and Gmail then answers
+ *  535 5.7.8 to the spaced version: the spaces are presentation, not password.
+ *
+ *  Stripped only when the value is exactly that shape, so a genuine
+ *  passphrase for some other SMTP host keeps every character it was given. An
+ *  operator who has to be told "remove the spaces" is an operator who spent an
+ *  evening on a rejection that names no cause. */
+const APP_PASSWORD = /^[a-z]{4}(?:[ \t]?[a-z]{4}){3}$/;
+
+function normaliseAppPassword(key: string): string {
+  return APP_PASSWORD.test(key) ? key.replace(/[ \t]/g, '') : key;
+}
+
+/** True when the credential is shaped like a Google App Password. Reported by
+ *  /api/sources as a BOOLEAN so an operator can tell "you pasted your account
+ *  password" from "the app password is wrong" without anybody reading it. */
+export function appPasswordShaped(): boolean {
+  const c = emailCredentials();
+  return c !== null && /^[a-z]{16}$/.test(c.key);
 }
 
 export type Capability = {
@@ -167,7 +207,7 @@ export function capabilities(): Capability[] {
       ready: emailCredentials() !== null,
       without: 'Verification codes are not sent. They are still never logged.',
       needs: ['EMAIL_API_KEY', 'EMAIL_FROM'],
-      note: 'GMAIL_APP_PASSWORD, MAIL_FROM and GMAIL_USER are read as aliases of EMAIL_API_KEY and EMAIL_FROM, so either set works and the explicit one wins. A key starting re_ is sent through Resend. Anything else is treated as an SMTP password, with EMAIL_FROM as the username, EMAIL_SMTP_HOST or smtp.gmail.com as the host, and EMAIL_SMTP_PORT or 465 as the port. 465 is TLS from the first byte; 587 and 25 upgrade with STARTTLS.',
+      note: 'Gmail over SMTP with a Google App Password, which needs 2-Step Verification on that account. GMAIL_APP_PASSWORD, MAIL_FROM and GMAIL_USER are read as aliases of EMAIL_API_KEY and EMAIL_FROM, so either set works and the explicit one wins. GMAIL_USER is the SMTP username and the envelope sender; the From header carries EMAIL_FROM or MAIL_FROM, which Gmail rewrites to the account unless it is a verified Send mail as alias. EMAIL_SMTP_HOST defaults to smtp.gmail.com and EMAIL_SMTP_PORT to 465, which is TLS from the first byte; 587 and 25 upgrade with STARTTLS and refuse to send at all if the host does not offer it. A key starting re_ goes through Resend instead. docs/EMAIL.md is the whole procedure.',
     },
     {
       id: 'admin', label: 'Admin levers',

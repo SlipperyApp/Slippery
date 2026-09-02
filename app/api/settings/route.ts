@@ -1,6 +1,8 @@
 import { hasDatabase, query } from '@/lib/server/db';
 import { currentAccount } from '@/lib/server/auth';
 import { fail, limitOr429, ok, readJson, str } from '@/lib/server/respond';
+import { isKnownTimeZone } from '@/lib/format';
+import { NOTIFICATIONS, SHARING_SWITCHES, isSwitch } from '@/lib/data/settings';
 
 export const runtime = 'nodejs';
 
@@ -39,17 +41,69 @@ export async function POST(req: Request) {
   if (PROFIT.has(showProfitIn)) push('show_profit_in', showProfitIn);
 
   if (body.weekStart === 0 || body.weekStart === 1) push('week_start', body.weekStart);
+
+  /*  A zone the runtime cannot resolve throws inside Intl on every date on
+      the page, so it is refused here rather than stored and discovered by a
+      calendar that will not render. */
+  const timeZone = str(body.timeZone);
+  if (timeZone && isKnownTimeZone(timeZone)) push('time_zone', timeZone);
+
   if (typeof body.calendarDates === 'boolean') push('calendar_dates', body.calendarDates);
   if (typeof body.break === 'boolean') {
     push('break_until', body.break ? new Date(Date.now() + 30 * 86400000).toISOString() : null);
   }
 
-  const bankroll = Number(body.bankrollStartPence);
-  if (Number.isFinite(bankroll) && bankroll >= 0) push('bankroll_start_pence', Math.round(bankroll));
+  const startBalance = Number(body.balanceStartPence);
+  if (Number.isFinite(startBalance) && startBalance >= 0) push('balance_start_pence', Math.round(startBalance));
+
+  /*  THE SWITCHES THAT SAVED NOTHING.
+   *
+   *  The seven notification toggles posted no request at all and the four
+   *  sharing ones posted { sharing, on } to a route that read neither field
+   *  and answered changed: 0. Both panes are about who can see you and what
+   *  is sent to you, which is the worst place in a product for a control that
+   *  only relabels itself.
+   *
+   *  The id is checked against the list it belongs to before it is written,
+   *  so a client cannot put an arbitrary key into the column, and jsonb_set
+   *  merges rather than replacing, so two switches thrown at once cannot
+   *  clobber each other. */
+  const notification = str(body.notification);
+  if (notification && isSwitch(NOTIFICATIONS, notification) && typeof body.on === 'boolean') {
+    /*  Billing notices are locked on: an account that cannot be told its card
+        failed is an account that goes read only without warning. The switch
+        is disabled in the pane and refused here too, because a disabled
+        attribute is a promise to a mouse and not to a request. */
+    const locked = NOTIFICATIONS.find((n) => n.id === notification)?.locked;
+    if (!locked) {
+      await query(
+        `update accounts set notifications = jsonb_set(coalesce(notifications, '{}'::jsonb), $2, $3::jsonb, true),
+                             updated_at = now()
+          where id = $1`,
+        [account.id, `{${notification}}`, JSON.stringify(body.on)],
+      );
+      return ok({ changed: 1, notification, on: body.on });
+    }
+    return fail(400, 'locked', 'Billing notices stay on. An account cannot be allowed to go read only without warning.');
+  }
+
+  const sharingId = str(body.sharing);
+  if (sharingId && isSwitch(SHARING_SWITCHES, sharingId) && typeof body.on === 'boolean') {
+    await query(
+      `update accounts set sharing = jsonb_set(coalesce(sharing, '{}'::jsonb), $2, $3::jsonb, true),
+                           updated_at = now()
+        where id = $1`,
+      [account.id, `{${sharingId}}`, JSON.stringify(body.on)],
+    );
+    return ok({ changed: 1, sharing: sharingId, on: body.on });
+  }
 
   if (body.purgeImages === true) {
+    /*  The bytes as well as the flag. This cleared a storage_key and left the
+        image in place, which was harmless only for as long as no image was
+        ever stored. */
     await query(
-      `update slip_images set deleted_at = now(), storage_key = ''
+      `update slip_images set deleted_at = now(), storage_key = '', data = null
         where account_id = $1 and deleted_at is null`,
       [account.id],
     ).catch(() => null);

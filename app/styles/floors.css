@@ -39,12 +39,14 @@ button.btn--link {
    16px gap or the wrong one fires. */
 .iconbtn + .iconbtn { margin-left: var(--s4); }
 
-/* Focus is visible on everything, with no radius, because an outline follows
-   the element's own border-radius and a pill would give a pill-shaped ring. */
+/*  Focus is visible on everything, and it takes the shape of the thing it is
+    around. See the note in base.css: the `border-radius: 0` that used to be
+    here set the ELEMENT's radius rather than the outline's, so every pill and
+    every card squared off its own corners while it held keyboard focus. */
 :where(a, button, input, select, textarea, [tabindex]):focus-visible {
   outline: 2px solid var(--accent);
   outline-offset: 2px;
-  border-radius: 0;
+  box-shadow: 0 0 0 5px color-mix(in oklab, var(--accent) 18%, transparent);
 }
 
 /* A scrollable region has to be reachable by keyboard, or its contents are

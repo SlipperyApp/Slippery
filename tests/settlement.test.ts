@@ -1,5 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
 import {
   gradeTotals, gradeHandicap, gradeMatchResult, gradeLeg, settleMulti, settleBet,
   handicapStyle, marketAlwaysAsks, parseLine, isQuarterLine, isWholeLine,
@@ -146,4 +147,64 @@ test('a single goes through the same path as a multiple, so there is one grader'
 test('a quarter line leg inside a multiple carries its split up to the bet', () => {
   assert.equal(settleMulti(['won', 'half_lost']).type, 'half_lost');
   assert.equal(settleMulti(['won', 'half_won']).type, 'half_won');
+});
+
+// ---------------------------------------------------------- commission
+
+/*  COMMISSION HAD NO APPENDER. The fold has understood a `commission` event
+ *  since the first migration and nothing in the product ever wrote one, so
+ *  every exchange winner in a real ledger was reported 1.5 to 2 per cent
+ *  above what the exchange paid. The example account builds its own events
+ *  and DID charge it, which is why the screenshots looked right.
+ *
+ *  Neither settlement path can be exercised without a database, so what is
+ *  asserted here is that both of them go through the one appender that
+ *  charges, and that neither has a second path around it. */
+
+const SETTLEMENT_PATHS = ['app/api/settle/route.ts', 'app/api/cron/results/route.ts'];
+
+test('both settlement paths append through the one thing that charges commission', () => {
+  for (const f of SETTLEMENT_PATHS) {
+    const src = readFileSync(f, 'utf8');
+    assert.match(src, /appendResult\(/, `${f} settles a bet without charging commission`);
+    assert.doesNotMatch(
+      src.replace(/appendResult/g, ''),
+      /appendEvent\(/,
+      `${f} has a second append path that skips the charge`,
+    );
+  }
+});
+
+test('the appender charges on the state the result produced, and only once', () => {
+  const src = readFileSync('lib/server/bets.ts', 'utf8');
+  assert.match(src, /export async function appendResult/);
+  assert.match(src, /commissionDue\(bet, events, state\)/, 'the charge is decided off something other than the fold');
+  assert.match(src, /type: 'commission'/);
+  // The amount is never worked out here. One commission formula, in the fold.
+  assert.doesNotMatch(src, /Math\.(ceil|round)\([^)]*commission/i);
+});
+
+test('a bet is written with its bookmaker rate frozen on it, not with a zero', () => {
+  /*  The insert carried a literal 0 for commission_pct, so even once
+   *  settlement learned to charge, every bet had nothing to charge. */
+  const src = readFileSync('app/api/bets/route.ts', 'utf8');
+  assert.match(src, /select commission_pct from bookmakers/);
+  assert.doesNotMatch(src, /commissionPct: 0/, 'the rate is hardcoded to zero again');
+});
+
+test('the migration that widens the outcome column is numbered past the branch that is not here', () => {
+  const sql = readFileSync('migrations/0007_pl_truth.sql', 'utf8');
+  assert.match(sql, /check \(outcome in \('won','lost','placed','cash-profit','cash-loss','cash-flat','void'\)\)/);
+  assert.match(sql, /places_paid/);
+  assert.match(sql, /bet_fingerprint/);
+  /*  A check cannot be widened in place, so the old one has to go first, and
+   *  it is found by what it contains rather than by a guessed name: 0001
+   *  declared it inline, so a `drop constraint if exists` naming it wrongly
+   *  is a silent no-op that leaves the old check standing and every `placed`
+   *  write failing against a constraint that is not in this file. */
+  assert.match(sql, /pg_get_constraintdef\(con\.oid\) like '%cash-flat%'/);
+  assert.ok(
+    sql.indexOf('drop constraint %I') < sql.indexOf('add constraint bet_state_outcome_check'),
+    'the outcome check is added before the old one is dropped',
+  );
 });

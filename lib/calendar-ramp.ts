@@ -95,3 +95,30 @@ export function rampStep(value: number, peak: number): RampStep {
     ink: 'ground',
   };
 }
+
+/** How many months back the newest month with anything in it is.
+ *
+ *  THE CALENDAR ALWAYS OPENED ON THE CURRENT MONTH, whatever was in it. On the
+ *  second of a month the largest module on the dashboard, 661 by 444 pixels,
+ *  was an empty grid with two struck through dates and the words "Nothing
+ *  settled", and the same empty grid was the second module on the public
+ *  shared balance page, which is the link people send to friends. Twelve times
+ *  a year, and on every link sent in the first week of a month.
+ *
+ *  Zero when there is nothing at all, because an empty account opening on a
+ *  month from before it existed would be stranger than opening on this one.
+ *  The header names the month either way, so this is not a lie about which
+ *  month is on screen, and the forward arrow still reaches the empty one.
+ *
+ *  Here rather than in the component so it can be tested without a DOM: jsdom
+ *  has no layout engine and a month offset is arithmetic, not a picture. */
+export function newestMonthBack(
+  days: { day: string }[],
+  now: { year: number; month: number },
+): number {
+  if (days.length === 0) return 0;
+  const last = days.reduce((a, d) => (d.day > a ? d.day : a), days[0].day);
+  const [y, m] = last.split('-').map(Number);
+  if (!Number.isFinite(y) || !Number.isFinite(m)) return 0;
+  return Math.max(0, (now.year - y) * 12 + (now.month - m));
+}

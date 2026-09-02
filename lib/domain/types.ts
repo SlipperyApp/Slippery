@@ -26,9 +26,41 @@ export type SportId = 'football' | 'tennis' | 'horse-racing';
 
 export type BetSource = 'telegram' | 'web_upload' | 'manual' | 'csv_import' | 'shot_import';
 
+/** History somebody brought with them, as opposed to a bet this product
+ *  watched happen.
+ *
+ *  It lives beside the type because four surfaces now split on it: the
+ *  dashboard leaves imported bets out of best day, worst day and the streak,
+ *  the ledger offers a chip that shows or hides them, the export carries an
+ *  `imported` column, and a row marks itself. Each of those held its own set
+ *  literal, and a fifth source added to the type above would have had to be
+ *  found in all of them. */
+export const IMPORTED_SOURCES: ReadonlySet<string> = new Set<BetSource>(['csv_import', 'shot_import']);
+
+export function isImportedSource(source: string): boolean {
+  return IMPORTED_SOURCES.has(source);
+}
+
+/** Was this struck after the event had started.
+ *
+ *  DERIVED, not stored, and it lives here beside the two fields it is derived
+ *  from. A bet placed after kick off is an in play bet and there is nothing
+ *  else it could be: `placedAt` is when the slip was struck and `eventAt` is
+ *  when the event begins, so the comparison IS the definition. A boolean
+ *  column beside them would be a third fact that could disagree with the two
+ *  it was copied from, and the first import that set one and not the others
+ *  would leave a bet that is in play according to one screen and not another. */
+export function isInPlay(bet: { placedAt: string; eventAt: string }): boolean {
+  return Date.parse(bet.placedAt) > Date.parse(bet.eventAt);
+}
+
 export type Bet = {
   id: string;
   accountId: string;
+  /** Which balance this bet belongs to. A bet is in exactly one, and the
+   *  balance carries the currency, so a selection inside a balance can
+   *  never contain two currencies. See lib/domain/balances.ts. */
+  balanceId: string;
   shape: BetShape;
   side: BetSide;
   /** Integer minor units. Money is never a float and never crosses currencies. */
@@ -58,10 +90,24 @@ export type Bet = {
   ewPlaceFraction: number | null;
   ewPart: EwPart | null;
   ewGroupId: string | null;
+  /** How many places the bookmaker paid on this market. The fraction says
+   *  what a place is worth and this says how many there were, which is the
+   *  half a ledger needs to print "3rd of 12, places paid 1-3". Null when
+   *  the slip did not say, because a place count is never inferred from a
+   *  field size. */
+  placesPaid: number | null;
   slipBacked: boolean;
   source: BetSource;
   arbGroupId: string | null;
   note: string | null;
+  /** The price this market settled at, as the account holder recorded it.
+   *
+   *  Entered by hand and null on most bets, which is the normal case rather
+   *  than a gap. Nothing in this product computes, estimates or infers one:
+   *  a fabricated closing price looks exactly like a real one, and the
+   *  module that used to stand in for the missing feed was deleted for
+   *  saying so on every account every day. See lib/domain/closing.ts. */
+  closingOdds: number | null;
   /** The unit in force when the bet was placed, frozen so history never
    *  rewrites itself when the account's unit changes. */
   unitPenceAtPlacement: number;
@@ -89,8 +135,17 @@ export type EventType =
   | 'cash_out_partial' | 'cash_out_full'
   | 'rule4' | 'commission' | 'promo_refund' | 'manual_correction';
 
-/** The whole outcome vocabulary the product ever shows. Six, and no more. */
-export type Outcome = 'won' | 'lost' | 'cash-profit' | 'cash-loss' | 'cash-flat' | 'void';
+/** The whole outcome vocabulary the product ever shows. Seven, and no more.
+ *
+ *  `placed` is the seventh and it was missing, which made the ledger lie
+ *  about the commonest each way result there is. A selection that placed and
+ *  did not win was collapsed to `realised >= 0 ? 'won' : 'lost'`, so a £10
+ *  each way at 4.0 on fifths that came third read as Lost on the win part
+ *  and Won on the place part, and neither row said the thing that actually
+ *  happened. It is its own result because it IS its own result: the money
+ *  can land either side of zero and the fact does not change. */
+export type Outcome =
+  | 'won' | 'lost' | 'placed' | 'cash-profit' | 'cash-loss' | 'cash-flat' | 'void';
 
 export type SettlementEvent = {
   id: string;
@@ -173,11 +228,15 @@ export type Account = {
   unitPence: number;
   currency: Currency;
   weekStart: 0 | 1;
+  /** The IANA zone every day boundary on this account is computed in. A
+   *  bettor in Ireland and a server in UTC disagree about which day a 23:40
+   *  bet belongs to, and the calendar is the most looked at surface here. */
+  timeZone: string;
   oddsFormat: 'decimal' | 'fractional' | 'american';
   showProfitIn: 'currency' | 'units' | 'both';
   calendarDates: boolean;
   theme: string;
-  bankrollStartPence: number;
+  balanceStartPence: number;
   linkCode: string;
   trialEndsAt: string;
   trialSlipsAllowed: number;

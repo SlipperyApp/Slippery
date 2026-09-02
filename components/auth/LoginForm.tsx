@@ -59,7 +59,16 @@ export function LoginForm({
     return (
       <div className="card">
         <div className="row" style={{ alignItems: 'flex-start' }}>
-          <Icon name={canEmail ? 'check' : 'alert'} size={20} style={{ color: canEmail ? 'var(--pos)' : 'var(--ink-2)', flex: 'none', marginTop: 2 }} />
+          {/*  readmark, not the profit colour. Green here meant "that address
+               looks like an email", and this is the second screen anybody
+               sees: the first place they learn what #86EFAC means should be
+               a figure with money in it. */}
+          <Icon
+            name={canEmail ? 'check' : 'alert'}
+            size={20}
+            className={canEmail ? 'readmark readmark--ok' : 'readmark readmark--ask'}
+            style={{ flex: 'none', marginTop: 2 }}
+          />
           <div>
             <p className="card__title">
               {canEmail

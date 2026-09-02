@@ -20,7 +20,8 @@ export default function Crop() {
         <h1>Crop to the slip</h1>
         <p className="muted" style={{ marginTop: 'var(--s2)' }}>
           Optional, and usually not needed. It helps when a photograph has a table in it, because
-          the template match works on the slip, not on the room.
+          the reader works on the slip, not on the room. Drag a rectangle, or tab to a corner and
+          use the arrow keys.
         </p>
         <div style={{ marginTop: 'var(--s5)' }}><Cropper /></div>
       </div>

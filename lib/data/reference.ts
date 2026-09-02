@@ -57,8 +57,41 @@ export const BOOKMAKER_GROUPS: { group: string; books: { id: string; name: strin
 export const ALL_BOOKMAKERS = BOOKMAKER_GROUPS.flatMap((g) =>
   g.books.map((b) => ({ ...b, group: g.group })));
 
+/** What a bet is filed under when the slip did not say and nobody answered.
+ *
+ *  It is here and not at a call site because a bet is fingerprinted on both
+ *  sides of an upload: once when the slip is read and once when it is saved.
+ *  A default applied on only one of those two is a duplicate check that
+ *  cannot match its own writes. */
+export const DEFAULT_BOOKMAKER_ID = 'bet365';
+
 export function bookmakerName(id: string): string {
   return ALL_BOOKMAKERS.find((b) => b.id === id)?.name ?? id;
+}
+
+/** An id, from whatever a caller happens to be holding.
+ *
+ *  THE COLUMN STORES AN ID AND THREE CALLERS WERE HOLDING A NAME. The review
+ *  screen sent whatever string the reader printed, so "Betfair Exchange" went
+ *  into bookmaker_id, where nothing could look it up: not the commission
+ *  rate, not the handicap convention, not the breakdown row. It reads as a
+ *  bookmaker on the row and behaves as one nowhere else.
+ *
+ *  It returns null rather than a default. Deciding that an unrecognised name
+ *  is bet365 is the silent guess the whole reader refuses, and the caller
+ *  that genuinely needs a value can say so at its own call site. */
+export function resolveBookmakerId(value: string): string | null {
+  const v = value.trim().toLowerCase();
+  if (!v) return null;
+  const byId = ALL_BOOKMAKERS.find((b) => b.id === v);
+  if (byId) return byId.id;
+  /*  Punctuation and spacing differ between "BetVictor", "Bet Victor" and
+      "bet-victor", and none of those differences is a different bookmaker. */
+  const flat = v.replace(/[^a-z0-9]/g, '');
+  return ALL_BOOKMAKERS.find(
+    (b) => b.name.toLowerCase().replace(/[^a-z0-9]/g, '') === flat
+      || b.id.replace(/[^a-z0-9]/g, '') === flat,
+  )?.id ?? null;
 }
 
 export function defaultBookmakers(accountId: string): Bookmaker[] {
@@ -100,6 +133,53 @@ export function marketGroupFor(marketRaw: string): string {
 
 export function marketGroupName(id: string): string {
   return MARKET_GROUPS.find((g) => g.id === id)?.name ?? id;
+}
+
+/*  THE ACCOUNT'S TIME ZONE, and why it is a short list rather than the whole
+ *  IANA database.
+ *
+ *  A calendar day is the most looked at thing in this product and it has to
+ *  be the day the person betting was living in. Europe/London and
+ *  Europe/Dublin keep the same clock, so the pair reads as one choice; every
+ *  other zone here is somewhere a UK or Irish account holder is plausibly
+ *  reading their own ledger from, and each one shifts a late kick off onto a
+ *  different day from the server's.
+ *
+ *  A zone outside this list is still accepted if the platform knows it, so an
+ *  account restored from elsewhere is never silently moved. What the list
+ *  decides is what the picker offers. */
+export const TIME_ZONES: { id: string; label: string; clock: string }[] = [
+  /*  `label` names the place, which is what somebody picks from a list.
+   *  `clock` is the same fact as an adjective, because the line under the
+   *  sidebar says "Times in ___" and "Times in United Kingdom time" is not a
+   *  sentence anybody would write. Two fields rather than one clever
+   *  template: English does not derive one from the other. */
+  { id: 'Europe/London', label: 'United Kingdom', clock: 'UK time' },
+  { id: 'Europe/Dublin', label: 'Ireland', clock: 'Irish time' },
+  { id: 'Atlantic/Canary', label: 'Canary Islands', clock: 'Canary Islands time' },
+  { id: 'Europe/Lisbon', label: 'Portugal', clock: 'Portuguese time' },
+  { id: 'Europe/Madrid', label: 'Spain', clock: 'Spanish time' },
+  { id: 'Europe/Paris', label: 'France', clock: 'French time' },
+  { id: 'Europe/Amsterdam', label: 'Netherlands', clock: 'Dutch time' },
+  { id: 'Europe/Berlin', label: 'Germany', clock: 'German time' },
+  { id: 'Europe/Malta', label: 'Malta', clock: 'Maltese time' },
+  { id: 'Europe/Athens', label: 'Greece', clock: 'Greek time' },
+  { id: 'Asia/Dubai', label: 'United Arab Emirates', clock: 'UAE time' },
+  { id: 'America/New_York', label: 'United States, eastern', clock: 'US eastern time' },
+  { id: 'Australia/Sydney', label: 'Australia, eastern', clock: 'eastern Australian time' },
+  { id: 'UTC', label: 'UTC', clock: 'UTC' },
+];
+
+export function timeZoneLabel(id: string): string {
+  return TIME_ZONES.find((z) => z.id === id)?.label ?? id.replace(/_/g, ' ');
+}
+
+/** The zone as the strap line says it: "Times in Irish time". A zone outside
+ *  the list falls back to its own IANA name, which is honest and ugly, and is
+ *  what an account restored from somewhere else should show rather than a
+ *  guess at the country. */
+export function timeZoneClock(id: string): string {
+  return TIME_ZONES.find((z) => z.id === id)?.clock ?? id.replace(/_/g, ' ');
 }
 
 export const COMPETITIONS: Record<SportId, string[]> = {

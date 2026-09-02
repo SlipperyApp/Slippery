@@ -39,6 +39,18 @@ export async function query<T extends QueryResultRow = QueryResultRow>(
   return res.rows;
 }
 
+/** The pool shaped like a client, for the reads that do not need one.
+ *
+ *  A server module that takes a client so it can be used inside a transaction
+ *  should not force a `begin` and a `commit` onto a single select. A
+ *  PoolClient and this both satisfy the small `{ query }` type those modules
+ *  take. */
+export const pooled = {
+  async query<R>(text: string, params: unknown[] = []): Promise<{ rows: R[] }> {
+    return { rows: (await query(text, params)) as R[] };
+  },
+};
+
 /** Every write that touches settlement_events runs inside one of these, with
  *  the bet_state recompute in the same transaction. */
 export async function transaction<T>(fn: (c: PoolClient) => Promise<T>): Promise<T> {

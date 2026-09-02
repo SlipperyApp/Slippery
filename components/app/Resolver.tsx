@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { plural } from '@/lib/format';
 import Link from 'next/link';
 import { Icon } from '@/components/Icon';
 import type { Unresolved } from '@/lib/data/importing';
@@ -82,16 +83,37 @@ export function Resolver({ items }: { items: Unresolved[] }) {
         })}
       </ul>
 
+      {/*  A GATE, NOT A COSTUME.
+           This was a <Link> with aria-disabled on it, and aria-disabled is a
+           promise to a screen reader, not a lock: an anchor with an href
+           still navigates on click no matter what it announces. The
+           stylesheet dimmed it and set cursor:not-allowed, which made it
+           LOOK locked, and a real click at its box walked past five
+           undecided rows into the one screen that writes the import. The
+           only page in the product whose entire job is to force a decision
+           did not force it.
+
+           So while there is a decision outstanding this is a <button
+           disabled>, which cannot be clicked, cannot be focused and cannot
+           be activated by keyboard. It becomes a link only when there is
+           somewhere legitimate for it to go. */}
       <div className="row" style={{ marginTop: 'var(--s5)', gap: 'var(--s3)' }}>
-        <Link
-          href="/app/import/history/done"
-          className={`btn grow ${done === items.length ? 'btn--primary' : 'btn--ghost'}`}
-          aria-disabled={done < items.length ? true : undefined}
-        >
-          {done === items.length ? 'Write the import' : `${items.length - done} still to decide`}
-          <Icon name="arrowRight" size={16} />
-        </Link>
+        {done === items.length ? (
+          <Link href="/app/import/history/done" className="btn btn--primary grow">
+            Write the import
+            <Icon name="arrowRight" size={16} />
+          </Link>
+        ) : (
+          <button type="button" className="btn btn--ghost grow" disabled aria-describedby="resolve-gate">
+            {plural(items.length - done, 'row')} still to decide
+          </button>
+        )}
       </div>
+      {done < items.length ? (
+        <p className="small dim" id="resolve-gate" style={{ marginTop: 'var(--s2)' }}>
+          Answer every row and this becomes the write step. Nothing is written until it does.
+        </p>
+      ) : null}
       <p className="small dim" style={{ marginTop: 'var(--s3)' }}>
         Every row is written in one transaction. If any part fails, none of it lands.
       </p>

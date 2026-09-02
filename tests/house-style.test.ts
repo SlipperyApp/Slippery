@@ -57,9 +57,11 @@ test('no buzzwords in anything a reader sees', () => {
       // Comments are for whoever reads the code, and are not the product.
       const code = line.replace(/\/\/.*$/, '').replace(/\/\*.*$/, '').trim();
       if (!code || code.startsWith('*')) return;
-      /*  Prose only. `unlock:` is a field on a theme and describes how one
-       *  is earned, which is the domain speaking rather than a brochure. The
-       *  check reads what is inside quotes, which is what a reader sees. */
+      /*  Prose only: the check reads what is inside quotes, which is what a
+       *  reader sees. This used to carry an exemption for `unlock:`, a field
+       *  on a theme that said how one was earned. The field is gone, and so
+       *  is the exemption: three of the eight strings gated a colour scheme
+       *  on a count of slips or bets. */
       for (const q of code.matchAll(/(['"`])((?:\\.|(?!\1)[^\\])*)\1/g)) {
         const m = re.exec(q[2]);
         if (m) found.push(`${f}:${i + 1} "${m[1]}" in: ${q[2].slice(0, 80)}`);

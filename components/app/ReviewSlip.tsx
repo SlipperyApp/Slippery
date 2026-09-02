@@ -5,6 +5,8 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Icon } from '@/components/Icon';
 import { CONFIDENCE_COPY, type Confidence, type SlipRead } from '@/lib/data/read';
+import { useSlipFlow } from '@/components/app/SlipFlow';
+import { dateTime, money, parseMoneyMinor } from '@/lib/format';
 
 /** The icon carries the confidence. The VALUE never does.
  *
@@ -18,8 +20,20 @@ const TONE: Record<Confidence, { icon: 'check' | 'help' | 'alert' | 'minus'; cls
   missing: { icon: 'minus', cls: 'gap' },
 };
 
-export function ReviewSlip({ read }: { read: SlipRead }) {
+/** The stake is the one field with a shape of its own: it is money, so it is
+ *  integer minor units or it is nothing. A stake typed as 19.99 that reaches
+ *  a ledger as 1998.9999999999998 pence is the reason this does not go
+ *  through Number(). */
+function stakeOf(read: SlipRead, typed: string): number | null {
+  if (read.stakeMinor !== null) return read.stakeMinor;
+  return parseMoneyMinor(typed)?.minor ?? null;
+}
+
+export function ReviewSlip({ fallback }: { fallback: SlipRead }) {
   const router = useRouter();
+  const flow = useSlipFlow();
+  const read = flow.read ?? fallback;
+
   const [legs, setLegs] = useState(read.legs);
   const [answers, setAnswers] = useState<Record<string, string>>({});
   const [free, setFree] = useState(read.promotional.freeBet);
@@ -27,23 +41,69 @@ export function ReviewSlip({ read }: { read: SlipRead }) {
   const [bonus, setBonus] = useState(read.promotional.bonusFunds);
   const [saving, setSaving] = useState(false);
   const [flagged, setFlagged] = useState(false);
+  const [flagNote, setFlagNote] = useState('');
   const [note, setNote] = useState('');
+  /*  A duplicate is ASKED ABOUT, never decided here. Silently skipping loses
+   *  a real second bet and silently saving is how one slip became two rows in
+   *  the ledger and two of everything in the aggregates. Confirm stays off
+   *  until this is answered, and answering it is one press. */
+  const [duplicateOk, setDuplicateOk] = useState(false);
+  const duplicate = read.duplicateOf;
 
-  const gaps = legs.filter((l) => !l.odds).length
-    + read.fields.filter((f) => f.confidence === 'missing' && !answers[f.key]).length;
-  const questions = read.fields.filter((f) => f.question);
+  const currency = read.currency ?? 'GBP';
+  const stakeMinor = stakeOf(read, answers.stake ?? '');
+  /*  THE ID GOES TO THE SERVER, NOT THE NAME. bookmaker_id is a key: the
+      commission rate, the handicap convention and the breakdown row are all
+      looked up from it, and "Betfair Exchange" as an id looks like a
+      bookmaker on the row and behaves as one nowhere else. The template
+      detector returns an id or the word unknown, and when it is unknown the
+      person answers the question and the server resolves what they typed. */
+  const bookmaker = read.bookmakerId !== 'unknown'
+    ? read.bookmakerId
+    : (answers.bookmaker ?? '');
+  /*  What to SHOW, which is a name. The two were one variable and the name
+      was the one that travelled. */
+  const bookmakerLabel = read.bookmaker || (answers.bookmaker ?? '');
+
+  /*  What is still open. A question with a required flag holds the write; one
+   *  without it is worth asking and not worth blocking on, and the difference
+   *  is whether a wrong answer would put a wrong number in the ledger. */
+  const openFields = read.fields.filter(
+    (f) => f.confidence !== 'high' && f.required && !(answers[f.key] ?? '').trim(),
+  );
+  const openStake = stakeMinor === null || stakeMinor < 1;
+  const openLegs = legs.filter((l) => !(Number(l.odds) > 1) || !l.selection.trim());
+  const open = openFields.length + openLegs.length + (openStake && !openFields.some((f) => f.key === 'stake') ? 1 : 0);
+
+  const questions = read.fields.filter((f) => f.confidence !== 'high');
+  const totalMinor = stakeMinor === null ? null : stakeMinor * Math.max(1, read.lines);
+  const heldOnDuplicate = Boolean(duplicate) && !duplicateOk;
 
   async function confirm() {
+    if (open > 0 || stakeMinor === null || heldOnDuplicate) return;
     setSaving(true);
     setNote('');
     try {
       const res = await fetch('/api/bets', {
-        method: 'POST', headers: { 'content-type': 'application/json' },
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
         body: JSON.stringify({
           source: 'web_upload',
-          shape: read.shape,
-          bookmaker: read.bookmaker,
-          legs,
+          shape: read.eachWay ? 'each_way' : 'single',
+          bookmaker: bookmaker || undefined,
+          // Integer minor units per line, and the line count beside it. The
+          // server multiplies; nothing here sends a total it worked out
+          // itself from a float.
+          stakePence: stakeMinor,
+          lines: Math.max(1, read.lines),
+          placedAt: read.placedAt ?? undefined,
+          sha256: flow.sha256 ?? undefined,
+          legs: legs.map((l) => ({
+            selection: l.selection,
+            eventName: l.fixture,
+            market: l.market,
+            odds: Number(l.odds),
+          })),
           answers,
           promotional: { freeBet: free, boosted: boost, bonusFunds: bonus },
         }),
@@ -59,20 +119,72 @@ export function ReviewSlip({ read }: { read: SlipRead }) {
 
   async function flag() {
     setFlagged(true);
-    await fetch('/api/reads/flag', {
-      method: 'POST', headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ readId: read.id }),
-    }).catch(() => null);
+    /*  THE SERVER SAYS WHETHER THE CREDIT WENT BACK, and this prints what it
+        said. The button used to relabel itself "Flagged, and the credit is
+        back" the instant it was pressed, whatever happened at the other end,
+        and the route it called refunded a slip on every press against a read
+        id it never checked existed. Both halves of that were a claim nothing
+        kept. */
+    try {
+      const res = await fetch('/api/reads/flag', {
+        method: 'POST', headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ readId: read.id }),
+      });
+      const b = await res.json().catch(() => ({}));
+      setFlagNote((b.message as string) || 'Nothing came back, so nothing was flagged.');
+    } catch {
+      setFlagNote('That did not reach the server, so nothing was flagged.');
+    }
   }
 
   return (
     <div className="grid">
+      {read.example ? (
+        <div className="banner col-12">
+          <Icon name="info" size={18} className="banner__icon" />
+          <span>
+            This is the worked example, not a read of one of your slips. Nothing here is yours and
+            Confirm has nothing to write. <Link href="/app/import">Send a slip</Link> to see your own.
+          </span>
+        </div>
+      ) : null}
+
+      {duplicate ? (
+        <div className="banner banner--neg col-12">
+          <Icon name="alert" size={18} className="banner__icon" />
+          <span>
+            This looks like a bet you already have, saved {dateTime(duplicate.when)}. It was matched
+            on the bet itself, {duplicate.matchedOn === 'image' ? 'as well as on the image file' : 'not on the image'},
+            so a second screenshot of one slip is caught even when the two files differ. Nothing has
+            been written. {' '}
+            <Link href={`/app/ledger?bet=${duplicate.id}`}>See the one you have</Link>, or say this is
+            a different bet and Confirm turns back on.
+            <button
+              type="button"
+              className="btn btn--ghost btn--sm"
+              style={{ marginTop: 'var(--s3)', display: duplicateOk ? 'none' : undefined }}
+              onClick={() => setDuplicateOk(true)}
+            >
+              This is a different bet
+            </button>
+            {duplicateOk ? (
+              <span className="small dim" style={{ display: 'block', marginTop: 'var(--s2)' }}>
+                Taken as a different bet. It will be written as its own row.
+              </span>
+            ) : null}
+          </span>
+        </div>
+      ) : null}
+
       <div className="col-8" style={{ display: 'grid', gap: 'var(--s4)', alignContent: 'start' }}>
         <section className="card">
           <div className="card__head">
             <div>
-              <h2 className="card__title">{read.shape}</h2>
-              <p className="small dim">{read.bookmaker} template, matched cleanly</p>
+              <h2 className="card__title">{read.shape}{read.eachWay ? ', each way' : ''}</h2>
+              <p className="small dim">
+                {bookmakerLabel ? `${bookmakerLabel} slip` : 'Bookmaker not read'}
+                {read.lines > 1 ? `, ${read.lines} lines` : ''}
+              </p>
             </div>
             <span className="pill pill--accent">{legs.length} selections</span>
           </div>
@@ -84,35 +196,67 @@ export function ReviewSlip({ read }: { read: SlipRead }) {
                 <li key={f.key} className="brow brow--field">
                   <Icon name={t.icon} size={16} className={`readmark readmark--${t.cls}`} />
                   <span style={{ minWidth: 0 }}>
-                    <span className="brow__title" style={{ display: 'block' }}>{f.label}</span>
-                    {f.saw ? <span className="brow__sub" style={{ display: 'block' }}>Saw: <span className="mono">{f.saw}</span></span> : null}
+                    <span className="brow__title">{f.label}</span>
+                    {f.saw ? <span className="brow__sub">Saw: <span className="mono">{f.saw}</span></span> : null}
                     {/*  Only where it says something. "Saved without asking.
                          Nothing here was in doubt." under every clean field is
                          one sentence repeated fifteen times, and the tick beside
-                         it already said it. The three that need an explanation
+                         it already said it. The ones that need an explanation
                          still get one. */}
                     {f.confidence === 'high' ? null : (
                       <span className="brow__sub">{CONFIDENCE_COPY[f.confidence].note}</span>
                     )}
                   </span>
-                  <span className="fig fig--s tnum">{f.value}</span>
+                  <span className="fig fig--s tnum">
+                    {f.confidence === 'high'
+                      ? f.value
+                      : (answers[f.key] ?? '').trim() || <span className="pending">Asked below</span>}
+                  </span>
                 </li>
               );
             })}
           </ul>
+          {totalMinor !== null ? (
+            <p className="small muted card__foot">
+              {read.lines > 1
+                ? `${money(stakeMinor as number, currency)} a line across ${read.lines} lines is ${money(totalMinor, currency)} of stake.`
+                : `${money(totalMinor, currency)} of stake, in ${currency}.`}
+            </p>
+          ) : null}
         </section>
 
         <section className="card">
           <h2 className="card__title">Selections</h2>
+          <p className="small muted" style={{ marginTop: 'var(--s2)' }}>
+            A price that was not legible is empty, never a plausible number. A missing price is
+            visible; a wrong one is not.
+          </p>
           <ul style={{ marginTop: 'var(--s3)' }}>
             {legs.map((l, i) => (
-              <li key={l.selection} className="brow" style={{ gridTemplateColumns: 'minmax(0,1fr) 110px', gap: 'var(--s3)' }}>
+              <li key={`${l.selection}-${i}`} className="brow" style={{ gridTemplateColumns: 'minmax(0,1fr) 110px', gap: 'var(--s3)' }}>
                 <span style={{ minWidth: 0 }}>
-                  <span className="brow__title" style={{ display: 'block' }}>{l.selection}</span>
-                  <span className="brow__sub">{l.fixture}</span>
+                  {l.selection ? (
+                    <span className="brow__title">{l.selection}</span>
+                  ) : (
+                    <>
+                      <label className="sr-only" htmlFor={`sel-${i}`}>Selection {i + 1}</label>
+                      <input
+                        id={`sel-${i}`}
+                        className="input"
+                        autoComplete="off"
+                        placeholder="Selection not read"
+                        value={l.selection}
+                        aria-invalid={!l.selection.trim() ? true : undefined}
+                        onChange={(e) => setLegs(legs.map((x, k) => (k === i ? { ...x, selection: e.target.value } : x)))}
+                      />
+                    </>
+                  )}
+                  <span className="brow__sub">
+                    {l.fixture || 'Fixture not read'}{l.saw ? ` · saw ${l.saw}` : ''}
+                  </span>
                 </span>
                 <span>
-                  <label className="sr-only" htmlFor={`odds-${i}`}>Price for {l.selection}</label>
+                  <label className="sr-only" htmlFor={`odds-${i}`}>Price for {l.selection || `selection ${i + 1}`}</label>
                   <input
                     id={`odds-${i}`}
                     className="input mono"
@@ -120,44 +264,63 @@ export function ReviewSlip({ read }: { read: SlipRead }) {
                     autoComplete="off"
                     value={l.odds}
                     placeholder="Not read"
-                    aria-invalid={!l.odds ? true : undefined}
+                    aria-invalid={!(Number(l.odds) > 1) ? true : undefined}
                     onChange={(e) => setLegs(legs.map((x, k) => (k === i ? { ...x, odds: e.target.value } : x)))}
-                    style={!l.odds ? { borderColor: 'var(--neg-line)' } : undefined}
+                    style={!(Number(l.odds) > 1) ? { borderColor: 'var(--neg-line)' } : undefined}
                   />
                 </span>
               </li>
             ))}
           </ul>
-          {legs.some((l) => !l.odds) ? (
-            <p className="small muted card__foot">
-              One price was not on the slip and is not being guessed. A missing price is visible;
-              a wrong one is not.
-            </p>
-          ) : null}
         </section>
 
         {questions.length ? (
           <section className="card">
             <h2 className="card__title">{questions.length === 1 ? 'One question' : `${questions.length} questions`}</h2>
             <p className="small muted" style={{ marginTop: 'var(--s2)' }}>
-              Targeted, not a whole form to fill in again.
+              Targeted, not a whole form to fill in again. Nothing here arrived with an answer
+              already in the box.
             </p>
             <ul style={{ marginTop: 'var(--s3)' }}>
               {questions.map((f) => (
-                <li key={f.key} style={{ borderTop: '1px solid var(--line)', paddingTop: 'var(--s3)', marginTop: 'var(--s3)' }}>
-                  <p className="small">{f.question}</p>
-                  <div className="row" style={{ gap: 'var(--s2)', marginTop: 'var(--s3)' }}>
-                    {['Yes', 'No', 'Not sure'].map((a) => (
-                      <button
-                        key={a} type="button" className="seg__btn"
-                        aria-pressed={answers[f.key] === a}
-                        onClick={() => setAnswers({ ...answers, [f.key]: a })}
-                        style={answers[f.key] === a ? { background: 'var(--surface-3)', color: 'var(--ink)' } : undefined}
-                      >
-                        {a}
-                      </button>
-                    ))}
-                  </div>
+                <li key={f.key} className="askrow">
+                  <p className="small">
+                    {f.question ?? `What is the ${f.label.toLowerCase()} on this slip?`}
+                    {f.required ? null : <span className="dim"> Optional.</span>}
+                  </p>
+                  {f.options ? (
+                    <div className="row row--wrap" style={{ gap: 'var(--s2)', marginTop: 'var(--s3)' }}>
+                      {f.options.map((a) => (
+                        <button
+                          key={a} type="button" className="seg__btn"
+                          aria-pressed={answers[f.key] === a}
+                          onClick={() => setAnswers({ ...answers, [f.key]: a })}
+                          style={answers[f.key] === a ? { background: 'var(--surface-3)', color: 'var(--ink)' } : undefined}
+                        >
+                          {a}
+                        </button>
+                      ))}
+                    </div>
+                  ) : (
+                    <div style={{ marginTop: 'var(--s3)' }}>
+                      <label className="sr-only" htmlFor={`ask-${f.key}`}>{f.label}</label>
+                      <input
+                        id={`ask-${f.key}`}
+                        className="input"
+                        autoComplete="off"
+                        inputMode={f.key === 'stake' ? 'decimal' : undefined}
+                        placeholder={f.key === 'stake' ? `Stake per line in ${currency}` : f.label}
+                        value={answers[f.key] ?? ''}
+                        aria-invalid={f.required && !(answers[f.key] ?? '').trim() ? true : undefined}
+                        onChange={(e) => setAnswers({ ...answers, [f.key]: e.target.value })}
+                      />
+                    </div>
+                  )}
+                  {f.key === 'stake' && (answers.stake ?? '').trim() && stakeMinor === null ? (
+                    <p className="small" role="alert" style={{ marginTop: 'var(--s2)' }}>
+                      That is not an amount this can read. Two decimal places at most, and no range.
+                    </p>
+                  ) : null}
                   {answers[f.key] === 'Not sure' ? (
                     <p className="small dim" style={{ marginTop: 'var(--s2)' }}>
                       It stays unanswered, and this bet is held out of your aggregates until it settles.
@@ -184,7 +347,7 @@ export function ReviewSlip({ read }: { read: SlipRead }) {
             ].map((r) => (
               <div key={r.t} className="switchrow">
                 <span style={{ minWidth: 0 }}>
-                  <span className="brow__title" style={{ display: 'block' }}>{r.t}</span>
+                  <span className="brow__title">{r.t}</span>
                   <span className="brow__sub">{r.s}</span>
                 </span>
                 <button
@@ -202,15 +365,20 @@ export function ReviewSlip({ read }: { read: SlipRead }) {
             type="button"
             className="btn btn--primary btn--wide"
             onClick={confirm}
-            disabled={saving || gaps > 0}
+            disabled={saving || open > 0 || heldOnDuplicate}
             aria-describedby="confirm-note"
           >
-            {saving ? 'Writing' : gaps > 0 ? `${gaps} field${gaps === 1 ? '' : 's'} still open` : 'Confirm and add to my ledger'}
+            {saving ? 'Writing'
+              : heldOnDuplicate ? 'One question about a duplicate'
+                : open > 0 ? `${open} field${open === 1 ? '' : 's'} still open`
+                  : 'Confirm and add to my ledger'}
           </button>
           <p className="small dim" id="confirm-note" style={{ marginTop: 'var(--s3)' }}>
-            {gaps > 0
-              ? 'Confirm stays off until the gaps are filled. Nothing is written half read.'
-              : 'Writes the bet and its first settlement event in one transaction.'}
+            {heldOnDuplicate
+              ? 'A bet like this one is already in your ledger. Saving it again would count it twice in every figure, so this asks first.'
+              : open > 0
+                ? 'Confirm stays off until the gaps are filled. Nothing is written half read.'
+                : 'Writes the bet and its first settlement event in one transaction.'}
           </p>
           {note ? <p className="small muted" role="status" style={{ marginTop: 'var(--s3)' }}>{note}</p> : null}
         </section>
@@ -218,7 +386,12 @@ export function ReviewSlip({ read }: { read: SlipRead }) {
         <section className="card">
           <h2 className="card__title">Read it wrong?</h2>
           <p className="small muted" style={{ marginTop: 'var(--s2)' }}>
-            Flag it and the slip goes back for a human look. The credit returns to your allowance.
+            {/*  It said the slip "goes back for a human look". There is no
+                 queue, no notification and no admin screen, so what it now
+                 promises is what the code keeps: the read is kept, marked as
+                 misread, and the slip goes back to your allowance once. */}
+            Flag it and the read is kept and marked as misread. The slip goes back to your
+            allowance, once per read rather than once per press.
           </p>
           <button
             type="button"
@@ -228,8 +401,11 @@ export function ReviewSlip({ read }: { read: SlipRead }) {
             disabled={flagged}
           >
             <Icon name="flag" size={16} />
-            {flagged ? 'Flagged, and the credit is back' : 'Flag this read'}
+            {flagged ? 'Flagged' : 'Flag this read'}
           </button>
+          {flagNote ? (
+            <p className="small muted" role="status" style={{ marginTop: 'var(--s3)' }}>{flagNote}</p>
+          ) : null}
           <p className="small dim card__foot">
             Or <Link href="/app/import/manual">type it in yourself</Link> instead.
           </p>

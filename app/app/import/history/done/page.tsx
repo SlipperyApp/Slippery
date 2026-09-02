@@ -29,7 +29,7 @@ export default function ImportDone() {
           ].map(([t, n, s]) => (
             <li key={String(t)} className="brow">
               <span style={{ minWidth: 0 }}>
-                <span className="brow__title" style={{ display: 'block' }}>{t}</span>
+                <span className="brow__title">{t}</span>
                 <span className="brow__sub">{s}</span>
               </span>
               <span className="fig fig--s tnum">{count(Number(n))}</span>

@@ -1,6 +1,8 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { recompute, effectiveOdds, turnoverPence, riskPence } from '@/lib/domain/fold';
+import {
+  recompute, effectiveOdds, turnoverPence, riskPence, commissionPence, commissionDue,
+} from '@/lib/domain/fold';
 import type { Bet, BetLeg, SettlementEvent } from '@/lib/domain/types';
 
 const NOW = '2026-08-31T12:00:00.000Z';
@@ -16,6 +18,7 @@ function bet(over: Partial<Bet> = {}): Bet {
     isFreeBet: false, isBonusFunds: false, isBoosted: false,
     isEachWay: false, ewPlaceFraction: null, ewPart: null, ewGroupId: null,
     slipBacked: true, source: 'manual', arbGroupId: null, note: null,
+    placesPaid: null,
     unitPenceAtPlacement: 2500, commissionPct: 0, createdAt: NOW, legs: [],
     ...over,
   };
@@ -146,6 +149,83 @@ test('a losing bet pays no commission', () => {
   assert.equal(s.realisedPlPence, -2500);
 });
 
+test('a fifty pound win at 3.0 on a two per cent exchange keeps ninety eight pounds', () => {
+  /*  The arithmetic the whole defect was about, pinned with the real numbers.
+   *  £50.00 at 3.00 returns £150.00, of which £100.00 is net winnings.
+   *  Commission is 2% OF THE WINNINGS, so £2.00: not 2% of the £150.00 back
+   *  (£3.00) and not 2% of the £50.00 staked (£1.00). Profit is £98.00. */
+  const b = bet({ stakePence: 5000, odds: 3, bookmakerId: 'betfair-exchange', commissionPct: 2 });
+  const s = recompute(b, seqd(ev('won'), ev('commission', { commissionPct: 2 })), NOW);
+  assert.equal(s.returnedPence, 15000 - 200, 'the charge came off the return');
+  assert.equal(s.realisedPlPence, 9800);
+  assert.equal(turnoverPence(b, s), 5000, 'commission never touches turnover');
+  // Return is measured on turnover, so it moves with the charge and not the
+  // other way about: 9800 on 5000 turned over is 196%.
+  assert.equal((s.realisedPlPence / turnoverPence(b, s)) * 100, 196);
+});
+
+test('commission is charged on net winnings, never on turnover or on the return', () => {
+  const b = bet({ stakePence: 5000, odds: 3, commissionPct: 2 });
+  const s = recompute(b, seqd(ev('won'), ev('commission', { commissionPct: 2 })), NOW);
+  assert.notEqual(s.realisedPlPence, 10000 - 300, 'charged on the return');
+  assert.notEqual(s.realisedPlPence, 10000 - 100, 'charged on the stake');
+  assert.equal(s.realisedPlPence, 10000 - 200);
+});
+
+test('a part penny of commission rounds UP, away from the person', () => {
+  /*  £5.10 at 3.00 on Matchbook wins £10.20. 1.5% of 1020 pence is 15.3
+   *  pence. Rounding to nearest would take 15p and report a penny of profit
+   *  the exchange never paid; the charge is 16p.
+   *
+   *  Stated direction, and this is the test that pins it. */
+  assert.equal(commissionPence(1020, 1.5), 16);
+  assert.equal(commissionPence(1970, 2), 40, '39.4 pence of charge is 40 pence taken');
+  assert.equal(commissionPence(10000, 2), 200, 'an exact charge is not pushed up a penny');
+  assert.equal(commissionPence(5000, 1.5), 75, 'and neither is an exact charge at a fractional rate');
+  // A rate with no exact binary form must not drift an exact charge upward.
+  assert.equal(commissionPence(10000, 1.3), 130);
+  assert.equal(commissionPence(0, 5), 0);
+  assert.equal(commissionPence(-500, 5), 0, 'a loss is not a negative charge');
+
+  const b = bet({ stakePence: 510, odds: 3, bookmakerId: 'matchbook', commissionPct: 1.5 });
+  const s = recompute(b, seqd(ev('won'), ev('commission', { commissionPct: 1.5 })), NOW);
+  assert.equal(s.realisedPlPence, 1020 - 16);
+  assert.ok(Number.isInteger(s.realisedPlPence), 'money left integer minor units');
+});
+
+test('a settled exchange winner is owed a commission event, and only once', () => {
+  /*  What the settlement paths ask before they append. The rate comes back,
+   *  never the amount: the fold works the amount out when the event lands, so
+   *  there is one commission formula in the build and not two. */
+  const b = bet({ stakePence: 5000, odds: 3, commissionPct: 2 });
+  const won = seqd(ev('won'));
+  assert.equal(commissionDue(b, won, recompute(b, won, NOW)), 2);
+
+  const charged = seqd(ev('won'), ev('commission', { commissionPct: 2 }));
+  assert.equal(commissionDue(b, charged, recompute(b, charged, NOW)), null, 'a second sweep charged it twice');
+
+  const lost = seqd(ev('lost'));
+  assert.equal(commissionDue(b, lost, recompute(b, lost, NOW)), null, 'a loser owes nothing');
+
+  const noRate = bet({ stakePence: 5000, odds: 3, commissionPct: 0 });
+  assert.equal(commissionDue(noRate, won, recompute(noRate, won, NOW)), null);
+
+  const voided = seqd(ev('void'));
+  assert.equal(commissionDue(b, voided, recompute(b, voided, NOW)), null, 'a void owes nothing');
+});
+
+test('commission comes off a part cash out on what that part actually won', () => {
+  // Half of £50.00 pulled back for £40.00 is £15.00 of net winnings on the
+  // half consumed, and 2% of that is 30 pence.
+  const b = bet({ stakePence: 5000, odds: 3, commissionPct: 2 });
+  const evs = seqd(
+    ev('cash_out_partial', { fractionEighths: 4, returnedPence: 4000 }),
+    ev('commission', { commissionPct: 2 }),
+  );
+  const s = recompute(b, evs, NOW);
+  assert.equal(s.realisedPlPence, 1500 - 30);
+});
+
 test('a promo refund landing a week later still lands', () => {
   const s = recompute(bet(), seqd(ev('lost'), ev('promo_refund', { returnedPence: 2500, afterResultKnown: true })), NOW);
   assert.equal(s.realisedPlPence, 0);
@@ -165,6 +245,69 @@ test('each way is two linked parts settling independently', () => {
   assert.equal(winState.realisedPlPence, -1250);
   assert.equal(placeState.realisedPlPence, 2500);
   assert.equal(winState.realisedPlPence + placeState.realisedPlPence, 1250);
+});
+
+test('a place is reported as PLACED, on both halves of a losing each way bet', () => {
+  /*  £10.00 each way at 4.00 on a fifth the odds, three places paid, and the
+   *  horse comes third of twelve.
+   *
+   *    win part    £10.00 at 4.00, loses            -£10.00
+   *    place part  £10.00 at 1.60, places      £16 back, +£6.00
+   *    the pair                                       -£4.00
+   *
+   *  That is the bet the ledger used to call Lost. The win part IS lost and
+   *  says so; the place part is a place, and it used to read Won because the
+   *  fold asked whether the money was positive instead of what happened. */
+  const group = 'ew-4';
+  const terms = 0.2;
+  const win = bet({
+    id: 'w', stakePence: 1000, odds: 4, shape: 'each_way', ewPart: 'win',
+    ewGroupId: group, isEachWay: true, ewPlaceFraction: terms, placesPaid: 3,
+  });
+  const place = bet({
+    id: 'p', stakePence: 1000, odds: Number((1 + (4 - 1) * terms).toFixed(3)),
+    shape: 'each_way', ewPart: 'place', ewGroupId: group, isEachWay: true,
+    ewPlaceFraction: terms, placesPaid: 3,
+  });
+  assert.equal(place.odds, 1.6, 'a fifth of 3.00 of net odds is 0.60 on top of the stake');
+
+  const winState = recompute(win, seqd({ ...ev('lost'), betId: 'w' }), NOW);
+  const placeState = recompute(place, seqd({ ...ev('placed'), betId: 'p' }), NOW);
+
+  assert.equal(winState.outcome, 'lost');
+  assert.equal(winState.realisedPlPence, -1000);
+  assert.equal(placeState.outcome, 'placed', 'a place read as won off the sign of the money');
+  assert.equal(placeState.returnedPence, 1600);
+  assert.equal(placeState.realisedPlPence, 600);
+  assert.equal(winState.realisedPlPence + placeState.realisedPlPence, -400, 'the pair is four pounds down');
+});
+
+test('a place that ends up out of pocket is still a place, not a loss', () => {
+  /*  The collapse this replaces was `realised >= 0 ? won : lost`, so the
+   *  moment anything took a place part below zero the ledger called it Lost.
+   *  A place is a fact about the race and the money is reported beside it. */
+  const place = bet({
+    stakePence: 1000, odds: 1.6, shape: 'each_way', ewPart: 'place',
+    isEachWay: true, ewPlaceFraction: 0.2, placesPaid: 3,
+  });
+  const s = recompute(place, seqd(
+    ev('placed'),
+    ev('manual_correction', { returnedPence: -700, afterResultKnown: true }),
+  ), NOW);
+  assert.equal(s.realisedPlPence, -100);
+  assert.equal(s.outcome, 'placed');
+});
+
+test('a place on an exchange pays commission on the place winnings only', () => {
+  const place = bet({
+    stakePence: 1000, odds: 1.6, shape: 'each_way', ewPart: 'place', isEachWay: true,
+    ewPlaceFraction: 0.2, placesPaid: 3, bookmakerId: 'smarkets', commissionPct: 2,
+  });
+  const evs = seqd(ev('placed'), ev('commission', { commissionPct: 2 }));
+  const s = recompute(place, evs, NOW);
+  // £6.00 of net winnings, 2% is 12 pence, and the place is still a place.
+  assert.equal(s.realisedPlPence, 588);
+  assert.equal(s.outcome, 'placed');
 });
 
 // ------------------------------------------------------------ free bets

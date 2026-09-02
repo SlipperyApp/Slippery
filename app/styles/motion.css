@@ -21,7 +21,7 @@
 .bgfield {
   position: fixed;
   inset: 0;
-  z-index: 0;
+  z-index: var(--z-background);
   overflow: hidden;
   pointer-events: none;
   contain: strict;
@@ -101,6 +101,18 @@
       the BOTTOM, where the footer's --t3 has to be readable
 
     Between them it is transparent, which is where the animation lives. */
+/*  THE RADIAL WAS THE FLATTENER. It laid 55% of the ground over everything
+    outside the middle 58%, which is exactly where the three blobs are: two
+    of them are anchored off the left and right edges. Measured with the
+    page content hidden, the field held a 31 level spread and the corners
+    were the darkest part of it, so the one place the drift was visible was
+    the one place the veil was heaviest.
+
+    It is gone. What the veil defends is unchanged and both halves stay: the
+    TOP, where the marketing header floats over the field, and the BOTTOM,
+    where the footer's --t3 has to be readable. The middle is transparent,
+    which is where the animation lives and where nothing sits directly on
+    the field anyway: every app surface between them is a card. */
 .bgfield__veil {
   position: absolute;
   inset: 0;
@@ -109,8 +121,27 @@
       color-mix(in oklab, var(--bg) 34%, transparent) 0%,
       transparent 16%,
       transparent 62%,
-      color-mix(in oklab, var(--bg) 78%, transparent) 100%),
-    radial-gradient(140% 110% at 50% 40%, transparent 0%, transparent 58%, color-mix(in oklab, var(--bg) 55%, transparent) 100%);
+      color-mix(in oklab, var(--bg) 78%, transparent) 100%);
+}
+
+/*  THE HORIZON. One wide accent wash across the top of the field, behind
+    the header, and the only decorative layer in the product that is not
+    also under a paragraph: the top 34% of the viewport on every route
+    carries a bar, a hero or a card, never body text on the field itself.
+    That is what makes it safe to be the brightest thing here.
+
+    It is what a dark product needs to stop reading as a flat sheet. Painted
+    once, never animated, and it takes the theme's light accent so the eight
+    palettes each get their own colour of light rather than eight shades of
+    the same grey. */
+.bgfield__horizon {
+  position: absolute;
+  left: -10%; right: -10%; top: 0;
+  height: 46vmax;
+  background: radial-gradient(60% 100% at 50% 0%,
+    color-mix(in oklab, var(--s) 13%, transparent) 0%,
+    color-mix(in oklab, var(--s) 5%, transparent) 42%,
+    transparent 76%);
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -158,7 +189,7 @@
 .slipword__glow {
   position: absolute;
   inset: 0;
-  z-index: -1;
+  z-index: var(--z-behind);
   color: var(--accent);
   opacity: 0.36;
   filter: blur(22px);
@@ -166,11 +197,21 @@
   user-select: none;
   -webkit-user-select: none;
 }
+/*  THE EMPHASISED WORD HAS TO BE THE BRIGHTEST ONE.
+ *
+ *  The gradient ran through --accent at 32%, and --accent is the SOLID
+ *  accent: on carbon it is #6E86B8 against ink at #E6EBF3. So the word the
+ *  whole headline turns on was measurably darker than the four words before
+ *  it, and the punchline read as the quiet part of the sentence. The accent
+ *  is still in it, at the far end where a gradient wants its weight, and the
+ *  light accent carries the rest. */
 .slipword__text {
   position: relative;
   background-image: linear-gradient(100deg,
-    var(--accent-2) 0%, var(--accent) 32%,
-    color-mix(in oklab, var(--accent) 58%, var(--ink)) 60%, var(--accent-2) 100%);
+    var(--ink) 0%,
+    var(--accent-2) 26%,
+    color-mix(in oklab, var(--accent-2) 62%, var(--accent)) 62%,
+    var(--accent-2) 100%);
   -webkit-background-clip: text;
           background-clip: text;
   color: transparent;
@@ -181,7 +222,7 @@
   inset: 0;
   overflow: hidden;          /* the sweep is clipped to the word's own box */
   pointer-events: none;
-  z-index: 1;
+  z-index: var(--z-content);
 }
 .slipword__sheen::after {
   content: '';
@@ -382,6 +423,109 @@ a.card:active, button.card:active, button.rowcard:active { transform: translateY
   to   { opacity: 1; transform: none; }
 }
 
+/* ------------------------------------------------------ the app arriving */
+/*  THE PRODUCT DID NOT MOVE. The brief asks for an app that feels alive and
+    the only motion inside /app was a spinner and the settlement lift: every
+    route appeared, fully formed, in one frame, which is the single clearest
+    difference between a screen that has been designed and a screen that has
+    been assembled.
+ *
+ *  Each block of a route rises into place, forty milliseconds apart. That is
+ *  short enough that it never delays a read and long enough that the eye
+ *  follows the page down rather than being handed it. Under App Router a
+ *  route change remounts these, so this is also the transition BETWEEN two
+ *  pages: there is no second mechanism and nothing to keep in step.
+ *
+ *  TRANSFORM ONLY, and this is the part that matters. An earlier entrance
+ *  elsewhere in this file faded from opacity 0, which meant anything the
+ *  animation had not reached yet was invisible: axe measured 46 calendar
+ *  figures at 1:1 and was right to. A sixteen pixel offset has no such
+ *  failure mode. If the animation never runs at all, every block is sixteen
+ *  pixels low and completely readable.
+ *
+ *  The delay is capped at the fifth block. A ledger is thirty elements deep
+ *  and a stagger that kept counting would have the last one waiting more
+ *  than a second for a page that has already loaded. */
+@keyframes lift-in {
+  from { transform: translate3d(0, 16px, 0); }
+  to   { transform: none; }
+}
+@media (prefers-reduced-motion: no-preference) {
+  /*  Not .main > * , for two separate reasons.
+   *
+   *  THE GRID is one child holding every module, so it would rise as a
+   *  single slab. It is skipped and its own children are staggered instead,
+   *  which is the row of modules arriving rather than the page.
+   *
+   *  THE FIXED LAYERS are children of .main only because the component that
+   *  owns them returns a fragment, and an animation on transform beats a
+   *  normal declaration: `to { transform: none }` with fill both wiped the
+   *  translate(-50%, -50%) that centres the bet sheet on a desktop, and the
+   *  sheet rendered with its top left corner at the middle of the screen and
+   *  the rest of it off the bottom right. Anything positioned against the
+   *  viewport is named here and is not part of the page arriving. */
+  .main > :not(.grid, .sheet, .sheet__scrim, .toast, .lbox, .lbox__scrim),
+  .main > .grid > * {
+    animation: lift-in 440ms var(--ease-out) both;
+  }
+  .main > :nth-child(2), .main > .grid > :nth-child(2) { animation-delay: 40ms; }
+  .main > :nth-child(3), .main > .grid > :nth-child(3) { animation-delay: 80ms; }
+  .main > :nth-child(4), .main > .grid > :nth-child(4) { animation-delay: 120ms; }
+  .main > :nth-child(n + 5), .main > .grid > :nth-child(n + 5) { animation-delay: 160ms; }
+
+  /*  A LIST FILLS IN. The rows of a ledger, a breakdown or a league arrive
+      as a run rather than as a block, which is what makes a long list read
+      as something being counted out. Twenty milliseconds and seven steps:
+      past seven the delay is the same for every row, so the tail of a
+      hundred row ledger does not wait for its own turn.
+
+      :not(.is-settling), because a settling row is already animating. The
+      two rules have identical specificity, so without the exclusion this
+      one wins on source order and takes the settlement lift off the one
+      moment in the product that is supposed to be felt. */
+  .brow:not(.is-settling), .brk__row {
+    animation: lift-in 320ms var(--ease-out) both;
+  }
+  .brow:nth-child(2), .brk__row:nth-child(2) { animation-delay: 20ms; }
+  .brow:nth-child(3), .brk__row:nth-child(3) { animation-delay: 40ms; }
+  .brow:nth-child(4), .brk__row:nth-child(4) { animation-delay: 60ms; }
+  .brow:nth-child(5), .brk__row:nth-child(5) { animation-delay: 80ms; }
+  .brow:nth-child(6), .brk__row:nth-child(6) { animation-delay: 100ms; }
+  .brow:nth-child(7), .brk__row:nth-child(7) { animation-delay: 120ms; }
+  .brow:nth-child(n + 8), .brk__row:nth-child(n + 8) { animation-delay: 140ms; }
+}
+
+/* ------------------------------------------------------- controls respond */
+/*  A press has to be felt. The buttons already lift under a pointer and
+    settle under a press; the things you navigate with did neither, so the
+    sidebar, the tab bar and every segmented strip were the only surfaces in
+    the product that took a click without acknowledging it. */
+.navrow, .seg__btn, .tab, .iconbtn, .icobtn {
+  transition:
+    background var(--dur-fast) var(--ease),
+    color var(--dur-fast) var(--ease),
+    transform 110ms var(--ease);
+}
+.navrow:active, .seg__btn:active, .iconbtn:active, .icobtn:active { transform: scale(0.975); }
+/*  The tab bar presses on the icon rather than the whole cell: scaling a
+    62px column scales the label with it, and a word that shrinks under a
+    thumb reads as the page having moved. */
+.tab:active .tab__icon { transform: scale(0.9); }
+.tab__icon { transition: transform 110ms var(--ease); }
+
+/*  The accent bar beside the page you are on grows out of the row rather
+    than appearing beside it. scaleY, so it costs no layout and the row it
+    marks does not move. */
+.navrow[aria-current='page']::before,
+.navlist .rowcard[aria-pressed='true']::before {
+  animation: bar-grow-y 260ms var(--ease-out) both;
+  transform-origin: 50% 50%;
+}
+@keyframes bar-grow-y {
+  from { transform: translateY(-50%) scaleY(0.2); opacity: 0; }
+  to   { transform: translateY(-50%) scaleY(1); opacity: 1; }
+}
+
 /* ------------------------------------------------------ between the pages */
 /*  One declaration, and only where the browser already knows how. The
     fallback is the navigation you had before. */
@@ -390,13 +534,28 @@ a.card:active, button.card:active, button.rowcard:active { transform: translateY
 }
 
 /* ------------------------------------------------------------- the switch */
-/*  Reduced motion is not "shorter". Everything above is off. */
+/*  Reduced motion is not "shorter". Everything above is off, and off means
+    the element sits where it belongs rather than where an animation would
+    have started it: none of these has a from-state that hides anything, so
+    `animation: none` is a full collapse and not a truncation. */
 @media (prefers-reduced-motion: reduce) {
   .sect > .wrap > *,
   .modmenu__pop:not([hidden]),
   .sheet__scrim,
-  .sheet { animation: none !important; }
+  .sheet,
+  .main > :not(.grid, .sheet, .sheet__scrim, .toast, .lbox, .lbox__scrim),
+  .main > .grid > *,
+  .brow, .brk__row,
+  .navrow[aria-current='page']::before,
+  .navlist .rowcard[aria-pressed='true']::before { animation: none !important; }
+  /*  The bar is drawn by the same rule that animates it, so switching the
+      animation off has to restore the transform the keyframes were carrying. */
+  .navrow[aria-current='page']::before,
+  .navlist .rowcard[aria-pressed='true']::before { transform: translateY(-50%); opacity: 1; }
   a.card, button.card, button.rowcard, .themecard { transition: none; }
+  .navrow, .seg__btn, .tab, .iconbtn, .icobtn, .tab__icon { transition: none; }
+  .navrow:active, .seg__btn:active, .iconbtn:active, .icobtn:active,
+  .tab:active .tab__icon { transform: none; }
 }
 
 /* ============================================== waiting, and saying so

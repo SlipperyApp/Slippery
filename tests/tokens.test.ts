@@ -74,3 +74,55 @@ test('every theme block defines the same set of properties', () => {
   }
   assert.deepEqual(gaps, []);
 });
+
+/*  EVERY Z-INDEX IS A NAMED TIER.
+ *
+ *  There were thirteen raw numbers across five stylesheets and not one of
+ *  them was wrong, which is the problem: each was chosen against whatever it
+ *  happened to sit near, so nothing in the codebase said whether the sticky
+ *  call to action was meant to be under the header or the header over the
+ *  toast. A stacking bug does not announce itself in a build or a type check.
+ *  It announces itself as one element under another on one device.
+ *
+ *  This is the rule that keeps it true. A raw number added later is a tier
+ *  nobody named. */
+test('no stylesheet sets a z-index to a raw number', () => {
+  const raw: string[] = [];
+  for (const { file, text } of sources) {
+    text.replace(/\/\*[\s\S]*?\*\//g, (m) => m.replace(/[^\n]/g, ' '))
+      .split('\n')
+      .forEach((line, i) => {
+        if (/z-index\s*:\s*-?\d/.test(line)) raw.push(`${file}:${i + 1} ${line.trim()}`);
+      });
+  }
+  assert.deepEqual(raw, [], raw.join('\n'));
+});
+
+test('the scale is ordered, and the order is the one the product needs', () => {
+  /*  Asserted as an order rather than as values, because the values are
+   *  spaced to leave room and the spacing is allowed to change. What may not
+   *  change is which tier sits over which: a sheet over its own scrim, a
+   *  toast over an open sheet, and the skip link over everything. */
+  const tokens = readFileSync(new URL('tokens.css', STYLES), 'utf8');
+  const value = (name: string) => {
+    const m = new RegExp(`${name}\\s*:\\s*(-?\\d+)`).exec(tokens);
+    assert.ok(m, `${name} is not defined`);
+    return Number(m![1]);
+  };
+  const order = ['--z-behind', '--z-background', '--z-content', '--z-sticky',
+    '--z-header', '--z-overlay', '--z-sheet', '--z-toast'];
+  const values = order.map(value);
+  for (let i = 1; i < values.length; i++) {
+    assert.ok(values[i] > values[i - 1], `${order[i]} must sit over ${order[i - 1]}`);
+  }
+  assert.ok(values[0] < 0, 'behind has to be behind its own box');
+});
+
+test('every named tier is actually used, and nothing reads one that is not defined', () => {
+  // A tier nobody uses is a name somebody will invent a second meaning for.
+  const all = sources.map((s) => s.text).join('\n');
+  for (const name of ['--z-behind', '--z-background', '--z-content', '--z-sticky',
+    '--z-header', '--z-overlay', '--z-sheet', '--z-toast']) {
+    assert.ok(new RegExp(`var\\(${name}\\)`).test(all), `${name} is defined and never used`);
+  }
+});

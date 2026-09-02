@@ -25,6 +25,22 @@ import { useTheme } from '@/components/ThemeProvider';
 
 const REDUCED = '(prefers-reduced-motion: reduce)';
 
+/*  WHERE THE SCREEN'S EDGES FALL INSIDE THE GRADIENT, and why both ends of
+ *  every gradient below are transparent at them.
+ *
+ *  The field is drawn 34% oversize on each side so the tilt does not leave
+ *  the corners bare, so the canvas runs from x0 = -0.34w to x1 = 1.34w and
+ *  the visible strip is the middle: p = 0.34/1.68 = 0.202 at the left edge
+ *  of the screen and 1.34/1.68 = 0.798 at the right.
+ *
+ *  The brightest stop used to sit at 0.86, which is off the right of the
+ *  screen, so the ribbon was at very nearly full strength where the viewport
+ *  cut it. A dozen evenly spaced hairlines ending in a hard vertical line
+ *  read as moire, not as cloth. Both ends now reach zero at the edges the
+ *  reader can actually see, and the peak moves inboard to 0.68. */
+const EDGE_L = 0.202;
+const EDGE_R = 0.798;
+
 export function WaveField() {
   const ref = useRef<HTMLCanvasElement>(null);
   const { theme } = useTheme();
@@ -137,8 +153,10 @@ export function WaveField() {
         const g2 = ctx.createLinearGradient(x0, 0, x1, 0);
         const a2 = 0.052 * near;
         g2.addColorStop(0, `rgba(${ar},${ag},${ab},0)`);
-        g2.addColorStop(0.45, `rgba(${ar},${ag},${ab},${(a2 * 0.5).toFixed(4)})`);
-        g2.addColorStop(0.82, `rgba(${ar},${ag},${ab},${a2.toFixed(4)})`);
+        g2.addColorStop(EDGE_L, `rgba(${ar},${ag},${ab},0)`);
+        g2.addColorStop(0.56, `rgba(${ar},${ag},${ab},${(a2 * 0.55).toFixed(4)})`);
+        g2.addColorStop(0.68, `rgba(${ar},${ag},${ab},${a2.toFixed(4)})`);
+        g2.addColorStop(EDGE_R, `rgba(${ar},${ag},${ab},0)`);
         g2.addColorStop(1, `rgba(${ar},${ag},${ab},0)`);
         ctx.fillStyle = g2;
         ctx.fill();
@@ -189,9 +207,11 @@ export function WaveField() {
         ctx.lineWidth = 0.8 + env * 1.15;
         const g = ctx.createLinearGradient(x0, 0, x1, 0);
         g.addColorStop(0, `rgba(${ar},${ag},${ab},0)`);
-        g.addColorStop(0.3, `rgba(${ar},${ag},${ab},${(a * 0.18).toFixed(4)})`);
-        g.addColorStop(0.62, `rgba(${ar},${ag},${ab},${(a * 0.7).toFixed(4)})`);
-        g.addColorStop(0.86, `rgba(${ar},${ag},${ab},${a.toFixed(4)})`);
+        g.addColorStop(EDGE_L, `rgba(${ar},${ag},${ab},0)`);
+        g.addColorStop(0.42, `rgba(${ar},${ag},${ab},${(a * 0.22).toFixed(4)})`);
+        g.addColorStop(0.60, `rgba(${ar},${ag},${ab},${(a * 0.78).toFixed(4)})`);
+        g.addColorStop(0.68, `rgba(${ar},${ag},${ab},${a.toFixed(4)})`);
+        g.addColorStop(EDGE_R, `rgba(${ar},${ag},${ab},0)`);
         g.addColorStop(1, `rgba(${ar},${ag},${ab},0)`);
         ctx.strokeStyle = g;
         ctx.stroke();

@@ -1,13 +1,14 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
+import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { Icon } from '@/components/Icon';
 import { useTheme } from '@/components/ThemeProvider';
 import { THEMES } from '@/lib/themes';
-import { NOTIFICATIONS, NEVER_SENT, type SettingsGroup } from '@/lib/data/settings';
-import { ALL_BOOKMAKERS, MARKET_GROUPS } from '@/lib/data/reference';
-import { money, units as fmtUnits } from '@/lib/format';
+import { NOTIFICATIONS, NEVER_SENT, SHARING_SWITCHES, type SettingsGroup } from '@/lib/data/settings';
+import { ALL_BOOKMAKERS, MARKET_GROUPS, TIME_ZONES } from '@/lib/data/reference';
+import { money, units as fmtUnits, timeOfDay, dayKey, longDate } from '@/lib/format';
 import { formatOdds } from '@/lib/odds';
 import type { Currency } from '@/lib/domain/types';
 
@@ -16,20 +17,45 @@ type Account = {
   unitPence: number; currency: Currency; weekStart: 0 | 1;
   oddsFormat: 'decimal' | 'fractional' | 'american';
   showProfitIn: 'currency' | 'units' | 'both';
-  calendarDates: boolean; bankrollStartPence: number;
+  calendarDates: boolean; balanceStartPence: number; timeZone: string;
+  /** What the switches are actually set to, resolved by the repository
+   *  against the lists in lib/data/settings.ts. The panes used to hold their
+   *  own copy and nothing else, so a reload put every one of them back. */
+  notifications: Record<string, boolean>;
+  sharing: Record<string, boolean>;
+  onBreak: boolean;
 };
 
 /** Six groups, each opening a detail pane. Every control changes something
  *  visible on this page, so none of them is a preference nothing reads. */
 export function SettingsPanes({ groups, account }: { groups: SettingsGroup[]; account: Account }) {
-  /*  OPEN ON ARRIVAL, not empty.
-      Landing on Settings showed six cards and a read only summary, so
-      changing your unit was two clicks and the first one only revealed that
-      a control existed. Twenty settings do not need a browse step: the first
-      group is open and its controls are on screen, and the cards beside it
-      still switch between them. The pane is collapsible, so somebody who
-      wants the overview can still close it. */
-  const [open, setOpen] = useState<string | null>(groups[0]?.id ?? null);
+  /*  THE OPEN PANE IS IN THE URL.
+      It was useState only, so no pane was linkable, the back button did not
+      undo a pane switch and a refresh lost it. That is a bug you feel most
+      from /app/you, where six rows named Account, Betting, Data, Sharing,
+      Organising and About all pointed at a bare /app/settings and therefore
+      all opened Account: five of six named links went somewhere else.
+
+      replaceState rather than a router push, because switching a pane is
+      not a navigation to be undone one at a time; the history entry is the
+      settings page, and the pane rides on it. */
+  const params = useSearchParams();
+  const wanted = params?.get('pane') ?? null;
+  const valid = groups.some((g) => g.id === wanted) ? wanted : null;
+  const [open, setOpen] = useState<string | null>(valid ?? groups[0]?.id ?? null);
+
+  useEffect(() => {
+    if (valid && valid !== open) setOpen(valid);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [valid]);
+
+  const show = (id: string | null) => {
+    setOpen(id);
+    if (typeof window === 'undefined') return;
+    const url = new URL(window.location.href);
+    if (id) url.searchParams.set('pane', id); else url.searchParams.delete('pane');
+    window.history.replaceState(null, '', url);
+  };
   const { theme, setTheme } = useTheme();
 
   const [unitPence, setUnitPence] = useState(account.unitPence);
@@ -38,8 +64,10 @@ export function SettingsPanes({ groups, account }: { groups: SettingsGroup[]; ac
   const [showProfitIn, setShowProfitIn] = useState(account.showProfitIn);
   const [weekStart, setWeekStart] = useState<0 | 1>(account.weekStart);
   const [calendarDates, setCalendarDates] = useState(account.calendarDates);
-  const [notifs, setNotifs] = useState(() => Object.fromEntries(NOTIFICATIONS.map((n) => [n.id, n.on])));
-  const [onBreak, setOnBreak] = useState(false);
+  const [timeZone, setTimeZone] = useState(account.timeZone);
+  const [notifs, setNotifs] = useState(account.notifications);
+  const [sharing, setSharing] = useState<Record<string, boolean>>(account.sharing);
+  const [onBreak, setOnBreak] = useState(account.onBreak);
   const [typed, setTyped] = useState('');
   const [danger, setDanger] = useState<'reset' | 'delete' | null>(null);
   const [saved, setSaved] = useState('');
@@ -53,6 +81,21 @@ export function SettingsPanes({ groups, account }: { groups: SettingsGroup[]; ac
     setSaved(res && res.ok ? `${label} saved.` : `${label} changed here. Signed in, it saves to your account.`);
   }
 
+  /*  The zone is the one setting whose effect is invisible until a bet
+      lands on the wrong day, so the pane shows the clock it produces. It is
+      rendered from a state the client sets after mount rather than at module
+      scope: the server's clock and the browser's differ by however long the
+      page sat in a cache, and a wrong time under a time zone control is the
+      one place that cannot be shrugged at. */
+  const [tick, setTick] = useState<Date | null>(null);
+  useEffect(() => {
+    setTick(new Date());
+    const t = setInterval(() => setTick(new Date()), 30_000);
+    return () => clearInterval(t);
+  }, []);
+  const clock = tick ? timeOfDay(tick, timeZone) : '--:--';
+  const clockDay = tick ? longDate(dayKey(tick, timeZone) + 'T12:00:00Z', 'UTC') : 'today';
+
   const sampleProfit = 900;
   const profitPreview = showProfitIn === 'units'
     ? fmtUnits(sampleProfit / unitPence, { sign: true })
@@ -62,7 +105,16 @@ export function SettingsPanes({ groups, account }: { groups: SettingsGroup[]; ac
 
   return (
     <div className="grid">
-      <div className="col-4" style={{ display: 'grid', gap: 'var(--s2)', alignContent: 'start' }}>
+      {/*  One list, not six cards. Six separately bordered boxes stacked with
+           gaps between them is the shape of six unrelated things; these are
+           six sections of one screen. The selected state is a filled row and
+           a bar on the leading edge, which is what the sidebar already does
+           with the same job, rather than a second border in the accent.
+
+           The open state is read from aria-pressed in the stylesheet rather
+           than written inline, because an inline style beats every rule in
+           floors.css and there is no way to override one later. */}
+      <div className="col-4 navlist">
         {groups.map((g) => (
           <button
             key={g.id}
@@ -71,11 +123,7 @@ export function SettingsPanes({ groups, account }: { groups: SettingsGroup[]; ac
             aria-pressed={open === g.id}
             aria-controls="settings-pane"
             aria-expanded={open === g.id}
-            onClick={() => setOpen(open === g.id ? null : g.id)}
-            style={{
-              cursor: 'pointer', textAlign: 'left', width: '100%',
-              ...(open === g.id ? { borderColor: 'var(--accent)', background: 'color-mix(in oklab, var(--accent) 8%, var(--surface))' } : {}),
-            }}
+            onClick={() => show(open === g.id ? null : g.id)}
           >
             <Icon name={g.icon} size={20} className="rowcard__i" />
             <span className="grow">
@@ -101,6 +149,7 @@ export function SettingsPanes({ groups, account }: { groups: SettingsGroup[]; ac
               <li className="brow"><span className="brow__title">A profit of {money(sampleProfit, currency)} reads as</span><span className="fig fig--s tnum">{profitPreview}</span></li>
               <li className="brow"><span className="brow__title">A price of 1.90 reads as</span><span className="fig fig--s mono">{formatOdds(1.9, oddsFormat)}</span></li>
               <li className="brow"><span className="brow__title">Week starts</span><span className="fig fig--s">{weekStart === 1 ? 'Monday' : 'Sunday'}</span></li>
+              <li className="brow"><span className="brow__title">A day ends at midnight in</span><span className="fig fig--s">{TIME_ZONES.find((z) => z.id === timeZone)?.label ?? timeZone}</span></li>
               <li className="brow"><span className="brow__title">Theme</span><span className="fig fig--s">{THEMES.find((t) => t.name === theme)?.label}</span></li>
             </ul>
           </div>
@@ -223,9 +272,31 @@ export function SettingsPanes({ groups, account }: { groups: SettingsGroup[]; ac
               </p>
             </fieldset>
 
+            <div className="field" style={{ marginTop: 'var(--s4)' }}>
+              <label className="field__label" htmlFor="st-tz">Time zone</label>
+              {/*  A SELECT, not a segmented control: fourteen options is a
+                   list, and the list is short because it is the places a UK
+                   or Irish account holder actually reads a ledger from
+                   rather than the whole IANA database. */}
+              <select
+                id="st-tz" className="select" value={timeZone}
+                onChange={(e) => { setTimeZone(e.target.value); save({ timeZone: e.target.value }, 'Time zone'); }}
+              >
+                {TIME_ZONES.map((z) => (
+                  <option key={z.id} value={z.id}>{z.label}</option>
+                ))}
+              </select>
+              <span className="field__hint">
+                Every day boundary uses this: the calendar, Today, the month a bet counts
+                towards and the period totals. Right now it is{' '}
+                <span className="mono tnum">{clock}</span> on {clockDay} where you are.
+                A bet placed at 23:40 belongs to the day it is 23:40 on here, not on the server.
+              </span>
+            </div>
+
             <div className="switchrow" style={{ marginTop: 'var(--s4)' }}>
               <span style={{ minWidth: 0 }}>
-                <span className="brow__title" style={{ display: 'block' }}>Date numbers on the calendar</span>
+                <span className="brow__title">Date numbers on the calendar</span>
                 <span className="brow__sub">Off leaves the colour and nothing else.</span>
               </span>
               <button type="button" className="switch" aria-pressed={calendarDates}
@@ -260,10 +331,15 @@ export function SettingsPanes({ groups, account }: { groups: SettingsGroup[]; ac
               Deleted 90 days after upload, or immediately if you ask. The bet stays and the gallery
               says the image was removed rather than showing a broken thumbnail.
             </p>
-            <button type="button" className="btn btn--ghost btn--sm" style={{ marginTop: 'var(--s3)' }}
-              onClick={() => save({ purgeImages: true }, 'Image purge')}>
-              Delete every slip image now
-            </button>
+            <div className="row row--wrap" style={{ gap: 'var(--s2)', marginTop: 'var(--s3)' }}>
+              <Link href="/app/gallery" className="btn btn--ghost btn--sm">
+                <Icon name="camera" size={15} /> See your slips
+              </Link>
+              <button type="button" className="btn btn--ghost btn--sm"
+                onClick={() => save({ purgeImages: true }, 'Image purge')}>
+                Delete every slip image now
+              </button>
+            </div>
 
             <div className="hr hr--strong" />
             <p className="label neg">Destructive</p>
@@ -304,20 +380,34 @@ export function SettingsPanes({ groups, account }: { groups: SettingsGroup[]; ac
               Outside a group, only units are visible, never stakes. Inside a group, members see
               each other&rsquo;s unit size, and that cannot be turned off while you are a member.
             </p>
-            {[
-              ['Profile visible to other Slippers', 'Your units, your slip backed percentage and your groups.'],
-              ['Anybody can follow you', 'Off means a follow is a request.'],
-              ['Show my late edits in groups', 'A group can require this anyway.'],
-            ].map(([t, s]) => (
-              <div key={t} className="switchrow">
+            {/*  Every one of these was hardcoded to on, including the one
+                 that discloses an open bet to strangers. A switch that
+                 renders pressed whatever the account says is not a control,
+                 it is a picture of one, and this is the pane where that
+                 matters most: tracking is opt in and starts off. */}
+            {SHARING_SWITCHES.map((sw) => (
+              <div key={sw.id} className="switchrow">
                 <span style={{ minWidth: 0 }}>
-                  <span className="brow__title" style={{ display: 'block' }}>{t}</span>
-                  <span className="brow__sub">{s}</span>
+                  <span className="brow__title" style={{ display: 'block' }}>{sw.label}</span>
+                  <span className="brow__sub">{sw.note}</span>
                 </span>
-                <button type="button" className="switch" aria-pressed
-                  aria-label={`${t}: on`} onClick={() => save({ sharing: t }, 'Sharing')} />
+                <button
+                  type="button"
+                  className="switch"
+                  aria-pressed={sharing[sw.id]}
+                  aria-label={`${sw.label}: ${sharing[sw.id] ? 'on' : 'off'}`}
+                  onClick={() => {
+                    const next = !sharing[sw.id];
+                    setSharing({ ...sharing, [sw.id]: next });
+                    save({ sharing: sw.id, on: next }, 'Sharing');
+                  }}
+                />
               </div>
             ))}
+            {saved ? <p className="small muted" role="status" style={{ marginTop: 'var(--s3)' }}>{saved}</p> : null}
+            <p className="small dim card__foot">
+              Nothing here can be turned on for you by a group, and nothing here shows a stake.
+            </p>
           </div>
         ) : null}
 
@@ -329,7 +419,7 @@ export function SettingsPanes({ groups, account }: { groups: SettingsGroup[]; ac
               {ALL_BOOKMAKERS.slice(0, 8).map((b) => (
                 <li key={b.id} className="brow">
                   <span style={{ minWidth: 0 }}>
-                    <span className="brow__title" style={{ display: 'block' }}>{b.name}</span>
+                    <span className="brow__title">{b.name}</span>
                     <span className="brow__sub">
                       {b.group} · {b.handicapStyle === 'asian' ? 'Asian handicaps, a whole line pushes' : 'European handicaps, the handicap draw is its own outcome'}
                     </span>
@@ -386,7 +476,7 @@ export function SettingsPanes({ groups, account }: { groups: SettingsGroup[]; ac
             {NOTIFICATIONS.map((n) => (
               <div key={n.id} className="switchrow">
                 <span style={{ minWidth: 0 }}>
-                  <span className="brow__title" style={{ display: 'block' }}>{n.label}</span>
+                  <span className="brow__title">{n.label}</span>
                   {n.note ? <span className="brow__sub">{n.note}</span> : null}
                 </span>
                 <button
@@ -394,15 +484,29 @@ export function SettingsPanes({ groups, account }: { groups: SettingsGroup[]; ac
                   aria-label={`${n.label}: ${notifs[n.id] ? 'on' : 'off'}${n.locked ? ', locked on' : ''}`}
                   disabled={n.locked}
                   style={n.locked ? { cursor: 'not-allowed', borderStyle: 'dashed' } : undefined}
-                  onClick={() => setNotifs({ ...notifs, [n.id]: !notifs[n.id] })}
+                  /*  A REAL SAVE. This called setNotifs and nothing else: no
+                       request, no persistence, and a reload put all seven
+                       back. DECISIONS.md records the same defect being found
+                       on the sharing switches one pane away, with the line
+                       "That is a picture of a control, not a control". */
+                  onClick={() => {
+                    const next = !notifs[n.id];
+                    setNotifs({ ...notifs, [n.id]: next });
+                    save({ notification: n.id, on: next }, n.label);
+                  }}
                 />
               </div>
             ))}
+            {saved ? <p className="small muted" role="status" style={{ marginTop: 'var(--s3)' }}>{saved}</p> : null}
             <p className="label" style={{ marginTop: 'var(--s5)' }}>Never sent, whatever you switch on</p>
+            {/*  The mark on these rows is readmark--gap, not the loss colour.
+                 Every line of this list is a promise that a message is never
+                 sent, which is a good thing, and red two panes away means a
+                 card was declined. */}
             <ul style={{ marginTop: 'var(--s2)' }}>
               {NEVER_SENT.map((t) => (
                 <li key={t} className="checkitem" style={{ padding: '5px 0' }}>
-                  <Icon name="close" size={14} style={{ color: 'var(--neg)' }} />
+                  <Icon name="close" size={14} className="readmark readmark--gap" />
                   <span>{t}</span>
                 </li>
               ))}

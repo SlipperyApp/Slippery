@@ -4,7 +4,9 @@ import { verifyStripeSignature, planStateAfterFailure, accountRoutes } from '@/l
 import { verifySecret, callbackData, PREFIX } from '@/lib/server/telegram';
 import { authoriseCron } from '@/lib/server/cron';
 import { createHmac } from 'node:crypto';
-import { ENV_NAMES, capabilities, emailCredentials } from '@/lib/server/env';
+import { ENV_NAMES, appPasswordShaped, capabilities, emailCredentials, read } from '@/lib/server/env';
+import { emailHealth, smtpSettings } from '@/lib/server/mail';
+import { bareAddress } from '@/lib/server/codes';
 
 // ------------------------------------------------------------- telegram
 
@@ -211,4 +213,128 @@ test('either set of email variable names works, and the explicit one wins', () =
   } finally {
     set(saved as Record<typeof keys[number], string | undefined>);
   }
+});
+
+// ----------------------------------------------------- the Gmail credential
+
+/*  Placeholders throughout. "abcd efgh ijkl mnop" is the SHAPE of a Google
+ *  App Password and is not one: sixteen lowercase letters in four groups. The
+ *  repository is public and GitHub's scanner revokes what it finds. */
+const EMAIL_KEYS = ['EMAIL_API_KEY', 'EMAIL_FROM', 'EMAIL_SMTP_HOST', 'EMAIL_SMTP_PORT', 'GMAIL_USER', 'GMAIL_APP_PASSWORD', 'MAIL_FROM'] as const;
+
+function withEmailEnv<T>(vars: Partial<Record<typeof EMAIL_KEYS[number], string>>, fn: () => T): T {
+  const saved = Object.fromEntries(EMAIL_KEYS.map((k) => [k, process.env[k]]));
+  for (const k of EMAIL_KEYS) delete process.env[k];
+  Object.assign(process.env, vars);
+  try {
+    return fn();
+  } finally {
+    for (const k of EMAIL_KEYS) delete process.env[k];
+    for (const [k, v] of Object.entries(saved)) if (v !== undefined) process.env[k] = v;
+  }
+}
+
+test('the spaces Google prints an app password with are stripped, and nothing else is', () => {
+  /*  Google's dialog shows the password in four groups of four and copying
+   *  what is on the screen is the obvious thing to do. Gmail then answers
+   *  535 5.7.8 to it, because the spaces are presentation. An evening lost to
+   *  a refusal that names no cause.
+   *
+   *  Narrow on purpose: only a value that is exactly sixteen lowercase
+   *  letters in four groups is touched, so a real passphrase for some other
+   *  SMTP host keeps every character it was given. */
+  withEmailEnv({ GMAIL_USER: 'account@example.com', GMAIL_APP_PASSWORD: 'abcd efgh ijkl mnop' }, () => {
+    assert.equal(emailCredentials()!.key, 'abcdefghijklmnop');
+    assert.equal(appPasswordShaped(), true);
+  });
+  withEmailEnv({ GMAIL_USER: 'account@example.com', GMAIL_APP_PASSWORD: 'abcdefghijklmnop' }, () => {
+    assert.equal(emailCredentials()!.key, 'abcdefghijklmnop');
+  });
+  // Not app password shaped: five groups, digits, a real passphrase.
+  for (const kept of ['abcd efgh ijkl mnop qrst', 'ab cd ef gh', 'correct horse battery staple', 'a b']) {
+    withEmailEnv({ GMAIL_USER: 'account@example.com', GMAIL_APP_PASSWORD: kept }, () => {
+      assert.equal(emailCredentials()!.key, kept, `${kept} must survive untouched`);
+      assert.equal(appPasswordShaped(), false);
+    });
+  }
+});
+
+test('a variable pasted with a trailing newline still works', () => {
+  /*  read() tested trim() for emptiness and then returned the untrimmed
+   *  value. A newline on EMAIL_FROM is a header injection refusal on every
+   *  send and a newline on EMAIL_SMTP_HOST is a name that never resolves,
+   *  and neither error mentions whitespace. */
+  withEmailEnv({ GMAIL_USER: ' account@example.com\n', GMAIL_APP_PASSWORD: 'abcdefghijklmnop\n', EMAIL_SMTP_HOST: 'smtp.example.com\n' }, () => {
+    const c = emailCredentials()!;
+    assert.equal(c.user, 'account@example.com');
+    assert.equal(c.key, 'abcdefghijklmnop');
+    assert.equal(read('EMAIL_SMTP_HOST'), 'smtp.example.com');
+  });
+});
+
+test('a From carrying a display name gives a username that can authenticate', () => {
+  /*  MAIL_FROM is exactly the variable somebody sets to `Slippery <post@...>`.
+   *  That is a correct From header and a username that authenticates as
+   *  nobody, and an envelope Gmail answers 555 to. */
+  withEmailEnv({ MAIL_FROM: 'Slippery <post@example.com>', GMAIL_APP_PASSWORD: 'abcdefghijklmnop' }, () => {
+    const c = emailCredentials()!;
+    assert.equal(c.from, 'Slippery <post@example.com>', 'the header keeps the display name');
+    assert.equal(c.user, 'post@example.com', 'the username does not');
+  });
+  assert.equal(bareAddress('Slippery <post@example.com>'), 'post@example.com');
+  assert.equal(bareAddress('post@example.com'), 'post@example.com');
+  assert.equal(bareAddress('  post@example.com  '), 'post@example.com');
+});
+
+test('the SMTP defaults are Gmail, and a nonsense port does not become NaN', () => {
+  withEmailEnv({}, () => assert.deepEqual(smtpSettings(), { host: 'smtp.gmail.com', port: 465, tls: 'implicit' }));
+  withEmailEnv({ EMAIL_SMTP_PORT: '587' }, () => assert.equal(smtpSettings().tls, 'starttls'));
+  for (const junk of ['', 'yes', '0', '-1', '70000', '465.5']) {
+    withEmailEnv({ EMAIL_SMTP_PORT: junk }, () => {
+      assert.equal(smtpSettings().port, 465, `${JSON.stringify(junk)} must fall back rather than connect to NaN`);
+    });
+  }
+});
+
+test('the email health report is booleans and never a value', () => {
+  /*  It is served by GET /api/sources on a public deployment. The rule there
+   *  is absolute, so it is asserted against the actual values rather than
+   *  read off the field names. */
+  const values = {
+    EMAIL_SMTP_HOST: 'smtp.private.example',
+    EMAIL_SMTP_PORT: '2525',
+    GMAIL_USER: 'account@example.com',
+    GMAIL_APP_PASSWORD: 'abcdefghijklmnop',
+    MAIL_FROM: 'Slippery <post@slippery.example>',
+  };
+  withEmailEnv(values, () => {
+    const health = emailHealth();
+    const json = JSON.stringify(health);
+    for (const v of Object.values(values)) {
+      assert.ok(!json.includes(v), `${v} reached the health report`);
+    }
+    for (const [k, v] of Object.entries(health)) {
+      if (k === 'transport') { assert.ok(['smtp', 'resend', 'none'].includes(v as string)); continue; }
+      assert.equal(typeof v, 'boolean', `${k} is not a boolean`);
+    }
+    assert.equal(health.configured, true);
+    assert.equal(health.transport, 'smtp');
+    assert.equal(health.gmailHost, false, 'EMAIL_SMTP_HOST is set, so this is not Gmail');
+    assert.equal(health.knownPort, false, '2525 is not one of the three ports this client speaks on');
+    assert.equal(health.fromIsAccount, false, 'the From is a different address to the account');
+    assert.equal(health.appPasswordShaped, true);
+  });
+
+  withEmailEnv({}, () => {
+    const health = emailHealth();
+    assert.equal(health.configured, false);
+    assert.equal(health.transport, 'none');
+    assert.equal(health.gmailHost, true, 'unset means Gmail');
+    assert.equal(health.implicitTls, true);
+    assert.equal(health.appPasswordShaped, false);
+  });
+
+  withEmailEnv({ GMAIL_USER: 'account@example.com', GMAIL_APP_PASSWORD: 'abcdefghijklmnop' }, () => {
+    assert.equal(emailHealth().fromIsAccount, true, 'no MAIL_FROM means the account is the sender');
+  });
 });

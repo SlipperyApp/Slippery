@@ -19,6 +19,9 @@ export function Background() {
         <div className="bgfield__blob bgfield__blob--c" />
       </div>
       <div className="bgfield__veil" />
+      {/*  Over the veil, not under it: the veil's top stop is what keeps the
+           header legible and the horizon is the light the header sits in. */}
+      <div className="bgfield__horizon" />
     </div>
   );
 }

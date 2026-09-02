@@ -1,9 +1,10 @@
 'use client';
 
 import { useMemo, useState } from 'react';
+import { FollowButton } from '@/components/app/FollowButton';
 import Link from 'next/link';
 import { Icon } from '@/components/Icon';
-import { initials, units as fmtUnits } from '@/lib/format';
+import { initials, plural, units as fmtUnits } from '@/lib/format';
 import type { GroupSummary, Slipper } from '@/lib/data/social';
 
 type Sort = 'popular' | 'newest' | 'az';
@@ -33,7 +34,7 @@ export function Discover({ groups, people }: { groups: GroupSummary[]; people: S
       !term || p.name.toLowerCase().includes(term) || p.handle.includes(term));
     if (sort === 'az') return [...list].sort((a, b) => a.name.localeCompare(b.name));
     if (sort === 'newest') return [...list].sort((a, b) => b.joined.localeCompare(a.joined));
-    return [...list].sort((a, b) => b.bets - a.bets);
+    return [...list].sort((a, b) => b.all.bets - a.all.bets);
   }, [people, term, sort]);
 
   return (
@@ -70,19 +71,26 @@ export function Discover({ groups, people }: { groups: GroupSummary[]; people: S
                     <span style={{ minWidth: 0 }}>
                       <Link href={`/app/social/group?id=${g.id}`} className="brow__title" style={{ textDecoration: 'none' }}>{g.name}</Link>
                       <span className="brow__sub" style={{ display: 'block' }}>
-                        {g.members} Slippers · {g.division} · {g.joinMode === 'open' ? 'open to anyone' : g.joinMode === 'code' ? 'by invite code' : 'approval needed'}
+                        {plural(g.members, 'Slipper')} · {g.division} · {g.joinMode === 'open' ? 'open to anyone' : g.joinMode === 'code' ? 'by invite code' : 'approval needed'}
                       </span>
-                      <span className="brow__sub" style={{ display: 'block' }}>{g.blurb}</span>
+                      <span className="brow__sub">{g.blurb}</span>
                     </span>
-                    <button
-                      type="button"
-                      className={`btn btn--sm ${isJoined ? 'btn--ghost' : 'btn--primary'}`}
-                      aria-pressed={isJoined}
-                      onClick={() => setJoined(isJoined ? joined.filter((x) => x !== g.id) : [...joined, g.id])}
-                    >
-                      <Icon name={isJoined ? 'check' : 'plus'} size={15} />
-                      {isJoined ? 'Requested' : g.joinMode === 'approval' ? 'Ask to join' : 'Join'}
-                    </button>
+                    {g.youAreIn ? (
+                      /*  A Join button on a group you are already in is the
+                          same defect the people list had with a Follow
+                          button beside your own account. */
+                      <span className="pill">In it</span>
+                    ) : (
+                      <button
+                        type="button"
+                        className={`btn btn--sm ${isJoined ? 'btn--ghost' : 'btn--primary'}`}
+                        aria-pressed={isJoined}
+                        onClick={() => setJoined(isJoined ? joined.filter((x) => x !== g.id) : [...joined, g.id])}
+                      >
+                        <Icon name={isJoined ? 'check' : 'plus'} size={15} />
+                        {isJoined ? (g.joinMode === 'approval' ? 'Requested' : 'Joined') : g.joinMode === 'approval' ? 'Ask to join' : 'Join'}
+                      </button>
+                    )}
                   </li>
                 );
               })}
@@ -93,18 +101,30 @@ export function Discover({ groups, people }: { groups: GroupSummary[]; people: S
             <p className="small dim">No Slipper matches that.</p>
           ) : (
             <ul>
+              {/*  EVERY GROUP ROW HAD A JOIN AND NOT ONE PERSON ROW HAD A
+                   FOLLOW. Discovery that ends in a profile you then have to
+                   act on is one hop longer than discovery that ends in the
+                   action, and the two halves of the same screen behaving
+                   differently is the part that reads as unfinished. */}
               {shownPeople.map((p) => (
-                <li key={p.handle} className="brow" style={{ gridTemplateColumns: '30px minmax(0,1fr) auto', gap: 'var(--s3)' }}>
+                <li key={p.handle} className="brow" style={{ gridTemplateColumns: '30px minmax(0,1fr) auto auto', gap: 'var(--s3)' }}>
                   <span className="avatar" aria-hidden="true">{initials(p.name)}</span>
                   <span style={{ minWidth: 0 }}>
                     <Link href={`/app/social/person?handle=${p.handle}`} className="brow__title" style={{ textDecoration: 'none' }}>{p.name}</Link>
                     <span className="brow__sub" style={{ display: 'block' }}>
-                      <span className="mono">@{p.handle}</span> · {p.slipBackedPct}% slip backed · {p.bets} bets
+                      <span className="mono">@{p.handle}</span> · {p.slipBackedPct}% slip backed · {plural(p.all.bets, 'bet')}
                     </span>
                   </span>
-                  <span className={`fig fig--s tnum ${p.unitsAllTime >= 0 ? 'pos' : 'neg'}`}>
-                    {fmtUnits(p.unitsAllTime, { league: true, sign: true })}
+                  <span className={`fig fig--s tnum ${p.all.units >= 0 ? 'pos' : 'neg'}`}>
+                    {fmtUnits(p.all.units, { league: true, sign: true })}
                   </span>
+                  {p.handle === 'tester123' ? (
+                    /*  The list included the viewer's own account with a
+                        follow button beside it. */
+                    <span className="pill">You</span>
+                  ) : (
+                    <FollowButton handle={p.handle} initial={p.following} />
+                  )}
                 </li>
               ))}
             </ul>

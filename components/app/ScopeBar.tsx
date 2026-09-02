@@ -27,6 +27,11 @@ export function ScopeBar({ scope, books }: { scope: Scope; books?: string[] }) {
     ? ALL_BOOKMAKERS.filter((b) => books.includes(b.id))
     : ALL_BOOKMAKERS;
 
+  /*  The two selects carried an inline minHeight of 40, which beat the 44px
+      floor .select declares and which nothing written in a stylesheet could
+      have put back: an inline style wins over every rule in floors.css. They
+      are a class now, and they share a row on a phone rather than taking one
+      each. */
   return (
     <div className="scopebar" role="group" aria-label="Scope for every module below">
       <Seg label="Period">
@@ -38,7 +43,7 @@ export function ScopeBar({ scope, books }: { scope: Scope; books?: string[] }) {
             aria-pressed={scope.period === p.id}
             onClick={() => set('period', p.id)}
           >
-            {p.label}
+            {p.chip}
           </button>
         ))}
       </Seg>
@@ -46,8 +51,7 @@ export function ScopeBar({ scope, books }: { scope: Scope; books?: string[] }) {
       <label className="sr-only" htmlFor="scope-book">Bookmaker</label>
       <select
         id="scope-book"
-        className="select"
-        style={{ width: 'auto', minWidth: '150px', minHeight: '40px' }}
+        className="select scopebar__sel scopebar__sel--book"
         value={scope.bookmakerId}
         onChange={(e) => set('book', e.target.value)}
       >
@@ -58,8 +62,7 @@ export function ScopeBar({ scope, books }: { scope: Scope; books?: string[] }) {
       <label className="sr-only" htmlFor="scope-sport">Sport</label>
       <select
         id="scope-sport"
-        className="select"
-        style={{ width: 'auto', minWidth: '130px', minHeight: '40px' }}
+        className="select scopebar__sel scopebar__sel--sport"
         value={scope.sportId}
         onChange={(e) => set('sport', e.target.value)}
       >

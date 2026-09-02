@@ -39,7 +39,7 @@ export default function DryRun() {
             {ROWS.map((r) => (
               <li key={r.k} className="brow">
                 <span style={{ minWidth: 0 }}>
-                  <span className="brow__title" style={{ display: 'block' }}>{r.t}</span>
+                  <span className="brow__title">{r.t}</span>
                   <span className="brow__sub">{r.s}</span>
                 </span>
                 <span className={`fig fig--s tnum ${r.k === 'needsYou' && DRY_RUN[r.k] > 0 ? 'neg' : ''}`}>

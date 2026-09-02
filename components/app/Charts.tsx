@@ -2,7 +2,7 @@
 
 import { useId } from 'react';
 import { useMeasure } from './useMeasure';
-import { axisMoney, axisMonth } from '@/lib/format';
+import { axisMoney, axisMonth, units as fmtUnits } from '@/lib/format';
 
 /** Every chart here measures its own container before it draws. */
 
@@ -17,11 +17,16 @@ const PAD = { l: 4, r: 4, t: 8, b: 18 };
  *  it. The prop stays as the FLOOR, for the places that render this outside
  *  a fixed height module. */
 export function ProfitCurve({
-  points, height: minHeight = 168, currency = 'GBP',
+  points, height: minHeight = 168, currency = 'GBP', unitMinor = 0,
 }: {
   points: { day: string; netPence: number }[];
   height?: number;
   currency?: 'GBP' | 'EUR';
+  /** Draw the end of the line in UNITS instead of money, and how many minor
+   *  units make one. Set only by the public shared page, which has no
+   *  currency to name: the only money on this chart is in its label, and a
+   *  shared record does not carry one. See lib/data/share.ts. */
+  unitMinor?: number;
 }) {
   const { ref, width, height: boxH } = useMeasure<HTMLDivElement>();
   const id = useId().replace(/[^a-zA-Z0-9]/g, '');
@@ -58,7 +63,7 @@ export function ProfitCurve({
     <div ref={ref} className="chartbox chartbox--fill">
       {width > 0 ? (
         <svg viewBox={`0 0 ${w} ${height}`} width={w} height={height} role="img"
-          aria-label={`Profit curve, ending at ${axisMoney(last, currency)}`}>
+          aria-label={`Profit curve, ending at ${unitMinor > 0 ? fmtUnits(last / unitMinor, { sign: true }) : axisMoney(last, currency)}`}>
           <defs>
             <linearGradient id={`g${id}`} x1="0" y1="0" x2="0" y2="1">
               <stop offset="0%" stopColor={tone} stopOpacity="0.28" />

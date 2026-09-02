@@ -36,7 +36,7 @@ export default function Offline() {
             <li key={q.t} className="brow brow--field">
               <Icon name="clock" size={16} className="dim" />
               <span style={{ minWidth: 0 }}>
-                <span className="brow__title" style={{ display: 'block' }}>{q.t}</span>
+                <span className="brow__title">{q.t}</span>
                 <span className="brow__sub">{q.s} · captured {timeOfDay(q.at)}</span>
               </span>
               <span className="fig fig--s tnum">{money(q.stake)}</span>
@@ -67,7 +67,10 @@ export default function Offline() {
             'Settlement, which needs a results feed',
           ].map((t) => (
             <li key={t} className="checkitem" style={{ padding: 'var(--s2) 0' }}>
-              <Icon name="close" size={15} style={{ color: 'var(--neg)' }} />
+              {/*  readmark--gap, the same mark the review screen puts on a
+                   field it could not read. The loss colour means money, and
+                   no signal is not a loss. */}
+              <Icon name="close" size={15} className="readmark readmark--gap" />
               <span>{t}</span>
             </li>
           ))}

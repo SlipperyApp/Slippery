@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import { authoriseCron } from '@/lib/server/cron';
 import { hasDatabase, transaction, query } from '@/lib/server/db';
 import { settleBet } from '@/lib/settlement/engine';
-import { loadBet, appendEvent } from '@/lib/server/bets';
+import { loadBet, appendResult } from '@/lib/server/bets';
 import type { LegResult } from '@/lib/domain/types';
 
 export const runtime = 'nodejs';
@@ -42,7 +42,9 @@ export async function GET(req: Request) {
           : ['open'];
         const outcome = settleBet(legs);
         if (!outcome.type) return null;
-        await appendEvent(client, {
+        /*  appendResult, not appendEvent: a winner on an exchange owes
+         *  commission on its net winnings, and this sweep never charged it. */
+        await appendResult(client, {
           accountId: row.account_id, betId: row.id, type: outcome.type,
           enteredBy: 'system', note: outcome.why,
         });

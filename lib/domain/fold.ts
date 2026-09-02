@@ -17,7 +17,17 @@
 
 import type { Bet, BetState, BetStatus, Outcome, SettlementEvent } from './types';
 
-const round = (n: number) => Math.round(n);
+/*  `|| 0` is not decoration. Math.round(-0.4) is -0 and so is -Math.round(0),
+ *  which is what a bet that pays no commission because it lost produced: a
+ *  returned figure of -0, harmless in the fold and "-0.00" the moment
+ *  anything reaches for toFixed on it, which is a bookmaker appearing to
+ *  have taken nothing in a way that looks like a bug. NaN falls to 0 here
+ *  too, rather than travelling into bet_state. */
+const round = (n: number) => Math.round(n) || 0;
+
+/** A deduction, kept off negative zero. The negation has to be guarded as
+ *  well as the rounding, because -0 is what negating a zero gives. */
+const deduct = (n: number) => -n || 0;
 
 /** The price actually in force. Void legs drop out of a multiple and the odds
  *  recalculate; a single keeps its own price. */
@@ -32,6 +42,22 @@ export function effectiveOdds(bet: Bet): number {
  *  the liability. Everything else in the fold is identical. */
 export function riskPence(bet: Bet): number {
   return bet.side === 'lay' ? (bet.liabilityPence ?? 0) : bet.stakePence;
+}
+
+/** The commission on a given amount of net winnings, in whole pence.
+ *
+ *  ONE formula, here, because two would drift. The fold calls it when a
+ *  commission event lands and the settlement paths call it only to ask
+ *  whether there is anything to charge; neither works the arithmetic out
+ *  again on its own.
+ *
+ *  The percentage is taken in thousandths, which is the precision the column
+ *  stores, so a rate like 1.3 that has no exact binary form cannot make an
+ *  exact charge land a penny high through the multiply. */
+export function commissionPence(netWinningsPence: number, pct: number): number {
+  if (netWinningsPence <= 0 || pct <= 0) return 0;
+  const thousandths = Math.round(pct * 1000);
+  return Math.ceil((netWinningsPence * thousandths) / 100_000);
 }
 
 const TERMINAL_TYPES = new Set([
@@ -106,16 +132,33 @@ function applyEvent(
       // Pence in the pound off net winnings only. Never touches the original
       // odds or the result.
       const d = Math.max(0, Math.min(90, ev.deductionPence ?? 0));
-      return { stakePortion: 0, returned: -round((Math.max(0, netWinningsSoFar) * d) / 100), voided: 0, terminal: false };
+      return { stakePortion: 0, returned: deduct(round((Math.max(0, netWinningsSoFar) * d) / 100)), voided: 0, terminal: false };
     }
     case 'commission': {
-      // Per bookmaker, on net winnings only. A losing bet pays no commission.
+      /*  Per bookmaker, on NET WINNINGS only, never on turnover. A £50 stake
+       *  returning £150 on a 2% exchange is charged 2% of the £100 it won,
+       *  which is £2.00, not 2% of the £150 back and not 2% of the £50 in.
+       *  A losing bet pays no commission at all.
+       *
+       *  The part penny rounds UP, away from the person. That is what Betfair
+       *  itself does, and it is the only direction that cannot overstate
+       *  profit: rounding a charge down reports money the exchange never paid
+       *  out, which is the same defect as never charging commission at all,
+       *  one penny smaller. */
       const pct = Math.max(0, ev.commissionPct ?? bet.commissionPct ?? 0);
-      return { stakePortion: 0, returned: -round((Math.max(0, netWinningsSoFar) * pct) / 100), voided: 0, terminal: false };
+      /*  Negated through `deduct`, not with a bare minus: -commissionPence(0)
+       *  is -0, and -0 is what a losing bet's commission is, so the bare
+       *  minus put "-0.00" on every bet that paid none. */
+      return {
+        stakePortion: 0,
+        returned: deduct(commissionPence(Math.max(0, netWinningsSoFar), pct)),
+        voided: 0,
+        terminal: false,
+      };
     }
     case 'promo_refund':
     case 'manual_correction':
-      // Adjusts profit and bankroll, never the original odds or the result.
+      // Adjusts profit and the balance, never the original odds or the result.
       return { stakePortion: 0, returned: ev.returnedPence ?? 0, voided: 0, terminal: false };
 
     default:
@@ -137,14 +180,46 @@ function outcomeOf(events: SettlementEvent[], realised: number, remaining: numbe
     if (result.type === 'void' || result.type === 'push') return 'void';
     if (result.type === 'lost') return 'lost';
     if (result.type === 'half_lost') return realised < 0 ? 'lost' : 'void';
+    /*  A place is its own result and is never read off the money. It used to
+     *  fall through to the line below, which asks whether realised is
+     *  negative, so the each way pair for a horse that came third reported
+     *  Won on the place part and Lost on the win part and the word "placed"
+     *  appeared nowhere. Both halves are true about the cash and both are
+     *  wrong about the race. */
+    if (result.type === 'placed') return 'placed';
     return realised >= 0 ? 'won' : 'lost';
   }
   if (cashPart && remaining === 0) return cashLabel();
   return null;
 }
 
-/** The recompute. Nothing else may write bet_state. */
-export function recompute(bet: Bet, events: SettlementEvent[], now: string): BetState {
+/** What one event did, kept so a bet can show its own working.
+ *
+ *  The sheet that reveals the maths behind a settled bet needs the same two
+ *  numbers per event that the fold consumed. Deriving them a second time in
+ *  the view would put a second implementation of settlement in the browser,
+ *  which rule 2 exists to prevent and which would let a bet's working
+ *  disagree with the figure printed above it. So the fold emits them and the
+ *  view reads them. */
+export type Step = {
+  event: SettlementEvent;
+  /** How much of the risk still standing this event consumed. */
+  stakePortion: number;
+  /** Money that came back because of it, signed. */
+  returned: number;
+  voided: number;
+  /** The risk still standing after it, and the profit folded so far. */
+  remainingAfter: number;
+  realisedAfter: number;
+  /** A result that arrived after the bet had already closed. Kept for leg
+   *  statistics and shown as such, never folded twice. */
+  ignored: boolean;
+};
+
+/** The fold, with its working shown. `recompute` is this and its state. */
+export function explain(
+  bet: Bet, events: SettlementEvent[], now: string,
+): { state: BetState; steps: Step[] } {
   const ordered = [...events].sort((a, b) => a.seq - b.seq);
   const risk = riskPence(bet);
 
@@ -154,12 +229,19 @@ export function recompute(bet: Bet, events: SettlementEvent[], now: string): Bet
   let voided = 0;
   let stakeConsumed = 0;
   let terminated = false;
+  const steps: Step[] = [];
 
   for (const ev of ordered) {
     // A terminal event closes the bet. Later leg grading is still kept for
     // leg statistics, but it stops determining the outcome. Adjustments
     // (a Rule 4, commission, a promo refund landing a week later) still land.
-    if (terminated && !ADJUSTMENT_TYPES.has(ev.type)) continue;
+    if (terminated && !ADJUSTMENT_TYPES.has(ev.type)) {
+      steps.push({
+        event: ev, stakePortion: 0, returned: 0, voided: 0,
+        remainingAfter: remaining, realisedAfter: realised, ignored: true,
+      });
+      continue;
+    }
 
     const netWinningsSoFar = returnedTotal - stakeConsumed;
     const a = applyEvent(bet, ev, remaining, risk, netWinningsSoFar);
@@ -170,6 +252,11 @@ export function recompute(bet: Bet, events: SettlementEvent[], now: string): Bet
     voided += a.voided;
     realised += a.returned - (bet.isFreeBet ? 0 : a.stakePortion);
     if (a.terminal) terminated = true;
+
+    steps.push({
+      event: ev, stakePortion: a.stakePortion, returned: a.returned, voided: a.voided,
+      remainingAfter: remaining, realisedAfter: realised, ignored: false,
+    });
   }
 
   const status: BetStatus =
@@ -180,16 +267,24 @@ export function recompute(bet: Bet, events: SettlementEvent[], now: string): Bet
   const unit = bet.unitPenceAtPlacement || 1;
 
   return {
-    betId: bet.id,
-    status,
-    remainingStakePence: remaining,
-    realisedPlPence: realised,
-    returnedPence: returnedTotal,
-    voidedStakePence: voided,
-    units: Number((realised / unit).toFixed(4)),
-    outcome: outcomeOf(ordered, realised, remaining),
-    updatedAt: now,
+    state: {
+      betId: bet.id,
+      status,
+      remainingStakePence: remaining,
+      realisedPlPence: realised,
+      returnedPence: returnedTotal,
+      voidedStakePence: voided,
+      units: Number((realised / unit).toFixed(4)),
+      outcome: outcomeOf(ordered, realised, remaining),
+      updatedAt: now,
+    },
+    steps,
   };
+}
+
+/** The recompute. Nothing else may write bet_state. */
+export function recompute(bet: Bet, events: SettlementEvent[], now: string): BetState {
+  return explain(bet, events, now).state;
 }
 
 /** Turnover excludes voided stake everywhere, and a free bet's stake too,
@@ -203,4 +298,32 @@ export function turnoverPence(bet: Bet, state: BetState): number {
  *  and average odds. They still count to net and turnover. */
 export function countsTowardWinRate(bet: Bet): boolean {
   return !bet.arbGroupId;
+}
+
+/** How much of the risk has been settled, and what the bet is up on it.
+ *
+ *  This is the same pair the fold works in, read back off a finished state,
+ *  so the base a commission is charged on is the base the fold would charge
+ *  it on and there is no second definition of "net winnings" to disagree. */
+function netWinnings(bet: Bet, state: BetState): number {
+  const consumed = riskPence(bet) - state.remainingStakePence;
+  return state.returnedPence - consumed;
+}
+
+/** The rate a commission event should be appended at, or null for none.
+ *
+ *  The AMOUNT is deliberately not returned. The fold works it out when the
+ *  event lands, from the state at that moment, which is what keeps one
+ *  commission formula in the build.
+ *
+ *  Nothing is appended when there is nothing to charge. A losing bet owes no
+ *  commission, so a zero row in somebody's settlement history would be a line
+ *  they have to ask about, and a second sweep over a bet that has already
+ *  been charged must not charge it twice. */
+export function commissionDue(bet: Bet, events: SettlementEvent[], state: BetState): number | null {
+  const pct = bet.commissionPct ?? 0;
+  if (pct <= 0) return null;
+  if (events.some((e) => e.type === 'commission')) return null;
+  if (commissionPence(netWinnings(bet, state), pct) <= 0) return null;
+  return pct;
 }

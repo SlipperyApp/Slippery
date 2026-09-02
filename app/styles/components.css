@@ -1,29 +1,70 @@
 /* Components. */
 
 /* -------------------------------------------------------------------- card */
+/*  A CARD IS LIT FROM ABOVE AND IT SITS ON THE FIELD.
+ *
+ *  It was a flat fill, a 1px border in --line and an inset highlight at 6%.
+ *  Measured on carbon, --card is #14171F and --line is #181C26: six levels
+ *  apart, which is not an edge, it is a rounding difference. Every surface
+ *  on the page was therefore the same value with no edge and no shadow, and
+ *  a screenshot of the dashboard read as grey rectangles ruled onto grey.
+ *
+ *  Three changes, and none of them costs a filter or a layer:
+ *
+ *  THE GRADIENT. A card catches more light at its top edge than at its
+ *  foot. Four per cent of ink over the top 40% is enough to say which way
+ *  is up, and it is one paint of the box the browser was painting anyway.
+ *
+ *  THE EDGE. --line2 rather than --line: thirteen levels up from the fill
+ *  instead of six, which is the difference between a hairline you can see
+ *  and one you can only measure. The inset highlight goes to 10% so the top
+ *  edge reads as a lit lip rather than as a lighter border.
+ *
+ *  THE SHADOW. On a dark ground a shadow is not a grey blur, it is the
+ *  field behind the card getting darker under it. Two stops: a tight one
+ *  that seats the card, and a wide low-opacity one that separates it from
+ *  the drifting field. Neither animates and both are on a property that
+ *  costs no layout. */
 .card {
   display: flex;
   flex-direction: column;
-  background: color-mix(in oklab, var(--surface) 88%, transparent);
-  border: 1px solid var(--line);
+  background:
+    linear-gradient(to bottom,
+      color-mix(in oklab, var(--ink) 4%, transparent) 0%,
+      transparent 40%),
+    color-mix(in oklab, var(--surface) 88%, transparent);
+  border: 1px solid var(--line2);
   border-radius: var(--r-card);
   padding: var(--s4);
   position: relative;
   overflow: hidden;
-  box-shadow: inset 0 1px 0 color-mix(in oklab, var(--ink) 6%, transparent);
+  box-shadow:
+    inset 0 1px 0 color-mix(in oklab, var(--ink) 10%, transparent),
+    0 1px 2px color-mix(in oklab, #000 30%, transparent),
+    0 14px 30px -18px color-mix(in oklab, #000 76%, transparent);
 }
 @media (min-width: 700px) { .card { padding: var(--s5); } }
 .card__foot { margin-top: auto; padding-top: var(--s4); }
 
-/* Fixed height tokens, so rows match by construction rather than by
-   stretching. Only applied from the two-column breakpoint up: on a phone a
-   single column should be as tall as its content. */
+/*  Height tokens, so rows match by construction rather than by stretching.
+    Only applied from the two-column breakpoint up: on a phone a single
+    column should be as tall as its content.
+
+    MINIMUM, not fixed. These were `height`, and a fixed height on a box
+    whose content is a figure grid is a promise about text that text does
+    not keep: at 1024 the record module is 298px wide, "Longest winning run"
+    and its caption wrap to four lines each, and eight figures needed 371px
+    inside a 295px box. The overflow was clipped rather than shown, so the
+    module simply stopped after six figures with no scrollbar to say so.
+    A minimum still matches the row -- the grid row takes the tallest card
+    and every card in it stretches -- and a card that needs one more line
+    now takes it and brings its neighbour with it. */
 @media (min-width: 700px) {
-  .h-s { height: var(--h-mod-s); }
-  .h-m { height: var(--h-mod-m); }
-  .h-l { height: var(--h-mod-l); }
-  .h-xl { height: var(--h-mod-xl); }
-  .h-xxl { height: var(--h-mod-xxl); }
+  .h-s { min-height: var(--h-mod-s); }
+  .h-m { min-height: var(--h-mod-m); }
+  .h-l { min-height: var(--h-mod-l); }
+  .h-xl { min-height: var(--h-mod-xl); }
+  .h-xxl { min-height: var(--h-mod-xxl); }
 }
 
 .card__head {
@@ -83,7 +124,14 @@
   white-space: nowrap;
 }
 .btn:active { transform: translateY(1px); }
+/*  aria-disabled DIMS. It does not stop anything: it is a promise to a
+    screen reader, and an anchor with an href navigates on click whatever it
+    announces. A resolve gate wearing it looked locked and was not, and a
+    real click walked five undecided rows into an irreversible write.
+    pointer-events:none is the belt to that braces, for the places where a
+    disabled attribute genuinely cannot be used; where it can, use it. */
 .btn[disabled], .btn[aria-disabled='true'] { opacity: 0.45; cursor: not-allowed; }
+.btn[aria-disabled='true'] { pointer-events: none; }
 .btn[disabled]:active, .btn[aria-disabled='true']:active { transform: none; }
 
 .btn--primary { background: var(--accent); color: var(--accent-ink); }
@@ -161,6 +209,11 @@
 .pill--pos { background: var(--pos-wash); border-color: var(--pos-line); color: var(--pos); }
 .pill--neg { background: var(--neg-wash); border-color: var(--neg-line); color: var(--neg); }
 .pill--lg { height: 28px; font-size: var(--t-small); text-transform: none; letter-spacing: 0; }
+/*  A pill carrying a FIGURE rather than a label. The uppercase transform is
+    right for "PADDY POWER" and wrong for a unit: a stake of 1.00u rendered as
+    1.00U, and a capital U is not the abbreviation this product uses anywhere
+    else. */
+.pill--asis { text-transform: none; letter-spacing: 0; }
 
 .dot { width: 7px; height: 7px; border-radius: var(--r-pill); background: currentColor; flex: none; }
 
@@ -189,7 +242,8 @@
 /*  The module's own corner, from inside the module's body: Breakdown is a
     client component and the header above it is not, so its menu is positioned
     into the header's corner rather than passed up through a prop. */
-.brk__tools { position: absolute; top: var(--s4); right: var(--s4); z-index: 2; }
+.brk__tools, .cal__tools { position: absolute; top: var(--s4); right: var(--s4); z-index: var(--z-content); }
+@media (min-width: 700px) { .brk__tools, .cal__tools { top: var(--s5); right: var(--s5); } }
 /*  The edge fades exist only while there is something past the edge, so a
     strip that fits looks like a strip that fits. */
 .seg--fadeL { mask-image: linear-gradient(to right, transparent, #000 16px); }
@@ -211,19 +265,64 @@
 }
 .seg__btn:hover { color: var(--ink); }
 .seg__btn[aria-pressed='true'], .seg__btn[aria-selected='true'] { background: var(--surface-3); color: var(--ink); }
+/*  A period strip that navigates rather than sets state is a strip of LINKS,
+    and a link says which one it is on with aria-current, not aria-pressed:
+    pressed describes a control that toggles, and reading "not pressed" on
+    the two periods you are not looking at is wrong about what they do.
+    Without the layout rules an anchor ignores the 44px floor's box entirely
+    and the chips sit at text height. */
+a.seg__btn { display: inline-flex; align-items: center; text-decoration: none; }
+.seg__btn[aria-current='page'] { background: var(--surface-3); color: var(--ink); }
 
 /* --------------------------------------------------------------- scope bar */
+/*  NO TRAY. It was a bordered, filled, 16px-radius box holding a segmented
+    control that has its own bordered tray and two selects that have their
+    own borders: three nested containers to present four period chips. On
+    the ledger it drew a full width box with the controls in the left third
+    and nothing in the other two.
+
+    The controls are already legible as controls. What the group needed was
+    not a box, it was room, so the box is gone and the gap stayed. The hero
+    already stripped this back to `border: 0` locally, which is the tell
+    that the box was never doing anything anywhere. */
 .scopebar {
   display: flex;
   align-items: center;
   gap: var(--s2);
   flex-wrap: wrap;
-  padding: var(--s3);
-  border: 1px solid var(--line);
-  border-radius: var(--r-card);
-  background: color-mix(in oklab, var(--surface) 70%, transparent);
-  margin-bottom: var(--s4);
+  margin-bottom: var(--s5);
 }
+/*  THE TWO SELECTS SHARE A ROW ON A PHONE.
+    At 390 they were two auto width controls with a 150px and a 130px floor,
+    so each took a line of its own and the ledger spent a hundred and ten
+    pixels of the first screen saying "every bookmaker" and "every sport"
+    with nothing selected in either. They grow from a floor small enough to
+    sit side by side, and at 320, where they genuinely cannot, they wrap the
+    way they always did. */
+/*  EACH TAKES THE ROOM ITS OWN WORDS NEED, and the two floors are different
+    because the two words are. Measured at 16px, which is the floor iOS
+    forces on every control: "Every bookmaker" with its chevron gap is 185
+    and "Every sport" is 143. Given one shared floor the pair fitted at 390
+    and the bookmaker ran under its own chevron, and a select does not
+    ellipsis its closed value, it simply stops, so the control read "Every
+    bookmake".
+
+    Above the two floors they grow to fill the row; below them they wrap,
+    which at 320 is one full width control on each of two lines rather than
+    two truncated ones on one. Nothing is ever cut. */
+/*  select.scopebar__sel, not .scopebar__sel. The fields section declares
+    `.select { width: 100% }` further down this file and wins on source
+    order, so flex-basis auto resolved to a full row and each control took a
+    line of its own however much room was beside it. One element name is
+    enough to settle it. */
+select.scopebar__sel {
+  width: auto;
+  flex: 1 1 auto;
+  max-width: 100%;
+  text-overflow: ellipsis;
+}
+.scopebar__sel--book { min-width: 179px; }
+.scopebar__sel--sport { min-width: 137px; }
 
 /* ------------------------------------------------------------------ fields */
 .field { display: block; }
@@ -257,14 +356,28 @@
   appearance: none;
   -webkit-appearance: none;
   /*  Room for the chevron, derived from where the chevron is drawn. The
-      arrow's far edge sits at 100% - 20px and each arm is 6px wide, so the
-      text must stop 20 + 6 + --s3 from the right. Written as a literal 38
-      it was one edit away from text running under the arrow. */
-  --chev-inset: 20px;
+      arrow's far edge sits at 100% - --chev-inset and each arm is 6px wide,
+      so the text must stop inset + 6 + --s3 from the right. Written as a
+      literal 38 it was one edit away from text running under the arrow.
+
+      14, not 20. Twenty put a six pixel arrow twenty pixels in from an edge
+      whose own padding is twelve, so it floated in the middle of the right
+      hand end rather than sitting at it, and it cost every select fifty
+      pixels of chrome around a fifteen character label. At 390 that was the
+      difference between the scope bar's two selects sharing a row inside the
+      hero card and taking one each, which is a hundred and ten pixels of the
+      first screen of a phone. */
+  --chev-inset: 14px;
   --chev-arm: 6px;
   padding-right: calc(var(--chev-inset) + var(--chev-arm) + var(--s3));
   background-image: linear-gradient(45deg, transparent 50%, currentColor 50%), linear-gradient(135deg, currentColor 50%, transparent 50%);
-  background-position: calc(100% - var(--chev-inset)) calc(50% + 2px), calc(100% - 14px) calc(50% + 2px);
+  /*  The second arm sits one arm's width right of the first. It was a
+      literal 14, which happened to be 20 minus 6 and said so nowhere, so
+      moving the inset would have left the chevron drawn as two overlapping
+      triangles with a gap. */
+  background-position:
+    calc(100% - var(--chev-inset)) calc(50% + 2px),
+    calc(100% - (var(--chev-inset) - var(--chev-arm))) calc(50% + 2px);
   background-size: var(--chev-arm) var(--chev-arm), var(--chev-arm) var(--chev-arm);
   background-repeat: no-repeat;
 }
@@ -359,6 +472,178 @@
     scrolls, which is what the shadows are for. */
 .scroller .tbl { min-width: 520px; }
 
+/* ----------------------------------------------------------- shared balance */
+.sharelist { margin-top: var(--s5); display: flex; flex-direction: column; gap: var(--s5); }
+.sharelist > * + * { border-top: 1px solid var(--line); padding-top: var(--s5); }
+/*  The URL wraps rather than truncating. A twenty character token with an
+    ellipsis through it is a link somebody cannot check before they send it,
+    and checking it is the whole reason it is printed instead of hidden
+    behind a Copy button. */
+.shareb__url { overflow-wrap: anywhere; text-decoration: none; color: var(--accent-2); }
+
+/* ---------------------------------------------------------------- analyser */
+/*  Thirteen columns do not fit on a phone, so the table scrolls. What made
+    the first version unreadable was that the only column saying WHICH row you
+    are on scrolled away with the rest: three screens right and every row is
+    an anonymous line of figures. The group column sticks, and it carries its
+    own background because a transparent sticky cell has the numbers sliding
+    under it. */
+.xtab__tools {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: var(--s4);
+  margin-bottom: var(--s5);
+}
+.xtab__dl { margin-left: auto; }
+.field--inline { margin-bottom: 0; }
+.field--inline .select { min-width: 168px; }
+
+.xtab__scroll .tbl { min-width: 880px; }
+.xtab__stick {
+  position: sticky;
+  left: 0;
+  z-index: var(--z-content);
+  background: var(--surface);
+  min-width: 156px;
+  max-width: 220px;
+  text-align: left;
+}
+/*  A ROW HEADER IS NOT A COLUMN HEADER, and the selector has to be able to
+    say so: `.tbl th` is a class plus an element and beats a bare class, so
+    the first version of this set text-transform: none and lost. The column
+    heading across the top stays uppercase micro type; the balance names and
+    the total under them take the body's own. */
+.xtab tbody .xtab__stick, .xtab tfoot .xtab__stick {
+  white-space: normal;
+  text-transform: none;
+  letter-spacing: 0;
+  font-size: var(--t-small);
+  color: var(--ink);
+  font-weight: 600;
+  border-top: 1px solid var(--line);
+  padding: var(--s3);
+}
+.xtab__name { display: block; }
+/*  The second axis sits UNDER the first rather than beside it. Side by side,
+    "Football · Saturday" reads as one name and the table looks like it has
+    one axis on it. */
+.xtab__name2 { display: block; color: var(--ink-2); font-weight: 400; }
+.xtab__pill { margin-top: var(--s1); }
+.xtab td.num { white-space: nowrap; }
+/*  MARKED, NEVER RECOLOURED. The first version greyed every cell on a thin
+    row, which beat `.pos` and `.neg` on specificity and took the profit and
+    loss colours off the money: those two are semantic and locked, and a
+    green that is sometimes grey is a third meaning nobody agreed to. What
+    marks the row is the pill and the quieter name beside it. */
+.xtab tbody .xtab__thin .xtab__stick { color: var(--ink-2); font-weight: 500; }
+/*  Narrower on a phone. At 220px the group column took more than half of a
+    390 screen and only the bet count was visible beside it, so the table
+    that exists to compare figures showed one. */
+@media (max-width: 699px) {
+  .xtab__stick { min-width: 118px; max-width: 148px; }
+  .xtab__scroll .tbl { min-width: 820px; }
+}
+.xtab__thin .xtab__pill { background: var(--surface-2); }
+
+.xtab__h {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s1);
+  min-height: var(--tap);
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+}
+.xtab thead .xtab__h { text-transform: uppercase; letter-spacing: var(--tr-micro); font-size: var(--t-micro); font-weight: var(--w-label); }
+.xtab thead .num .xtab__h { justify-content: flex-end; width: 100%; }
+.xtab__h:hover { color: var(--ink); }
+.xtab__sort { flex: none; color: var(--ink); }
+/*  The unsorted columns' marks are quieter by COLOUR rather than by opacity.
+    An opacity below 0.7 is what tests/contrast.test.ts fails on, and it is
+    right to: a faded glyph lands at whatever contrast the theme happens to
+    give it, while --ink-2 is a colour somebody chose and checked. */
+.xtab__sort--off { color: var(--ink-2); }
+.xtab tfoot th, .xtab tfoot td {
+  border-top: 2px solid var(--line-2);
+  font-weight: var(--w-fig);
+  padding: var(--s3);
+}
+
+/* ------------------------------------------------------------ closing price */
+/*  The box takes a price and nothing else, so it is sized for one: a full
+    width input for "2.90" invites a sentence. */
+.clv__in { width: 8ch; min-width: 8ch; }
+/*  Four figures across the module rather than three in a row and a third of
+    the card empty. Two columns on a phone, four where there is room.
+
+    A HAIRLINE BETWEEN THEM at the width where the module is the widest thing
+    on the page. Four figures spread across 1152px with nothing between them
+    read as four things that happen to be near each other; a divided strip
+    reads as one measurement in four parts, which is what it is. The rule is
+    an inset shadow rather than a border so the first column needs no
+    override, the same way the ledger's summary strip does it. */
+.clvmod {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--s5) var(--s6);
+  align-content: start;
+}
+@media (min-width: 700px) {
+  .clvmod { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 0; }
+  .clvmod > * { padding-inline: var(--s5); }
+  .clvmod > :first-child { padding-left: 0; }
+  .clvmod > * + * { box-shadow: inset 1px 0 0 var(--line2); }
+}
+.clv .field { margin-bottom: 0; }
+
+/* ----------------------------------------------------------- balance sheet */
+/*  The one table in the product with a tfoot, because it is the one table
+    with a total: every currency's balances and then that currency's line.
+    The total is a footer rather than a last row so a screen reader announces
+    it as one, and so it cannot be sorted into the middle of the balances. */
+/*  A ROW HEADER IS NOT A COLUMN HEADER. `.tbl th` is uppercase micro type
+    with tracking on it, which is right for the five words across the top and
+    wrong for a balance's name and the sentence under it: the first draft of
+    this table rendered "MAIN £1,000.00 TO START, £2,450.00 PAID IN" as one
+    band of capitals. Row and footer headers take the body's own type. */
+.bsheet tbody th, .bsheet tfoot th {
+  text-transform: none;
+  letter-spacing: 0;
+  font-size: var(--t-small);
+  color: var(--ink);
+  font-weight: 600;
+  padding: var(--s3);
+  border-top: 1px solid var(--line);
+  /*  `.tbl th` is nowrap, which is right for five words across the top and
+      wrong for a sentence: at 390 the starting figure and the money in and
+      out held the name column open to 450px and pushed every figure on the
+      row off the screen. The table already scrolls, so the reader was
+      scrolling past the only column that is not a number. */
+  white-space: normal;
+}
+.bsheet__name { min-width: 132px; max-width: 216px; }
+/*  A figure never wraps. Squeezed to fit beside a wrapping name column,
+    "+£2,631.37" broke after the plus and printed the sign on its own line,
+    which reads as two cells. The table scrolls; the number does not. */
+.bsheet td.num { white-space: nowrap; }
+.bsheet__sub { display: block; margin-top: 2px; font-weight: 400; }
+.bsheet__name .pill { margin-left: var(--s2); vertical-align: middle; }
+.bsheet tfoot th, .bsheet tfoot td {
+  border-top: 2px solid var(--line-2);
+  font-weight: var(--w-fig);
+  padding: var(--s3);
+  vertical-align: middle;
+}
+.bsheet tfoot th { text-align: left; }
+/*  The balance being read, marked in its own sheet. Without it the page is
+    seven rows of figures with nothing saying which of them the rest of the
+    product is currently showing you. */
+.bsheet__here td, .bsheet__here th { background: var(--surface-2); }
+
 /* -------------------------------------------------------------------- rows */
 .brow {
   display: grid;
@@ -369,8 +654,20 @@
   align-items: center;
 }
 .brow:first-child { border-top: 0; }
-.brow__title { font-weight: var(--w-label); font-size: var(--t-small); }
-.brow__sub { font-size: var(--t-small); color: var(--ink-2); }
+/*  BLOCK, both of them, and they had never been.
+ *
+ *  A row is a title with a caption under it, everywhere in this product, and
+ *  both were spans, which are inline. Twenty call sites patched the title
+ *  with an inline display:block and nine patched the caption, so the rule was
+ *  really "block, except where somebody forgot", and where somebody forgot it
+ *  showed: the bet sheet ran a hint into the timestamp after it and printed
+ *  "Nothing, so the loss is the stake.2 Sep, 21:55", which reads as a missing
+ *  space in a sentence rather than as two facts on one line.
+ *
+ *  A link keeps its inline-flex from the tap target rule in layout.css, which
+ *  is more specific and is there so a title that navigates clears 44px. */
+.brow__title { display: block; font-weight: var(--w-label); font-size: var(--t-small); }
+.brow__sub { display: block; font-size: var(--t-small); color: var(--ink-2); }
 /*  The last resort, at 320.
  *
  *  A grid column of minmax(0, 1fr) beside a fixed sibling can collapse below
@@ -387,6 +684,15 @@
     1fr column collapsed under the width of one word. 88px is four or five
     characters, which is enough for the value beside it to wrap first. */
 .brow--field { grid-template-columns: 20px minmax(88px, 1fr) auto; gap: var(--s3); }
+
+/* One question and its answer. A rule above each rather than between them,
+   so the last question is not the only one without a boundary under it. */
+.askrow {
+  border-top: 1px solid var(--line);
+  padding-top: var(--s3);
+  margin-top: var(--s3);
+}
+.askrow:first-child { border-top: 0; padding-top: 0; margin-top: 0; }
 .league__you { margin-left: 4px; }
 /*  Under 400 there is no width for three columns. "Saw: Each line priced
     separately, which is what a Lucky 15 does" in a 78px mono column is eight
@@ -515,7 +821,7 @@
 .modmenu__pop {
   position: absolute;
   top: calc(100% + 6px);
-  z-index: 20;
+  z-index: var(--z-sticky);
   min-width: 210px;
   padding: var(--s3);
   border-radius: var(--r-ctl);
@@ -565,7 +871,20 @@
   white-space: nowrap;
 }
 .brk__n { grid-area: n; font-size: var(--t-micro); color: var(--ink-2); }
-.brk__spark { grid-area: spark; display: flex; align-items: center; height: 22px; }
+.brk__spark { grid-area: spark; display: flex; align-items: center; height: 22px; position: relative; }
+
+/*  The marker on a row whose shape was clamped. It sits in the 12px gutter
+    between the spark and the figure rather than inside the 74px the line
+    needs, so a marked row and an unmarked one draw the same shape at the same
+    size and the eye can still compare them. */
+.brk__cap {
+  position: absolute;
+  top: -3px;
+  right: -7px;
+  font-size: var(--t-small);
+  line-height: 1;
+  color: var(--ink-2);
+}
 .rspark { display: block; width: 74px; height: 22px; overflow: visible; }
 .brk__fig {
   grid-area: fig;
@@ -612,9 +931,21 @@
 
 /*  Under about 420px the sparkline is the first thing to go: a 74px trend
     beside a name, a count and a figure leaves the name four characters. */
+/*  The note under the list, explaining the marker. It goes with the shapes:
+    under 420 there are no lines on screen, so a footnote about how they are
+    drawn is a sentence about nothing.
+
+    The rule above it belongs to the LIST and not to the note. Every small
+    paragraph in this product is held to 54ch for readability, so a border on
+    the note itself stopped two thirds of the way across the card and read as
+    a mistake rather than as a separator. */
+.brk--noted { border-bottom: 1px solid var(--line); padding-bottom: var(--s3); }
+.brk__note { margin-top: var(--s3); }
+
 @media (max-width: 419px) {
   .brk__row { grid-template-columns: minmax(0, 1fr) auto auto; grid-template-areas: 'name n fig' 'bar bar sub'; }
   .brk__spark { display: none; }
+  .brk__note { display: none; }
 }
 
 /* ------------------------------------------------------------------ meters */
@@ -625,6 +956,12 @@
   overflow: hidden;
 }
 .meter__fill {
+  /*  BLOCK, and it had never been. A span is inline, and width and height on
+      an inline box do nothing, so every meter in the product drew a track and
+      a zero pixel fill: the trial page's two bars, the import progress, the
+      resolver's count and the reading screen's sweep. Five bars that measured
+      correctly, were styled correctly and painted nothing. */
+  display: block;
   height: 100%;
   border-radius: var(--r-pill);
   background: var(--accent);
@@ -634,11 +971,29 @@
 .meter__fill--pos { background: var(--pos); }
 .meter__fill--neg { background: var(--neg); }
 
+/* An indeterminate meter, for the one place in the product where progress is
+   genuinely not knowable: another system is reading an image and says nothing
+   at all until it has finished. A fill that crawls to ninety per cent and
+   stops is a claim about a measurement nobody has, which is what the five
+   staged ticks on the reading screen were. This slides and claims nothing.
+   Transform only, and it stands still under reduced motion. */
+.meter--busy .meter__fill {
+  width: 34%;
+  animation: meter-sweep 1400ms var(--ease) infinite;
+}
+@keyframes meter-sweep {
+  from { transform: translate3d(-110%, 0, 0); }
+  to   { transform: translate3d(320%, 0, 0); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .meter--busy .meter__fill { animation: none; width: 100%; }
+}
+
 /* ------------------------------------------------------------------- sheet */
 .sheet__scrim {
   position: fixed;
   inset: 0;
-  z-index: 90;
+  z-index: var(--z-overlay);
   background: color-mix(in oklab, #000 62%, transparent);
   animation: fade-in var(--dur) var(--ease) both;
 }
@@ -646,7 +1001,7 @@
 @keyframes sheet-up { from { transform: translate3d(0, 18px, 0); opacity: 0; } to { transform: none; opacity: 1; } }
 .sheet {
   position: fixed;
-  z-index: 91;
+  z-index: var(--z-sheet);
   left: 0; right: 0; bottom: 0;
   max-height: 86svh;
   overflow-y: auto;
@@ -668,13 +1023,31 @@
 }
 .sheet__head { display: flex; align-items: flex-start; justify-content: space-between; gap: var(--s3); margin-bottom: var(--s4); }
 
+/* --------------------------------------------------------------- the sum
+ *
+ * The working behind a settled bet, drawn as a sum: the parts, a rule, then
+ * the totals. Nothing here is a control, so there is no target floor and no
+ * focus ring to give it: it is a table of figures that happens to be a list.
+ *
+ * The rule is on the FIRST total only. .brow already draws a hairline
+ * between every row, so a heavier border on each of the four summary rows
+ * would read as four separate sums rather than one. */
+.sum__group {
+  padding-top: var(--s4);
+  border-top: 1px solid var(--line);
+}
+.sum__group:first-child { border-top: 0; padding-top: 0; }
+.sum__group + .brow { border-top: 0; }
+.sum__rule { border-top: 1px solid var(--line-2); }
+.sum__foot .brow__title { color: var(--ink); }
+
 /* ------------------------------------------------------------------- toast */
 .toast {
   position: fixed;
   left: 50%;
   bottom: calc(var(--bottombar-h) + env(safe-area-inset-bottom) + var(--s4));
   transform: translateX(-50%);
-  z-index: 95;
+  z-index: var(--z-toast);
   display: flex;
   align-items: center;
   gap: var(--s3);
@@ -758,6 +1131,18 @@
   flex: 1 1 auto;
   min-height: 0;
 }
+/*  A FLOOR UNDER THE ROWS, WHEREVER THE CARD HAS NO HEIGHT OF ITS OWN.
+    The module height tokens start at 700 and only the dashboard's calendar
+    carries one, so on a phone and on the demo page at any width the grid
+    took its content height and its content is one line of digits: measured
+    at 390 and again at 1440 on /demo the rows came out SEVENTEEN pixels
+    tall, a thirteen pixel number in a seventeen pixel box, six rows deep,
+    which renders a month as a dense block of figures rather than as a
+    calendar. 40 is near the column width the same grid gives at 390, so the
+    cells are roughly square, which is the shape a day has to be for a month
+    to be read as one. It is a minimum and not a size: inside a card that
+    does give a height the rows still stretch to fill it. */
+.cal { grid-template-rows: auto repeat(var(--cal-rows, 6), minmax(40px, 1fr)); }
 .calwrap { display: flex; flex-direction: column; flex: 1 1 auto; min-height: 0; }
 
 /*  Month nav on the left, what-each-day-shows on the right. They wrap onto
@@ -782,6 +1167,19 @@
   min-width: 9ch;
   text-align: center;
 }
+/*  Why the calendar is not on this month. It is a caption on the control
+    beside it, not a banner: on the second of the month it is the difference
+    between "your September is missing" and "here is your August". */
+.cal__why {
+  margin-left: var(--s2);
+  font-size: var(--t-micro);
+  letter-spacing: var(--tr-micro);
+  text-transform: uppercase;
+  font-weight: var(--w-label);
+  color: var(--ink-2);
+  white-space: nowrap;
+}
+
 .icobtn {
   display: inline-flex;
   align-items: center;
@@ -863,7 +1261,7 @@
     body size. */
 .cal__cell { container-type: inline-size; }
 .cal__v {
-  position: relative; z-index: 1;
+  position: relative; z-index: var(--z-content);
   /*  Mono, because a column of figures that do not line up is a column you
       cannot read down. Same face as every other figure in the product. */
   font-family: var(--f-mono);
@@ -885,7 +1283,7 @@
   .cal__v { display: none; }
 }
 .cal__n {
-  position: relative; z-index: 1;
+  position: relative; z-index: var(--z-content);
   font-weight: var(--w-label); line-height: 1;
   /*  --t1, not --t3. On a low band cell the tint lifts the ground enough that
       the tertiary ink measures 2.21:1 in periwinkle. Primary ink measures
@@ -914,15 +1312,22 @@
     The mark belongs to the day rather than to the digit: a slash reads across
     a whole month at a glance where a struck-through number does not, and it
     never touches the legibility of the number itself. */
+/*  NO OUTLINE. It carried a dashed border as well as the slash, and the
+    slash is the mark: two signals for one fact, and the outline is the one
+    that draws a box. */
 .cal__cell--blank {
   background: color-mix(in srgb, var(--surface-2) 55%, var(--bg));
-  border-color: color-mix(in srgb, var(--line-2) 70%, transparent);
-  border-style: dashed;
 }
+/*  INSET, not corner to corner. Drawn across the whole cell it was a
+    hairline running from one rounded corner to the other, and with the
+    dashed outlines gone from every neighbour it was the only diagonal on
+    the module: it read as a scratch on the glass rather than as a mark on a
+    day. A quarter in from each side puts the stroke inside the cell it
+    belongs to, which is what makes it read as a mark. */
 .cal__cell--blank::before {
   content: '';
   position: absolute;
-  inset: 0;
+  inset: 24%;
   background-image: linear-gradient(to top right,
     transparent calc(50% - 0.5px),
     color-mix(in srgb, var(--ink-2) 42%, transparent) calc(50% - 0.5px),
@@ -931,13 +1336,18 @@
 }
 .cal__cell--blank .cal__n { color: var(--ink-2); }
 
-/*  A day that has not happened is a dashed outline on the ground itself: no
-    slash, because "you did not bet" and "it has not happened yet" are
-    different facts and a line through tomorrow is a lie. */
+/*  A day that has not happened is its number on the ground and nothing
+    else: no slash, because "you did not bet" and "it has not happened yet"
+    are different facts and a line through tomorrow is a lie.
+
+    AND NO OUTLINE EITHER. It was a dashed box, and in a September viewed on
+    the 2nd that is twenty-eight dashed boxes drawn across the module, which
+    is more ink than the one day that actually had bets in it. Emptiness
+    already says the day is empty; the dimmer number already says it has not
+    come. The three states that carry a mark are the three that have
+    something to report. */
 .cal__cell--future {
   background: none;
-  border-color: color-mix(in srgb, var(--line) 80%, transparent);
-  border-style: dashed;
 }
 /*  Was mixed 72% into the ground, which measured 3.1:1 and axe was right to
     say so. A day that has not happened is marked by the dashed outline
@@ -945,7 +1355,11 @@
 .cal__cell--future .cal__n { color: var(--ink-2); }
 
 .cal__cell--out { background: none; border-color: transparent; }
-.cal__cell--today { border-color: var(--accent); border-style: solid; box-shadow: 0 0 0 1px var(--accent); }
+/*  One line, not two. The border and the box-shadow drew the accent twice
+    around the same cell, which on a day that also carries a full profit
+    fill put a 2px periwinkle ring around a green square: two colours
+    arguing inside one hundred pixels. */
+.cal__cell--today { border-color: var(--accent); border-style: solid; }
 
 /*  The key and the month's own total on one line: the key explains the fill
     and the total is the one number somebody actually came for. */
@@ -970,8 +1384,11 @@
 .cal__keyswatch { width: 11px; height: 11px; border-radius: var(--r-xs); flex: none; }
 .cal__keyswatch--pos { background: var(--cal-pos); border: 1px solid color-mix(in srgb, var(--pos) 45%, transparent); }
 .cal__keyswatch--neg { background: var(--cal-neg); border: 1px solid color-mix(in srgb, var(--neg) 45%, transparent); }
+/*  The swatch matches the cell: a faint ground and a slash, and no dashed
+    outline, because the cells stopped drawing one. A key that does not look
+    like the thing it explains is worse than no key. */
 .cal__keyswatch--none {
-  border: 1px dashed color-mix(in srgb, var(--line-2) 80%, transparent);
+  background-color: color-mix(in srgb, var(--surface-2) 55%, var(--bg));
   background-image: linear-gradient(to top right,
     transparent calc(50% - 0.5px),
     color-mix(in srgb, var(--ink-2) 42%, transparent) calc(50% - 0.5px),
@@ -1003,10 +1420,19 @@
 @media (min-width: 700px) { .hide-sm { display: revert; } }
 
 /* A place in a field. Gold, silver and bronze as classes, so they theme, and
-   none of the three sits near the profit or loss colour. */
-.medal--1 { color: #E8C35A; }
-.medal--2 { color: #C7CBD1; }
-.medal--3 { color: #C08552; }
+   none of the three sits near the profit or loss colour.
+
+   Named once, here, because the podium's first plinth takes the gold on its
+   top edge and a second literal is a second answer waiting to drift from
+   this one. */
+:root {
+  --medal-1: #E8C35A;
+  --medal-2: #C7CBD1;
+  --medal-3: #C08552;
+}
+.medal--1 { color: var(--medal-1); }
+.medal--2 { color: var(--medal-2); }
+.medal--3 { color: var(--medal-3); }
 .medal--none { color: var(--ink-2); }
 
 /*  A drop zone that is not accepting anything. Border and label, not a fade:
@@ -1038,29 +1464,34 @@
 /*  One call to action on the landing page, so it is allowed to be big. */
 .btn--lg { min-height: 54px; padding-inline: var(--s6); font-size: var(--t-body); border-radius: var(--r-pill); }
 
-/*  The record, six figures in a fixed height module beside the calendar.
-    Two columns at any width the module has: six figures in one column needs
-    more height than the calendar has, and the module's height is what makes
-    the two of them one row. */
-/*  The record, six figures in a fixed height module beside the calendar.
-    Two columns at any width the module has: six figures in one column needs
-    more height than the calendar has, and the module's height is what makes
-    the two of them one row.
-
-    align-content START, not space-between. Spread across 444px the three
-    rows floated as three disconnected pairs with holes between them, which
-    reads as three separate things rather than one record. They sit together
-    at the top and the module has room underneath, which is what a fixed
-    height module is for. */
+/*  THE RECORD, IN THREE TIERS.
+ *
+ *  It was eight figures at one size in a two column grid: twenty two lines
+ *  of near identical treatment, the densest thing on the dashboard, and no
+ *  order at all, so a reader had to read all eight to find the one they
+ *  wanted. A win rate, three averages and two days are not peers and should
+ *  not look like peers.
+ *
+ *  The gap between the tiers is what does the separating, and the last tier
+ *  takes margin-top: auto so the module's fixed height is spent between the
+ *  groups rather than left as a lake under all of them. */
 .record {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: var(--s6) var(--s5);
-  align-content: start;
+  display: flex;
+  flex-direction: column;
+  gap: var(--s5);
   flex: 1;
   min-height: 0;
 }
-@container (max-width: 260px) { .record { grid-template-columns: minmax(0, 1fr); } }
+/*  auto-fit rather than a column count per breakpoint. This module is five
+    of twelve columns, so its width runs from about 270px at 1000 to 660 at
+    1920, and writing that out as three media queries is three numbers that
+    have to be kept in step with one. */
+.record__three {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(104px, 1fr));
+  gap: var(--s4) var(--s5);
+}
+.record__rows { margin-top: auto; }
 
 /*  Open positions at the top of the ledger. It is a card rather than a
     Module because the ledger has no module grid: it is a page of rows with
@@ -1094,25 +1525,127 @@
 .runnow__hi { color: var(--warn); flex: none; }
 .runnow__note { margin: 0 0 var(--s2); max-width: 62ch; }
 
-/*  A summary as boxes rather than a row of figures.
-    Five numbers on one line read as a sentence and have to be parsed left to
-    right; four bordered cells can be read in any order and compared by eye,
-    which is what somebody actually does with a summary. */
+/*  ONE STRIP, NOT FOUR CARDS.
+ *
+ *  Four numbers arrived as four separately bordered, separately filled,
+ *  separately rounded boxes, each one a card whose entire contents were a
+ *  label and a figure. The old note here argued that four cells can be read
+ *  in any order where a row of figures has to be parsed left to right, and
+ *  that is right about the LAYOUT and wrong about the border: a grid already
+ *  says "these are peers, read them in any order". The border only said
+ *  "each of these is a thing", which is four claims nobody made.
+ *
+ *  So the grid stays and the boxes go. The four sit inside the one surface
+ *  the summary actually is, divided by a hairline rather than enclosed by
+ *  four. The dividers are inset shadows rather than borders so the first
+ *  column and the first row of a wrapped grid need no override. */
 .statgrid {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: var(--s3);
+  gap: 0;
+  border: 1px solid var(--line2);
+  border-radius: var(--r-card);
+  background: color-mix(in oklab, var(--surface) 72%, transparent);
+  box-shadow: inset 0 1px 0 color-mix(in oklab, var(--ink) 7%, transparent);
+  overflow: hidden;
 }
 @media (max-width: 860px) { .statgrid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 .stat {
-  padding: var(--s3) var(--s4);
-  border: 1px solid var(--line);
-  border-radius: var(--r-ctl);
-  background: color-mix(in oklab, var(--surface) 76%, transparent);
+  padding: var(--s4) var(--s5);
   min-width: 0;
 }
-.stat .fig { margin-top: var(--s1); }
-.statgrid__foot { grid-column: 1 / -1; margin: 0; }
+/*  The rule is on the cell's leading edge and it is switched off wherever
+    the cell starts a row, which the grid knows and the stylesheet does not:
+    4n+1 at four columns, 2n+1 at two. */
+.stat + .stat { box-shadow: inset 1px 0 0 var(--line2); }
+@media (min-width: 861px) { .stat:nth-child(4n + 1) { box-shadow: none; } }
+@media (max-width: 860px) {
+  .stat:nth-child(2n + 1) { box-shadow: none; }
+  .stat:nth-child(n + 3) { box-shadow: inset 0 1px 0 var(--line2); }
+  .stat:nth-child(2n):nth-child(n + 3) { box-shadow: inset 1px 0 0 var(--line2), inset 0 1px 0 var(--line2); }
+}
+/*  A FIGURE NEVER BREAKS. body carries overflow-wrap: break-word as the last
+    resort against text painting outside its own box, and on a 320px phone
+    that resort fired on the summary: £10,421.66 wrapped after the comma and
+    rendered as "£10,421." over "66", which is not a hard number to misread,
+    it is two. nowrap forbids it, and the size and padding come down at the
+    width where the two columns are 144px wide so there is nothing left to
+    forbid. */
+.stat .fig { margin-top: var(--s1); white-space: nowrap; }
+@media (max-width: 420px) {
+  .stat { padding: var(--s3) var(--s4); }
+  .stat .fig { font-size: var(--t-fig-s); line-height: var(--lh-fig-s); }
+  p.statgrid__foot { padding: var(--s3) var(--s4); }
+}
+/*  The conditions on the four, inside the strip and ruled off from them.
+    p.statgrid__foot, not .statgrid__foot: the prose measure in base.css is
+    written as `p.dim`, which is one element name more specific than a class
+    on its own, so a bare class here loses and the sentence wrapped at 54ch
+    across a strip eleven hundred pixels wide. This is a single line of
+    conditions under a row of figures, not prose, and it takes the strip. */
+p.statgrid__foot {
+  grid-column: 1 / -1;
+  margin: 0;
+  padding: var(--s3) var(--s5);
+  border-top: 1px solid var(--line2);
+  max-width: none;
+}
+
+/*  The four figures under a profile, pinned to the foot of the card.
+    A grid row takes its tallest card and every card in it stretches, so a
+    short card is not short, it is a tall card with a hole under its content.
+    This is the one place in the product where that hole was two hundred and
+    fifty pixels. */
+.profile__figs { gap: var(--s7); margin-top: auto; padding-top: var(--s6); }
+
+/* --------------------------------------------------------------- nav list */
+/*  A COLUMN OF ROWS THAT PICK A PANE, on one surface.
+ *
+ *  The settings navigation was six .rowcard buttons, each with its own
+ *  border, its own fill, its own 10px radius and an 8px gap to the next: six
+ *  boxes to say what is really one list of six. A gap between boxes says
+ *  "these are separate things"; a hairline inside one box says "these are
+ *  parts of one thing", which is what six sections of a settings screen are.
+ *
+ *  The selected row takes a fill and a bar on its leading edge, the same two
+ *  signals the sidebar uses for the page you are on, so the product has one
+ *  way of saying "this one" rather than two. */
+.navlist {
+  display: grid;
+  align-content: start;
+  border: 1px solid var(--line2);
+  border-radius: var(--r-card);
+  background: color-mix(in oklab, var(--surface) 72%, transparent);
+  box-shadow: inset 0 1px 0 color-mix(in oklab, var(--ink) 7%, transparent);
+  overflow: hidden;
+}
+.navlist .rowcard {
+  position: relative;
+  width: 100%;
+  text-align: left;
+  cursor: pointer;
+  border: 0;
+  border-radius: 0;
+  background: none;
+  padding: var(--s4) var(--s5);
+  transition: background var(--dur-fast) var(--ease);
+}
+.navlist .rowcard + .rowcard { border-top: 1px solid var(--line2); }
+/*  A row in a list does not lift. The card lift in motion.css is for a card
+    that is its own object; lifting one row out of a ruled column tears the
+    rule it shares with the row above it. */
+.navlist .rowcard:hover { background: color-mix(in oklab, var(--ink) 4%, transparent); transform: none; }
+.navlist .rowcard[aria-pressed='true'] { background: color-mix(in oklab, var(--accent) 11%, transparent); }
+.navlist .rowcard[aria-pressed='true']::before {
+  content: '';
+  position: absolute;
+  left: 0; top: 50%;
+  width: 3px; height: 22px;
+  transform: translateY(-50%);
+  border-radius: var(--r-pill);
+  background: var(--accent);
+}
+.navlist .rowcard[aria-pressed='true'] .rowcard__i { color: var(--accent); }
 
 /*  The chip that says why a list is short.
     role=status, so a reader that has just followed "Waiting on a result 7"
@@ -1162,13 +1695,39 @@
   background: var(--surface-3);
   overflow: hidden;
 }
+/*  --accent, not --gold. tokens.css declares --gold as a NEW marker "and
+    nothing else", 0.120 from --warn in oklab so the two do not read as one,
+    and this bar is neither new nor a warning: it is a proportion, which is
+    what the solid accent is for ("buttons, bars, active states"). */
 .split__fill {
   display: block;
   height: 100%;
   border-radius: var(--r-pill);
-  background: var(--gold);
+  background: var(--accent);
 }
 .split__say { margin-top: var(--s2); max-width: 44ch; }
+
+/*  OFFERS VERSUS OWN, AS A STRIP ACROSS THE PAGE.
+ *
+ *  It was four columns of a twelve column grid, 367 by 408, holding two
+ *  figures and a bar: roughly 140px of measured nothing between them,
+ *  because the row it sat in took its height from the profit curve beside it
+ *  and every card in a grid row stretches to the tallest. Nothing below the
+ *  fold is a pair any more. The two figures and the reading of them sit
+ *  across one row and the module is as tall as they are.
+ *
+ *  The bar column is wider than the figures because it carries the sentence,
+ *  and a sentence in a 300px column beside two 24px figures wraps to five
+ *  lines and sets the height of the strip. */
+.offsplit { display: grid; gap: var(--s5); }
+@media (min-width: 900px) {
+  .offsplit {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1.6fr);
+    gap: var(--s7);
+    align-items: center;
+  }
+}
+.offsplit__read { min-width: 0; }
 
 /*  A chart that fills its module rather than sitting in the top third of it.
     The height comes from the box, so the box has to have one: flex:1 inside
@@ -1180,3 +1739,792 @@
     two figures above it lead to, and a conclusion belongs under the thing it
     concludes rather than floating in the middle of the space left over. */
 .split { margin-top: auto; padding-top: var(--s5); }
+
+/*  The conditions on a set of figures, at the foot of the set. heldOut and
+    the imported-history caveat are not statistics, they are the terms the
+    statistics above them are true under, so they sit under all of them
+    rather than beside any one.
+
+    There was an `overflow: auto` here, holding back a grid that was taller
+    than the fixed-height card it sat in. It hid the last two figures at
+    three of the five widths this is checked at. The card is a minimum
+    height now, so there is nothing left to hide. */
+
+/*  A set of mutually exclusive choices where each one needs a sentence to
+    explain it. Radios would be right if the labels were one word; they are
+    not, and a radio with a two-line description beside it puts the target on
+    the dot rather than on the choice. These are buttons the size of the
+    thing they select. */
+.optionset { display: grid; gap: var(--s2); }
+.optionrow {
+  display: grid;
+  gap: var(--s1);
+  text-align: left;
+  padding: var(--s3) var(--s4);
+  min-height: var(--tap);
+  border: 1px solid var(--line);
+  border-radius: var(--r-ctl);
+  background: var(--surface-2);
+  cursor: pointer;
+  transition: border-color var(--dur-fast) var(--ease), background var(--dur-fast) var(--ease);
+}
+.optionrow:hover { border-color: var(--line-2); }
+.optionrow[aria-pressed='true'] {
+  border-color: var(--accent);
+  background: color-mix(in oklab, var(--accent) 9%, var(--surface));
+}
+.optionrow__t { font-weight: var(--w-label); }
+.optionrow__s { font-size: var(--t-small); color: var(--ink-2); }
+.fieldset { border: 0; padding: 0; margin: 0; min-width: 0; }
+
+/*  Things that are true, listed as facts rather than offered as switches.
+    A switch invites a decision; these are not decisions, and presenting them
+    as though they were would be the first step to somebody asking for the
+    one that must never exist. */
+.factlist { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--s2); }
+.factlist li { display: grid; grid-template-columns: 16px minmax(0, 1fr); gap: var(--s2); align-items: start; font-size: var(--t-small); color: var(--ink-2); }
+.factlist svg { color: var(--pos); margin-top: 3px; }
+
+/*  An empty state draws example rows behind its copy so the shape of the
+    thing is visible before there is anything in it. That is worth doing and
+    it is also two halves of a screen disagreeing unless somebody says so:
+    four people with figures under a heading that says you have nobody reads
+    as a bug, not as an illustration. */
+.empty__note { margin-top: var(--s3); max-width: 42ch; }
+
+/*  Follow, which has to be two words in one button: what is true now, and
+    what pressing it does. Swapping the label on hover and focus is the
+    convention everybody has already learned, and without it a button
+    reading "Following" that unfollows has tricked the person pressing it.
+    The width is held by the wider of the two so the row does not jump. */
+.follow { position: relative; }
+.follow--on { border-color: var(--line-2); }
+.follow__hover { position: absolute; inset: 0; display: grid; place-items: center; opacity: 0; }
+.follow--on:hover .follow__rest,
+.follow--on:focus-visible .follow__rest { opacity: 0; }
+.follow--on:hover .follow__hover,
+.follow--on:focus-visible .follow__hover { opacity: 1; }
+@media (prefers-reduced-motion: no-preference) {
+  .follow__rest, .follow__hover { transition: opacity 120ms var(--ease); }
+}
+
+/* ------------------------------------------------- money in and money out */
+
+/*  THREE FIGURES THAT ADD UP, left to right: own money in, plus profit and
+    loss, is the balance. The operators between them are the read, so they are
+    real elements at the same optical weight as the figures rather than
+    punctuation inside a label. They are aria-hidden and the footer says the
+    same relationship in words.
+
+    It stacks at 640 rather than wrapping: three figures on two lines with an
+    equals sign orphaned above the third is worse than three rows. */
+.moved__sums {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr) auto minmax(0, 1fr);
+  align-items: center;
+  gap: var(--s3);
+  padding: var(--s2) 0 var(--s4);
+}
+.moved__fig .fig { margin-top: var(--s0); }
+.moved__fig .small { margin-top: var(--s1); }
+.moved__op {
+  font-family: var(--f-mono);
+  font-size: var(--t-h3);
+  color: var(--ink-2);
+  text-align: center;
+}
+@media (max-width: 640px) {
+  .moved__sums { grid-template-columns: minmax(0, 1fr); gap: var(--s4); }
+  /*  The operator is horizontal punctuation. Stacked it would sit alone on
+      its own line saying nothing, and the footer carries the sum in words. */
+  .moved__op { display: none; }
+}
+
+/*  A MOVEMENT IS NOT A BET, and the row has to say so before it is read.
+    A rule down the left in the accent and a tag instead of an outcome pill,
+    so somebody scanning a column of bets for their bets never has to read one
+    of these to find out it is not one.
+
+    Neither result colour appears on it. Green and red mean profit and loss
+    here, and paying money in is not winning. */
+.mvrow {
+  border-left: 2px solid var(--accent);
+  padding-left: var(--s3);
+  background: color-mix(in oklab, var(--accent) 5%, transparent);
+}
+.mvrow__tag {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s1);
+  font-size: var(--t-micro);
+  letter-spacing: var(--tr-micro);
+  text-transform: uppercase;
+  font-weight: var(--w-label);
+  color: var(--accent-2);
+}
+
+/* ----------------------------------------------------------- slip gallery */
+
+/*  A grid of slips, sized so a phone shows two across and a desktop shows
+    six. auto-fill rather than a fixed column count, because the number of
+    columns is a function of the width and writing it out per breakpoint is
+    four numbers that have to be kept in step with one. */
+.gal {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(148px, 1fr));
+  gap: var(--gap-grid);
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.gal__tile {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  text-align: left;
+  cursor: pointer;
+  border: 1px solid var(--line-2);
+  border-radius: var(--r-card);
+  background: var(--surface);
+  overflow: hidden;
+  transition: border-color var(--dur-fast) var(--ease), transform var(--dur-fast) var(--ease);
+}
+.gal__tile:hover { border-color: var(--accent); }
+/*  Transform only. Nothing here animates a width, a height or a position. */
+.gal__tile:active { transform: scale(0.985); }
+
+/*  The face of the tile is SLIP SHAPED, taller than it is wide, because that
+    is the shape of the thing it stands for and a row of landscape boxes reads
+    as cards rather than as slips. It is not a picture and it does not pretend
+    to be one: it carries what is known about the bet, and the strip under it
+    carries what is known about the image. */
+.gal__face {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s1);
+  padding: var(--s4) var(--s3);
+  min-height: 132px;
+  background:
+    linear-gradient(180deg, color-mix(in oklab, var(--surface-2) 70%, transparent), transparent);
+}
+/*  THE SLIP ITSELF, when there is one to show.
+ *
+ *  The picture fills the face and the words sit over the foot of it, which is
+ *  the point of a gallery: a wall of tiles that says "Image held" and shows
+ *  nothing is a list with a worse layout. The shade under the text is a
+ *  painted gradient rather than an opacity on the picture, because a slip
+ *  faded to a quarter is not evidence of anything.
+ *
+ *  A separate element rather than :has() or ::after on the face. The shade
+ *  only exists when the image does, and an element that is drawn by the same
+ *  condition as the thing it covers cannot fall out of step with it.
+ *
+ *  min-height on the face, never a fixed height. */
+.gal__face { position: relative; isolation: isolate; }
+.gal__shot,
+.gal__shade {
+  position: absolute;
+  inset: 0;
+  z-index: var(--z-behind);
+}
+.gal__shot {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: top center;
+}
+/*  Transparent at the top so the slip is legible, solid at the foot so the
+    words over it are. No filter: blur() anywhere near it: a live blur is
+    banned in this product because it is re-evaluated every scroll frame. */
+.gal__shade {
+  background: linear-gradient(180deg,
+    color-mix(in oklab, var(--surface) 10%, transparent) 0%,
+    color-mix(in oklab, var(--surface) 55%, transparent) 42%,
+    var(--surface) 92%);
+}
+.gal__tile--held .gal__face { min-height: 168px; }
+.gal__tile--held .gal__book { margin-top: auto; }
+.gal__face > :not(.gal__shot):not(.gal__shade) { position: relative; z-index: var(--z-content); }
+.gal__mark { color: var(--ink-2); flex: none; }
+.gal__book {
+  font-size: var(--t-micro);
+  letter-spacing: var(--tr-micro);
+  text-transform: uppercase;
+  color: var(--ink-2);
+  margin-top: var(--s1);
+}
+.gal__sel {
+  font-size: var(--t-small);
+  font-weight: var(--w-label);
+  color: var(--ink);
+  /*  Two lines then an ellipsis. A selection that wraps to five lines makes
+      one tile twice the height of the row and the grid stops being a grid. */
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  overflow: hidden;
+}
+.gal__price { font-size: var(--t-micro); color: var(--ink-2); margin-top: auto; }
+
+.gal__state {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--s2);
+  padding: var(--s2) var(--s3);
+  font-size: var(--t-micro);
+  letter-spacing: var(--tr-micro);
+  text-transform: uppercase;
+  font-weight: var(--w-label);
+  border-top: 1px solid var(--line);
+  color: var(--ink-2);
+}
+/*  The removed state takes the warn colour and not the loss colour. Loss red
+    means money in this product and a deleted image cost nobody anything: it
+    is the retention promise being kept. */
+.gal__state--expired { color: var(--warn); }
+/*  Not the warn colour. An image that was never kept is not a promise being
+    kept or broken, it is a fact about an older bet, so it reads as the same
+    quiet ink as the rest of the strip rather than as a caution. --ink-3 is a
+    border token and is never a text colour. */
+.gal__state--unstored { color: var(--ink-2); }
+.gal__statet { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.gal__days { font-weight: var(--w-body); flex: none; letter-spacing: 0; }
+
+/* -------------------------------------------------------------- lightbox */
+
+/*  ONE backdrop-filter in here and no more. The budget is about three across
+    the whole product, and a previous build shipped 79 and stuttered. */
+.lbox__scrim {
+  position: fixed;
+  inset: 0;
+  z-index: var(--z-overlay);
+  background: color-mix(in oklab, #000 68%, transparent);
+  animation: fade-in var(--dur) var(--ease) both;
+}
+.lbox {
+  position: fixed;
+  z-index: var(--z-sheet);
+  left: 0; right: 0; bottom: 0;
+  /*  svh, never dvh: dvh recalculates when the iOS toolbar shows or hides and
+      a pinned layout visibly breathes while somebody is reading it. */
+  max-height: 92svh;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  background: var(--bg-2);
+  border-top: 1px solid var(--line-2);
+  border-radius: var(--r-card) var(--r-card) 0 0;
+  padding: var(--s5) var(--s4) calc(var(--s5) + env(safe-area-inset-bottom));
+  animation: sheet-up var(--dur) var(--ease-out) both;
+}
+@media (min-width: 700px) {
+  .lbox {
+    left: 50%; right: auto; bottom: auto; top: 50%;
+    transform: translate(-50%, -50%);
+    width: min(860px, calc(100vw - 48px));
+    border-radius: var(--r-card);
+    border: 1px solid var(--line-2);
+    animation: fade-in var(--dur) var(--ease) both;
+  }
+}
+.lbox__head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--s3);
+  margin-bottom: var(--s4);
+}
+.lbox__body { display: grid; gap: var(--s5); }
+@media (min-width: 700px) {
+  /*  The slip on the left and the bet on the right, which is the whole point
+      of the lightbox: a slip without the bet it produced is a photograph, and
+      the pair is the evidence. */
+  .lbox__body { grid-template-columns: minmax(0, 5fr) minmax(0, 6fr); align-items: start; }
+}
+.lbox__img {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: center;
+  min-height: 220px;
+  padding: var(--s5);
+  border: 1px dashed var(--line-2);
+  border-radius: var(--r-ctl);
+  background: var(--surface);
+}
+.lbox__img--expired { border-color: var(--warn-line); }
+/*  A held image fills its side of the lightbox: solid border rather than the
+    dashed placeholder, and no padding, because the picture is the content.
+    A modifier class rather than :has(), so the rule is drawn by the same
+    condition that draws the picture. */
+.lbox__img--shot { padding: 0; border-style: solid; overflow: hidden; }
+.lbox__shot {
+  display: block;
+  width: 100%;
+  max-height: 70svh;
+  object-fit: contain;
+  background: var(--surface-2);
+}
+.lbox__bet ul { list-style: none; margin: 0; padding: 0; }
+.lbox__foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--s3);
+  flex-wrap: wrap;
+  margin-top: var(--s5);
+  padding-top: var(--s4);
+  border-top: 1px solid var(--line);
+}
+
+/* ------------------------------------------------------- getting started */
+
+/*  Four steps, on the dashboard, while there are four to do. It draws nothing
+    once they are done, so there is no dismissed state to store and nothing to
+    remember per device. */
+.onb .meter { margin-top: var(--s1); }
+.onb__list { margin-top: var(--s3); list-style: none; padding: 0; }
+.onb__step {
+  grid-template-columns: 22px minmax(0, 1fr) auto;
+  gap: var(--s2) var(--s3);
+  /*  The mark sits beside the TITLE, not centred against a two line row. The
+      row inherits align-items: center from .brow, which put a tick level with
+      the gap between the two lines it was ticking. */
+  align-items: start;
+}
+/*  The title on its own line and the reason under it. Both are inline
+    elements, so without this they ran together into "Link the Telegram botOne
+    code, once", which is one sentence made of two. */
+.onb__mark {
+  display: grid;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  border-radius: var(--r-pill);
+  border: 1px solid var(--line-2);
+  color: var(--ink-2);
+  flex: none;
+}
+/*  A done step goes QUIET rather than green. Profit green means money in this
+    product and ticking a box is not money, and a column of green ticks beside
+    a ledger of green figures is two things claiming the same colour. */
+.onb__step--done .onb__mark { border-color: var(--line-2); background: var(--surface-2); }
+.onb__step--done .brow__title { color: var(--ink-2); }
+.onb__body { display: block; min-width: 0; }
+.onb__link { color: inherit; text-decoration: none; }
+.onb__link:hover .brow__title { color: var(--accent-2); }
+.onb__state { flex: none; white-space: nowrap; padding-top: 3px; }
+@media (max-width: 419px) {
+  /*  The right hand word goes first at 320: "To do" is the same fact as the
+      empty circle on the left, and the title needs the width more. */
+  .onb__state { display: none; }
+  .onb__step { grid-template-columns: 22px minmax(0, 1fr); }
+}
+
+/* ------------------------------------------------------------- leaderboard */
+/*  A row is position, avatar, who, and the two figures on the right. The
+    return sits UNDER the units rather than in a fifth column: at 320 a fifth
+    column collapses the name column to nothing, and the two belong together
+    anyway, because they are one fold over one set of bets read two ways. */
+.lb__row { grid-template-columns: 24px 30px minmax(0, 1fr) auto; gap: var(--s3); }
+.lb__fig { display: grid; justify-items: end; gap: var(--s0); text-align: right; }
+.lb__note { margin-top: var(--s3); }
+/*  Your own row, wherever it appears. A wash rather than a border, so the
+    row keeps the height every other row has and the table does not step. */
+.lb__row--you {
+  background: color-mix(in oklab, var(--accent) 7%, transparent);
+  border-radius: var(--r-sm);
+}
+
+/* ------------------------------------------------------------------ podium */
+/*  Three plinths and no trophy. The heights carry the ranking, the numeral
+    carries the place, and the units figure keeps the profit or loss colour
+    it has everywhere else in the product. */
+.podium {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--s2);
+  align-items: end;
+}
+.podium__place {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-width: 0;
+  text-align: center;
+}
+/*  DOM order is rank order, so anything reading the list in sequence reads
+    first, second, third. Visual order is second, first, third, which is what
+    a podium is. */
+.podium__place--1 { order: 2; }
+.podium__place--2 { order: 1; }
+.podium__place--3 { order: 3; }
+.podium__name {
+  font-size: var(--t-small);
+  font-weight: var(--w-label);
+  color: var(--ink);
+  text-decoration: none;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.podium__handle {
+  font-size: var(--t-micro);
+  line-height: var(--lh-micro);
+  color: var(--ink-2);
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.podium__units { margin-top: var(--s1); }
+/*  A PLINTH HAS TO LOOK LIKE A STEP.
+ *
+ *  It was 64, 46 and 34, and the block inside it is a position and a bet
+ *  count, which is 34 tall on its own. So second and third both bottomed out
+ *  at the height of their own contents and rendered identically, and first
+ *  stood sixteen pixels above them. Three blocks, two of them the same
+ *  height, with the names floating above at three heights that read as
+ *  misalignment rather than as a rank.
+ *
+ *  96, 64 and 44. The steps are 32 and 20, which is the proportion of an
+ *  actual podium and enough that the shape is legible before any of the
+ *  words are. The plinth is also lit from the top now, like every other
+ *  surface in the product, so it reads as a block rather than as a slightly
+ *  paler rectangle. */
+.podium__plinth {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  gap: var(--s0);
+  width: 100%;
+  margin-top: var(--s2);
+  padding-top: var(--s3);
+  border: 1px solid var(--line2);
+  border-bottom: 0;
+  border-radius: var(--r-sm) var(--r-sm) 0 0;
+  background:
+    linear-gradient(to bottom,
+      color-mix(in oklab, var(--ink) 6%, transparent) 0%,
+      transparent 46%),
+    var(--surface-2);
+}
+.podium__place--1 .podium__plinth { min-height: 96px; }
+.podium__place--2 .podium__plinth { min-height: 64px; }
+.podium__place--3 .podium__plinth { min-height: 44px; }
+/*  First place is the one the eye should land on, and it says so with the
+    medal's own colour on its top edge rather than with a second border
+    weight or a size the other two cannot have. */
+.podium__place--1 .podium__plinth {
+  border-top-color: color-mix(in oklab, var(--medal-1) 40%, transparent);
+  box-shadow: inset 0 1px 0 color-mix(in oklab, var(--medal-1) 26%, transparent);
+}
+.podium__pos { font-size: var(--t-small); font-weight: var(--w-label); }
+.podium__bets { font-size: var(--t-micro); line-height: var(--lh-micro); color: var(--ink-2); }
+.podium__place--you .podium__plinth { background: color-mix(in oklab, var(--accent) 12%, var(--surface-2)); }
+/*  The pinned row, in the table's own shape. Somebody in fourteenth should
+    read their figure in the same units, the same colour and the same layout
+    as the three above, or the block is three strangers and a footnote. */
+.podium__pin { margin-top: var(--s4); border-top: 1px solid var(--line); padding-top: var(--s3); }
+
+/* --------------------------------------------------------- tracking a bet */
+/*  An open bet somebody captured before the off. There is no result column
+    because there is no result: the item ages out when the event starts and
+    is never revisited. */
+.trk__row { grid-template-columns: 30px minmax(0, 1fr) auto; gap: var(--s3); align-items: start; }
+.trk__when { display: grid; justify-items: end; gap: var(--s0); text-align: right; }
+.trk__meta { display: flex; flex-wrap: wrap; gap: var(--s1) var(--s2); margin-top: var(--s1); }
+@media (max-width: 359px) {
+  /*  At 320 the price, the stake and the bookmaker do not fit beside the
+      kick off time. The time drops under the selection rather than the
+      selection wrapping to one word a line. */
+  .trk__row { grid-template-columns: 30px minmax(0, 1fr); }
+  .trk__when { grid-column: 2; justify-items: start; text-align: left; margin-top: var(--s1); }
+}
+
+
+/* ------------------------------------------------------------ the ledger */
+/*  THE LEDGER AT DESKTOP WIDTH, WHICH IS A TABLE AND A PANE.
+ *
+ *  What shipped here was the phone layout given a thousand more pixels: at
+ *  1440 the row measured 1110px, the text in it took about 460, and the
+ *  money sat at the far right, so a page of thirty bets was a thousand pixel
+ *  eye movement per row. Every product the customer is coming from draws
+ *  bets as columns you can scan and sort. This drew them as a chat log, and
+ *  it is the single thing that separated the product from a serious
+ *  analytics tool.
+ *
+ *  ONE TABLE, TWO SHAPES. Above 1000px it is a table. Below it, the same
+ *  cells reflow into the stacked row that was always right on a phone: the
+ *  head is dropped, the row becomes a block, the fact cells become inline
+ *  text on one line with their own separators, and the money is taken out of
+ *  the flow to the right where it has always sat. Rendering two trees and
+ *  hiding one would ship fifty rows of markup twice.
+ *
+ *  EVERY SELECTOR HERE IS ONE CLASS. The first version reset the shape with
+ *  `.btbl tr` and `.btbl td`, which are a class plus an element, so the
+ *  media query below could not win against its own base and the desktop
+ *  table rendered as fifty stacked blocks with four columns missing. */
+.btbl { width: 100%; border-collapse: collapse; display: block; }
+.btbl caption { text-align: left; }
+.btbl__head { display: none; }
+.btbl__body { display: block; }
+
+.btbl__r {
+  display: block;
+  position: relative;
+  padding: var(--s3) 0;
+  /*  The money sits out of the flow on the right, so the text beside it
+      needs the room reserved. 108px holds "-£1,234.56" at --t-fig-s with a
+      gap, which is the widest figure a row can carry before the sum itself
+      is the problem. */
+  padding-right: 108px;
+  border-top: 1px solid var(--line);
+}
+.btbl__r:first-child { border-top: 0; }
+.btbl__c { display: block; padding: 0; border: 0; }
+.btbl__c--res { margin-bottom: 3px; }
+/*  A REAL BOX, and it holds both lines of the name. Around the title alone
+    it measured 19px against a 44px thumb floor, inside a row 95px tall. */
+.btbl__open {
+  display: block;
+  width: 100%;
+  min-height: var(--tap);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+@media (min-width: 1000px) and (pointer: fine) { .btbl__open { min-height: 24px; } }
+.btbl__open--flat { cursor: default; min-height: 0; }
+.btbl__sel {
+  display: block;
+  font-weight: var(--w-label);
+  font-size: var(--t-small);
+  color: var(--ink);
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.btbl__sub {
+  display: block;
+  font-size: var(--t-small);
+  color: var(--ink-2);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+/*  The facts run together as one line of mono, the way they always did, and
+    the separators are drawn by CSS rather than written into the markup: at
+    desktop each of them is its own column and a stray middle dot in a cell
+    is punctuation nobody put there. */
+.btbl__c--stake, .btbl__c--price, .btbl__c--when {
+  display: inline;
+  font-family: var(--f-mono);
+  font-size: var(--t-small);
+  color: var(--ink-2);
+}
+.btbl__c--price::before { content: ' at '; }
+.btbl__c--when::before { content: ' · '; }
+.btbl__book, .btbl__date { display: inline; }
+/*  The date never breaks across two lines. "2 Sep 18:00" wrapping after the
+    2 reads as a different date on the line above a time. */
+.btbl__date { white-space: nowrap; }
+.btbl__date::before { content: ' · '; }
+/*  A movement has no stake and no price, so the separators that join them
+    have nothing to join: the deposit row printed a bare "at · Betfair
+    Exchange" where the bet rows print "£25.00 at 3.97 · Sky Bet". */
+.btbl__c--stake:empty::before, .btbl__c--price:empty::before { content: none; }
+.btbl__r--mv .btbl__c--when::before { content: none; }
+/*  The two lines on a movement row that have to be read in full rather than
+    scanned, so they wrap where every bet row's fixture truncates. There are
+    three of these in a page of fifty and neither line is a figure anybody
+    scans a column for. */
+.btbl__r--mv .btbl__sub, .btbl__r--mv .btbl__note { white-space: normal; }
+.btbl__c--money {
+  position: absolute;
+  top: var(--s3);
+  right: 0;
+  display: block;
+  text-align: right;
+}
+.btbl__c--money .fig { display: block; }
+.btbl__note {
+  display: block;
+  font-size: var(--t-small);
+  color: var(--ink-2);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.btbl__c--go { display: none; }
+/*  A movement is not a bet and the row says so before it is read: the accent
+    rule down the left and a tag where a bet carries its outcome. Neither
+    result colour appears on it, because paying money in is not winning. */
+.btbl__r--mv {
+  border-left: 2px solid var(--accent);
+  padding-left: var(--s3);
+  background: color-mix(in oklab, var(--accent) 5%, transparent);
+}
+
+/* --------------------------------------------- from 1000, it is a table */
+@media (min-width: 1000px) {
+  /*  The card gives its horizontal padding to the cells, so a row's hover
+      band and a movement's accent rule reach the card's own edge. On a phone
+      the card keeps its padding: the rows are not a table there and a row
+      running to the edge of the screen is a row with no margin. */
+  .card--table { padding-inline: 0; }
+  /*  FIXED, not auto. Under auto layout a column is as wide as its widest
+      content wants to be, and the fixture line inside the bet cell does not
+      wrap, so one five fold with four Irish club names in it made that
+      column two thousand pixels wide and pushed stake, price, book and
+      profit off the right hand edge of the card, where overflow: hidden ate
+      them silently. Fixed widths on the head row, one auto column for the
+      name, and the name truncates instead of the table exploding.
+
+      The six add up to 510px, which is what leaves the name column 236px at
+      1024 and 720 at 1920. Move one and the name column moves with it. */
+  .btbl { display: table; table-layout: fixed; }
+  .btbl__h2--result { width: 100px; }
+  .btbl__h2--stake { width: 84px; }
+  .btbl__h2--price { width: 64px; }
+  .btbl__h2--when { width: 120px; }
+  .btbl__h2--pl { width: 120px; }
+  .btbl__h2--go { width: 22px; }
+  .btbl__head { display: table-header-group; }
+  .btbl__body { display: table-row-group; }
+  .btbl__r {
+    display: table-row;
+    position: static;
+    padding: 0;
+    border-top: 0;
+    border-left: 0;
+    background: none;
+    cursor: pointer;
+    transition: background var(--dur-fast) var(--ease);
+  }
+  /*  IT SAYS IT IS PRESSABLE. The row carried no chevron, no hover treatment
+      and nothing else suggesting that pressing it did anything, on the one
+      screen whose whole job is opening bets. */
+  .btbl__r:hover .btbl__c { background: var(--surface-2); }
+  .btbl__r:hover .btbl__sel { text-decoration: underline; text-underline-offset: 2px; }
+  .btbl__r:hover .btbl__c--go svg { color: var(--ink-2); }
+  .btbl__r--on .btbl__c { background: var(--surface-2); }
+  .btbl__r--on .btbl__c--res { box-shadow: inset 2px 0 0 var(--accent); }
+
+  .btbl__h2, .btbl__c {
+    display: table-cell;
+    padding: var(--s3) var(--s2h);
+    border-top: 1px solid var(--line);
+    vertical-align: top;
+    white-space: nowrap;
+    /*  A cell keeps what is in it. Without this a long name in a fixed
+        column paints across the figure in the next one, and the element's
+        rectangle does not move, so neither the collision check nor the
+        clipping check can see it happen. */
+    overflow: hidden;
+  }
+  .btbl__h2 { border-top: 0; padding-top: 0; }
+  .btbl__c--res, .btbl__h2--result { padding-left: var(--s5); }
+  .btbl__c--go, .btbl__h2--go { padding-right: var(--s5); }
+  .btbl__c--bet { white-space: normal; }
+  .btbl__c--res { margin-bottom: 0; }
+  .btbl__c--stake, .btbl__c--price {
+    text-align: right;
+    color: var(--ink);
+  }
+  .btbl__c--price::before { content: none; }
+  .btbl__c--when {
+    font-family: var(--f-ui);
+    font-size: var(--t-small);
+  }
+  .btbl__c--when::before { content: none; }
+  .btbl__book { display: block; color: var(--ink); }
+  .btbl__date { display: block; color: var(--ink-2); font-family: var(--f-mono); font-size: var(--t-micro); }
+  .btbl__date::before { content: none; }
+  .btbl__c--money { position: static; text-align: right; }
+  .btbl__c--go { width: 1%; padding-left: 0; }
+  /*  --ink-3 on the SVG rather than on the cell. It is the border and
+      disabled-icon token and it is never a text colour, which a test
+      enforces by reading the stylesheet: a rule that paints a cell in it
+      cannot know that the only thing in the cell is a chevron. */
+  .btbl__c--go svg { display: inline-block; vertical-align: middle; color: var(--ink-3); }
+  /*  The tags stay on the sub line and out of the way. They are facts about
+      the bet and the last thing anybody scans this column for. */
+  .btbl__tag { color: var(--ink-2); }
+  .btbl__r--mv .btbl__c--res { box-shadow: inset 2px 0 0 var(--accent); }
+  .btbl__r--mv .btbl__c { background: color-mix(in oklab, var(--accent) 5%, transparent); }
+}
+
+/*  A COLUMN HEADING IS A CONTROL, so it looks like one and clears the mouse
+    floor of 24px on its own. */
+.btbl__h {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s1);
+  min-height: 24px;
+  cursor: pointer;
+  font: inherit;
+  font-size: var(--t-micro);
+  letter-spacing: var(--tr-micro);
+  text-transform: uppercase;
+  font-weight: var(--w-label);
+  color: var(--ink-2);
+}
+.btbl__h:hover { color: var(--ink); }
+.btbl__h2[aria-sort='ascending'] .btbl__h,
+.btbl__h2[aria-sort='descending'] .btbl__h { color: var(--ink); }
+.btbl__h2--num .btbl__h { justify-content: flex-end; width: 100%; }
+/*  Quieter by COLOUR, never by opacity: an opacity ramp on a mark beside a
+    heading takes the heading with it on the themes with the lightest ground. */
+.btbl__sort { flex: none; color: var(--ink); }
+.btbl__sort--off { color: var(--ink-2); }
+
+/* ---------------------------------------------------- the list and the bet */
+/*  From 1400 the ledger is two panes. Not before, and the number is
+    measured rather than chosen: six fixed columns take 526px, the pane
+    wants 300, and what is left is the room the selection and its fixture
+    have to read in. At 1280 that room is 176px, which truncates the fixture
+    off every row to make space for a panel, so the split waits until the
+    window can hold both properly. Under it the aside is not drawn at all
+    and the bet opens as the sheet it always was. */
+.lgr { display: block; }
+.lgr__side { display: none; }
+@media (min-width: 1400px) {
+  .lgr {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) clamp(300px, 22vw, 400px);
+    gap: var(--gap-grid);
+  }
+  /*  The aside takes the whole row height, or there is nothing for the pane
+      inside it to be sticky WITHIN: a sticky box cannot travel past its own
+      parent, and with align-items: start the parent was exactly as tall as
+      the pane, so it scrolled away with the page and the whole point of
+      putting it beside the list was lost. */
+  .lgr__side { display: block; align-self: stretch; }
+  /*  Sticky under the top bar, with its own scroll. A working with fourteen
+      lines in it is taller than some ledgers are, and a pane that pushed the
+      page down to fit would move the row that opened it. */
+  .dpane {
+    position: sticky;
+    top: calc(var(--topbar-h) + var(--gap-block));
+    max-height: calc(100svh - var(--topbar-h) - var(--s8));
+    overflow-y: auto;
+    background: var(--bg-2);
+    border: 1px solid var(--line-2);
+    border-radius: var(--r-card);
+    padding: var(--s5);
+    animation: fade-in var(--dur) var(--ease) both;
+  }
+  .dpane--rest {
+    background: color-mix(in oklab, var(--surface) 55%, transparent);
+    border-style: dashed;
+  }
+  .dpane__mark { color: var(--ink-2); margin-bottom: var(--s3); }
+  .dpane--rest .card__title { margin-bottom: var(--s2); }
+}

@@ -1,8 +1,9 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import {
-  money, pl, units, pct, count, shortDate, longDate, londonDay, timeOfDay,
-  axisMoney, axisMonth, position, initials, daysUntil,
+  money, pl, units, pct, count, shortDate, longDate, dayKey, timeOfDay,
+  axisMoney, axisMonth, position, initials, daysUntil, ewTerms,
+  zonedParts, startOfDay, isKnownTimeZone, DEFAULT_TZ,
 } from '@/lib/format';
 import { trialState, TRIAL_DAYS, TRIAL_SLIPS } from '@/lib/domain/trial';
 
@@ -60,15 +61,88 @@ test('dates are day first, always', () => {
   assert.equal(axisMonth('2026-08-12T10:00:00Z'), 'Aug');
 });
 
-test('a 23:00 UTC bet in summer lands on the NEXT London day', () => {
+test('a 23:00 UTC bet in summer lands on the NEXT UK day', () => {
   // Europe/London is UTC+1 in August, so 23:30Z is 00:30 the following day.
-  assert.equal(londonDay('2026-08-12T23:30:00Z'), '2026-08-13');
+  assert.equal(dayKey('2026-08-12T23:30:00Z', DEFAULT_TZ), '2026-08-13');
   assert.equal(timeOfDay('2026-08-12T23:30:00Z'), '00:30');
 });
 
 test('a winter timestamp stays on its own day', () => {
-  assert.equal(londonDay('2026-01-12T23:30:00Z'), '2026-01-12');
+  assert.equal(dayKey('2026-01-12T23:30:00Z', DEFAULT_TZ), '2026-01-12');
   assert.equal(timeOfDay('2026-01-12T23:30:00Z'), '23:30');
+});
+
+/*  ------------------------------------------------------ the account's zone
+ *
+ *  THE BET AT 23:40, which is the case the whole zone change is for. One
+ *  instant, read by three accounts, is three different calendar days, and
+ *  every one of those three answers is right for the person reading it. */
+
+const AT_2340_IRISH_SUMMER = '2026-08-12T22:40:00Z';   // 23:40 in Dublin, 22:40 UTC
+
+test('a 23:40 bet lands on the day it was 23:40 on, in whichever zone the account keeps', () => {
+  assert.equal(dayKey(AT_2340_IRISH_SUMMER, 'Europe/Dublin'), '2026-08-12');
+  assert.equal(timeOfDay(AT_2340_IRISH_SUMMER, 'Europe/Dublin'), '23:40');
+
+  // The same instant is 22:40 in UTC, still the 12th, and 00:40 on the 13th
+  // in Madrid, which is an hour further on.
+  assert.equal(dayKey(AT_2340_IRISH_SUMMER, 'UTC'), '2026-08-12');
+  assert.equal(dayKey(AT_2340_IRISH_SUMMER, 'Europe/Madrid'), '2026-08-13');
+  assert.equal(timeOfDay(AT_2340_IRISH_SUMMER, 'Europe/Madrid'), '00:40');
+});
+
+test('a 23:40 bet in Sydney is already tomorrow to a UTC server', () => {
+  // 23:40 on the 12th in Sydney is 13:40 UTC on the 12th; the interesting
+  // direction is the other one, where a UTC afternoon is a Sydney night.
+  const utcLateEvening = '2026-08-12T23:40:00Z';
+  assert.equal(dayKey(utcLateEvening, 'UTC'), '2026-08-12');
+  assert.equal(dayKey(utcLateEvening, 'Australia/Sydney'), '2026-08-13');
+  assert.equal(timeOfDay(utcLateEvening, 'Australia/Sydney'), '09:40');
+});
+
+test('startOfDay is the instant local midnight actually happens at', () => {
+  /*  The defect this replaces: Date.UTC on the zoned year, month and day,
+   *  which is midnight UTC and an hour late for anywhere on summer time. */
+  assert.equal(startOfDay(2026, 8, 13, 'Europe/London').toISOString(), '2026-08-12T23:00:00.000Z');
+  assert.equal(startOfDay(2026, 1, 13, 'Europe/London').toISOString(), '2026-01-13T00:00:00.000Z');
+  assert.equal(startOfDay(2026, 8, 13, 'Europe/Madrid').toISOString(), '2026-08-12T22:00:00.000Z');
+  assert.equal(startOfDay(2026, 8, 13, 'UTC').toISOString(), '2026-08-13T00:00:00.000Z');
+});
+
+test('startOfDay survives the clocks going forward and back', () => {
+  /*  Two passes, because the offset depends on the instant and the instant
+   *  depends on the offset. British summer time starts at 01:00 on 29 March
+   *  2026 and ends at 02:00 on 25 October, so midnight on each of those days
+   *  is on the old offset and midday is on the new one. */
+  assert.equal(startOfDay(2026, 3, 29, 'Europe/London').toISOString(), '2026-03-29T00:00:00.000Z');
+  assert.equal(startOfDay(2026, 3, 30, 'Europe/London').toISOString(), '2026-03-29T23:00:00.000Z');
+  assert.equal(startOfDay(2026, 10, 25, 'Europe/London').toISOString(), '2026-10-24T23:00:00.000Z');
+  assert.equal(startOfDay(2026, 10, 26, 'Europe/London').toISOString(), '2026-10-26T00:00:00.000Z');
+});
+
+test('the day a startOfDay begins is the day it is a start of', () => {
+  // The round trip, in four zones, across a year. If these ever disagree the
+  // period window and the calendar are filing the same bet under two days.
+  for (const tz of ['Europe/London', 'Europe/Dublin', 'Europe/Madrid', 'Australia/Sydney', 'UTC']) {
+    for (let m = 1; m <= 12; m++) {
+      const key = `2026-${String(m).padStart(2, '0')}-01`;
+      assert.equal(dayKey(startOfDay(2026, m, 1, tz), tz), key, `${tz} ${key}`);
+    }
+  }
+});
+
+test('zonedParts reads midnight as hour zero, never as hour 24', () => {
+  const p = zonedParts('2026-08-12T23:00:00Z', 'Europe/London');
+  assert.equal(p.hour, 0);
+  assert.equal(p.day, 13);
+});
+
+test('a zone the platform cannot resolve is refused rather than stored', () => {
+  assert.equal(isKnownTimeZone('Europe/Dublin'), true);
+  assert.equal(isKnownTimeZone('UTC'), true);
+  assert.equal(isKnownTimeZone('Middle/Earth'), false);
+  assert.equal(isKnownTimeZone(''), false);
+  assert.equal(isKnownTimeZone(null), false);
 });
 
 test('a position reads as a place out of a field', () => {
@@ -113,4 +187,17 @@ test('a running trial reports both numbers in one sentence', () => {
   assert.equal(s.slipsLeft, 23);
   assert.match(s.message, /9 days left/);
   assert.match(s.message, /23 more slips/);
+});
+
+test('each way terms print as a slip prints them, and never half of themselves', () => {
+  /*  "3rd of 12, places paid 1-3" needs both halves stored. A fifth the odds
+   *  says nothing without the place count and the place count says nothing
+   *  without the fraction, which is why places_paid went in beside
+   *  ew_place_fraction rather than instead of it. */
+  assert.equal(ewTerms(0.2, 3), '1/5, places 1-3');
+  assert.equal(ewTerms(0.25, 4), '1/4, places 1-4');
+  assert.equal(ewTerms(0.2, null), '1/5', 'a place count nobody read was invented');
+  assert.equal(ewTerms(null, 3), 'places 1-3');
+  assert.equal(ewTerms(null, null), '');
+  assert.equal(ewTerms(0, 0), '');
 });

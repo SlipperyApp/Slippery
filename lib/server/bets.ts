@@ -6,7 +6,7 @@
  *  the numbers it stores. */
 
 import type { PoolClient } from 'pg';
-import { recompute } from '@/lib/domain/fold';
+import { commissionDue, recompute } from '@/lib/domain/fold';
 import type { Bet, BetLeg, BetState, EventType, SettlementEvent } from '@/lib/domain/types';
 
 export type AppendInput = {
@@ -23,13 +23,15 @@ export type AppendInput = {
 };
 
 type BetRow = {
-  id: string; account_id: string; shape: Bet['shape']; side: Bet['side'];
+  id: string; account_id: string; balance_id: string | null; shape: Bet['shape']; side: Bet['side'];
   stake_pence: number; liability_pence: number | null; odds: string;
   currency: Bet['currency']; bookmaker_id: string; tipster_id: string | null;
   sport_id: string; event_name: string; selection: string; market_raw: string;
   event_at: string; placed_at: string; is_free_bet: boolean; is_bonus_funds: boolean;
   is_boosted: boolean; is_each_way: boolean; ew_place_fraction: string | null;
-  ew_part: Bet['ewPart']; ew_group_id: string | null; slip_backed: boolean;
+  ew_part: Bet['ewPart']; ew_group_id: string | null; places_paid: number | null;
+  closing_odds: string | null;
+  slip_backed: boolean;
   source: Bet['source']; arb_group_id: string | null; note: string | null;
   unit_pence_at_placement: number; commission_pct: string;
   competition: string | null; course: string | null; market_group_id: string | null;
@@ -51,7 +53,7 @@ type EventRow = {
 };
 
 const toBet = (r: BetRow, legs: LegRow[]): Bet => ({
-  id: r.id, accountId: r.account_id, shape: r.shape, side: r.side,
+  id: r.id, accountId: r.account_id, balanceId: r.balance_id ?? '', shape: r.shape, side: r.side,
   stakePence: r.stake_pence, liabilityPence: r.liability_pence, odds: Number(r.odds),
   currency: r.currency, fxRate: r.fx_rate ? Number(r.fx_rate) : null,
   bookmakerId: r.bookmaker_id, tipsterId: r.tipster_id, sportId: r.sport_id as Bet['sportId'],
@@ -60,7 +62,13 @@ const toBet = (r: BetRow, legs: LegRow[]): Bet => ({
   eventAt: r.event_at, placedAt: r.placed_at, expectedSettleAt: r.expected_settle_at,
   isFreeBet: r.is_free_bet, isBonusFunds: r.is_bonus_funds, isBoosted: r.is_boosted,
   isEachWay: r.is_each_way, ewPlaceFraction: r.ew_place_fraction ? Number(r.ew_place_fraction) : null,
-  ewPart: r.ew_part, ewGroupId: r.ew_group_id, slipBacked: r.slip_backed,
+  ewPart: r.ew_part, ewGroupId: r.ew_group_id,
+  placesPaid: r.places_paid == null ? null : Number(r.places_paid),
+  slipBacked: r.slip_backed,
+  /*  Null stays null. A closing price nobody recorded is not a zero and is
+      not a price, and `Number(null)` is 0, which would divide into the price
+      taken and print a beat on a bet nobody looked up. */
+  closingOdds: r.closing_odds == null ? null : Number(r.closing_odds),
   source: r.source, arbGroupId: r.arb_group_id, note: r.note,
   unitPenceAtPlacement: r.unit_pence_at_placement, commissionPct: Number(r.commission_pct),
   createdAt: r.created_at,
@@ -142,4 +150,39 @@ export async function appendEvent(client: PoolClient, input: AppendInput): Promi
   );
 
   return state;
+}
+
+/** A graded result, and the commission that result triggers, in one go.
+ *
+ *  COMMISSION HAD NO APPENDER AT ALL. The fold has understood a `commission`
+ *  event since the first migration, bookmakers carry their rate, bets freeze
+ *  it at placement, and neither /api/settle nor the cron sweep ever mentioned
+ *  the word. So every winner on an exchange was reported 1.5 to 2 per cent
+ *  above what the exchange actually paid, and it compounded through return,
+ *  units, the calendar and every breakdown, because they all read the same
+ *  realised figure.
+ *
+ *  Both settlement paths call this instead of appendEvent, so there is one
+ *  place that decides whether a charge is owed. The charge itself is worked
+ *  out by the fold, off the state the result event produced, which is why the
+ *  base is net winnings on the settled portion and not turnover.
+ *
+ *  It is a second event rather than a smaller first one on purpose: the
+ *  ledger is append only and a person looking at a bet that returned £150 and
+ *  paid £98 is owed the line that says where the other £2 went. */
+export async function appendResult(client: PoolClient, input: AppendInput): Promise<BetState> {
+  const state = await appendEvent(client, input);
+
+  const { bet, events } = await loadBet(client, input.accountId, input.betId);
+  const pct = commissionDue(bet, events, state);
+  if (pct === null) return state;
+
+  return appendEvent(client, {
+    accountId: input.accountId,
+    betId: input.betId,
+    type: 'commission',
+    commissionPct: pct,
+    enteredBy: input.enteredBy ?? 'system',
+    note: `${pct}% commission on net winnings.`,
+  });
 }

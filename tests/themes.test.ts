@@ -5,8 +5,8 @@ import { THEMES, THEME_NAMES, DEFAULT_THEME } from '@/lib/themes';
 
 const CSS = readFileSync(new URL('../app/styles/tokens.css', import.meta.url), 'utf8');
 
-const PROFIT = '#7FE3A6';
-const LOSS = '#F5A3A3';
+const PROFIT = '#86EFAC';
+const LOSS = '#FCA5A5';
 
 function hsl(hex: string): { h: number; s: number; l: number } {
   const n = hex.replace('#', '');

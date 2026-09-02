@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { Icon } from '@/components/Icon';
 import { getViewer } from '@/lib/data/session';
+import { EmptySocial, SOCIAL_EXAMPLE_NOTE } from '@/components/app/EmptySocial';
 import { groupSummaries, slippers } from '@/lib/data/social';
 import { Discover } from '@/components/app/Discover';
 
@@ -11,7 +12,17 @@ export const metadata: Metadata = {
 };
 
 export default async function DiscoverPage() {
-  const { now } = await getViewer();
+  const { now, source } = await getViewer();
+
+  /*  THE SOCIAL GRAPH ON THIS SCREEN IS THE EXAMPLE ACCOUNT'S. It is folded
+      out of lib/data/social.ts, which invents the Slippers around
+      @tester123, so showing it to a signed-in account would place that
+      person first in a league of bets they never placed. Signed out, on the
+      marketing site and on /demo, it is exactly the right thing to show. */
+  if (source !== 'example') {
+    return <EmptySocial title="Find Slippers" note={SOCIAL_EXAMPLE_NOTE} />;
+  }
+
   return (
     <>
       <div className="row" style={{ marginBottom: 'var(--gap-block)' }}>

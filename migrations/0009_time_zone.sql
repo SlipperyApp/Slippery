@@ -1,0 +1,18 @@
+-- The account's own time zone.
+--
+-- Every day boundary in the product was computed in Europe/London, which is
+-- right for most of the people using it and wrong for anybody else: the day a
+-- bet belongs to, the month it falls in, "today", and the period the scope bar
+-- selects. An account holder reading their ledger from Spain had a 00:40 kick
+-- off filed on the previous day.
+--
+-- Worse, the two halves disagreed with each other. The calendar asked Intl for
+-- the zoned day, while the period window took the zoned year, month and day
+-- and handed them to Date.UTC, which is that day's midnight in UTC and an hour
+-- early through British summer time. Every bet in that hour was on the
+-- calendar under one day and inside the period totals under another.
+--
+-- Default Europe/London so no existing row changes meaning. The value is an
+-- IANA name and is validated against the platform before it is stored, since
+-- one the runtime cannot resolve throws inside Intl on every date on the page.
+alter table accounts add column if not exists time_zone text not null default 'Europe/London';

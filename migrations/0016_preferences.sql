@@ -1,0 +1,25 @@
+-- The switches that were pictures of controls.
+--
+-- The seven notification toggles in Settings, About called setNotifs({...})
+-- and nothing else: no request, no save, no persistence, and a reload put
+-- every one of them back where it started. DECISIONS.md records the same
+-- defect being found and fixed on the sharing switches, with the line "That is
+-- a picture of a control, not a control", and the sharing switches were not
+-- fixed either: they posted { sharing, on } to /api/settings, which read
+-- neither field and returned changed: 0.
+--
+-- A control that changes only its own label is worse than no control, because
+-- it teaches the person that the product lies, and both of these sit on the
+-- panes about who can see them and what gets sent to them.
+--
+-- One jsonb each rather than fourteen boolean columns. The lists live in
+-- lib/data/settings.ts and both of them will grow; a column per switch means a
+-- migration per switch, and the route validates every key against those lists
+-- before it writes, so an unknown key cannot get in.
+--
+-- Default '{}' and not a copy of the defaults. An empty object means nobody
+-- has chosen, and the answer then comes from the one list in
+-- lib/data/settings.ts, so changing a default there changes it for every
+-- account that has not overridden it rather than for none of them.
+alter table accounts add column if not exists notifications jsonb not null default '{}'::jsonb;
+alter table accounts add column if not exists sharing jsonb not null default '{}'::jsonb;

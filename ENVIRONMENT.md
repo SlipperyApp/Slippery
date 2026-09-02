@@ -27,18 +27,34 @@ Already present on the project. Names only.
 | `TELEGRAM_WEBHOOK_SECRET` | verifying inbound Telegram webhooks |
 | `VISION_API_KEY` | image/PDF extraction |
 | `ANTHROPIC_API_KEY` | the key the deployment already held |
-| `EMAIL_API_KEY` | transactional email |
+| `EMAIL_API_KEY` | transactional email: the Google App Password |
 | `EMAIL_FROM` | the From address on transactional email |
 | `ADMIN_SECRET` | admin-only endpoints |
 | `ADMIN_PROMO_CODE` | admin-issued promo code |
 | `CRON_SECRET` | authenticating scheduled invocations |
 | `NEXT_PUBLIC_APP_URL` | absolute base URL; **public, reaches the browser** |
 
-Two notes worth carrying:
+## Email, set by hand before the code existed
+
+The same three things under different names. Either set works and `EMAIL_*`
+wins where both are set. `docs/EMAIL.md` is the whole procedure.
+
+| Variable | For |
+|---|---|
+| `GMAIL_APP_PASSWORD` | alias of `EMAIL_API_KEY` |
+| `MAIL_FROM` | alias of `EMAIL_FROM` |
+| `GMAIL_USER` | the Google account the app password belongs to; the SMTP username and the envelope sender |
+| `EMAIL_SMTP_HOST` | optional, defaults to `smtp.gmail.com` |
+| `EMAIL_SMTP_PORT` | optional, defaults to `465` |
+
+Three notes worth carrying:
 
 - `VISION_API_KEY` and `ANTHROPIC_API_KEY` are the same kind of key. The server
   read `VISION_API_KEY ?? ANTHROPIC_API_KEY` so a rename would not take the
   deployment down. Keep or drop that fallback deliberately.
+- The email credential must be a Google **App Password**, which only exists on
+  an account with 2-Step Verification on. Google has not accepted an ordinary
+  account password over SMTP since May 2022.
 - Only `NEXT_PUBLIC_`-prefixed variables reach the client. Every other name
   above must stay server-side.
 

@@ -129,7 +129,7 @@ export function SettleDemo() {
                 )}
               </span>
               <span className={i < step ? 'is-settling' : undefined} style={{ minWidth: 0 }}>
-                <span className="brow__title" style={{ display: 'block' }}>{leg.team}</span>
+                <span className="brow__title">{leg.team}</span>
                 <span className="brow__sub">{leg.fixture}</span>
               </span>
               <span className="small mono dim">{leg.odds}</span>
