@@ -19,13 +19,17 @@ export default async function Referrals() {
           <Icon name="chevronLeft" size={16} /> Settings
         </Link>
       </div>
-      <div className="column column--wide" style={{ marginInline: 0 }}>
-        <h1>Referrals</h1>
-        <p className="muted" style={{ marginTop: 'var(--s2)' }}>
-          Your code gives the person who uses it a longer trial. You get nothing for it, on purpose.
-        </p>
+      <h1>Referrals</h1>
+      <p className="muted" style={{ marginTop: 'var(--s2)' }}>
+        Your code gives the person who uses it a longer trial. You get nothing for it, on purpose.
+      </p>
 
-        <div className="card" style={{ marginTop: 'var(--s5)' }}>
+      {/*  TWO CARDS IN A ROW, NOT A COLUMN DOWN THE LEFT. A code and the list
+           of who has used it are two halves of one page, and stacked in an
+           860 pixel column they left 430 pixels of a 1440 screen empty beside
+           them. They stack again under the two column breakpoint. */}
+      <div className="grid" style={{ marginTop: 'var(--s5)' }}>
+        <div className="card col-7">
           <p className="label">Your code</p>
           <CopyCode code={data.account.linkCode.replace('SLIP-', 'REF-')} />
           <p className="small muted card__foot">
@@ -34,7 +38,7 @@ export default async function Referrals() {
           </p>
         </div>
 
-        <div className="card" style={{ marginTop: 'var(--s4)' }}>
+        <div className="card col-5">
           <p className="card__title">Who has used it</p>
           <p className="small dim" style={{ marginTop: 'var(--s3)' }}>
             Nobody yet. When somebody does, they appear here by handle and nothing else: not what

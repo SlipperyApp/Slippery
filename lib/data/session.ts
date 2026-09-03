@@ -166,7 +166,6 @@ export async function getViewer(): Promise<Viewer> {
     handle: data.account.handle,
     balanceMinor: balance(data.bets, data.movements, data.account.balanceStartPence),
     currency: data.account.currency,
-    timeZone: data.account.timeZone,
     balances: whole.balances.map((b) => ({ id: b.id, name: b.name, currency: b.currency })),
     balanceId: selected.id,
     badges: {

@@ -10,11 +10,20 @@ export const metadata: Metadata = {
   description: 'Forward it, upload it, photograph it or type it in. Four ways in, one ledger.',
 };
 
+/*  FOUR WAYS IN, AND NONE OF THEM HAS A DEADLINE.
+ *
+ *  This page opened with "Four ways in. Send it now, while you still do not
+ *  know." Slippery reads a slip at any time: the whole of the third card on
+ *  this page is bringing in a spreadsheet of bets placed years ago, and the
+ *  ledger records, per bet, whether it reached the record before its event
+ *  started. That is a fact about a bet. It was being printed here as an
+ *  instruction about when a slip may be sent, which is a rule this product
+ *  does not have and cannot enforce. */
 const WAYS = [
-  { href: '/app/import/linked', t: 'Forward it to the bot', s: 'Telegram, straight from the bookmaker app. The fastest of the four.', i: 'telegram' as const },
-  { href: '/app/import/manual', t: 'Type it in', s: 'Singles through to a Lucky 63, legs and all.', i: 'edit' as const },
-  { href: '/app/import/history', t: 'Import a history', s: 'A CSV from a spreadsheet or another tracker. Dry run first.', i: 'upload' as const },
-  { href: '/app/import/review', t: 'See the last read', s: 'The confirm screen, with what the reader found on each field.', i: 'eye' as const },
+  { href: '/app/import/linked', t: 'Forward it to the bot', s: 'Telegram, straight from the bookmaker app', i: 'telegram' as const },
+  { href: '/app/import/manual', t: 'Type it in', s: 'Singles through to a Lucky 63', i: 'edit' as const },
+  { href: '/app/import/history', t: 'Import a history', s: 'A CSV from a spreadsheet or another tracker', i: 'upload' as const },
+  { href: '/app/import/review', t: 'See the last read', s: 'The confirm screen', i: 'eye' as const },
 ];
 
 export default async function ImportHome() {
@@ -22,14 +31,24 @@ export default async function ImportHome() {
   const readerReady = Boolean(visionKey());
 
   return (
-    <>
-      <h1>Add a bet</h1>
-      <p className="muted" style={{ marginTop: 'var(--s2)' }}>
-        Four ways in. Send it now, while you still do not know.
-      </p>
+    <div className="column column--wide">
+      <div className="spread lgr__top">
+        <h1>Add a bet</h1>
+        {/*  The trial as a line rather than a card with a meter in it. It was
+             a full width card carrying a label, a figure, a sentence and a
+             progress bar, under four cards, on a screen whose subject is the
+             file you are about to choose. */}
+        {trial.active ? (
+          <p className="small dim">
+            {trial.slipsLeft} slips left of {trial.slipsAllowed}. <Link href="/app/settings/plan">Plans</Link>.
+          </p>
+        ) : (
+          <Link href="/app/settings/plan" className="btn btn--ghost btn--sm">See plans</Link>
+        )}
+      </div>
 
       {readOnly ? (
-        <div className="banner banner--neg" style={{ marginTop: 'var(--s5)' }}>
+        <div className="banner banner--warn" style={{ marginBottom: 'var(--gap-block)' }}>
           <Icon name="lock" size={18} className="banner__icon" />
           <span>
             New slips are paused while the account is read only. The ledger and the export are
@@ -39,7 +58,7 @@ export default async function ImportHome() {
       ) : null}
 
       {!readerReady ? (
-        <div className="banner" style={{ marginTop: 'var(--s5)' }}>
+        <div className="banner" style={{ marginBottom: 'var(--gap-block)' }}>
           <Icon name="alert" size={18} className="banner__icon" />
           <span>
             Slip reading is down on this deployment, so an upload would go nowhere. Typing a bet in
@@ -53,7 +72,7 @@ export default async function ImportHome() {
            upload rather than before it. The sentence is trialState()'s own,
            which is the one place the trial numbers live. */}
       {!slips.allowed && !readOnly ? (
-        <div className="banner" style={{ marginTop: 'var(--s5)' }}>
+        <div className="banner" style={{ marginBottom: 'var(--gap-block)' }}>
           <Icon name="clock" size={18} className="banner__icon" />
           <span className="grow">
             {slips.message} New slips are paused until there is a plan on the account. Typing a bet
@@ -63,11 +82,9 @@ export default async function ImportHome() {
         </div>
       ) : null}
 
-      <div style={{ marginTop: 'var(--s5)' }}>
-        <Dropzone enabled={readerReady && slips.allowed} />
-      </div>
+      <Dropzone enabled={readerReady && slips.allowed} />
 
-      <div className="grid" style={{ marginTop: 'var(--s5)' }}>
+      <div className="grid" style={{ marginTop: 'var(--gap-block)' }}>
         {WAYS.map((w) => (
           <Link key={w.href} href={w.href} className="card col-6" style={{ textDecoration: 'none' }}>
             <span className="spread">
@@ -78,20 +95,6 @@ export default async function ImportHome() {
           </Link>
         ))}
       </div>
-
-      <div className="card" style={{ marginTop: 'var(--s5)' }}>
-        <p className="label">Your trial</p>
-        <p className="fig fig--m" style={{ marginTop: 4 }}>
-          {trial.active ? `${trial.slipsLeft} slips left` : 'Trial over'}
-        </p>
-        <p className="small muted" style={{ marginTop: 'var(--s2)' }}>{trial.message}</p>
-        <div className="meter" style={{ marginTop: 'var(--s3)' }}>
-          <span
-            className="meter__fill"
-            style={{ width: `${Math.round((trial.slipsUsed / Math.max(1, trial.slipsAllowed)) * 100)}%` }}
-          />
-        </div>
-      </div>
-    </>
+    </div>
   );
 }

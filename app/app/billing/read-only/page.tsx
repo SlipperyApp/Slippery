@@ -31,7 +31,9 @@ export default async function ReadOnly() {
         and your export works right now.
       </p>
 
-      <div className="grid" style={{ marginTop: 'var(--s6)' }}>
+      {/*  Measured at 1440 by 900: 869 pixels against the 824 the window
+           leaves. The sentence saying nothing has been deleted stays put. */}
+      <div className="grid fitcol fitcol--scroll" style={{ marginTop: 'var(--s6)', alignContent: 'start' }}>
         <section className="card col-6">
           <h2 className="card__title">Paused</h2>
           <ul style={{ marginTop: 'var(--s3)' }}>

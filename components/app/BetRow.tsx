@@ -164,7 +164,7 @@ export function BetLine({ bet, currency = 'GBP', tz = DEFAULT_TZ }: { bet: DemoB
  *  nobody is two halves of a screen disagreeing. The note says the rows are
  *  an example. */
 export function EmptyState({
-  title, action, href, ghost, secondary, note,
+  title, action, href, ghost, secondary, note, icon = 'plus',
 }: {
   title: string;
   action: string;
@@ -172,6 +172,9 @@ export function EmptyState({
   ghost: React.ReactNode;
   secondary?: { label: string; href: string };
   note?: string;
+  /** What the action does. A plus adds something; a cross clears a filter,
+   *  and a filter that matches nothing is not an invitation to add a bet. */
+  icon?: 'plus' | 'close';
 }) {
   return (
     <div className="empty grow" style={{ minHeight: 180 }}>
@@ -180,7 +183,7 @@ export function EmptyState({
         <p className="card__title">{title}</p>
         <div className="row" style={{ gap: 'var(--s2)', flexWrap: 'wrap', justifyContent: 'center' }}>
           <Link href={href} className="btn btn--primary btn--sm">
-            <Icon name="plus" size={16} />
+            <Icon name={icon} size={16} />
             {action}
           </Link>
           {secondary ? (

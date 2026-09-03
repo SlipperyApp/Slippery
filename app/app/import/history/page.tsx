@@ -16,14 +16,12 @@ export default function ImportHistory() {
           <Icon name="chevronLeft" size={16} /> Add a bet
         </Link>
       </div>
-      <div className="column column--wide" style={{ marginInline: 0 }}>
-        <h1>Import a history</h1>
-        <p className="muted" style={{ marginTop: 'var(--s2)' }}>
-          A CSV or JSON export from a spreadsheet or another tracker. Slippery reads it, reports
-          exactly what it would create, and writes nothing until you say so.
-        </p>
-        <div style={{ marginTop: 'var(--s5)' }}><HistoryUpload /></div>
-      </div>
+      <h1>Import a history</h1>
+      <p className="muted" style={{ marginTop: 'var(--s2)' }}>
+        A CSV or JSON export from a spreadsheet or another tracker. Slippery reads it, reports
+        exactly what it would create, and writes nothing until you say so.
+      </p>
+      <div style={{ marginTop: 'var(--s5)' }}><HistoryUpload /></div>
     </>
   );
 }

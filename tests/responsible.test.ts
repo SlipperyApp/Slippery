@@ -178,10 +178,35 @@ test('held out bets are explained rather than silently dropped', () => {
   assert.match(many, /question is open/i, 'and it says WHY they are out');
 });
 
-/*  A control somebody needs when they are not enjoying themselves cannot be
- *  three taps into a settings pane. It is reachable from the account page. */
-test('the break control stays reachable', () => {
+/*  THE BREAK CONTROL IS GONE AND THE SAFEGUARDS ARE NOT.
+ *
+ *  This test used to assert that "take a break" was in the settings pane. The
+ *  owner asked for it to be removed and said so explicitly, overriding the
+ *  line in CLAUDE.md that named it, and the line in CLAUDE.md has been
+ *  changed to match. What went was a switch that paused notifications and
+ *  took an account out of the monthly leagues; it was never any form of self
+ *  exclusion and could not have been, because Slippery accepts no bets, holds
+ *  no money and pays no winnings, so there is nothing here to be excluded
+ *  from.
+ *
+ *  What the test asserts now is the half that is load bearing. Every one of
+ *  these is a real safeguard, none of them is a preference, and each has gone
+ *  missing from a screen at least once in this build's history, which is why
+ *  it is a test rather than a paragraph. */
+test('the genuine safeguards stay on screen', () => {
   const panes = readFileSync('components/app/SettingsPanes.tsx', 'utf8');
-  assert.match(panes, /take a break/i, 'the break control is gone from settings');
-  assert.match(panes, /begambleaware/i, 'the helpline went with it');
+  /*  Comments out first, the way every other check in this file does it: the
+      comment where the control used to be explains what was deleted and
+      names it, and a note about a deletion must not read as the deletion
+      being undone. */
+  const shown = panes.replace(/\/\*[\s\S]*?\*\//g, ' ').replace(/^\s*\/\/.*$/gm, ' ');
+  assert.doesNotMatch(shown, /take a break/i, 'the break control came back');
+  assert.match(panes, /begambleaware/i, 'BeGambleAware is gone from settings');
+  assert.match(panes, /0808 8020 133/, 'the National Gambling Helpline number is gone');
+  assert.match(panes, /18 or over/i, 'the age statement is gone');
+  assert.match(panes, /safer-gambling/, 'the safer gambling page is unreachable from settings');
+
+  const sg = readFileSync('app/(marketing)/safer-gambling/page.tsx', 'utf8');
+  assert.match(sg, /begambleaware/i, 'the safer gambling page lost BeGambleAware');
+  assert.match(sg, /0808 8020 133/, 'the safer gambling page lost the helpline');
 });

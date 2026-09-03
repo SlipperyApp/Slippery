@@ -63,30 +63,34 @@ export default async function Gallery() {
         </div>
       </div>
 
-      {/*  THREE FIGURES THIS PAGE CAN PROVE, before the grid.
-           Capture at placement is the whole product, and the page that ought
-           to demonstrate it opened as a hundred and sixty one identical grey
-           cards. These three are the demonstration: how many of these slips
-           were on the record before the event started, by how long in the
-           middle case, and how many bets never had a slip at all. */}
+      {/*  THREE FIGURES THIS PAGE CAN PROVE, before the grid: how many of
+           these slips were on the record before the event started, by how
+           long in the middle case, and how many bets never had a slip.
+
+           THE THREE CAPTIONS UNDER THEM ARE GONE. "A bet recorded after the
+           start is not a prediction" reads as a verdict on a bet somebody is
+           allowed to send, and Slippery takes a bet at any time: how far
+           ahead of its own kick off a slip landed is a fact about that slip,
+           which is what the figure states and what every tile below repeats.
+           "The middle slip, not the average, which one early slip would move"
+           explained the product's choice of a median to somebody reading a
+           duration. State the number and stop. */}
       <div className="figstrip slipstats">
         <Figure
           value={`${count(beforeOff)} of ${count(captured.length)}`}
-          label="Captured before the off"
+          label="On the record before the off"
           size="md"
-          sub="A bet recorded after the start is not a prediction"
         />
         <Figure
           value={median > 0 ? gap(new Date(0), new Date(median)) : 'None yet'}
           label="Typical head start"
           size="md"
-          sub="The middle slip, not the average, which one early slip would move"
         />
         <Figure
           value={count(withoutSlips)}
           label="Bets with no slip"
           size="md"
-          sub="Typed in or imported, so they are not on this page"
+          sub="Typed in or imported"
         />
       </div>
 
@@ -94,7 +98,10 @@ export default async function Gallery() {
            silently held fewer tiles than the ledger holds bets is a page
            somebody would report as losing their bets. */}
       <p className="small muted" style={{ marginBottom: 'var(--gap-block)', maxWidth: '62ch' }}>
-        {plural(captured.length, 'captured slip')}, newest first.{' '}
+        {/*  "newest first" went with the ledger's sort instruction. The order
+             of a grid is visible in the grid, and a line telling somebody how
+             a list is sorted is the product narrating itself. */}
+        {plural(captured.length, 'captured slip')}.{' '}
         {/*  THE EXAMPLE ACCOUNT IS GENERATED, so it has no slips behind its
              slips. Every tile here used to read "Image held" with a ninety
              day countdown, which was the product describing a file that had
@@ -116,18 +123,26 @@ export default async function Gallery() {
         {unstored > 0 && !(source === 'example' && unstored === captured.length)
           ? `${unstored} came from a slip whose image was never stored, so there is nothing to show for ${unstored === 1 ? 'it' : 'them'} and nothing to delete. `
           : ''}
-        {withoutSlips > 0
-          ? `${plural(withoutSlips, 'bet')} in your ledger came in typed or imported and never had a slip, so they are not here.`
-          : ''}
+        {/*  THE BETS WITH NO SLIP ARE THE THIRD FIGURE ABOVE, with the same
+             reason under them in the same words. A caption that restates the
+             figure it is under is one thing; a sentence four inches lower
+             restating a caption is another, and this page had both. */}
       </p>
 
-      <SlipGallery
-        bets={captured}
-        currency={account.currency}
-        oddsFormat={account.oddsFormat}
-        tz={account.timeZone}
-        now={now.toISOString()}
-      />
+      {/*  THE GRID SCROLLS AND THE THREE FIGURES ABOVE IT DO NOT. Measured
+           at 1440 by 900 this page was 2,186 pixels against the 824 the
+           window leaves, so how many slips landed before the off went off
+           the top of the screen at the first flick through the slips it is
+           counting. */}
+      <div className="fitcol fitcol--scroll">
+        <SlipGallery
+          bets={captured}
+          currency={account.currency}
+          oddsFormat={account.oddsFormat}
+          tz={account.timeZone}
+          now={now.toISOString()}
+        />
+      </div>
     </>
   );
 }

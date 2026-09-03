@@ -98,7 +98,7 @@ export function CreateGroup() {
 
   return (
     <form className="card" onSubmit={create}>
-      <div className="field">
+      <div className="field field--name">
         <label className="field__label" htmlFor="g-name">What is it called</label>
         <input
           id="g-name" className="input" value={name} maxLength={40} autoComplete="off"
@@ -115,15 +115,23 @@ export function CreateGroup() {
 
       <fieldset className="fieldset" style={{ marginTop: 'var(--s5)' }}>
         <legend className="label">Who can join</legend>
-        <div className="optionset">
+        {/*  THE SETTINGS LIST, which is the product's answer to picking one
+             of three: one frame, a rule between the rows and the chosen row
+             filled with a bar on its leading edge. This was .optionset, a
+             third implementation of the same control after .navlist and the
+             importer's, drawn as three separately outlined boxes with gaps
+             inside a card that is already a box. */}
+        <div className="navlist">
           {JOIN.map((o) => (
             <button
-              key={o.id} type="button" className="optionrow"
+              key={o.id} type="button" className="rowcard"
               aria-pressed={joinMode === o.id}
               onClick={() => setJoinMode(o.id)}
             >
-              <span className="optionrow__t">{o.label}</span>
-              <span className="optionrow__s">{o.sub}</span>
+              <span>
+                <span className="rowcard__t">{o.label}</span>
+                <span className="rowcard__s">{o.sub}</span>
+              </span>
             </button>
           ))}
         </div>

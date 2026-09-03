@@ -33,13 +33,20 @@ export function Resolver({ items }: { items: Unresolved[] }) {
               <p className="mono" style={{ marginTop: 'var(--s2)', wordBreak: 'break-word' }}>{it.raw}</p>
               <p className="small muted" style={{ marginTop: 'var(--s3)' }}>{it.why}</p>
 
-              <div className="rows" style={{ marginTop: 'var(--s4)' }}>
+              {/*  ONE LIST, NOT THREE BORDERED BOXES INSIDE A CARD. These
+                   are three answers to one question, and drawn as three
+                   separately outlined cards inside the card that asks it
+                   they read as three unrelated things. The settings list
+                   found this first, and .navlist is the treatment: one
+                   frame, a rule between the rows, and the chosen row filled
+                   with a bar on its leading edge. The pressed state comes
+                   from aria-pressed, which these buttons already carry. */}
+              <div className="navlist" style={{ marginTop: 'var(--s4)' }}>
                 <button
                   type="button"
-                  className={`rowcard${c === 'split' ? ' rowcard--on' : ''}`}
+                  className="rowcard"
                   aria-pressed={c === 'split'}
                   onClick={() => setChoices({ ...choices, [it.id]: 'split' })}
-                  style={{ cursor: 'pointer', textAlign: 'left' }}
                 >
                   <Icon name="split" size={20} className="rowcard__i" />
                   <span className="grow">
@@ -52,10 +59,9 @@ export function Resolver({ items }: { items: Unresolved[] }) {
 
                 <button
                   type="button"
-                  className={`rowcard${c === 'one' ? ' rowcard--on' : ''}`}
+                  className="rowcard"
                   aria-pressed={c === 'one'}
                   onClick={() => setChoices({ ...choices, [it.id]: 'one' })}
-                  style={{ cursor: 'pointer', textAlign: 'left' }}
                 >
                   <Icon name="slip" size={20} className="rowcard__i" />
                   <span className="grow">
@@ -66,10 +72,9 @@ export function Resolver({ items }: { items: Unresolved[] }) {
 
                 <button
                   type="button"
-                  className={`rowcard${c === 'skip' ? ' rowcard--on' : ''}`}
+                  className="rowcard"
                   aria-pressed={c === 'skip'}
                   onClick={() => setChoices({ ...choices, [it.id]: 'skip' })}
-                  style={{ cursor: 'pointer', textAlign: 'left' }}
                 >
                   <Icon name="minus" size={20} className="rowcard__i" />
                   <span className="grow">

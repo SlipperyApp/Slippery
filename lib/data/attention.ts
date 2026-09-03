@@ -142,8 +142,13 @@ export function attention(bets: DemoBet[], now: Date = new Date()): Attention {
   };
 }
 
-/** The ledger's `needs` filter, so a count in the sidebar goes somewhere. */
-export const NEEDS = ['resting', 'running', 'waiting'] as const;
+/** The ledger's `needs` filter, so a count in the sidebar goes somewhere.
+ *
+ *  `open` is the fourth and it is the union of the other three rather than a
+ *  fourth list: the rail links to it, and a rail row promising "open bets"
+ *  that delivered only the ones past their grace period would be a count
+ *  that disagrees with the badge beside it. */
+export const NEEDS = ['resting', 'running', 'waiting', 'open'] as const;
 export type Needs = (typeof NEEDS)[number];
 
 export function needsFromParam(v: string | string[] | undefined): Needs | null {
@@ -155,7 +160,10 @@ export function filterByNeeds(bets: DemoBet[], needs: Needs | null, now: Date = 
   const a = attention(bets, now);
   /*  One split, read three ways. The filter reads the same lists the counts
       came off, so a chip promising four rows cannot deliver three. */
-  const list = needs === 'resting' ? a.resting : needs === 'running' ? a.running : a.waiting;
+  const list = needs === 'resting' ? a.resting
+    : needs === 'running' ? a.running
+      : needs === 'waiting' ? a.waiting
+        : [...a.resting, ...a.running, ...a.waiting];
   const ids = new Set(list.map((b) => b.id));
   return bets.filter((b) => ids.has(b.id));
 }
@@ -164,4 +172,5 @@ export const NEEDS_LABEL: Record<Needs, string> = {
   resting: 'Not started yet',
   running: 'Running now',
   waiting: 'Waiting on a result',
+  open: 'Open bets',
 };

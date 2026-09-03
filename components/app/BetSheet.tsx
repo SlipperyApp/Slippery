@@ -462,7 +462,7 @@ export function BetSheet({
               </span>
             </div>
 
-            <div className="field">
+            <div className="field field--tight">
               <label className="field__label" htmlFor="co-return">What the bookmaker offered</label>
               <input
                 id="co-return" className="input input--money" inputMode="decimal" autoComplete="off"

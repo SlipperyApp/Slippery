@@ -36,7 +36,7 @@ export function RateLimited({ seconds, from }: { seconds: number; from: string }
         This is a limit on attempts, not on you. Nothing was created and nothing was locked.
       </p>
 
-      <div className="card" style={{ marginTop: 'var(--s6)', alignItems: 'center', textAlign: 'center' }}>
+      <div className="card card--mid" style={{ marginTop: 'var(--s6)' }}>
         <p className="label">Try again in</p>
         <p className="fig tnum" aria-live="polite">
           {left > 0 ? `${mm}:${String(ss).padStart(2, '0')}` : 'now'}

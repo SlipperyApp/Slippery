@@ -16,7 +16,10 @@ export default function HistoryReview() {
           <Icon name="chevronLeft" size={16} /> Import a history
         </Link>
       </div>
-      <div className="column column--wide" style={{ marginInline: 0 }}>
+      {/*  THE STEP SCROLLS AND THE WAY BACK DOES NOT. Measured at 1440 by
+           900: 923 pixels against the 824 the window leaves. See .fitcol in
+           layout.css. */}
+      <div className="column column--wide fitcol fitcol--scroll" style={{ marginInline: 0 }}>
         <h1>Match the columns</h1>
         <p className="muted" style={{ marginTop: 'var(--s2)' }}>
           Matched on the header names in your file, never on position. Two are marked as guesses.

@@ -123,7 +123,6 @@ test('the panes start from the account rather than from a fresh copy of the defa
    *  account had chosen. */
   assert.match(PANES, /useState\(account\.notifications\)/);
   assert.match(PANES, /useState<Record<string, boolean>>\(account\.sharing\)/);
-  assert.match(PANES, /useState\(account\.onBreak\)/);
 });
 
 test('billing notices cannot be switched off, in the pane or through the route', () => {

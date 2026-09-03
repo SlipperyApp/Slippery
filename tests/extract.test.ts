@@ -11,6 +11,7 @@ import {
   DUPLICATE_WINDOW_MS, duplicateCutoff, fingerprintSource, identityOf,
   withinDuplicateWindow, type BetIdentity, type SlipRefusal,
 } from '@/lib/data/read';
+import { detectPromotions } from '@/lib/data/importing';
 
 /** The reader, tested where the reader actually decides things.
  *
@@ -573,4 +574,63 @@ test('the read hands the id on, not the display name', () => {
   assert.equal(read.bookmakerId, 'betfair-exchange');
   assert.equal(read.bookmaker, 'Betfair Exchange');
   assert.ok(read.templateMatched.length > 0, 'the evidence travels with it');
+});
+
+/*  ------------------------------------------------ promotions, at ingestion
+ *
+ *  A free bet, bonus funds and a boost are three different things and every
+ *  one changes what a bet is worth. Three weeks later a 25 pound stake at 3.0
+ *  that returned 50 says nothing about whether the 25 was the account
+ *  holder's. The slip knows, once, and only at ingestion. */
+
+test('a free bet is read off the slip, under any of the names it goes by', () => {
+  for (const text of [
+    'Free Bet applied',
+    'FREE BET STAKE NOT RETURNED',
+    '£10 Bet Credits used',
+    'Risk-free bet',
+    'Returns exclude stake. S.N.R.',
+  ]) {
+    const p = detectPromotions(text);
+    assert.equal(p.freeBet, true, text);
+    assert.ok(p.matched.length > 0, `${text} has to say what it saw`);
+  }
+});
+
+test('bonus funds need the word beside something that names a balance', () => {
+  assert.equal(detectPromotions('Paid from Bonus Funds').bonusFunds, true);
+  assert.equal(detectPromotions('Staked using your bonus balance').bonusFunds, true);
+  assert.equal(detectPromotions('Wagering requirement 1x').bonusFunds, true);
+});
+
+test('a Lucky 15 odds bonus is not bonus funds', () => {
+  /*  bet365 prints "BONUS 1/4 2x" on a Lucky 15, which doubles the odds on a
+      single winner. It is a bonus on the PRICE and not a penny of bonus
+      money, and reading it as bonus funds would take a real stake out of
+      turnover and stop a real loss counting. */
+  const p = detectPromotions('LUCKY 15 BONUS 1/4 2x CONSOLATION');
+  assert.equal(p.bonusFunds, false);
+  assert.equal(p.freeBet, false);
+});
+
+test('a boost is read and is never confused with either of the other two', () => {
+  const p = detectPromotions('PRICE BOOST was 2.50 now 3.00');
+  assert.equal(p.boosted, true);
+  assert.equal(p.freeBet, false);
+  assert.equal(p.bonusFunds, false);
+});
+
+test('a free bet beats bonus funds when a slip says both', () => {
+  /*  "Free bet placed from your bonus balance" is a free bet whose token sat
+      in the bonus wallet. The stake of a free bet is not returned, and that
+      is the fact the arithmetic turns on, so it wins the tie. */
+  const p = detectPromotions('Free Bet placed from your bonus balance');
+  assert.equal(p.freeBet, true);
+  assert.equal(p.bonusFunds, false);
+});
+
+test('a slip with no promotion on it flags nothing', () => {
+  const p = detectPromotions('Bet Receipt · Single · Arsenal to win · £25.00 at 2.50');
+  assert.deepEqual(p, { freeBet: false, bonusFunds: false, boosted: false, matched: [] });
+  assert.deepEqual(detectPromotions(null), { freeBet: false, bonusFunds: false, boosted: false, matched: [] });
 });

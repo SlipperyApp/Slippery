@@ -3,7 +3,7 @@ import Link from 'next/link';
 import { Icon } from '@/components/Icon';
 import { getViewer } from '@/lib/data/session';
 import { ManualEntry } from '@/components/app/ManualEntry';
-import { ALL_BOOKMAKERS, SPORTS } from '@/lib/data/reference';
+import { ALL_BOOKMAKERS, SPORTS, TIME_ZONES } from '@/lib/data/reference';
 
 export const metadata: Metadata = {
   title: 'Type it in',
@@ -25,11 +25,10 @@ export default async function Manual() {
         </Link>
       </div>
       <h1>Type it in</h1>
-      <p className="muted" style={{ marginTop: 'var(--s2)' }}>
-        A typed-in bet counts everywhere a captured one does, and is marked as typed in, which is
-        what a group&rsquo;s slip backed filter reads.
-      </p>
-      <div style={{ marginTop: 'var(--s5)' }}>
+      {/*  THE FORM SCROLLS AND THE HEADING DOES NOT. Measured at 1440 by 900
+           this screen was 1,286 pixels against the 824 the window leaves, so
+           the fields under the fold included the one that files the bet. */}
+      <div className="fitcol fitcol--scroll" style={{ marginTop: 'var(--s5)' }}>
         <ManualEntry
           bookmakers={ALL_BOOKMAKERS.map((b) => ({ id: b.id, name: b.name }))}
           sports={SPORTS.map((s) => ({ id: s.id, name: s.name }))}
@@ -38,6 +37,11 @@ export default async function Manual() {
           balances={balances.map((b) => ({ id: b.id, name: b.name, currency: b.currency }))}
           balanceId={balance.id}
           balanceName={balance.name}
+          /*  The account's own zone, named. Falling back to UTC rather than to
+              the United Kingdom: a zone this list does not carry is not a
+              British one, and the wrong country under a kick off field is the
+              defect this prop exists to end. */
+          clock={TIME_ZONES.find((z) => z.id === data.account.timeZone)?.clock ?? 'UTC'}
         />
       </div>
     </>

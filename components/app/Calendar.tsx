@@ -143,11 +143,25 @@ export function MonthCalendar({
   const daysInMonth = new Date(Date.UTC(year, month, 0)).getUTCDate();
   const lead = (first.getUTCDay() - weekStart + 7) % 7;
 
-  // The peak is the shown month's OWN biggest day, so a quiet month uses the
-  // full range instead of being washed out by a loud one three months ago.
+  /*  THE DEPTH IS RELATIVE TO THIS PERIOD'S OWN RANGE, AND IT HAS TWO ENDS.
+   *
+   *  It was one peak, the largest ABSOLUTE day in the month, and both signs
+   *  were measured against it. On a month whose best day was +£675 and whose
+   *  worst was -£90 that put every losing day at thirteen per cent of the
+   *  ramp: a cell tinted so faintly that the eye reads it as a day with no
+   *  bets, on a grid whose entire job is to show where the money went.
+   *
+   *  Profit is measured against the best day and loss against the worst, so
+   *  each end of the month's range reaches the top of its own ramp and the
+   *  two deepest cells on the grid are the best day and the worst day. The
+   *  scale is still the shown month's own, so a quiet month uses the full
+   *  range rather than being washed out by a loud one three months ago, and
+   *  the figures printed in the cells are what say how big a day actually
+   *  was: the colour is a rank inside the period, and it always was. */
   const prefix = `${year}-${String(month).padStart(2, '0')}-`;
   const inMonth = days.filter((d) => d.day.startsWith(prefix));
-  const peak = Math.max(1, ...inMonth.map((d) => Math.abs(d.netPence)));
+  const peakUp = Math.max(1, ...inMonth.filter((d) => d.netPence > 0).map((d) => d.netPence));
+  const peakDown = Math.max(1, ...inMonth.filter((d) => d.netPence < 0).map((d) => -d.netPence));
   const monthNet = inMonth.reduce((a, d) => a + d.netPence, 0);
   const monthBets = inMonth.reduce((a, d) => a + d.count, 0);
 
@@ -182,7 +196,7 @@ export function MonthCalendar({
     const bet = !future && Boolean(rec);
     const net = bet ? rec!.netPence : 0;
 
-    const step = rampStep(bet ? net : 0, peak);
+    const step = rampStep(bet ? net : 0, net >= 0 ? peakUp : peakDown);
     const anchor = net >= 0 ? 'var(--pos)' : 'var(--neg)';
 
     const label = MONTH_LONG[month - 1];
@@ -309,14 +323,14 @@ export function MonthCalendar({
         {cells}
       </div>
 
-      {/* The ramp is the only thing on the page whose meaning is not written
-          down anywhere, so one line says it. */}
+      {/*  THE COLOUR KEY IS GONE. Three swatches reading Profitable, Losing
+           and No bets, under a grid whose cells print the amount in the
+           colour: a green cell saying +£134 does not need a legend saying
+           green is profitable, and the two struck-through cells are the only
+           thing the third swatch described. That is the product explaining
+           its own mechanics beside the figure it is explaining, and it cost
+           the month a row of cells on a screen sized to the window. */}
       <div className="cal__foot">
-        <ul className="cal__key">
-          <li><span className="cal__keyswatch cal__keyswatch--pos" aria-hidden="true" />Profitable</li>
-          <li><span className="cal__keyswatch cal__keyswatch--neg" aria-hidden="true" />Losing</li>
-          <li><span className="cal__keyswatch cal__keyswatch--none" aria-hidden="true" />No bets</li>
-        </ul>
         <p className="small tnum cal__sum">
           {monthBets > 0
             ? <>{monthBets} bet{monthBets === 1 ? '' : 's'}, <span className={monthNet >= 0 ? 'pos' : 'neg'}>{full(monthNet)}</span></>

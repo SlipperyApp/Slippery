@@ -449,7 +449,6 @@ export function feed(now = new Date()): FeedItem[] {
     { kind: 'slip-backed', text: 'reached 100% slip backed this month', h: 14 },
     { kind: 'group', text: 'started a group, The Nap', h: 26 },
     { kind: 'settle', text: 'settled everything that was waiting on them', h: 33 },
-    { kind: 'break', text: 'is taking a break, back on the 12th', h: 41 },
     { kind: 'join', text: 'joined Accas Only', h: 52 },
     { kind: 'unit', text: 'changed unit size, so figures from here on use the new one', h: 66 },
   ];

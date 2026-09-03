@@ -38,13 +38,13 @@ export function NameForm() {
 
   return (
     <form onSubmit={submit} noValidate>
-      <div className="field">
+      <div className="field field--name">
         <label className="field__label" htmlFor="nm">Display name</label>
         <input id="nm" name="name" className="input" autoComplete="name" value={name}
           onChange={(e) => setName(e.target.value)} placeholder="Rowan Ellis" required />
       </div>
 
-      <div className="field">
+      <div className="field field--name">
         <label className="field__label" htmlFor="hn">Handle</label>
         <div className="row" style={{ gap: 'var(--s2)' }}>
           <span className="mono dim" aria-hidden="true">@</span>
@@ -57,7 +57,7 @@ export function NameForm() {
         </span>
       </div>
 
-      <div className="field">
+      <div className="field field--tight">
         <label className="field__label" htmlFor="rf">Referral code, if you have one</label>
         <input id="rf" name="referral" className="input mono" autoComplete="off"
           value={referral} onChange={(e) => setReferral(e.target.value.toUpperCase())}

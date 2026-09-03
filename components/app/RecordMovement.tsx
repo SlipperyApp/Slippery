@@ -84,7 +84,7 @@ export function RecordMovement({ balanceName, currency }: {
         </div>
       </fieldset>
 
-      <div className="field">
+      <div className="field field--tight">
         <label className="field__label" htmlFor="mv-amount">Amount</label>
         <input
           id="mv-amount" className="input input--money" inputMode="decimal" autoComplete="off"

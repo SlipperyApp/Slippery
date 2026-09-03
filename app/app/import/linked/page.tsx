@@ -43,7 +43,9 @@ export default async function Linked() {
         from this page.
       </p>
 
-      <div className="grid" style={{ marginTop: 'var(--s5)' }}>
+      {/*  Measured at 1440 by 900: 1,259 pixels against the 824 the window
+           leaves. The two cards scroll together under the heading. */}
+      <div className="grid fitcol fitcol--scroll" style={{ marginTop: 'var(--s5)', alignContent: 'start' }}>
         {/*  The real control, not a printed code. What was here was
              accounts.link_code: one permanent code per account, never used up
              and identical every time anybody looked, which is a password to a

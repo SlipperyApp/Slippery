@@ -451,7 +451,7 @@ a.card:active, button.card:active, button.rowcard:active { transform: translateY
   to   { transform: none; }
 }
 @media (prefers-reduced-motion: no-preference) {
-  /*  Not .main > * , for two separate reasons.
+  /*  Not .mainbody > * , for two separate reasons.
    *
    *  THE GRID is one child holding every module, so it would rise as a
    *  single slab. It is skipped and its own children are staggered instead,
@@ -464,14 +464,20 @@ a.card:active, button.card:active, button.rowcard:active { transform: translateY
    *  sheet rendered with its top left corner at the middle of the screen and
    *  the rest of it off the bottom right. Anything positioned against the
    *  viewport is named here and is not part of the page arriving. */
-  .main > :not(.grid, .sheet, .sheet__scrim, .toast, .lbox, .lbox__scrim),
-  .main > .grid > * {
+  /*  .mainbody, NOT .main. The main is now a fixed height box and the body
+      inside it is the one element that scrolls, so with the rule on .main
+      the single child being lifted was the scroll container itself: a
+      translate of 16px on it put 16 pixels past the bottom of every app
+      route for the length of the animation, which is a page that scrolls
+      for 440 milliseconds after every navigation. */
+  .mainbody > :not(.grid, .sheet, .sheet__scrim, .toast, .lbox, .lbox__scrim),
+  .mainbody > .grid > * {
     animation: lift-in 440ms var(--ease-out) both;
   }
-  .main > :nth-child(2), .main > .grid > :nth-child(2) { animation-delay: 40ms; }
-  .main > :nth-child(3), .main > .grid > :nth-child(3) { animation-delay: 80ms; }
-  .main > :nth-child(4), .main > .grid > :nth-child(4) { animation-delay: 120ms; }
-  .main > :nth-child(n + 5), .main > .grid > :nth-child(n + 5) { animation-delay: 160ms; }
+  .mainbody > :nth-child(2), .mainbody > .grid > :nth-child(2) { animation-delay: 40ms; }
+  .mainbody > :nth-child(3), .mainbody > .grid > :nth-child(3) { animation-delay: 80ms; }
+  .mainbody > :nth-child(4), .mainbody > .grid > :nth-child(4) { animation-delay: 120ms; }
+  .mainbody > :nth-child(n + 5), .mainbody > .grid > :nth-child(n + 5) { animation-delay: 160ms; }
 
   /*  A LIST FILLS IN. The rows of a ledger, a breakdown or a league arrive
       as a run rather than as a block, which is what makes a long list read
@@ -543,8 +549,8 @@ a.card:active, button.card:active, button.rowcard:active { transform: translateY
   .modmenu__pop:not([hidden]),
   .sheet__scrim,
   .sheet,
-  .main > :not(.grid, .sheet, .sheet__scrim, .toast, .lbox, .lbox__scrim),
-  .main > .grid > *,
+  .mainbody > :not(.grid, .sheet, .sheet__scrim, .toast, .lbox, .lbox__scrim),
+  .mainbody > .grid > *,
   .brow, .brk__row,
   .navrow[aria-current='page']::before,
   .navlist .rowcard[aria-pressed='true']::before { animation: none !important; }
@@ -577,7 +583,6 @@ a.card:active, button.card:active, button.rowcard:active { transform: translateY
 .skel { --skel-rest: color-mix(in oklab, var(--ink) 9%, transparent); }
 .skel__b { gap: 0; }
 .skel__head { margin-bottom: var(--s4); }
-.skel .hero-net__head { display: flex; align-items: flex-start; justify-content: space-between; }
 .skel__bar {
   display: block;
   position: relative;
@@ -609,7 +614,6 @@ a.card:active, button.card:active, button.rowcard:active { transform: translateY
   to   { transform: translate3d(100%, 0, 0); }
 }
 
-.skel .hero-net__stats li { display: flex; align-items: center; gap: var(--s2); }
 .skel .scopebar { display: flex; gap: var(--s3); margin-top: var(--s4); padding: 0; border: 0; background: none; flex-wrap: wrap; }
 .skel__rows { display: flex; flex-direction: column; gap: var(--s3); }
 .skel__row {

@@ -17,7 +17,10 @@ export default function Resolve() {
           <Icon name="chevronLeft" size={16} /> Dry run
         </Link>
       </div>
-      <div className="column column--wide" style={{ marginInline: 0 }}>
+      {/*  THE STEP SCROLLS AND THE WAY BACK DOES NOT. Measured at 1440 by
+           900: 2435 pixels against the 824 the window leaves. See .fitcol in
+           layout.css. */}
+      <div className="column column--wide fitcol fitcol--scroll" style={{ marginInline: 0 }}>
         <h1>Combined selections</h1>
         <p className="muted" style={{ marginTop: 'var(--s2)' }}>
           These rows have an ampersand in them, and the importer cannot tell whether it joins two

@@ -7,14 +7,14 @@ import { SettingsPanes } from '@/components/app/SettingsPanes';
 
 export const metadata: Metadata = {
   title: 'Settings',
-  description: 'Six groups, each opening a detail pane. Everything here genuinely changes what is displayed.',
+  description: 'Seven groups, each opening a detail pane. Everything here genuinely changes what is displayed.',
 };
 
 export default async function Settings() {
   const { data } = await getViewer();
   return (
     <>
-      <div className="spread" style={{ marginBottom: 'var(--gap-block)', flexWrap: 'wrap' }}>
+      <div className="spread lgr__top">
         <h1>Settings</h1>
         <Link href="/app/settings/plan" className="btn btn--ghost btn--sm">
           <Icon name="card" size={16} /> Plan and billing

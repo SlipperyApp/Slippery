@@ -103,9 +103,6 @@ export type DemoData = {
      *  overridden, so a pane never holds the only copy of an answer. */
     notifications: Record<string, boolean>;
     sharing: Record<string, boolean>;
-    /** A break is on. It comes from break_until on the account, and the
-     *  switch used to start at false whatever the account said. */
-    onBreak: boolean;
   };
   /** Every balance on the account, in the order they are drawn.
    *
@@ -651,7 +648,6 @@ export function buildDemo(now = new Date()): DemoData {
       trialSlipsUsed: 12,
       notifications: switchDefaults(NOTIFICATIONS, null),
       sharing: switchDefaults(SHARING_SWITCHES, null),
-      onBreak: false,
     },
     bets,
     movements,

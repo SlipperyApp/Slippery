@@ -16,7 +16,10 @@ export default function Offline() {
   ];
 
   return (
-    <div className="column column--wide">
+    /*  Measured at 1440 by 900: 884 pixels against the 824 the window
+         leaves. The column is the whole page here, so the column is the
+         region that scrolls and the page ends at the window. */
+    <div className="column column--wide fitcol fitcol--scroll">
       <span className="pill pill--warn">
         <Icon name="offline" size={13} /> No connection
       </span>

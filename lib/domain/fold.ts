@@ -10,10 +10,36 @@
  *    returned      how much money came back because of it, signed
  *  and the fold is
  *    remaining -= stakePortion
- *    realised  += returned - (free bet ? 0 : stakePortion)
+ *    realised  += returned - (the bettor's own money ? stakePortion : 0)
  *  which is why a repeated partial cash out, a Rule 4 deduction, exchange
  *  commission and a late promo refund all fit through one mechanism, where a
- *  single result column could hold none of them. */
+ *  single result column could hold none of them.
+ *
+ *  WHOSE MONEY THE STAKE WAS, AND WHAT COMES BACK, ARE TWO SEPARATE
+ *  QUESTIONS, and every promotional flag answers one or both of them.
+ *
+ *    own money       risk S. A win returns S x odds. A loss costs S.
+ *    free bet        risk 0, because the token was never in the balance and
+ *                    never returns to it. A win returns S x (odds - 1), the
+ *                    winnings alone: that is what "stake not returned" means
+ *                    and it is why the flag exists. A loss costs nothing.
+ *    bonus funds     risk 0 for the same reason, but the stake DOES come
+ *                    back: a win returns S x odds, all of which is money the
+ *                    account did not have. A loss costs nothing, because the
+ *                    restricted balance was never counted as arriving, so it
+ *                    cannot be counted as leaving.
+ *    boost           changes nothing here. The stake is the bettor's own and
+ *                    the price on the slip is the price the bet was struck
+ *                    at. Nothing in this product records what the price would
+ *                    have been unboosted, so nothing can compute an uplift,
+ *                    and a flag that guessed one would put an invented number
+ *                    into a return. Where a boost pays as a separate credit
+ *                    it arrives as a promo_refund event, which the fold
+ *                    already carries.
+ *
+ *  Both of the first two are out of turnover, in `turnoverPence` below: a
+ *  return is a return on the money you put up, and neither of these was
+ *  yours to put up. */
 
 import type { Bet, BetState, BetStatus, Outcome, SettlementEvent } from './types';
 
@@ -42,6 +68,43 @@ export function effectiveOdds(bet: Bet): number {
  *  the liability. Everything else in the fold is identical. */
 export function riskPence(bet: Bet): number {
   return bet.side === 'lay' ? (bet.liabilityPence ?? 0) : bet.stakePence;
+}
+
+/** Whether the stake was the bettor's own money.
+ *
+ *  A free bet and a bonus funds stake are both handed over by the bookmaker,
+ *  so neither costs anything to lose and neither belongs in turnover. They
+ *  differ in what comes back on a win, which is `stakeReturns` below.
+ *
+ *  It is a function rather than a field so that the two flags can never
+ *  disagree with the arithmetic that reads them: there is one place that says
+ *  what "not your money" means and everything else calls it. */
+export function ownMoney(bet: Pick<Bet, 'isFreeBet' | 'isBonusFunds'>): boolean {
+  return !bet.isFreeBet && !bet.isBonusFunds;
+}
+
+/** Whether the stake comes back with the winnings.
+ *
+ *  This is the whole difference between the two promotional flags and it is
+ *  impossible to reconstruct after the fact, which is why the review screen
+ *  asks at ingestion. A free bet pays the winnings only; bonus funds pay the
+ *  stake and the winnings, because the restricted balance converts. */
+export function stakeReturns(bet: Pick<Bet, 'isFreeBet'>): boolean {
+  return !bet.isFreeBet;
+}
+
+/** What a bet is up, out of what has come back off it.
+ *
+ *  A Rule 4 and an exchange commission are both charged on winnings and never
+ *  on turnover, so both need this figure and neither may work it out its own
+ *  way. Subtracting the consumed stake is right only when the return HAS the
+ *  stake in it. A free bet's return is the winnings alone, so subtracting the
+ *  stake there charged both of them on a smaller number than the bet actually
+ *  won: a £25 free bet at 3.0 won £50 and a 25p Rule 4 took £6.25 off it
+ *  instead of £12.50, and the same slip on a 2% exchange was charged 50p
+ *  instead of a pound. Bonus funds do return the stake and are unaffected. */
+function winningsOn(bet: Pick<Bet, 'isFreeBet'>, returned: number, consumed: number): number {
+  return returned - (stakeReturns(bet) ? consumed : 0);
 }
 
 /** The commission on a given amount of net winnings, in whole pence.
@@ -75,7 +138,12 @@ function applyEvent(
   netWinningsSoFar: number,
 ): Applied {
   const odds = effectiveOdds(bet);
-  const free = bet.isFreeBet;
+  /*  Two questions, two answers, and they are not the same answer. `own`
+      decides whether the stake cost anything; `back` decides whether it comes
+      back with a win. A free bet is no to both; bonus funds are no to the
+      first and yes to the second. */
+  const own = ownMoney(bet);
+  const back = stakeReturns(bet);
 
   switch (ev.type) {
     case 'won':
@@ -86,8 +154,9 @@ function applyEvent(
         const won = risk > 0 ? round((bet.stakePence * remaining) / risk) : 0;
         return { stakePortion: remaining, returned: remaining + won, voided: 0, terminal: true };
       }
-      // A free bet's stake is not returned with the winnings.
-      const returned = free ? round(remaining * (odds - 1)) : round(remaining * odds);
+      // A free bet's stake is not returned with the winnings. A bonus funds
+      // stake is, which is the whole difference between the two flags.
+      const returned = back ? round(remaining * odds) : round(remaining * (odds - 1));
       return { stakePortion: remaining, returned, voided: 0, terminal: true };
     }
     case 'lost':
@@ -97,9 +166,13 @@ function applyEvent(
     case 'push':
       // Stake returned, zero profit, and the stake is excluded from turnover
       // and from the ROI denominator everywhere it is reported.
+      /*  `own`, not `back`. A voided bonus funds bet puts the restricted
+          balance back where it came from, which is not money arriving: the
+          bonus was never counted in, so returning it is not a profit. Read
+          off `back` this paid the whole stake as pure profit on every void. */
       return {
         stakePortion: remaining,
-        returned: free ? 0 : remaining,
+        returned: own ? remaining : 0,
         voided: remaining,
         terminal: true,
       };
@@ -109,12 +182,14 @@ function applyEvent(
       // returned because that half pushed.
       const half = round(remaining / 2);
       const rest = remaining - half;
-      const win = free ? round(half * (odds - 1)) : round(half * odds);
-      return { stakePortion: remaining, returned: win + (free ? 0 : rest), voided: rest, terminal: true };
+      const win = back ? round(half * odds) : round(half * (odds - 1));
+      /*  The winning half follows `back`; the pushed half follows `own`, for
+          the same reason the void above does. */
+      return { stakePortion: remaining, returned: win + (own ? rest : 0), voided: rest, terminal: true };
     }
     case 'half_lost': {
       const half = round(remaining / 2);
-      return { stakePortion: remaining, returned: free ? 0 : half, voided: half, terminal: true };
+      return { stakePortion: remaining, returned: own ? half : 0, voided: half, terminal: true };
     }
 
     case 'cash_out_full':
@@ -243,14 +318,14 @@ export function explain(
       continue;
     }
 
-    const netWinningsSoFar = returnedTotal - stakeConsumed;
+    const netWinningsSoFar = winningsOn(bet, returnedTotal, stakeConsumed);
     const a = applyEvent(bet, ev, remaining, risk, netWinningsSoFar);
 
     remaining = Math.max(0, remaining - a.stakePortion);
     stakeConsumed += a.stakePortion;
     returnedTotal += a.returned;
     voided += a.voided;
-    realised += a.returned - (bet.isFreeBet ? 0 : a.stakePortion);
+    realised += a.returned - (ownMoney(bet) ? a.stakePortion : 0);
     if (a.terminal) terminated = true;
 
     steps.push({
@@ -287,10 +362,17 @@ export function recompute(bet: Bet, events: SettlementEvent[], now: string): Bet
   return explain(bet, events, now).state;
 }
 
-/** Turnover excludes voided stake everywhere, and a free bet's stake too,
- *  because it was never turned over. */
+/** Turnover excludes voided stake everywhere, and any stake that was not the
+ *  bettor's own money.
+ *
+ *  A return is a return on what you put up. A free bet stake was never put up
+ *  and neither was a bonus funds stake, so leaving either in the denominator
+ *  reports a smaller return than the account actually made on its own money,
+ *  and leaving it in with a zero numerator on a losing free bet reports a
+ *  loss on money nobody lost. Bonus funds used to be counted in full here,
+ *  which is the defect this line fixes. */
 export function turnoverPence(bet: Bet, state: BetState): number {
-  if (bet.isFreeBet) return 0;
+  if (!ownMoney(bet)) return 0;
   return Math.max(0, riskPence(bet) - state.voidedStakePence);
 }
 
@@ -307,7 +389,7 @@ export function countsTowardWinRate(bet: Bet): boolean {
  *  it on and there is no second definition of "net winnings" to disagree. */
 function netWinnings(bet: Bet, state: BetState): number {
   const consumed = riskPence(bet) - state.remainingStakePence;
-  return state.returnedPence - consumed;
+  return winningsOn(bet, state.returnedPence, consumed);
 }
 
 /** The rate a commission event should be appended at, or null for none.

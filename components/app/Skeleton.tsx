@@ -113,13 +113,22 @@ export function Skeleton({ shape = 'page' }: { shape?: SkeletonShape }) {
       <p className="sr-only" role="status">Loading</p>
       <div className="skel" aria-hidden="true">
         {shape === 'dashboard' ? (
+          /*  THE SHAPE OF THE DASHBOARD THAT IS COMING, and it was the shape
+               of the one before it: four tiles, a wide block, two thirds and
+               then a calendar row, which is nine cards over four rows against
+               the seven over three the page has had since the overhaul. .dash
+               gives three rows their heights, so a fourth had nowhere to go
+               and the placeholder measured 1,135 pixels at 1440 by 900 for a
+               page that fits 824. A loading state a different height from the
+               page it stands in for moves everything the moment it is
+               replaced, which is the one thing it exists to prevent. */
           <div className="grid dash">
-            {['58%', '64%', '44%', '52%'].map((w) => <TileBlock key={w} w={w} />)}
-            <div className="card col-6 skel__b"><Head /><Bar w="100%" h="60%" /></div>
-            <div className="card col-3 skel__b"><Head /><Bar w="100%" h="52%" /></div>
-            <div className="card col-3 skel__b"><Head /><Rows n={4} /></div>
+            {['58%', '64%'].map((w) => <TileBlock key={w} w={w} />)}
+            <div className="card col-6 skel__b"><Head /><Bar w="100%" h="58%" /></div>
             <div className="card col-5 skel__b"><Head /><CalendarBlock /></div>
-            <div className="card col-7 skel__b"><Head /><Rows n={5} /></div>
+            <div className="card col-7 skel__b"><Head /><Rows n={4} /></div>
+            <div className="card col-8 skel__b"><Head /><Bar w="100%" h="52%" /></div>
+            <div className="card col-4 skel__b"><Head /><Bar w="100%" h="52%" /></div>
           </div>
         ) : shape === 'list' ? (
           <div className="grid">

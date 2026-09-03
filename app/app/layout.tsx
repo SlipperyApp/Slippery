@@ -17,7 +17,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
     <AppShell chrome={viewer.chrome}>
       {viewer.demo ? <DemoNote handle={viewer.data.account.handle} /> : null}
       {viewer.readOnly ? (
-        <div className="banner banner--neg" style={{ marginBottom: 'var(--gap-block)' }}>
+        <div className="banner banner--warn" style={{ marginBottom: 'var(--gap-block)' }}>
           <span>
             <strong>Read only.</strong> Two payments failed, so new slips, imports and the bot are
             paused. The ledger and the export stay fully live, and nothing has been deleted.{' '}

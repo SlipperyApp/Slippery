@@ -19,7 +19,9 @@ const FIELDS: [string, string, 'high' | 'missing'][] = [
 export default function Unreadable() {
   const read = FIELDS.filter((f) => f[2] === 'high').length;
   return (
-    <div className="column column--wide">
+    /*  Measured at 1440 by 900: 894 pixels against the 824 the window
+         leaves. The column is the whole page, so it is the region. */
+    <div className="column column--wide fitcol fitcol--scroll">
       <span className="pill pill--warn">UNREADABLE</span>
       <h1 style={{ marginTop: 'var(--s4)' }}>
         {read} of {FIELDS.length} fields came off that slip

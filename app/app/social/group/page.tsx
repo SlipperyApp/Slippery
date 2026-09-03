@@ -129,21 +129,27 @@ export default async function GroupPage({
         <Icon name="shield" size={18} className="banner__icon" />
         <span>
           {summary.slipBackedOnly
-            ? `Slip backed bets only, so every bet in this table was captured from a slip at placement. ${excluded === 0
+            ? `Slip backed bets only, so every bet in this table came off a slip rather than a keyboard. ${excluded === 0
               ? 'Nothing its members have typed in has been left out yet.'
               : `${plural(excluded, 'bet')} from its members are out of it because they were not.`} A typed-in winner cannot move a position.`
             : `${verified}% of the bets here came from a slip captured at placement. Typed-in and imported bets count, and are marked on each Slipper.`}
         </span>
       </div>
 
-      {/*  THE BOARD TAKES THE WHOLE ROW AND THE GROUP'S SETTINGS SIT UNDER
-           IT. They were a column of five cards down the right, which at 1920
-           was a 500 pixel stack two thousand pixels tall beside a table that
-           had finished after five rows: the page was mostly the scroll
-           between one fact and the next. What a wide screen has room for
-           beside a table is one row of it, so the right of the board is the
-           pane and the settings are three columns underneath. */}
-      <section className="card col-12" style={{ marginBottom: 'var(--gap-block)' }}>
+      {/*  THE BOARD AND THE GROUP'S SETTINGS SCROLL, and the name, the pills
+           and the sentence saying what the table counts do not. Measured at
+           1440 by 900: 1,835 pixels against the 824 the window leaves, so a
+           group's own rules were two screens below the rule printed at the
+           top of it. See .fitcol in layout.css. */}
+      <div className="fitcol fitcol--scroll">
+        {/*  THE BOARD TAKES THE WHOLE ROW AND THE GROUP'S SETTINGS SIT UNDER
+             IT. They were a column of five cards down the right, which at
+             1920 was a 500 pixel stack two thousand pixels tall beside a
+             table that had finished after five rows: the page was mostly the
+             scroll between one fact and the next. What a wide screen has room
+             for beside a table is one row of it, so the right of the board is
+             the pane and the settings are three columns underneath. */}
+        <section className="card col-12" style={{ marginBottom: 'var(--gap-block)' }}>
         <div className="card__head">
           <h2 className="card__title">Leaderboard</h2>
           <p className="card__note">{periodLabel}, units to 1dp</p>
@@ -287,6 +293,7 @@ export default async function GroupPage({
               <Link href="/app/social/group/join" className="btn btn--quiet btn--sm">Join with a code</Link>
             </div>
           </section>
+        </div>
         </div>
       </div>
     </>

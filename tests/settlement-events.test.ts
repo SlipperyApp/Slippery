@@ -235,6 +235,10 @@ test('the on-demand settle has a caller', () => {
    *  sweep a day and no way to ask for another. */
   const caller = readFileSync('components/app/CheckResults.tsx', 'utf8');
   assert.match(caller, /'\/api\/settle'/);
-  const runningNow = readFileSync('components/app/RunningNow.tsx', 'utf8');
-  assert.match(runningNow, /<CheckResults \/>/);
+  /*  It was in RunningNow, which was a 430 pixel card above the ledger
+      naming up to twelve of the bets the list underneath already carries.
+      The card is gone and the control moved to the one row that replaced it,
+      which is where the count of what is waiting is printed. */
+  const bar = readFileSync('components/app/OpenBar.tsx', 'utf8');
+  assert.match(bar, /<CheckResults \/>/);
 });

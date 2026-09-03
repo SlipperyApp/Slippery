@@ -1,12 +1,14 @@
 'use client';
 
-import { useState, useSyncExternalStore } from 'react';
+import { useEffect, useRef, useState, useSyncExternalStore } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { Icon } from '@/components/Icon';
 import { EmptyState } from './BetRow';
 import { BetSheet } from './BetSheet';
 import { BetTable, FIRST_DIR, sortBets, type Entry, type SortKey } from './BetTable';
+import { SPORTS, ALL_BOOKMAKERS } from '@/lib/data/reference';
+import type { Scope } from '@/lib/data/analytics';
 import type { DemoBet } from '@/lib/data/demo';
 import type { Currency } from '@/lib/domain/types';
 import type { OddsFormat } from '@/lib/odds';
@@ -43,13 +45,29 @@ const isWide = () => window.matchMedia(QUERY).matches;
     paint anyway: this is only ever read after somebody presses a row. */
 const notWide = () => false;
 
-/** Cursor pagination, and facets whose counts agree with the rows.
+/** The list, one filter control, and the bet beside it.
  *
- *  The count line says "N of M shown" rather than leaving two numbers on
- *  screen to disagree with each other. */
+ *  ONE FILTER CONTROL, NOT THREE ROWS AND A SENTENCE. This screen carried a
+ *  search form, then a row of outcome pills with their counts, then a row of
+ *  source pills with their counts, then a line reading "Showing 50 of 218
+ *  filtered from 218. Facets sum to 218." Four rows of chrome, about 170
+ *  pixels, before the first bet, on a page that is a list of bets. They are
+ *  one row of controls now: what you are looking for, then four questions
+ *  about which bets, each a dropdown carrying its own counts.
+ *
+ *  THE COUNTS DID NOT GO, THEY MOVED INTO THE OPTIONS. Every count still
+ *  derives from one query and the facet total still equals the row total,
+ *  which is rule 5 of this codebase; what went is the sentence asserting it
+ *  to the reader. A person who wants to know how many won reads "Won 99" in
+ *  the list they choose it from.
+ *
+ *  THE SORT INSTRUCTION WENT. "Your bets, newest first. Press a column
+ *  heading to sort by it, or a row to open the bet." A table with sort
+ *  arrows in its headings is a table anybody has pressed a heading on
+ *  before. */
 export function LedgerRows({
   bets, facets, facetTotal, sourceFacets, activeSource, ewSiblings,
-  rowTotal, activeOutcome, search,
+  rowTotal, activeOutcome, search, focusSearch = false, scope,
   currency, oddsFormat, showProfitIn, tz = DEFAULT_TZ,
   movements = [], allBets = [], balanceStartMinor = 0,
 }: {
@@ -63,6 +81,12 @@ export function LedgerRows({
   rowTotal: number;
   activeOutcome: string | null;
   search: string;
+  /** Arrived from the rail's search row, so the cursor goes in the box. */
+  focusSearch?: boolean;
+  /** The bookmaker and the sport are part of the scope, and their dropdowns
+   *  are in this row rather than in a bar of their own. The period is the
+   *  shared selector above and is not repeated here. */
+  scope: Scope;
   currency: Currency;
   oddsFormat: OddsFormat;
   showProfitIn: 'currency' | 'units' | 'both';
@@ -87,6 +111,7 @@ export function LedgerRows({
   const [cursor, setCursor] = useState(PAGE);
   const [open, setOpen] = useState<DemoBet | null>(null);
   const [q, setQ] = useState(search);
+  const box = useRef<HTMLInputElement>(null);
   /*  Sort lives in component state rather than in the URL. A period, a facet
       and a search all change WHICH bets are on the page and belong in a link
       somebody can send; which column they are stacked by does not, and
@@ -96,9 +121,20 @@ export function LedgerRows({
   const [dir, setDir] = useState<'asc' | 'desc'>('desc');
   const wide = useSyncExternalStore(subscribe, isWide, notWide);
 
+  /*  The rail's Search row lands on /app/ledger?find=1, and a row labelled
+      Search that leaves the cursor at the top of the document has not
+      searched anything. Once, on arrival: it is not re-run when the list
+      re-renders, or every filter change would steal the focus back. */
+  useEffect(() => {
+    if (focusSearch) box.current?.focus();
+  }, [focusSearch]);
+
   const set = (key: string, value: string | null) => {
     const next = new URLSearchParams(params?.toString() ?? '');
     if (!value) next.delete(key); else next.set(key, value);
+    /*  Off with the first filter change, or the box takes the focus back on
+        every navigation this component makes. */
+    next.delete('find');
     const s = next.toString();
     setCursor(PAGE);
     router.replace(s ? `${pathname}?${s}` : pathname, { scroll: false });
@@ -122,10 +158,7 @@ export function LedgerRows({
       filter would put rows in a list that the filter above says are not
       there.
 
-      Inside the page's own window, so the load-more button governs them the
-      way it governs the rows: a deposit from March has no business at the
-      top of fifty August bets. */
-  /*  A sort takes them out too, for the same reason and one more: a deposit
+      A sort takes them out too, for the same reason and one more: a deposit
       has no stake, no price and no result, so under any column but the date
       it would file at whichever end the blanks land, which is a row in the
       list that the heading above it cannot explain. */
@@ -144,110 +177,106 @@ export function LedgerRows({
   ];
   if (!sorting) entries.sort((a, b) => Date.parse(b.at) - Date.parse(a.at));
 
+  const paneOpen = Boolean(open) && wide;
+
   return (
     <>
       <form
-        className="row"
-        style={{ gap: 'var(--s2)', marginBottom: 'var(--gap-block)' }}
+        className="lgrfilt"
+        role="search"
         onSubmit={(e) => { e.preventDefault(); set('q', q || null); }}
       >
         <label className="sr-only" htmlFor="ledger-q">Search your bets</label>
-        <input
-          id="ledger-q" className="input grow" value={q} autoComplete="off"
-          onChange={(e) => setQ(e.target.value)}
-          placeholder="Selection, fixture, market, course"
-        />
-        <button type="submit" className="btn btn--ghost" aria-label="Search your bets">
-          <Icon name="search" size={18} />
-        </button>
+        <span className="lgrfilt__find">
+          <input
+            id="ledger-q" ref={box} className="input" value={q} autoComplete="off" type="search"
+            onChange={(e) => setQ(e.target.value)}
+            placeholder="Selection, fixture, market, course"
+          />
+          <button type="submit" className="roundbtn lgrfilt__go" aria-label="Search your bets">
+            <Icon name="search" size={16} />
+          </button>
+        </span>
+
+        {/*  THE FACET COUNTS ARE IN THE OPTIONS. Two rows of pills carrying
+             the same numbers took 96 pixels above the list and could not be
+             read as a set: eight outcomes wrapped to two lines at 1440 and
+             the eye had to find the pressed one among them. A select says
+             which is on in one word. */}
+        <label className="sr-only" htmlFor="ledger-outcome">Outcome</label>
+        <select
+          id="ledger-outcome"
+          className="select lgrfilt__sel"
+          value={activeOutcome ?? 'all'}
+          onChange={(e) => set('outcome', e.target.value === 'all' ? null : e.target.value)}
+        >
+          <option value="all">Every outcome ({facetTotal})</option>
+          {facets.map((f) => (
+            <option key={f.id} value={f.id}>{f.label} ({f.count})</option>
+          ))}
+        </select>
+
+        {/*  Only where the record actually holds both kinds. A control that
+             filters nothing away teaches somebody the filter does not work. */}
+        {sourceFacets.length > 1 ? (
+          <>
+            <label className="sr-only" htmlFor="ledger-source">Where the bet came from</label>
+            <select
+              id="ledger-source"
+              className="select lgrfilt__sel"
+              value={activeSource ?? 'all'}
+              onChange={(e) => set('source', e.target.value === 'all' ? null : e.target.value)}
+            >
+              <option value="all">Placed here and imported</option>
+              {sourceFacets.map((f) => (
+                <option key={f.id} value={f.id}>{f.label} ({f.count})</option>
+              ))}
+            </select>
+          </>
+        ) : null}
+
+        <label className="sr-only" htmlFor="ledger-book">Bookmaker</label>
+        <select
+          id="ledger-book"
+          className="select lgrfilt__sel"
+          value={scope.bookmakerId}
+          onChange={(e) => set('book', e.target.value === 'all' ? null : e.target.value)}
+        >
+          <option value="all">Every bookmaker</option>
+          {ALL_BOOKMAKERS.map((b) => <option key={b.id} value={b.id}>{b.name}</option>)}
+        </select>
+
+        <label className="sr-only" htmlFor="ledger-sport">Sport</label>
+        <select
+          id="ledger-sport"
+          className="select lgrfilt__sel"
+          value={scope.sportId}
+          onChange={(e) => set('sport', e.target.value === 'all' ? null : e.target.value)}
+        >
+          <option value="all">Every sport</option>
+          {SPORTS.map((sp) => <option key={sp.id} value={sp.id}>{sp.name}</option>)}
+        </select>
+
         {search ? (
-          <button type="button" className="btn btn--quiet" onClick={() => { setQ(''); set('q', null); }}>
+          <button type="button" className="btn btn--quiet btn--sm" onClick={() => { setQ(''); set('q', null); }}>
             Clear
           </button>
         ) : null}
       </form>
 
-      <div
-        className="row row--wrap" style={{ gap: 'var(--s2)', marginBottom: 'var(--s3)' }}
-        role="group" aria-label="Filter by outcome"
-      >
-        {/*  .pill--accent, not an inline colour. These carried
-             color: var(--accent) written by hand, which is the exact thing
-             .pill--accent exists to stop: --accent is the button GROUND
-             colour and measured 4.38:1 as text on a card, which axe found
-             and called serious. The class uses --accent-2, which is the one
-             of the two accents made for text. */}
-        <button
-          type="button" className={`pill pill--lg${activeOutcome ? '' : ' pill--accent'}`}
-          aria-pressed={!activeOutcome}
-          onClick={() => set('outcome', null)}
-          style={{ cursor: 'pointer' }}
-        >
-          All <span className="tnum">{facetTotal}</span>
-        </button>
-        {facets.map((f) => (
-          <button
-            key={f.id} type="button"
-            className={`pill pill--lg${activeOutcome === f.id ? ' pill--accent' : ''}`}
-            aria-pressed={activeOutcome === f.id}
-            onClick={() => set('outcome', activeOutcome === f.id ? null : f.id)}
-            style={{ cursor: 'pointer' }}
-          >
-            {f.label} <span className="tnum">{f.count}</span>
-          </button>
-        ))}
-      </div>
-
-      {/*  WHERE THE BET CAME FROM. Only drawn when the record actually holds
-           both kinds: a chip that filters nothing away is a control that
-           teaches somebody the filter does not work.
-
-           Three states out of two chips, which is what "show them, hide them
-           or show them alone" needs: neither pressed is every bet, Imported
-           is imported alone, Placed here hides them. Pressing the one that
-           is already on clears it, so there is no fourth state to get stuck
-           in and no separate reset. */}
-      {sourceFacets.length > 1 ? (
-        <div
-          className="row row--wrap" style={{ gap: 'var(--s2)', marginBottom: 'var(--s3)' }}
-          role="group" aria-label="Filter by where the bet came from"
-        >
-          <span className="label" style={{ marginRight: 'var(--s1)' }}>Source</span>
-          {sourceFacets.map((f) => (
-            <button
-              key={f.id} type="button"
-              className={`pill pill--lg${activeSource === f.id ? ' pill--accent' : ''}`}
-              aria-pressed={activeSource === f.id}
-              onClick={() => set('source', activeSource === f.id ? null : f.id)}
-              style={{ cursor: 'pointer' }}
-            >
-              {f.label} <span className="tnum">{f.count}</span>
-            </button>
-          ))}
-        </div>
-      ) : null}
-
-      <p className="small dim" style={{ marginBottom: 'var(--s3)' }}>
-        {/* One query behind both numbers, so these cannot disagree. */}
-        Showing {count(page.length)} of {count(bets.length)}
-        {bets.length !== rowTotal ? <> filtered from {count(rowTotal)}</> : null}. Facets sum to {count(facetTotal)}.
-        {/*  Counted apart and never added to the bets. A deposit has no
-             outcome, so it is in no facet, and rolling it into the row total
-             would break the one promise this line makes. */}
-        {shownMovements.length > 0
-          ? <> Plus {count(shownMovements.length)} money {shownMovements.length === 1 ? 'movement' : 'movements'}, which are in no count above.</>
-          : null}
-        {(filtered || sorting) && movements.length > 0
-          ? <> Deposits and withdrawals are hidden while a {sorting && !filtered ? 'column is sorting' : 'filter is on'}.</>
-          : null}
-      </p>
-
       {page.length === 0 ? (
         <div className="card">
+          {/*  WHICH EMPTY THIS IS, decided by whether the ACCOUNT has rows
+               rather than by which of three controls is set. rowTotal is the
+               count before any filter, so one condition covers every way in,
+               and the action is the way out of the filter rather than an
+               invitation to add a bet: /app/ledger with no query clears every
+               one of them, including the ones this component does not own. */}
           <EmptyState
-            title={search || activeOutcome || activeSource ? 'Nothing matches that filter yet.' : 'Your first slip goes here.'}
-            action="Add a bet"
-            href="/app/import"
+            title={rowTotal > 0 ? 'Nothing matches this filter.' : 'Your first slip goes here.'}
+            action={rowTotal > 0 ? 'Show everything' : 'Add a bet'}
+            icon={rowTotal > 0 ? 'close' : 'plus'}
+            href={rowTotal > 0 ? '/app/ledger' : '/app/import'}
             ghost={
               <ul>
                 {[1, 2, 3].map((i) => (
@@ -261,13 +290,19 @@ export function LedgerRows({
           />
         </div>
       ) : (
-        /*  THE LIST AND THE BET, SIDE BY SIDE FROM 1280.
+        /*  THE LIST AND THE BET, SIDE BY SIDE FROM 1400.
              A wide screen can hold both, and holding both is the difference
              between a ledger and a phone screen with more air in it: the
-             thirty rows you were reading stay on screen while you read one
-             of them. Under 1280 the pane is not drawn at all and the bet
-             opens as the sheet it always was. */
-        <div className="lgr">
+             rows you were reading stay on screen while you read one of them.
+
+             THE PANE IS ONLY IN THE DOCUMENT WHEN A BET IS OPEN. It used to
+             draw a resting state, a slip icon over "Press a bet" and two
+             sentences about where the working opens, in a 400 pixel column
+             beside the list on every visit. That is a third of a wide window
+             spent telling somebody to press something, and the list is one
+             press wide. With nothing open the grid is one column and the
+             rows take the width. */
+        <div className={`lgr fitcol${paneOpen ? ' lgr--open' : ''}`}>
           <div className="lgr__list">
             <div className="card card--table">
               <BetTable
@@ -287,7 +322,7 @@ export function LedgerRows({
               {cursor < bets.length ? (
                 <div className="card__foot center">
                   <button type="button" className="btn btn--ghost" onClick={() => setCursor(cursor + PAGE)}>
-                    Load {Math.min(PAGE, bets.length - cursor)} more
+                    Load {Math.min(PAGE, bets.length - cursor)} more of {count(bets.length)}
                   </button>
                 </div>
               ) : (
@@ -299,13 +334,8 @@ export function LedgerRows({
             </div>
           </div>
 
-          {/*  The pane. It is in the document at every width and CSS decides
-               whether there is room for it, so nothing about the list has to
-               know: the bet inside it is only ever mounted once, in one of
-               the two places, which is what keeps the sheet's own ids from
-               appearing twice on the page. */}
-          <aside className="lgr__side" aria-label="The bet you have open">
-            {open && wide ? (
+          {paneOpen && open ? (
+            <aside className="lgr__side" aria-label="The bet you have open">
               <BetSheet
                 key={open.id}
                 mode="pane"
@@ -316,17 +346,8 @@ export function LedgerRows({
                 tz={tz}
                 onClose={() => setOpen(null)}
               />
-            ) : (
-              <div className="dpane dpane--rest">
-                <Icon name="slip" size={22} className="dpane__mark" />
-                <p className="card__title">Press a bet</p>
-                <p className="small dim">
-                  Every figure on it is folded from its settlement events, and the working opens
-                  here beside the list rather than over it.
-                </p>
-              </div>
-            )}
-          </aside>
+            </aside>
+          ) : null}
         </div>
       )}
 

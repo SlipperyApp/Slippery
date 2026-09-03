@@ -141,38 +141,42 @@ export default function Landing() {
            links all three. What is left is what it is, how a bet gets in,
            what the record then says, what it costs, and who made it. */}
 
-      {/* --------------------------------------------------------- pricing */}
+      {/* ------------------------------------------- pricing and questions */}
+      {/*  ONE SECTION, TWO COLUMNS. These were two centred sections stacked,
+           each a heading, a line and a small ghost button, and with the block
+           after them that made three centred stacks each ending in the same
+           control: 643 pixels of a 1440 page to say two things and offer two
+           links. Side by side they are what somebody still deciding asks
+           next, which is what it costs and what it does not do. */}
       <section className="sect" id="price">
-        <div className="wrap">
-          <SectionHead
-            centred
-            setup="One price, both platforms."
-            claim="£3.49 a month, £29.99 a year."
-          >
-            Free for {TRIAL_DAYS} days or {TRIAL_SLIPS} slips. Your ledger and export stay live
-            even if the card does not.
-          </SectionHead>
-          <p style={{ marginTop: 'var(--s5)', textAlign: 'center' }}>
-            <Link href="/pricing" className="btn btn--ghost btn--sm">
-              What is in it <Icon name="arrowRight" size={16} />
-            </Link>
-          </p>
-        </div>
-      </section>
-
-      {/* ------------------------------------------------------- questions */}
-      <section className="sect" style={{ paddingTop: 0 }} id="questions">
-        <div className="wrap">
-          <SectionHead
-            centred
-            setup={`${spell(QUESTIONS.length)} questions.`}
-            claim="Answered without the marketing."
-          />
-          <p style={{ marginTop: 'var(--s5)', textAlign: 'center' }}>
-            <Link href="/faq" className="btn btn--ghost btn--sm">
-              Read them <Icon name="arrowRight" size={16} />
-            </Link>
-          </p>
+        <div className="wrap two">
+          <div>
+            <SectionHead
+              setup="One price, both platforms."
+              claim="£3.49 a month, £29.99 a year."
+            >
+              Free for {TRIAL_DAYS} days or {TRIAL_SLIPS} slips. Your ledger and export stay live
+              even if the card does not.
+            </SectionHead>
+            <p style={{ marginTop: 'var(--s5)' }}>
+              <Link href="/pricing" className="btn btn--ghost btn--sm">
+                What is in it <Icon name="arrowRight" size={16} />
+              </Link>
+            </p>
+          </div>
+          <div id="questions">
+            <SectionHead
+              setup={`${spell(QUESTIONS.length)} questions.`}
+              claim="Answered without the marketing."
+            >
+              The ones a spreadsheet cannot answer, and the ones this cannot either.
+            </SectionHead>
+            <p style={{ marginTop: 'var(--s5)' }}>
+              <Link href="/faq" className="btn btn--ghost btn--sm">
+                Read them <Icon name="arrowRight" size={16} />
+              </Link>
+            </p>
+          </div>
         </div>
       </section>
 

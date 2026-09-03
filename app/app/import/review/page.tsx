@@ -26,13 +26,13 @@ export default async function Review() {
       </div>
 
       <h1>Check what was read</h1>
-      <p className="muted" style={{ marginTop: 'var(--s2)' }}>
-        Nothing is written until you confirm. Each field is scored on its own, and anything the
-        reader was not sure of arrives as a question with an empty box rather than a plausible
-        number already filled in.
-      </p>
 
-      <div style={{ marginTop: 'var(--s5)' }}>
+      {/*  THE READ SCROLLS AND THE HEADING DOES NOT. Measured at 1440 by 900
+           this screen was 1,532 pixels against the 824 the window leaves, so
+           the three promotion switches and the line saying what the bet as
+           flagged returns were both under the fold on the screen whose whole
+           job is checking a read before it is filed. */}
+      <div className="fitcol fitcol--scroll" style={{ marginTop: 'var(--s5)' }}>
         <ReviewSlip
           fallback={EXAMPLE_READ}
           balances={balances.map((b) => ({ id: b.id, name: b.name, currency: b.currency }))}

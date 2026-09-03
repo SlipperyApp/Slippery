@@ -26,3 +26,13 @@ tools/.*.mjs
 
 # The audit writes here; the findings live in test-results/.
 .audit.log
+
+# scratch build and dev logs from running the app to look at it
+.build.log
+.dev.log
+
+# the owner reference image, not mine to commit
+REFERENCE.png
+
+# Scratch measuring output.
+*.log

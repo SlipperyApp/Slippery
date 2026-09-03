@@ -98,20 +98,35 @@ export default function How() {
            looks up once and nobody reads on the way to deciding whether to
            try this, and all eight are now in the settlement answer on /faq,
            which is where a rule gets looked up. Nothing was dropped. */}
+      {/*  THE FOUR RULES ARE A LIST, in the column the section left empty.
+           A head, one sentence and a link filled the left 620 pixels of a
+           1200 pixel wrap and nothing stood in the other 580, on a page where
+           every section above it has something beside the words. The facts
+           are the ones the sentence already carried, in the shape this page
+           uses two sections up: nothing has been added back. */}
       <section className="sect" style={{ paddingTop: 0 }}>
-        <div className="wrap">
-          <SectionHead
-            setup="A wrong grade is worse"
-            claim="than no grade at all."
-          >
-            Ninety minute scores only, whole lines push, quarter lines split the stake, and
-            anything uncertain asks you rather than guessing.
-          </SectionHead>
-          <p style={{ marginTop: 'var(--s5)' }}>
-            <Link href="/faq" className="btn btn--ghost btn--sm">
-              Every settlement rule <Icon name="arrowRight" size={16} />
-            </Link>
-          </p>
+        <div className="wrap two">
+          <div>
+            <SectionHead
+              setup="A wrong grade is worse"
+              claim="than no grade at all."
+            >
+              Anything uncertain asks you rather than guessing.
+            </SectionHead>
+            <p style={{ marginTop: 'var(--s5)' }}>
+              <Link href="/faq" className="btn btn--ghost btn--sm">
+                Every settlement rule <Icon name="arrowRight" size={16} />
+              </Link>
+            </p>
+          </div>
+          <Checks
+            items={[
+              'Ninety minute scores only, never extra time',
+              'A whole line pushes and the stake comes back',
+              'A quarter line splits the stake in half',
+              'Handicaps follow the bookmaker, from a table',
+            ]}
+          />
         </div>
       </section>
 

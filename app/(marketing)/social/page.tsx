@@ -103,8 +103,7 @@ export default function Social() {
                 { title: 'Nothing late at night', sub: 'No push after the last fixture of the evening, for any reason.', icon: 'clock' },
                 { title: '"Moving to League One next month"', sub: 'Never "RELEGATED". State the number and stop.', icon: 'trophy' },
                 { title: 'Celebrate app actions, never outcomes', sub: 'Importing a history is worth marking. A winning bet is not, and neither is a run of days with a bet on them.', icon: 'check' },
-                { title: 'No tips, and nothing to tail', sub: 'What other Slippers are tracking shows only bets captured before kick off, never a result, and no button turns one of theirs into one of yours.', icon: 'shield' },
-                { title: 'Take a break, one control', sub: 'Pauses notifications and leagues. Touches nothing in your ledger.', icon: 'pause' },
+                { title: 'No tips, and nothing to tail', sub: 'What other Slippers are tracking never shows a result, and no button turns one of theirs into one of yours.', icon: 'shield' },
               ]}
             />
           </div>

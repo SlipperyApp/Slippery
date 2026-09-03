@@ -108,7 +108,7 @@ export function BetTable({
   return (
     <table className="btbl">
       <caption className="sr-only">
-        Your bets, newest first. Press a column heading to sort by it, or a row to open the bet.
+        Your bets, newest first.
       </caption>
       <thead className="btbl__head">
         <tr>

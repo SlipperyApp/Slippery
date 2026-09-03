@@ -34,7 +34,10 @@ export default async function Declined() {
         Your bank refused the payment. Usually an expiry date, a spending limit, or a bank blocking something it has not seen before. None of it is about your account here.
       </p>
 
-      <div className="grid" style={{ marginTop: 'var(--s6)' }}>
+      {/*  Measured at 1440 by 900: 944 pixels against the 824 the window
+           leaves. The pill, the heading and the sentence saying the bank
+           refused it stay put; what follows from that scrolls. */}
+      <div className="grid fitcol fitcol--scroll" style={{ marginTop: 'var(--s6)', alignContent: 'start' }}>
         <section className="card col-8">
           <h2 className="card__title">Nothing has changed yet</h2>
           <ul style={{ marginTop: 'var(--s3)' }}>

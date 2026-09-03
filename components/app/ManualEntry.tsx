@@ -36,10 +36,16 @@ const LINES: Record<string, number> = {
 const blankLeg = (): Leg => ({ selection: '', eventName: '', market: 'Match result', odds: '' });
 
 export function ManualEntry({
-  bookmakers, sports, unitPence, currency, balances, balanceId, balanceName,
+  bookmakers, sports, unitPence, currency, balances, balanceId, balanceName, clock,
 }: {
   bookmakers: { id: string; name: string }[];
   sports: { id: string; name: string }[];
+  /** The account's zone, as an adjective, for the one field that needs it.
+   *  It was the literal "UK time", and this product is set up for Ireland,
+   *  Spain, the United States and ten more in lib/data/reference.ts: an
+   *  account on Europe/Madrid was being told to type a Spanish kick off in
+   *  UK time by a form that then filed it in Madrid. */
+  clock: string;
   /** The OPEN BALANCE'S unit and currency, not the account's. The page reads
    *  them off the viewer, which is already scoped to one balance, so choosing
    *  another one re-denominates every figure in this form on the refresh. */
@@ -58,6 +64,7 @@ export function ManualEntry({
   const [sport, setSport] = useState('football');
   const [placedAt, setPlacedAt] = useState('');
   const [freeBet, setFreeBet] = useState(false);
+  const [bonusFunds, setBonusFunds] = useState(false);
   const [boosted, setBoosted] = useState(false);
   const [saving, setSaving] = useState(false);
   const [note, setNote] = useState('');
@@ -95,7 +102,7 @@ export function ManualEntry({
           source: 'manual', shape, side, bookmaker, sport,
           stakePence, lines, placedAt: placedAt || null,
           legs: legs.slice(0, wanted),
-          promotional: { freeBet, boosted, bonusFunds: false },
+          promotional: { freeBet, boosted, bonusFunds },
         }),
       });
       const b = await res.json().catch(() => ({}));
@@ -206,7 +213,7 @@ export function ManualEntry({
             unitMinor={unitPence}
           />
 
-          <div className="field">
+          <div className="field field--tight">
             <label className="field__label" htmlFor="mn-stake">
               {lines > 1 ? 'Stake per line' : side === 'lay' ? 'Backer’s stake' : 'Stake'}
             </label>
@@ -247,20 +254,48 @@ export function ManualEntry({
             <label className="field__label" htmlFor="mn-when">When it kicks off</label>
             <input id="mn-when" className="input" type="datetime-local" value={placedAt}
               onChange={(e) => setPlacedAt(e.target.value)} />
-            <span className="field__hint">
-              UK time. This is what every period total is worked out from, not when you placed it.
-            </span>
+            {/*  THE ZONE, AND NOT THE LECTURE. It read "UK time. This is what
+                 every period total is worked out from, not when you placed
+                 it", which is the product explaining its own filing to
+                 somebody filling in a field. A datetime-local box carries no
+                 zone of its own, so naming one is a fact about what to type;
+                 the rest was mechanics. */}
+            <span className="field__hint">{clock}.</span>
           </div>
         </section>
 
+        {/*  THE SAME THREE FLAGS THE READ SCREEN CARRIES, and the same
+             arithmetic behind them. Bonus funds was missing here entirely, so
+             a bet typed in from a restricted balance had no way to say so and
+             went into the ledger as the account holder's own money: a real
+             loss where there was none, and a return computed over a stake
+             that was never put up. Free bet and bonus funds are exclusive,
+             because a stake came from one place or the other. */}
         <section className="card">
-          <h2 className="card__title">Promotional</h2>
+          <h2 className="card__title">Whose money the stake was</h2>
           <div className="switchrow">
-            <span className="brow__title">Free bet</span>
-            <button type="button" className="switch" aria-pressed={freeBet} aria-label={`Free bet: ${freeBet ? 'on' : 'off'}`} onClick={() => setFreeBet(!freeBet)} />
+            <span style={{ minWidth: 0 }}>
+              <span className="brow__title">Free bet</span>
+              <span className="brow__sub">Stake not returned with a win, and out of turnover.</span>
+            </span>
+            <button type="button" className="switch" aria-pressed={freeBet}
+              aria-label={`Free bet: ${freeBet ? 'on' : 'off'}`}
+              onClick={() => { setFreeBet(!freeBet); if (!freeBet) setBonusFunds(false); }} />
           </div>
           <div className="switchrow">
-            <span className="brow__title">Price boost</span>
+            <span style={{ minWidth: 0 }}>
+              <span className="brow__title">Bonus funds</span>
+              <span className="brow__sub">Stake IS returned with a win, and out of turnover.</span>
+            </span>
+            <button type="button" className="switch" aria-pressed={bonusFunds}
+              aria-label={`Bonus funds: ${bonusFunds ? 'on' : 'off'}`}
+              onClick={() => { setBonusFunds(!bonusFunds); if (!bonusFunds) setFreeBet(false); }} />
+          </div>
+          <div className="switchrow">
+            <span style={{ minWidth: 0 }}>
+              <span className="brow__title">Price boost</span>
+              <span className="brow__sub">Recorded, and no figure moves.</span>
+            </span>
             <button type="button" className="switch" aria-pressed={boosted} aria-label={`Price boost: ${boosted ? 'on' : 'off'}`} onClick={() => setBoosted(!boosted)} />
           </div>
           <p className="small dim card__foot">

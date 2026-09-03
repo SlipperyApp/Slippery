@@ -40,7 +40,6 @@ type AccountRow = {
   plan_state: string; telegram_linked: boolean;
   notifications: Record<string, unknown> | null;
   sharing: Record<string, unknown> | null;
-  break_until: string | null;
 };
 
 type BalanceRow = {
@@ -131,7 +130,6 @@ function toAccount(r: AccountRow, now: Date): DemoData['account'] {
         else, and a reload put every switch back where it started. */
     notifications: switchDefaults(NOTIFICATIONS, r.notifications),
     sharing: switchDefaults(SHARING_SWITCHES, r.sharing),
-    onBreak: Boolean(r.break_until && new Date(r.break_until).getTime() > now.getTime()),
   }, now);
 }
 
@@ -231,7 +229,7 @@ export async function loadBook(accountId: string, now: Date = new Date()): Promi
                 a.week_start, a.odds_format, a.show_profit_in, a.calendar_dates, a.theme,
                 a.balance_start_pence, a.link_code, a.time_zone,
                 a.trial_ends_at, a.trial_slips_allowed, a.trial_slips_used, a.plan_state,
-                a.notifications, a.sharing, a.break_until,
+                a.notifications, a.sharing,
                 exists (select 1 from telegram_links t
                          where t.account_id = a.id and t.dormant = false) as telegram_linked
            from accounts a where a.id = $1 limit 1`,

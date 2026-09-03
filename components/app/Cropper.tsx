@@ -307,7 +307,7 @@ export function Cropper() {
         ) : null}
 
         {failed ? (
-          <div className="banner banner--neg" style={{ marginBottom: 'var(--s4)' }}>
+          <div className="banner banner--warn" style={{ marginBottom: 'var(--s4)' }}>
             <Icon name="alert" size={18} className="banner__icon" />
             <span>
               This browser could not open <span className="mono">{pending.name}</span>, so it cannot

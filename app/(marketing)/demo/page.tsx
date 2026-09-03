@@ -5,15 +5,16 @@ import { demoData } from '@/lib/data/demo';
 import { inBalance } from '@/lib/domain/balances';
 import {
   select, summarise, byDay, cumulative, offerSplit, buildBreakdowns, DEFAULT_SCOPE, scopeLabel,
+  runningTotal, runningRoi,
 } from '@/lib/data/analytics';
 import { ProfitCurve } from '@/components/app/Charts';
 import { MonthCalendar } from '@/components/app/Calendar';
 import { Module, Figure } from '@/components/app/Module';
+import { Tile } from '@/components/app/Tile';
 import { Breakdown } from '@/components/app/Breakdown';
 import { ledgerSummary, isImported, heldOutSentence } from '@/lib/data/ledger-shape';
 import { summariseClosing } from '@/lib/domain/closing';
-import { PctUp, UnitsUp } from '@/components/app/CountUp';
-import { money, pct, count, plural, longDate } from '@/lib/format';
+import { money, pct, count, plural, longDate, units as fmtUnits } from '@/lib/format';
 import { Breadcrumbs } from '@/components/marketing/Breadcrumbs';
 import { StickyCta } from '@/components/marketing/StickyCta';
 import { EndCard } from '@/components/MarketingChrome';
@@ -93,35 +94,51 @@ export default function Demo() {
           </p>
 
           <div className="grid" style={{ marginTop: 'var(--s7)' }}>
-            {/*  The net card, with the tools off. See the note at the top. */}
-            <section className="card col-12 hero-net" aria-labelledby="demo-net-t">
-              <div className="hero-net__head">
-                <p className="label" id="demo-net-t">Net, {scopeLabel(scope).toLowerCase()}</p>
-              </div>
-              {/*  UnitsUp and PctUp below, not the plain formatters, because
-                   they round at the hundredth in a way toFixed does not and
-                   the two pages printing 105.25u and 105.26u for one number
-                   is exactly the drift this page exists to close. The net
-                   itself is integer pence, so money() and the dashboard's
-                   count up land on the same string, and CountUp cannot be
-                   used here anyway: it takes a render function and this is a
-                   server component. */}
-              <p className={`hero-net__fig ${s.netPence > 0 ? 'pos' : s.netPence < 0 ? 'neg' : ''}`}>
-                {money(s.netPence, main.currency, { sign: true })}
-              </p>
-              <div className="hero-net__row">
-                <ul className="hero-net__stats">
-                  <li><span className="label">Units</span><span className="tnum"><UnitsUp value={s.units} sign /></span></li>
-                  <li>
-                    <span className="label">Return</span>
-                    <span className={`tnum ${s.roi > 0 ? 'pos' : s.roi < 0 ? 'neg' : ''}`}>
-                      <PctUp value={s.roi} sign />
-                    </span>
-                  </li>
-                  <li><span className="label">Bets</span><span className="tnum">{count(s.count)}</span></li>
-                </ul>
-              </div>
-            </section>
+            {/*  THE DASHBOARD'S OWN FOUR TILES, and they are the reason this
+                 block was rewritten rather than restyled.
+
+                 This was a `hero-net` card, and .hero-net, .hero-net__head,
+                 .hero-net__fig, .hero-net__row and .hero-net__stats have no
+                 rule anywhere in the stylesheet: the dashboard's hero was
+                 replaced by these four tiles and its CSS went with it, while
+                 this page kept the markup. What shipped was five unstyled
+                 lines in the corner of a full width card, reading "UNITS
+                 +94.00u" and "RETURN+40.0%" with the label welded to the
+                 figure. It is the page the landing hero sends people to.
+
+                 Using Tile also settles the question this page exists to
+                 settle: the screen somebody decides on is the screen they
+                 get, module for module, including which figure is filled. */}
+            <Tile
+              accent
+              label={`Net, ${scopeLabel(scope).toLowerCase()}`}
+              value={money(s.netPence, main.currency, { sign: true })}
+              sub={`${fmtUnits(s.units, { sign: true })} over ${plural(s.count, 'bet')}`}
+              spark={curve.map((pt) => pt.netPence)}
+              sparkTone="ink"
+            />
+            <Tile
+              label="Turnover"
+              value={money(s.turnoverPence, main.currency)}
+              sub={`${money(s.avgStakePence, main.currency)} average stake`}
+              spark={runningTotal(byDay(rows, tz).map((d) => d.turnoverPence))}
+              sparkTone="ink"
+            />
+            <Tile
+              label="Return"
+              value={pct(s.roi, { sign: true })}
+              tone={s.roi > 0 ? 'pos' : s.roi < 0 ? 'neg' : ''}
+              sub={plural(s.settled, 'settled bet')}
+              spark={runningRoi(byDay(rows, tz))}
+              sparkTone={s.roi >= 0 ? 'pos' : 'neg'}
+            />
+            <Tile
+              label="Bets"
+              value={count(s.count)}
+              sub={s.open > 0 ? `${count(s.open)} still running` : `${count(s.settled)} settled`}
+              spark={runningTotal(byDay(rows, tz).map((d) => d.count))}
+              sparkTone="ink"
+            />
 
             <Module title="Calendar" span={7} size="xl" id="demo-calendar">
               <MonthCalendar

@@ -190,8 +190,16 @@ A red and green grid and a ranked leaderboard are engagement mechanics.
 Nothing may nudge toward more volume. Never send a notification about not
 having bet, or framed as losing your place, or late at night. "Moving to
 League One next month", never "RELEGATED". State the number and stop.
-Celebrate app actions, never betting outcomes. There is a "take a break"
-control.
+Celebrate app actions, never betting outcomes.
+
+**SUPERSEDED: there is no "take a break" control.** This section used to
+require one and the owner asked for it to be removed, in those words. What it
+did was pause notifications and take an account out of the monthly leagues; it
+was never self exclusion and could not have been, because Slippery accepts no
+bets, holds no money and pays no winnings. The genuine safeguards all stay and
+are not negotiable: 18+, BeGambleAware, the National Gambling Helpline on 0808
+8020 133, and the safer gambling page. `tests/responsible.test.ts` asserts each
+of them is on screen. See DECISIONS.md.
 
 ## HOW TO WORK
 

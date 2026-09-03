@@ -31,7 +31,7 @@ const SPLIT_AT = 1280;
  *  are the two sides of one condition, because two live copies of the same
  *  control disagree about their own state the moment somebody presses one. */
 export function BalanceTable({
-  groups, openId, sharePaths, many,
+  groups, openId, sharePaths,
 }: {
   groups: { total: CurrencyTotal; word: string; names: string; lines: BalanceLine[] }[];
   /** The balance every other screen is currently showing. */
@@ -39,7 +39,6 @@ export function BalanceTable({
   /** The public path for each shared balance, by balance id. Absent means
    *  the link is off. */
   sharePaths: Record<string, string | null>;
-  many: boolean;
 }) {
   const wide = useWide(SPLIT_AT);
   /*  Nothing is picked on a first paint. The pane says what pressing a row
@@ -65,24 +64,33 @@ export function BalanceTable({
         {/*  The share controls, where they were, on the widths that have no
              room for a pane. */}
         {!wide ? (
-          <div className="sharelist">
-            {all.map((l) => (
-              <ShareBalance
-                key={l.balance.id}
-                balanceId={l.balance.id}
-                name={l.balance.name}
-                path={sharePaths[l.balance.id] ?? null}
-              />
-            ))}
-          </div>
-        ) : null}
-
-        {many ? (
-          <p className="small dim" style={{ marginTop: 'var(--gap-block)' }}>
-            There is no figure on this page that adds pounds to euro. One would need an exchange
-            rate, the rate would be the one on the day you looked, and the number it produced
-            would change overnight without a single bet being placed.
-          </p>
+          <section className="card sharelist" aria-labelledby="sharelist-t">
+            <div className="card__head">
+              <h2 className="card__title" id="sharelist-t">Public links</h2>
+            </div>
+            {/*  THE SENTENCE IS THE LIST'S, NOT EACH ROW'S. It is the same
+                 sentence for every balance on the account, so three balances
+                 printed it three times and two of those were word for word
+                 identical under two buttons that already said the same
+                 thing. It is a fact about what a link is, which is what a
+                 lead is for. */}
+            <p className="small dim">
+              A link shows one balance in units: net, return, bet count, the calendar and the
+              curve. No stakes, no money, no email and nothing about your other balances. Turning
+              one off stops it immediately, and turning it on again issues a different link.
+            </p>
+            <div className="sharelist__rows">
+              {all.map((l) => (
+                <ShareBalance
+                  key={l.balance.id}
+                  balanceId={l.balance.id}
+                  name={l.balance.name}
+                  path={sharePaths[l.balance.id] ?? null}
+                  explain={false}
+                />
+              ))}
+            </div>
+          </section>
         ) : null}
       </div>
 
@@ -151,14 +159,23 @@ function Sheet({
                    and in column order Bets, Turnover, Net the two figures
                    somebody opened this page to compare were the two off the
                    right hand edge. */}
+              {/*  THE COLUMN WIDTHS ARE ON THE HEAD CELLS, and they are what
+                   makes the euro table line up with the pounds one. The two
+                   sheets are two tables in two cards, so each used to size
+                   its own columns to its own longest figure: net was 120
+                   wide in one and 110 in the other, turnover 114 and 119,
+                   and every column in the lower table sat a few pixels off
+                   the column above it. Each sheet was internally aligned,
+                   which is what made it look almost right. See .bsheet in
+                   components.css, where the widths live. */}
               <th scope="col" className="bsheet__name">Balance</th>
-              <th scope="col" className="num">Net</th>
-              <th scope="col" className="num">Return</th>
-              <th scope="col" className="num">Bets</th>
-              <th scope="col" className="num">Turnover</th>
-              <th scope="col" className="num">Units</th>
-              <th scope="col" className="num">In there</th>
-              <th scope="col"><span className="sr-only">Open</span></th>
+              <th scope="col" className="num bsheet__net">Net</th>
+              <th scope="col" className="num bsheet__ret">Return</th>
+              <th scope="col" className="num bsheet__bets">Bets</th>
+              <th scope="col" className="num bsheet__turn">Turnover</th>
+              <th scope="col" className="num bsheet__units">Units</th>
+              <th scope="col" className="num bsheet__in">In there</th>
+              <th scope="col" className="bsheet__go"><span className="sr-only">Open</span></th>
             </tr>
           </thead>
           <tbody>

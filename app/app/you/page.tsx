@@ -2,44 +2,42 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { Icon } from '@/components/Icon';
 import { getViewer } from '@/lib/data/session';
+import { Figure } from '@/components/app/Module';
 import { select, summarise, byMonth, DEFAULT_SCOPE } from '@/lib/data/analytics';
-import { groupSummaries } from '@/lib/data/social';
-import { SETTINGS_GROUPS } from '@/lib/data/settings';
 import { TRIAL_DAYS } from '@/lib/domain/trial';
-import { money, units as fmtUnits, pct, count, initials, plural, position as fmtPosition, zonedParts } from '@/lib/format';
+import { money, units as fmtUnits, pct, count, initials } from '@/lib/format';
 import { isImported } from '@/lib/data/ledger-shape';
 
 export const metadata: Metadata = {
   title: 'You',
-  description: 'Your profile, your form, your division, your badges and your settings.',
+  description: 'Who you are, what your record says all time, your badges and your plan.',
 };
 
-/** "You" holds profile, form, division, badges and settings, because settings
- *  is rarely visited and does not earn a permanent slot of its own. */
+/** You holds identity, the lifetime figures, the badges and the plan.
+ *
+ *  FORM IS GONE. It was seven rows of month, bet count and net, which is the
+ *  dashboard's own six period chart drawn as a list, one screen away, at a
+ *  granularity the dashboard's selector can produce and this could not
+ *  change. Two places to read a month is one place too many and this was the
+ *  one that could not be scoped.
+ *
+ *  DIVISIONS IS GONE. It listed the groups the account is in with a position
+ *  in each, which is the Your groups card on Social, row for row, including
+ *  the same position pill. Social owns the groups.
+ *
+ *  THE SETTINGS LIST WAS ALREADY GONE and stays gone: it was the six rows of
+ *  /app/settings printed a second time, 640 pixels of card, beside a rail
+ *  that carries a Settings row.
+ *
+ *  THE BADGES ARE A ROW OF CHIPS. Six rows with a title, a sentence and a
+ *  tick came to 360 pixels to say that four of six are held. The name is the
+ *  badge and the sentence under each was a restatement of it. */
 export default async function You() {
-  const { data, now, trial, source } = await getViewer();
+  const { data, now, trial } = await getViewer();
   const { account, bets } = data;
 
   const all = summarise(select(bets, { ...DEFAULT_SCOPE, period: 'all' }, now));
-
-  /*  The foot of the Form card and the last row of the Form card are the same
-   *  month, so they come from the same call.
-   *
-   *  They did not. The list came from byMonth, which is a fold over SETTLED
-   *  bets, and the foot came from summarise over the month scope, which counts
-   *  everything in the period. September had three settled bets and one still
-   *  running, so the row read "Sep 3 +£134.50" and the line under it read
-   *  "+£134.50 from 4 bets": the same net attributed to a different number of
-   *  bets, four inches apart. One of the two had to be a lie and it was the
-   *  foot, because an open bet contributed nothing to that net. */
   const allMonths = byMonth(bets, account.timeZone);
-  const months = allMonths.slice(-6);
-  const p = zonedParts(now, account.timeZone);
-  const thisMonth = allMonths.find((m) => m.key === `${p.year}-${String(p.month).padStart(2, '0')}`);
-  /*  GROUPS AND SLIPPERS ARE THE EXAMPLE ACCOUNT'S, so they are read only
-   *  when this IS the example account. A real account was previously shown
-   *  three divisions it is not in and a position in each of them. */
-  const groups = source === 'example' ? groupSummaries(now) : [];
 
   /*  EVERY BADGE IS COMPUTED OFF THIS ACCOUNT'S OWN BETS, AND NOTHING HERE
    *  COUNTS CONSECUTIVE DAYS.
@@ -60,52 +58,65 @@ export default async function You() {
   const slipBackedCount = bets.filter((b) => b.slipBacked).length;
   const slipBackedShare = bets.length > 0 ? slipBackedCount / bets.length : 0;
   const badges = [
-    { t: 'Mostly slip backed', s: 'Three in four of your bets came off a slip rather than a keyboard', got: bets.length > 0 && slipBackedShare >= 0.75 },
-    { t: 'Slip backed', s: 'Nine in ten of your bets came from a slip', got: bets.length > 0 && slipBackedShare >= 0.9 },
-    { t: 'First import', s: 'Brought a history in from somewhere else', got: bets.some(isImported) },
-    { t: 'A full year', s: 'Twelve months of records on Slippery', got: allMonths.length >= 12 },
-    { t: 'Every bet type', s: 'Logged a single, a multiple and an each way', got: ['single', 'each_way'].every((sh) => bets.some((b) => b.shape === sh)) && bets.some((b) => b.legs.length > 1) },
-    { t: 'Group founder', s: 'Started a group somebody else joined', got: groups.some((g) => g.youOwn && g.members > 1) },
+    { t: 'Mostly slip backed', got: bets.length > 0 && slipBackedShare >= 0.75 },
+    { t: 'Slip backed', got: bets.length > 0 && slipBackedShare >= 0.9 },
+    { t: 'First import', got: bets.some(isImported) },
+    { t: 'A full year', got: allMonths.length >= 12 },
+    { t: 'Every bet type', got: ['single', 'each_way'].every((sh) => bets.some((b) => b.shape === sh)) && bets.some((b) => b.legs.length > 1) },
   ];
 
   return (
-    <>
-      <h1>You</h1>
+    /*  A COLUMN, NOT THE WHOLE WIDTH. What is left on this page after Form,
+        Divisions and the settings list is a profile, four lifetime figures, a
+        row of badges and a plan, which is about five hundred pixels of
+        content. Spread across 1920 that is two cards against the left edge
+        with a void beside and under them; the same content in a centred
+        column reads as a page rather than as the top of one. */
+    <div className="column column--wide">
+      <div className="spread lgr__top">
+        <h1>You</h1>
+        <div className="row row--wrap" style={{ gap: 'var(--s3)' }}>
+          <Link href="/app/settings" className="btn btn--quiet btn--sm">
+            <Icon name="settings" size={16} /> Settings
+          </Link>
+          <form action="/api/auth/logout" method="post">
+            <button type="submit" className="btn btn--ghost btn--sm">Sign out</button>
+          </form>
+        </div>
+      </div>
 
-      <div className="grid" style={{ marginTop: 'var(--s4)' }}>
-        <section className="card col-8">
+      <div className="grid">
+        <section className="card col-7">
           <div className="row" style={{ gap: 'var(--s4)', alignItems: 'flex-start' }}>
             {/*  An account that has not been named yet gets neither an empty
                  avatar nor a bare at sign. Both appeared the day a signed-in
                  account stopped being handed the example account's name, and
-                 a card headed with nothing above "@" reads as a load
-                 failure rather than as a profile waiting to be filled in. */}
+                 a card headed with nothing above "@" reads as a load failure
+                 rather than as a profile waiting to be filled in. */}
             <span className="avatar avatar--lg" aria-hidden="true">
               {account.displayName ? initials(account.displayName) : ''}
             </span>
             <div className="grow" style={{ minWidth: 0 }}>
               <p className="card__title">{account.displayName || 'Your profile'}</p>
+              {/*  ONE LINE, AND IT TRUNCATES RATHER THAN WRAPPING. At 320 the
+                   name block has about 90 pixels beside the avatar, and
+                   "@tester123" is 80 of them in the mono face: the handle
+                   broke after the ninth character and printed the "3" on its
+                   own line, which reads as a rendering fault rather than as a
+                   name that did not fit. */}
               {account.handle
-                ? <p className="small dim mono">@{account.handle}</p>
+                ? <p className="small dim mono nowrap ellip">@{account.handle}</p>
                 : <p className="small dim"><Link href="/app/settings?pane=account">Choose a name and a handle</Link></p>}
               <p className="small muted" style={{ marginTop: 'var(--s2)' }}>
                 Unit {money(account.unitPence, account.currency)} · {account.currency} · week starts{' '}
                 {account.weekStart === 1 ? 'Monday' : 'Sunday'}
               </p>
             </div>
-            <Link href="/app/settings" className="btn btn--ghost btn--sm">
-              <Icon name="settings" size={15} /> Settings
-            </Link>
           </div>
 
-          {/*  UNDER THE NAME, AND THEN THE REST OF THE RECORD UNDER THEM.
-               This card sits beside a form card six months tall and a grid
-               row takes its tallest, so the four figures were pinned to the
-               foot with two hundred and fifty pixels of empty card between
-               the name and them. A hole is a hole wherever it is put. What
-               closes it is what the four figures leave out: which month this
-               is, how much of the record came off a slip rather than a
-               keyboard, and how far back it goes. */}
+          {/*  THE LIFETIME FIGURES, and they are the only figures on this
+               page. Everything scoped to a period is on the dashboard, under
+               a selector that can change it. */}
           <div className="figstrip profile__figs" style={{ ['--figs' as string]: 4 }}>
             <div><p className="label">All time</p><p className={`fig fig--m ${all.netPence >= 0 ? 'pos' : 'neg'}`}>{money(all.netPence, account.currency, { sign: true })}</p></div>
             <div><p className="label">Units</p><p className="fig fig--m tnum">{fmtUnits(all.units, { sign: true })}</p></div>
@@ -113,185 +124,62 @@ export default async function You() {
             <div><p className="label">Bets</p><p className="fig fig--m tnum">{count(all.count)}</p></div>
           </div>
 
-          <ul style={{ marginTop: 'var(--s5)' }}>
-            <li className="brow">
-              <span style={{ minWidth: 0 }}>
-                <span className="brow__title">This month</span>
-                <span className="brow__sub">
-                  {thisMonth ? `${count(thisMonth.count)} settled` : 'Nothing settled yet'}
-                </span>
-              </span>
-              <span className={`fig fig--s tnum ${thisMonth && thisMonth.netPence < 0 ? 'neg' : thisMonth && thisMonth.netPence > 0 ? 'pos' : ''}`}>
-                {thisMonth ? money(thisMonth.netPence, account.currency, { sign: true }) : '–'}
-              </span>
-            </li>
-            <li className="brow">
-              <span style={{ minWidth: 0 }}>
-                <span className="brow__title">Slip backed</span>
-                <span className="brow__sub">
-                  {count(slipBackedCount)} of {count(bets.length)} came off a slip rather than a keyboard
-                </span>
-              </span>
-              <span className="fig fig--s tnum">{pct(slipBackedShare * 100)}</span>
-            </li>
-            <li className="brow">
-              <span style={{ minWidth: 0 }}>
-                <span className="brow__title">Records go back to</span>
-                <span className="brow__sub">
-                  {allMonths.length > 0 ? `${count(allMonths.length)} months of settled bets` : 'No settled month yet'}
-                </span>
-              </span>
-              <span className="fig fig--s">{allMonths.length > 0 ? allMonths[0].label : '–'}</span>
-            </li>
-          </ul>
-        </section>
-
-        <section className="card col-4">
-          {/*  "The last six months, by net" under a card titled Form, above
-               six rows labelled Apr to Sep with a money figure on each: the
-               months are on screen and only "by net" was carrying anything.
-               It goes where every other module puts its caveat. */}
-          <div className="card__head">
-            <h2 className="card__title">Form</h2>
-            <p className="card__note">Net, by month</p>
-          </div>
-          {months.length === 0 ? (
-            <p className="small muted" style={{ marginTop: 'var(--s3)' }}>
-              Nothing has settled yet, so there is no month to draw. The first settled bet puts a
-              row here.
-            </p>
-          ) : null}
-          <ul>
-            {months.map((m) => (
-              <li key={m.key} className="brow">
-                <span className="brow__title">{m.label}</span>
-                <span className="row" style={{ gap: 'var(--s3)' }}>
-                  <span className="small dim tnum">{m.count}</span>
-                  <span className={`fig fig--s tnum ${m.netPence >= 0 ? 'pos' : 'neg'}`}>
-                    {money(m.netPence, account.currency, { sign: true })}
-                  </span>
-                </span>
-              </li>
-            ))}
-          </ul>
-          {thisMonth ? (
-            <p className="small dim card__foot">
-              This month: {money(thisMonth.netPence, account.currency, { sign: true })} from{' '}
-              {count(thisMonth.count)} settled.
-            </p>
-          ) : null}
-        </section>
-
-        <section className="card col-6">
-          <h2 className="card__title">Divisions</h2>
-          {groups.length ? (
-            <ul style={{ marginTop: 'var(--s3)' }}>
-              {groups.map((g) => (
-                <li key={g.id} className="brow wrow">
-                  <span style={{ minWidth: 0 }}>
-                    <Link href={`/app/social/group?id=${g.id}`} className="brow__title" style={{ textDecoration: 'none' }}>{g.name}</Link>
-                    <span className="brow__sub">{g.division}</span>
-                  </span>
-                  {/*  What the group asks, in the middle, from 1000 up: a
-                       name and a position with six hundred pixels between
-                       them is the shape this branch exists to end. */}
-                  <span className="wrow__mid">
-                    {plural(g.members, 'Slipper')} · {g.slipBackedOnly ? 'slip backed only' : 'every bet counts'}
-                  </span>
-                  <span className="pill">{fmtPosition(g.yourPosition, g.members)}</span>
+          {/*  BADGES AS A ROW. A held badge is a filled chip and one that is
+               not is an outline, so which is which is the shape rather than a
+               tick beside a sentence. Nothing here is for winning a bet or
+               for betting more often, which is why none of them counts
+               anything you have to place. */}
+          <div className="card__foot">
+            <p className="label">Badges</p>
+            <ul className="badges">
+              {badges.map((b) => (
+                <li key={b.t} className={`badge${b.got ? ' badge--on' : ''}`}>
+                  <Icon name={b.got ? 'check' : 'minus'} size={13} />
+                  {b.t}
                 </li>
               ))}
             </ul>
-          ) : (
-            <p className="small muted" style={{ marginTop: 'var(--s3)' }}>
-              You are not in a group yet. A division is a position inside one, so there is nothing
-              to show here until you start or join one.{' '}
-              <Link href="/app/social">Social</Link>.
-            </p>
-          )}
+          </div>
         </section>
 
-        <section className="card col-6">
-          <h2 className="card__title">Badges</h2>
-          <ul style={{ marginTop: 'var(--s3)' }}>
-            {badges.map((b) => (
-              <li key={b.t} className={`brow${b.got ? '' : ' brow--faded'}`} style={{ gridTemplateColumns: '20px minmax(0,1fr)', gap: 'var(--s3)' }}>
-                <Icon name={b.got ? 'check' : 'minus'} size={16} className={b.got ? 'readmark readmark--ok' : 'dim'} />
-                <span>
-                  <span className="brow__title">{b.t}</span>
-                  <span className="brow__sub">{b.s}</span>
-                </span>
-              </li>
-            ))}
-          </ul>
-          <p className="small dim card__foot">
-            Every badge is for something you did in the app, never for winning a bet and never
-            for betting more often.
-          </p>
-        </section>
+        <section className="card col-5" aria-labelledby="you-plan">
+          <div className="card__head">
+            <h2 className="card__title" id="you-plan">Plan</h2>
+            <p className="card__note">{trial.active ? 'Free trial' : 'Trial over'}</p>
+          </div>
 
-        <section className="card col-8">
-          <h2 className="card__title">Settings</h2>
-          <ul style={{ marginTop: 'var(--s3)' }}>
-            {SETTINGS_GROUPS.map((g) => (
-              <li key={g.id} className="brow brow--field">
-                <Icon name={g.icon} size={16} className="dim" />
-                <span style={{ minWidth: 0 }}>
-                  <Link href={`/app/settings?pane=${g.id}`} className="brow__title" style={{ textDecoration: 'none' }}>{g.label}</Link>
-                  <span className="brow__sub">{g.blurb}</span>
-                </span>
-                <Icon name="chevronRight" size={16} className="dim" />
-              </li>
-            ))}
-          </ul>
-        </section>
-
-        <section className="card col-4">
-          <h2 className="card__title">Plan</h2>
-          <p className="fig fig--m" style={{ marginTop: 'var(--s3)' }}>
-            {trial.active ? 'Free trial' : 'Trial over'}
-          </p>
-          <p className="small muted" style={{ marginTop: 'var(--s2)' }}>{trial.message}</p>
-
-          {/*  THE TWO HALVES OF THE TRIAL, as rows. It is fourteen days or
-               thirty five slips, whichever runs out first, and they fail
-               differently: the sentence above says which one is closest and
-               these say where each of them stands. This card sits beside a
-               settings list six rows tall and was a heading, a figure, a line
-               and three buttons pinned to the bottom, with the rest empty. */}
-          <ul style={{ marginTop: 'var(--s5)' }}>
-            <li className="brow">
-              <span style={{ minWidth: 0 }}>
-                <span className="brow__title">Days left</span>
-                <span className="brow__sub">Of the {TRIAL_DAYS} day trial</span>
-              </span>
-              <span className="fig fig--s tnum">{trial.daysLeft}</span>
-            </li>
-            <li className="brow">
-              <span style={{ minWidth: 0 }}>
-                <span className="brow__title">Slips left</span>
-                <span className="brow__sub">{count(trial.slipsUsed)} of {count(trial.slipsAllowed)} used</span>
-              </span>
-              <span className="fig fig--s tnum">{trial.slipsLeft}</span>
-            </li>
-            <li className="brow">
-              <span style={{ minWidth: 0 }}>
-                <span className="brow__title">After the trial</span>
-                <span className="brow__sub">Or £29.99 a year</span>
-              </span>
-              <span className="fig fig--s tnum">£3.49 a month</span>
-            </li>
-          </ul>
+          {/*  THE TWO HALVES OF THE TRIAL, across the card. It is fourteen
+               days or thirty five slips, whichever runs out first, and they
+               fail differently, so each says where it stands rather than the
+               page printing the closer of the two in a sentence and the
+               figures under it saying the same thing twice. */}
+          <div className="figstrip" style={{ ['--figs' as string]: 3, marginTop: 'var(--s4)' }}>
+            <Figure
+              size="md"
+              label="Days left"
+              value={count(trial.daysLeft)}
+              sub={`Of the ${TRIAL_DAYS} day trial`}
+            />
+            <Figure
+              size="md"
+              label="Slips left"
+              value={count(trial.slipsLeft)}
+              sub={`${count(trial.slipsUsed)} of ${count(trial.slipsAllowed)} used`}
+            />
+            <Figure
+              size="md"
+              label="After the trial"
+              value="£3.49 a month"
+              sub="Or £29.99 a year"
+            />
+          </div>
 
           <div className="card__foot row row--wrap" style={{ gap: 'var(--s2)' }}>
             <Link href="/app/settings/plan" className="btn btn--primary btn--sm">Plans</Link>
             <Link href="/app/settings/referrals" className="btn btn--ghost btn--sm">Referrals</Link>
-            <form action="/api/auth/logout" method="post">
-              <button type="submit" className="btn btn--quiet btn--sm">Sign out</button>
-            </form>
           </div>
         </section>
       </div>
-    </>
+    </div>
   );
 }

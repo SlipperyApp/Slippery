@@ -35,7 +35,9 @@ export default async function DiscoverPage() {
         Search a group name or a handle. Nothing here shows anybody&rsquo;s stakes, in a group or
         out of one.
       </p>
-      <div style={{ marginTop: 'var(--s5)' }}>
+      {/*  Measured at 1440 by 900: 1,059 pixels against the 824 the window
+           leaves. The search and its results scroll under the heading. */}
+      <div className="fitcol fitcol--scroll" style={{ marginTop: 'var(--s5)' }}>
         <Discover groups={groupSummaries(now)} people={slippers(now)} />
       </div>
     </>

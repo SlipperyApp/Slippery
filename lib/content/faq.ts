@@ -26,5 +26,5 @@ export const QUESTIONS: QA[] = [
   { q: 'What happens to my slip images?', a: 'They are deleted after 90 days, or immediately if you ask. The bet stays; the image goes, and the gallery says so rather than showing you a broken thumbnail.' },
   { q: 'Does the bot read anything I have not sent it?', a: 'No. It reads photos and documents you send it, and only after your account is linked. An unlinked chat is asked for a code and the image is not read at all.' },
   { q: 'Is there an app?', a: 'iOS and Android are coming. The web app works today and adds to your home screen. There is no store badge on this site until there is a live listing, because both stores forbid drawing their artwork by hand.' },
-  { q: 'I want to stop for a while.', a: 'Settings has a take a break control. It pauses notifications and the leagues without touching your ledger, and it does not ask you to confirm twice or try to talk you out of it.' },
+  { q: 'I want to stop for a while.', a: 'Stop. Slippery accepts no bets and holds no money, so there is nothing here to close and nothing to withdraw, and it will not chase you: no notification is ever sent about not having bet. Your ledger and your export stay exactly as they are. Free and confidential help is at BeGambleAware.org and on 0808 8020 133, 24 hours a day.' },
 ];

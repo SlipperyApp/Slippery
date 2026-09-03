@@ -28,8 +28,16 @@ const PAGE = 60;
     screen at a time, and wrong on a monitor: it hides the ninety tiles
     somebody was scanning to show them one of them, and closing it is the only
     way back. Shared with the balance sheet and the group table through
-    .dsplit in components.css. */
-const SPLIT_AT = 1280;
+    .dsplit in components.css.
+
+    1600 RATHER THAN THE GENERAL 1280, and .dsplit--tiles carries it. The
+    tiles reflow and a list of rows does not: at 1440 the pane takes the grid
+    from seven columns to five, so resting it open spends two columns of
+    somebody's slips on a dashed box asking them to press one. At 1600 it
+    costs one column instead of two. The number is
+    in the stylesheet as well, because the pane is drawn by CSS and chosen
+    by this, and the two have to agree. */
+const SPLIT_AT = 1600;
 
 /** The slips, newest first, each opening beside the bet it belongs to.
  *
@@ -147,7 +155,7 @@ export function SlipGallery({
   const shown = open === null ? null : page[open];
 
   return (
-    <div className="dsplit">
+    <div className="dsplit dsplit--tiles">
       <div>
       <ul className="gal">
         {page.map((b, i) => {

@@ -44,6 +44,24 @@
     0 14px 30px -18px color-mix(in oklab, #000 76%, transparent);
 }
 @media (min-width: 700px) { .card { padding: var(--s5); } }
+/*  A CARD WHOSE CONTENT IS CENTRED: a dropzone, a rate limit notice. It was
+    three inline `alignItems: center, textAlign: center` in three components,
+    which is also why the rule below had to be told about it: align-self on a
+    child beats align-items on its parent, so a start on every button in a
+    card left aligned the one button on the upload screens. */
+.card--mid { align-items: center; text-align: center; }
+/*  TWO CLASSES, NOT ONE, the same trap .dsplit--lgt fell into: on its own
+    the modifier is exactly as specific as `.card > .btn` below and loses to
+    it on order, so the dropzone's own button stayed against the left edge of
+    a centred card. */
+.card.card--mid > .btn { align-self: center; }
+/*  A BUTTON IN A CARD IS AS WIDE AS ITS LABEL. The card is a flex column, so
+    a direct child stretches to it, and .btn is inline-flex precisely so that
+    it does not: "Save these" in the settings pane was an 808 pixel button at
+    1440, which reads as a page's primary action rather than as the save under
+    three text fields. Where a full width button is wanted it is wrapped, and
+    the wrapper is what stretches. */
+.card > .btn { align-self: start; }
 .card__foot { margin-top: auto; padding-top: var(--s4); }
 
 /*  Height tokens, so rows match by construction rather than by stretching.
@@ -73,6 +91,11 @@
   justify-content: space-between;
   gap: var(--s3);
   margin-bottom: var(--s3);
+  /*  A HEAD THAT DOES NOT FIT WRAPS RATHER THAN CLIPPING. The card carries
+      overflow:hidden, so a head wider than its card loses whatever is at the
+      end of it with nothing to say so: the Plan card on You put a note and
+      three controls beside its title and printed "Sign o" at 390. */
+  flex-wrap: wrap;
 }
 .card__title {
   font-size: var(--t-h3);
@@ -80,7 +103,7 @@
   font-weight: var(--w-label);
   letter-spacing: var(--tr-tight);
 }
-.card__tools { display: flex; align-items: center; gap: var(--s3); flex: none; }
+.card__tools { display: flex; align-items: center; gap: var(--s3); flex: 0 1 auto; flex-wrap: wrap; }
 .card__note { font-size: var(--t-micro); line-height: var(--lh-micro); color: var(--ink-2); font-weight: var(--w-label); letter-spacing: 0.02em; }
 
 /* The slip motif: a torn lower edge, used wherever a bet is shown as an
@@ -355,7 +378,34 @@ select.scopebar__sel {
 .scopebar__sel--sport { min-width: 137px; }
 
 /* ------------------------------------------------------------------ fields */
-.field { display: block; }
+/*  A FIELD IS AS WIDE AS WHAT GOES IN IT.
+ *
+ *  Every input in this product was width: 100% of whatever held it, which is
+ *  right on a phone and wrong the moment a card is wider than a sentence: at
+ *  1440 the settings pane is 850px, so a display name of eight characters was
+ *  typed into a box 808 pixels wide, with the caret a thumb's width from the
+ *  left edge and seven hundred pixels of empty control to the right of it. A
+ *  box that wide is a claim about how much belongs in it.
+ *
+ *  The cap is a max-width and never a width, so nothing here can make a field
+ *  wider than its column: at 390 every one of them is still the full width of
+ *  the card, which is what a phone wants. It is in `ch` because the thing
+ *  being sized is a number of characters rather than a number of pixels, and
+ *  the ch box is measured in the input's own 16px face.
+ *
+ *  The default is an email address, because that is the longest thing anybody
+ *  types into this product. The modifiers are named for their content rather
+ *  than for a size, so a field cannot be given the wrong one by guessing at
+ *  small, medium and large. */
+.field { display: block; --field-w: 42ch; }
+.field .input, .field .select, .field .textarea { max-width: var(--field-w); }
+/** A price, a stake, a unit, a six character invite code. */
+.field--tight { --field-w: 13ch; }
+/** A display name or a handle. */
+.field--name { --field-w: 26ch; }
+/** The exceptions: a field that is one column of a grid built to hold it,
+ *  and which is therefore already sized by the grid. */
+.field--fill { --field-w: none; }
 .field + .field { margin-top: var(--s4); }
 .field__label {
   display: block;
@@ -365,7 +415,11 @@ select.scopebar__sel {
   margin-bottom: var(--s1h);
 }
 .field__hint { display: block; font-size: var(--t-small); color: var(--ink-2); margin-top: var(--s1h); }
-.field__err { display: block; font-size: var(--t-small); color: var(--neg); margin-top: var(--s1h); font-weight: var(--w-label); }
+/*  A FIELD THAT IS WRONG IS NOT MONEY LOST. Nine forms print their errors
+    through this, the login and signup screens included, and it painted every
+    one of them in the loss colour: exactly the "field missing" meaning the
+    two colours were taken back from once already. --warn is attention. */
+.field__err { display: block; font-size: var(--t-small); color: var(--warn); margin-top: var(--s1h); font-weight: var(--w-label); }
 
 .input, .select, .textarea {
   width: 100%;
@@ -528,8 +582,13 @@ select.scopebar__sel {
 .scroller .tbl { min-width: 520px; }
 
 /* ----------------------------------------------------------- shared balance */
-.sharelist { margin-top: var(--s5); display: flex; flex-direction: column; gap: var(--s5); }
-.sharelist > * + * { border-top: 1px solid var(--line); padding-top: var(--s5); }
+/*  The share controls, under the sheet, on the widths with no room for a
+    pane beside it. A card rather than a run of loose blocks: it is a module
+    of the page like the sheets above it, and three unbordered sections
+    stacked under two cards read as the page having run out. */
+.sharelist { margin-top: var(--gap-block); }
+.sharelist__rows { display: flex; flex-direction: column; gap: var(--s4); margin-top: var(--s4); }
+.sharelist__rows > * + * { border-top: 1px solid var(--line); padding-top: var(--s4); }
 /*  The URL wraps rather than truncating. A twenty character token with an
     ellipsis through it is a link somebody cannot check before they send it,
     and checking it is the whole reason it is printed instead of hidden
@@ -699,7 +758,39 @@ select.scopebar__sel {
       scrolling past the only column that is not a number. */
   white-space: normal;
 }
+/*  ONE SET OF COLUMN WIDTHS FOR EVERY SHEET ON THE PAGE.
+ *
+ *  An account with pounds and euro draws two tables in two cards, and each
+ *  one sized its own columns to its own longest figure: net came out 120
+ *  wide over the pounds and 110 over the euro, turnover 114 and 119, and so
+ *  on down the row. Each table was internally aligned, so the page looked
+ *  almost right, which is worse than looking wrong: two blocks of figures
+ *  that nearly line up read as a rendering fault rather than as a decision.
+ *
+ *  Fixed layout, and the widths are on the head cells. Each is the widest
+ *  figure that column can hold at this account's scale plus its padding:
+ *  a signed money total, a signed percentage, a bet count, a turnover, a
+ *  units figure and a balance. The name column takes whatever is left, and
+ *  under about 900 the sum is wider than the card, so the table scrolls
+ *  sideways inside .scroller with the name column stuck to the left, which
+ *  is what it did before and what a phone needs. */
 .bsheet__name { min-width: 132px; max-width: 216px; }
+/*  FROM 1000, where the card is wide enough to hold the whole sheet without
+    scrolling. Under it each table scrolls sideways inside its own frame with
+    the name column stuck to the left, the two sheets are a thousand pixels
+    apart vertically and neither is laid out at the width of the other, so
+    there is nothing to line up: a fixed layout there squeezes eight columns
+    into 358 pixels and prints the balance names one letter per line. */
+@media (min-width: 1000px) {
+  .bsheet { table-layout: fixed; }
+  .bsheet__net { width: 118px; }
+  .bsheet__ret { width: 92px; }
+  .bsheet__bets { width: 68px; }
+  .bsheet__turn { width: 116px; }
+  .bsheet__units { width: 100px; }
+  .bsheet__in { width: 112px; }
+  .bsheet__go { width: 34px; }
+}
 /*  THE NAME COLUMN STAYS PUT, the way the analyser's does and for the same
     reason: seven money columns do not fit a phone, so the table scrolls, and
     the first thing to leave the screen was the only column that says which
@@ -772,7 +863,10 @@ select.scopebar__sel {
 /*  --ink-3 on the SVG rather than on the cell: it is the border token and
     never a text colour, and a rule that paints a cell in it cannot know the
     only thing in the cell is a chevron. */
-.bsheet__go { width: 1%; }
+/*  The width is with the other column widths above, where a fixed table
+    layout wants them. It was 1%, which an auto layout reads as "as narrow as
+    the chevron" and a fixed one reads as a column with no width at all: the
+    chevron took 149 pixels of the sheet and the balance names lost them. */
 .bsheet__go svg { display: inline-block; vertical-align: middle; color: var(--ink-3); }
 
 /* ------------------------------------------------------- change history */
@@ -979,15 +1073,84 @@ select.scopebar__sel {
   flex: 1 1 auto;
   min-height: 0;
 }
-.radial__dial { position: relative; width: 100%; max-width: 188px; }
-.radial__svg { width: 100%; height: auto; overflow: visible; }
-.radial__track { fill: none; stroke: var(--surface-3); stroke-width: 11; stroke-linecap: round; }
+/*  THE RING TAKES THE HEIGHT THE CARD HAS AND NOT A PIXEL MORE. It was a
+    square 168 wide, which is 168 tall, inside a card that is one row of a
+    grid sized to the window: at 1440 by 900 that row leaves 150, so the ring
+    hung 18 pixels past the card's edge and the card, which carries
+    overflow:hidden, ate the caption underneath it. Height first, width
+    derived from it, capped at 168 so a tall window does not draw a large
+    circle with a small number in the middle of it. */
+.radial__dial {
+  position: relative;
+  flex: 1 1 auto;
+  min-height: 0;
+  align-self: center;
+  aspect-ratio: 1;
+  max-width: 168px;
+  max-height: 168px;
+  /*  A CONTAINER, BECAUSE THE THING THAT DECIDES IS THE RING AND NOT THE
+      WINDOW. The dial takes what the card's height leaves, so at 1024 by 800
+      it came out 68.6 pixels across while the figure stayed at --t-fig-m:
+      "49.0%" needs 74 of them, and five pixels of the percent sign painted
+      outside the ring and over its own track. A media query cannot see that,
+      because the width that went wrong is the height of a grid row. */
+  container-type: inline-size;
+  display: grid;
+  place-items: center;
+}
+.radial__svg { width: 100%; height: 100%; }
+.radial__track { fill: none; stroke: var(--surface-3); stroke-width: 10; }
 /*  The accent, because a win rate is not money. Green here would put the
     profit colour on a figure that says nothing about profit: a 70% strike
     rate at odds-on is a losing account. */
-.radial__fill { fill: none; stroke: var(--accent); stroke-width: 11; stroke-linecap: round; }
-.radial__v { position: absolute; left: 0; right: 0; bottom: 0; text-align: center; }
+.radial__fill { fill: none; stroke: var(--accent); stroke-width: 10; stroke-linecap: round; }
+/*  Inside the ring, absolutely, so the digits are centred on the circle
+    rather than on the flow box the SVG happens to leave. */
+.radial__v {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  margin: 0;
+  text-align: center;
+}
 .radial__cap { text-align: center; }
+/*  The steps are measured off the longest figure a ring here can hold, which
+    is "100.0%": 88 pixels at --t-fig-m, 66 at --t-fig-s and 48 at --t-small.
+    The clear space inside the ring is about three quarters of the dial,
+    because the track is ten units of the 104 the viewBox is wide on each
+    side, so each step is the dial width at which the next size down stops
+    touching the ring. */
+@container (max-width: 118px) {
+  .radial__v { font-size: var(--t-fig-s); line-height: var(--lh-fig-s); }
+}
+@container (max-width: 88px) {
+  .radial__v { font-size: var(--t-small); line-height: 1.2; }
+}
+/*  WIDE AND SHORT, SO THE RING GOES BESIDE ITS DENOMINATOR AND NOT ABOVE IT.
+    From 1000 this module is four columns of the dashboard's bottom row: about
+    430 pixels across and 96 of body height at 1440. Stacked, the dial could
+    only have what the caption left, which was 73 pixels, and the figure in
+    the middle of it came out smaller than the caption underneath. Side by
+    side the dial takes the whole height, the number in it is a figure again,
+    and the card stops being mostly air to the left and right of a badge.
+
+    A media query and not a container query, because a container cannot query
+    itself and this is the only Radial in the build: it is col-4 of a twelve
+    column grid at every width above 1000 and full width below it, where the
+    stack is right and the page scrolls anyway. */
+@media (min-width: 1000px) {
+  .radial { flex-direction: row; gap: var(--s5); }
+  /*  flex: 0 0 auto, or the dial GROWS ACROSS THE ROW. It carries flex 1 1
+      auto for the stacked layout, where growing is how it takes the height
+      the caption leaves; in a row that same declaration made the box 200
+      pixels wide with a 98 pixel ring drawn in the middle of it, and the
+      container query above, which measures the box, went on believing there
+      was room for a 24 pixel figure inside a ring that had 73. The box is
+      the ring now, and everything that measures it is measuring the ring. */
+  .radial__dial { flex: 0 0 auto; height: 100%; width: auto; max-width: none; }
+  .radial__cap { text-align: left; }
+}
 
 /* ---------------------------------------------------------- month by month */
 /*  ONE LINE A MONTH. The list row this product uses everywhere else is a
@@ -1372,7 +1535,14 @@ select.scopebar__sel {
   font-size: var(--t-small);
 }
 .banner--accent { border-color: color-mix(in oklab, var(--accent) 34%, transparent); background: color-mix(in oklab, var(--accent) 9%, var(--surface)); }
-.banner--neg { border-color: var(--neg-line); background: color-mix(in oklab, var(--neg) 9%, var(--surface)); }
+/*  A BLOCKED ACTION IS NOT A LOSS. This was --neg, and the six banners that
+    use it say the slip reader is down, the browser cannot open a HEIC, the
+    slip is in the wrong currency, the bet is already in the ledger and new
+    slips are paused: five faults and a state, none of them money. The locked
+    pair means money and nothing else, and DECISIONS.md already records
+    #FCA5A5 drifting to mean "field missing" once. --warn is the token for
+    attention, which is what every one of these is asking for. */
+.banner--warn { border-color: var(--warn-line); background: color-mix(in oklab, var(--warn) 9%, var(--surface)); }
 .banner__icon { width: 18px; height: 18px; flex: none; }
 
 /* ------------------------------------------------------------------- empty */
@@ -1445,7 +1615,7 @@ select.scopebar__sel {
     above is for a calendar in a box with no height, and on the dashboard the
     box has one. 34, because the cell still has to hold an eleven pixel
     figure over an eleven pixel date with a pixel between them. */
-.cal--fit { grid-template-rows: auto repeat(var(--cal-rows, 6), minmax(34px, 1fr)); }
+.cal--fit { grid-template-rows: auto repeat(var(--cal-rows, 6), minmax(30px, 1fr)); }
 .calwrap { display: flex; flex-direction: column; flex: 1 1 auto; min-height: 0; }
 
 /*  Month nav on the left, what-each-day-shows on the right. They wrap onto
@@ -1675,35 +1845,15 @@ select.scopebar__sel {
 .cal__foot {
   display: flex;
   align-items: baseline;
-  justify-content: space-between;
+  justify-content: flex-end;
   gap: var(--s3) var(--s4);
   flex-wrap: wrap;
-  margin-top: var(--s4);
+  margin-top: var(--s3);
 }
 .cal__sum { color: var(--ink-2); flex: none; }
-.cal__key {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--s2) var(--s4);
-  font-size: var(--t-micro);
-  line-height: var(--lh-micro);
-  color: var(--ink-2);
-}
-.cal__key li { display: inline-flex; align-items: center; gap: var(--s1h); }
-.cal__keyswatch { width: 11px; height: 11px; border-radius: var(--r-xs); flex: none; }
-.cal__keyswatch--pos { background: var(--cal-pos); border: 1px solid color-mix(in srgb, var(--pos) 45%, transparent); }
-.cal__keyswatch--neg { background: var(--cal-neg); border: 1px solid color-mix(in srgb, var(--neg) 45%, transparent); }
-/*  The swatch matches the cell: a faint ground and a slash, and no dashed
-    outline, because the cells stopped drawing one. A key that does not look
-    like the thing it explains is worse than no key. */
-.cal__keyswatch--none {
-  background-color: color-mix(in srgb, var(--surface-2) 55%, var(--bg));
-  background-image: linear-gradient(to top right,
-    transparent calc(50% - 0.5px),
-    color-mix(in srgb, var(--ink-2) 42%, transparent) calc(50% - 0.5px),
-    color-mix(in srgb, var(--ink-2) 42%, transparent) calc(50% + 0.5px),
-    transparent calc(50% + 0.5px));
-}
+/*  The colour key is gone with the swatches that drew it. See
+    components/app/Calendar.tsx: a green cell printing +£134 does not need a
+    legend saying green is profitable. */
 
 .seg--xs .seg__btn { font-size: var(--t-micro); padding: 0 8px; min-height: 34px; }
 @media (max-width: 699px), (pointer: coarse) {
@@ -1724,6 +1874,10 @@ select.scopebar__sel {
 .lead { font-size: 17px; line-height: 1.6; color: var(--ink-2); }
 @media (min-width: 700px) { .lead { font-size: 18px; } }
 .nowrap { white-space: nowrap; }
+/*  With .nowrap, a line that does not fit ends in an ellipsis rather than
+    running under whatever is beside it. Needs a min-width:0 ancestor to
+    shrink at all, which every flex row in this product already sets. */
+.ellip { overflow: hidden; text-overflow: ellipsis; }
 .center { text-align: center; }
 .hide-sm { display: none; }
 @media (min-width: 700px) { .hide-sm { display: revert; } }
@@ -1956,12 +2110,23 @@ p.statgrid__foot {
 .navlist {
   display: grid;
   align-content: start;
+
   border: 1px solid var(--line2);
   border-radius: var(--r-card);
   background: color-mix(in oklab, var(--surface) 72%, transparent);
   box-shadow: inset 0 1px 0 color-mix(in oklab, var(--ink) 7%, transparent);
   overflow: hidden;
 }
+/*  AND THE LIST ITSELF STOPS AT ITS LAST ROW. align-content governs the rows
+    inside it; the list is a grid item in the settings row, so it stretched to
+    the height of the pane beside it and drew 146 pixels of bordered nothing
+    under the sixth group at 1440.
+
+    ON A GRID ITEM ONLY. The importer's resolve screen uses the same list for
+    three answers to one question, inside a card, and a card is a flex column:
+    align-self there took the list to the width of its longest row and left it
+    floating in a 860 pixel card. */
+.grid > .navlist { align-self: start; }
 .navlist .rowcard {
   position: relative;
   width: 100%;
@@ -2047,26 +2212,6 @@ p.statgrid__foot {
     not, and a radio with a two-line description beside it puts the target on
     the dot rather than on the choice. These are buttons the size of the
     thing they select. */
-.optionset { display: grid; gap: var(--s2); }
-.optionrow {
-  display: grid;
-  gap: var(--s1);
-  text-align: left;
-  padding: var(--s3) var(--s4);
-  min-height: var(--tap);
-  border: 1px solid var(--line);
-  border-radius: var(--r-ctl);
-  background: var(--surface-2);
-  cursor: pointer;
-  transition: border-color var(--dur-fast) var(--ease), background var(--dur-fast) var(--ease);
-}
-.optionrow:hover { border-color: var(--line-2); }
-.optionrow[aria-pressed='true'] {
-  border-color: var(--accent);
-  background: color-mix(in oklab, var(--accent) 9%, var(--surface));
-}
-.optionrow__t { font-weight: var(--w-label); }
-.optionrow__s { font-size: var(--t-small); color: var(--ink-2); }
 .fieldset { border: 0; padding: 0; margin: 0; min-width: 0; }
 
 /*  Things that are true, listed as facts rather than offered as switches.
@@ -2075,7 +2220,11 @@ p.statgrid__foot {
     one that must never exist. */
 .factlist { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--s2); }
 .factlist li { display: grid; grid-template-columns: 16px minmax(0, 1fr); gap: var(--s2); align-items: start; font-size: var(--t-small); color: var(--ink-2); }
-.factlist svg { color: var(--pos); margin-top: 3px; }
+/*  THE TICK IS THE ACCENT, NOT PROFIT GREEN. It marks a sentence as true,
+    which is the "read cleanly" and "stage done" drift DECISIONS.md records
+    nine of. .checkitem, which is the same mark on the marketing pages, has
+    always used the accent. */
+.factlist svg { color: var(--accent); margin-top: 3px; }
 
 /*  An empty state draws example rows behind its copy so the shape of the
     thing is visible before there is anything in it. That is worth doing and
@@ -2171,14 +2320,54 @@ p.statgrid__foot {
     as one measurement in parts. */
 .figstrip {
   display: grid;
-  grid-template-columns: minmax(0, 1fr);
+  /*  TWO ACROSS A PHONE, ONE ACROSS A 320, and the width of the figure
+      decides which rather than a breakpoint. Four figures stacked one per
+      row is 240 pixels of a 390 screen to say four things, and the
+      dashboard's own tiles are two across at the same width, so this was
+      the one row of figures in the product that disagreed with it. 150 is
+      the floor because "+£2,350.10" at --t-fig-m is 130 of it: under that
+      the column would clip a digit off a money figure, which is not a
+      harder figure to read, it is a different one. */
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
   gap: var(--s5);
 }
-@media (min-width: 700px) {
-  .figstrip { grid-template-columns: repeat(var(--figs, 3), minmax(0, 1fr)); gap: 0; }
-  .figstrip > * { padding-inline: var(--s5); }
-  .figstrip > :first-child { padding-left: 0; }
-  .figstrip > * + * { box-shadow: inset 1px 0 0 var(--line2); }
+
+/*  ---- app-overhaul: the strip keeps its own floor at every width ----
+ *
+ *  THE FIGURES ON /app/you WERE BREAKING MID NUMBER AT 1440.
+ *  The rule above this one already knew the floor and said why: 150 pixels,
+ *  because "+£2,350.10" at --t-fig-m is 130 of them. From 700 up a second
+ *  rule threw that away and forced exactly `--figs` columns at
+ *  minmax(0, 1fr), which lets a column shrink to nothing. On You the profile
+ *  card is seven twelfths of an 860 pixel column, so four figures got 108
+ *  pixels each and 24px digits wrapped: "+£2,350.10" rendered as "+" over
+ *  "£2,350." over "10", "+94.00u" as "+94.0" over "0u", and "£3.49 a month"
+ *  as four lines ending "mont" over "h". A number split across lines is not a
+ *  number that is harder to read, it is a different number, which is the same
+ *  defect .tile__v carries a nowrap for.
+ *
+ *  So the floor holds everywhere and the strip reflows to two rows rather
+ *  than squeezing: `auto-fit` can never draw more columns than there are
+ *  figures, so it is already capped by the count `--figs` was setting, and
+ *  the phone was drawing two across on this rule all along.
+ *
+ *  THE HAIRLINES WENT WITH IT. They were an inset border on every child but
+ *  the first, which is correct on one row and wrong on two: the first figure
+ *  of a wrapped second row would carry a divider against the card's own edge.
+ *  A gap already says these are one measurement in parts, and a rule that is
+ *  right only when nothing wraps is a rule waiting for a narrower card.
+ *
+ *  AND THE FIGURE ITSELF NEVER WRAPS, the way .tile__v does not, sized
+ *  against its own cell rather than the window. The step is at 190 rather
+ *  than at the 150 the column floor uses, because the widest thing in one of
+ *  these slots is not a money figure at all: "£3.49 a month" on the Plan card
+ *  is 172 pixels at --t-fig-m, so a 150 pixel cell holding it at that size
+ *  would push it out of the card instead of wrapping it. --t-fig-s is the
+ *  next size on the scale, not a size chosen to make this fit. */
+.figstrip > * { container-type: inline-size; min-width: 0; }
+.figstrip .fig { white-space: nowrap; }
+@container (max-width: 190px) {
+  .figstrip .fig { font-size: var(--t-fig-s); line-height: var(--lh-fig-s); }
 }
 
 /* ----------------------------------------------------------- slip gallery */
@@ -2668,13 +2857,32 @@ p.statgrid__foot {
 .lgt__r--thin { border-left: 2px solid var(--line-2); padding-left: 28px; }
 .lgt__r--you { background: color-mix(in oklab, var(--accent) 7%, transparent); }
 
-/* ------------------------------------- from 1200, the league is a table */
-/*  1200 rather than 1000, and the number is measured. The eight fixed
-    columns take 508px and the card around them keeps its padding, so at
-    1024 the name and the handle would have had about seventy pixels
-    between them. Under this the row is the stacked one, which is right on
-    a phone and correct on a tablet. */
-@media (min-width: 1200px) {
+/* -------------------------------- the league becomes a table by container */
+/*  THE CARD DECIDES, NOT THE WINDOW.
+ *
+ *  This was `@media (min-width: 1200px)`, and a window width is the wrong
+ *  question to ask: the same table is drawn in a card that is the whole
+ *  content column on the leaderboard and half of it on the Social hub. At
+ *  1200 the first has 1012 pixels for it and the second has 466, so a rule
+ *  keyed to the window either overflowed the hub's card or left the
+ *  leaderboard stacked, and what actually happened is that the hub kept a
+ *  stacked list of rows that the board next to it had stopped using.
+ *
+ *  Three widths, and each one is the sum of the columns it turns on:
+ *
+ *    440  the four columns a position is: place, name, bets, units, return.
+ *         274 of fixed column plus a name, which is what a half width card
+ *         holds at 1440, where it has 589.
+ *    720  won, lost and slip backed. 638 of fixed column, so the name still
+ *         has room to grow rather than truncating at its 172.
+ *    900  the handle and the bar. The fixed columns take 770 of it and the
+ *         bar wants about 130 to be a bar rather than a stub, which is the
+ *         crowding the old 1200 was really about: at 1024 the bar had 70.
+ *
+ *  A column that is off is off in the head and the body together, so the
+ *  table never has a heading with no cells under it. */
+.lgtwrap { container-type: inline-size; }
+@container (min-width: 440px) {
   .lgt { display: table; table-layout: fixed; }
   .lgt__head { display: table-header-group; }
   .lgt__body { display: table-row-group; }
@@ -2693,7 +2901,9 @@ p.statgrid__foot {
   }
   .lgt__h2--num { text-align: right; }
   .lgt__h2--pos { width: 36px; }
-  .lgt__h2--who { width: 172px; }
+  /*  NO WIDTH UNTIL THE BAR IS DRAWN. Something has to absorb what the
+      fixed columns do not use, and while the bar is off it is the name. */
+  .lgt__h2--who { width: auto; }
   .lgt__h2--at { width: 132px; }
   .lgt__h2--won, .lgt__h2--lost { width: 58px; }
   .lgt__h2--bets { width: 62px; }
@@ -2701,8 +2911,6 @@ p.statgrid__foot {
   .lgt__h2--roi { width: 84px; }
   .lgt__h2--slip { width: 76px; }
   .lgt__h2--edits { width: 72px; }
-  /*  NO WIDTH. It is the column that absorbs whatever the fixed ones do
-      not use, which is the whole reason it exists. */
   .lgt__h2--bar { width: auto; }
   /*  NO POINTER ON THE ROW. A hand cursor over a row of figures is a hand
       cursor over two hundred and sixty eight things that are not controls,
@@ -2732,7 +2940,6 @@ p.statgrid__foot {
   .lgt__u { display: none; }
   .lgt__c--units, .lgt__c--roi { text-align: right; }
   .lgt__c--roi { color: var(--ink-2); }
-  .lgt__c--bar { display: table-cell; padding-inline: var(--s3); }
   .lgt__r--live:hover .lgt__c { background: var(--surface-2); }
   .lgt__r--you .lgt__c { background: color-mix(in oklab, var(--accent) 7%, transparent); }
   .lgt__r--on .lgt__c { background: color-mix(in oklab, var(--accent) 12%, var(--surface)); }
@@ -2742,6 +2949,31 @@ p.statgrid__foot {
   .lgt__r--thin { border-left: 0; padding-left: 0; }
   .lgt__r--thin .lgt__c--pos { box-shadow: inset 2px 0 0 var(--line-2); }
   .lgt__r--thin .lgt__c--who { color: var(--ink-2); }
+  /*  THE COLUMNS THIS WIDTH HAS NO ROOM FOR, head and body together so the
+      table never has a heading with no cells under it. Last in the block on
+      purpose: `.lgt__c` sets every cell to table-cell a few rules up and is
+      exactly as specific as `.lgt__c--at`, so a hide written above it loses
+      and the table drew all ten columns into 589 pixels, breaking its own
+      SLIPPER heading across two lines. */
+  .lgt__h2--at, .lgt__c--at,
+  .lgt__h2--won, .lgt__c--won,
+  .lgt__h2--lost, .lgt__c--lost,
+  .lgt__h2--slip, .lgt__c--slip,
+  .lgt__h2--edits, .lgt__c--edits,
+  .lgt__h2--bar, .lgt__c--bar { display: none; }
+}
+/*  How the position was got: won, lost, and how much of it came off a slip
+    captured before the off. */
+@container (min-width: 720px) {
+  .lgt__h2--won, .lgt__h2--lost, .lgt__h2--slip, .lgt__h2--edits,
+  .lgt__c--won, .lgt__c--lost, .lgt__c--slip, .lgt__c--edits { display: table-cell; }
+}
+/*  The handle, and the bar that draws the column the figures are ranked on. */
+@container (min-width: 900px) {
+  .lgt__h2--at, .lgt__c--at { display: table-cell; }
+  .lgt__h2--bar, .lgt__c--bar { display: table-cell; }
+  .lgt__c--bar { padding-inline: var(--s3); }
+  .lgt__h2--who { width: 172px; }
 }
 /*  THE COLUMN THAT WAS THE VOID. Eight fixed columns and two names leave
     several hundred pixels at 1920, and the honest thing to put in them is
@@ -3082,7 +3314,11 @@ p.statgrid__foot {
       The six add up to 510px, which is what leaves the name column 236px at
       1024 and 720 at 1920. Move one and the name column moves with it. */
   .btbl { display: table; table-layout: fixed; }
-  .btbl__h2--result { width: 100px; }
+  /*  136, not 100. The longest result this column ever holds is "Cashed
+      out, ahead", which is 92 pixels of tracked uppercase, and at 100 the
+      cell had 66 of them: the pill broke into three lines of one word. At
+      136 it takes two, which is what a status pill in a table does. */
+  .btbl__h2--result { width: 136px; }
   .btbl__h2--stake { width: 84px; }
   .btbl__h2--price { width: 64px; }
   .btbl__h2--when { width: 120px; }
@@ -3135,6 +3371,22 @@ p.statgrid__foot {
   }
   .btbl__h2 { border-top: 0; padding-top: 0; }
   .btbl__c--res, .btbl__h2--result { padding-left: var(--s5); }
+  /*  THE ONE PILL THAT DOES NOT FIT ITS COLUMN. "Cashed out, ahead" is 130
+      pixels of tracked uppercase inside a 100 pixel cell that carries
+      overflow: hidden, so it printed "CASHED OU" and stopped: a result that
+      reads as a different result, which is the exact failure the sweep's
+      text-clipped check exists for. Shortening the label would leave the
+      three cash outs told apart by colour alone. It wraps to two lines
+      instead, in the only cell where a pill has to. */
+  .btbl__c--res { white-space: normal; }
+  .btbl__c--res .pill {
+    height: auto;
+    min-height: 24px;
+    padding-block: 3px;
+    white-space: normal;
+    text-align: left;
+    line-height: 1.25;
+  }
   .btbl__c--go, .btbl__h2--go { padding-right: var(--s5); }
   .btbl__c--bet { white-space: normal; }
   .btbl__c--res { margin-bottom: 0; }
@@ -3199,19 +3451,117 @@ p.statgrid__foot {
     and the bet opens as the sheet it always was. */
 .lgr { display: block; }
 .lgr__side { display: none; }
+/*  FROM 1000 THE LIST IS THE SCROLLER AND NOT THE BODY.
+    .lgr is the flex child that takes the height the ledger's header, its
+    open bets row and its filter row leave, but while it was a plain block
+    the list inside it had no definite height, so the overflow-y: auto in
+    layout.css had nothing to overflow. Measured at 1440 by 900: the list
+    grew to 3,671 pixels of rows and the ledger's body to 3,900 against a
+    window of 824. The document never scrolled, which is why it read as
+    fitting; the body did, taking the header and the filters with it.
+
+    Column flex, and a flex item is allowed to be shorter than its content.
+    It has to be set here rather than in layout.css: `.lgr { display: block }`
+    above is the same specificity in a later file and won. */
+@media (min-width: 1000px) {
+  .lgr { display: flex; flex-direction: column; min-height: 0; }
+}
 @media (min-width: 1400px) {
-  .lgr {
+  /*  ONLY WHEN A BET IS OPEN. The second column used to exist at every
+      moment and hold a resting state: a slip icon over "Press a bet" and two
+      sentences about where the working opens. That is 400 pixels of a wide
+      window spent telling somebody to press something. With nothing open the
+      grid is one column and the rows take the width. */
+  .lgr--open {
     display: grid;
     grid-template-columns: minmax(0, 1fr) clamp(300px, 22vw, 400px);
     gap: var(--gap-grid);
+    align-items: stretch;
   }
-  /*  The aside takes the whole row height, or there is nothing for the pane
-      inside it to be sticky WITHIN: a sticky box cannot travel past its own
-      parent, and with align-items: start the parent was exactly as tall as
-      the pane, so it scrolled away with the page and the whole point of
-      putting it beside the list was lost. */
-  .lgr__side { display: block; align-self: stretch; }
+  .lgr--open .lgr__side { display: block; align-self: stretch; min-height: 0; overflow-y: auto; }
 }
+
+/* ------------------------------------------------- the ledger's own header */
+.lgr__top { margin-bottom: var(--s4); flex-wrap: wrap; gap: var(--s3) var(--s4); }
+/*  In the header row the selector is a member of it rather than a centred
+    band across the page, so it stops growing and sits between the name and
+    the links. On a phone the row wraps and it takes its own line, where
+    centred is right again. */
+/*  min-width: 0, or the strip cannot shrink. A flex item's automatic minimum
+    size is its content, and five period chips are 317 pixels wide against the
+    288 a 320 phone leaves: the ledger scrolled sideways by 13 pixels, which is
+    the one thing this build measures on every route at every width. The strip
+    carries its own overflow-x and its own snap, so what it does with the
+    width it is given is already decided; it just has to be allowed to be
+    narrower than its content first. */
+.lgr__top .scopepick { margin-bottom: 0; flex: 1 1 auto; min-width: 0; }
+
+/*  THE OPEN BETS ROW. One line above the list: how many, what is on them,
+    how many need a person, and the control that clears the last of those.
+    It replaced a 430 pixel card that named up to twelve of the same bets
+    the list underneath already carries. See components/app/OpenBar.tsx. */
+.openbar {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--s2) var(--s4);
+  margin-bottom: var(--s3);
+  padding: var(--s2) var(--s4);
+  border: 1px solid var(--line2);
+  border-radius: var(--r-ctl);
+  background: var(--surface);
+  font-size: var(--t-small);
+}
+.openbar__i { color: var(--ink-2); flex: none; }
+/*  THE COUNT IS A LINK AND A LINK IS A CONTROL. It measured 20 pixels,
+    which is the height of the text and nothing else, against a floor of 24 on
+    a mouse and 44 on a thumb. Padding, because a ring drawn three pixels
+    outside a box leaves the box 20 pixels tall; the box has to grow. It is
+    symmetric, so the words do not move, and the bar around it is already
+    taller than this on every width, so neither does the bar. */
+.openbar__n { font-weight: var(--w-label); color: var(--ink); padding-block: 2px; }
+@media (max-width: 699px), (pointer: coarse) { .openbar__n { padding-block: 12px; } }
+.openbar__r { color: var(--ink-2); font-variant-numeric: tabular-nums; }
+.openbar__w { display: inline-flex; align-items: center; gap: var(--s1h); color: var(--warn); }
+/*  The button inside it is a row control, so it loses the top margin it
+    carries when it sits under a paragraph in a card. */
+.openbar .row { margin-top: 0 !important; }
+
+/* ---------------------------------------------------- one filter control */
+/*  A search box and four questions about which bets, on one line. It was a
+    search form, a row of outcome pills, a row of source pills and a sentence
+    asserting that the counts add up: about 170 pixels of chrome above a list
+    of bets. See components/app/LedgerRows.tsx. */
+.lgrfilt {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--s2);
+  margin-bottom: var(--s3);
+}
+.lgrfilt__find { position: relative; display: flex; align-items: center; flex: 1 1 220px; min-width: 180px; }
+.lgrfilt__find .input { width: 100%; padding-right: calc(var(--tap) + var(--s1)); }
+.lgrfilt__go { position: absolute; right: 3px; }
+/*  44px OF ELEMENT, NOT 44px OF ::after, and this is the second control to
+    need saying so: see .topbar__menu in layout.css for the first and for the
+    reasoning. A .roundbtn is 38 pixels of paint with a pseudo element growing
+    the hit area to 44, which is 44 to a thumb and 38 to every measurement,
+    the browser's own hit testing on a scrolled ancestor included. Every other
+    .roundbtn in the build lives above 1000 where the floor is 24; this one is
+    on the ledger's filter row, which a phone gets, and the sweep found it at
+    38 on every ledger route at 320, 390 and 430.
+
+    right: 0 with it. The field reserves --tap plus --s1 of right padding, so
+    a 44px button sits in that reservation exactly, and 3 pixels of inset was
+    the offset that centred a 38px one in it. */
+@media (max-width: 999px), (pointer: coarse) {
+  .lgrfilt__go { width: var(--tap); height: var(--tap); right: 0; }
+  .lgrfilt__go::after { content: none; }
+}
+/*  Wide enough for the longest option each one holds, and no wider: a select
+    as wide as its widest option is a select that never truncates the answer
+    it is currently showing. */
+.lgrfilt__sel { flex: 0 1 auto; width: auto; min-width: 150px; max-width: 230px; }
 
 /*  THE SAME SHAPE, ON EVERY SCREEN THAT HAS A LIST AND ONE OF SOMETHING.
     The ledger had a detail pane and nothing else did, so a pattern that is
@@ -3235,6 +3585,27 @@ p.statgrid__foot {
     gap: var(--gap-grid);
   }
   .dsplit__side { display: block; align-self: stretch; }
+}
+/*  THE GALLERY'S OWN THRESHOLD, and it is the one screen where the pane
+    costs more than it is worth at 1440. The tiles are a grid of
+    minmax(148px, 1fr) with a 26px gap, so the content column draws seven
+    columns of them at 1440 and five with a 317px pane beside it: resting the
+    pane open there spends two columns of somebody's slips on a dashed box
+    telling them to press one. At 1600 the grid draws six with the pane
+    beside it, which is one column for the pane rather than two, and that is
+    the trade worth making.
+
+    Consistency with the ledger was the argument for 1280 and it is a real
+    one, which is why the shape, the animation and the rest state are all
+    still shared: what differs here is that the list under the pane is a grid
+    that reflows rather than a column of rows that does not. */
+@media (max-width: 1599px) {
+  .dsplit.dsplit--tiles { display: block; }
+  .dsplit.dsplit--tiles .dsplit__side { display: none; }
+}
+@media (min-width: 1600px) {
+  .dsplit.dsplit--tiles { display: grid; }
+  .dsplit.dsplit--tiles .dsplit__side { display: block; }
 }
 /*  The analyser's own threshold. Measured: the cross tab's natural width is
     1110px, the pane wants 300 and the gap is 26, so the content column has
@@ -3282,4 +3653,191 @@ p.statgrid__foot {
     margin-bottom: var(--s4);
   }
   .dpane__rows { margin-top: var(--s4); }
+}
+
+/*  The settings summary stops at its last row. It is the third column of the
+    settings row and the pane beside it is a form six fields long, so without
+    this the grid stretched seven rows over 600 pixels of card. */
+.set__now { align-self: start; }
+
+/* ------------------------------------------------- the example account note */
+/*  A popup on entering the view, not a bar above every heading. See
+    components/app/DemoNote.tsx for what the bar cost: fifty eight pixels of
+    a 900 pixel window on six screens, carrying one sentence about the visit
+    rather than about the page under it.
+
+    Bottom left, clear of the tab bar and the safe area on a phone and clear
+    of the rail on a desktop. It is out of the flow entirely, so no layout
+    below it moves when it goes. */
+.expop {
+  position: fixed;
+  left: var(--s4);
+  right: var(--s4);
+  bottom: calc(var(--bottombar-h) + env(safe-area-inset-bottom) + var(--s4));
+  z-index: var(--z-toast);
+  display: flex;
+  align-items: flex-start;
+  gap: var(--s3);
+  max-width: 460px;
+  padding: var(--s4);
+  border: 1px solid color-mix(in oklab, var(--accent) 34%, transparent);
+  border-radius: var(--r-card);
+  background: color-mix(in oklab, var(--accent) 9%, var(--surface));
+  color: var(--ink);
+}
+@media (min-width: 1000px) {
+  .expop {
+    left: calc(var(--rail-w) + var(--s3) * 2 + var(--s5));
+    right: auto;
+    bottom: var(--s5);
+  }
+}
+.expop__i { flex: none; color: var(--accent-2); margin-top: 2px; }
+.expop__t { flex: 1 1 auto; min-width: 0; font-size: var(--t-small); line-height: var(--lh-small); }
+.expop__x { flex: none; margin: -4px -4px 0 0; }
+
+@media (prefers-reduced-motion: no-preference) {
+  .expop { animation: expop-in var(--dur) var(--ease) both; }
+}
+@keyframes expop-in {
+  from { opacity: 0; transform: translate3d(0, 8px, 0); }
+  to   { opacity: 1; transform: none; }
+}
+
+/* ------------------------------------------------------- six period bars */
+/*  See PeriodBars in components/app/Charts.tsx. Figure above, bar in the
+    middle, period underneath, and a losing period hangs below the line.
+
+    The plot is two halves of equal height with the zero line between them,
+    so up and down are the same scale by construction rather than by an
+    offset somebody has to keep in step with the fill. */
+.pbars {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: minmax(0, 1fr);
+  gap: var(--s2);
+  flex: 1 1 auto;
+  min-height: 0;
+}
+.pbar { display: flex; flex-direction: column; min-width: 0; }
+.pbar__v {
+  font-size: var(--t-micro);
+  font-weight: var(--w-label);
+  line-height: 1.3;
+  text-align: center;
+  white-space: nowrap;
+  /*  A period with no bets prints nothing, and the empty box still has to
+      take its line or the six bars sit at six different heights. */
+  min-height: 1.3em;
+}
+/*  64, measured. The tile row takes its own content height and the two
+    tiles beside this are 118 pixels of it, so the plot is what decides how
+    tall the row is. Under about 60 a bar at three per cent of the peak and a
+    bar at twelve are the same two pixels. */
+.pbar__plot { flex: 1 1 auto; min-height: 64px; display: flex; flex-direction: column; }
+.pbar__half { flex: 1 1 50%; min-height: 0; display: flex; }
+.pbar__half--up { align-items: flex-end; }
+.pbar__half--down { align-items: flex-start; }
+.pbar__zero { height: 1px; background: var(--line-2); flex: none; }
+.pbar__barfill { width: 100%; border-radius: 2px; }
+.pbar__barfill--pos { background: var(--pos); opacity: 0.66; }
+.pbar__barfill--neg { background: var(--neg); opacity: 0.66; }
+/*  The period you have selected is the one the rest of the page is about, so
+    it is the one drawn at full strength. */
+.pbar--now .pbar__barfill { opacity: 1; }
+.pbar__k {
+  margin-top: var(--s1);
+  font-size: var(--t-micro);
+  color: var(--ink-2);
+  text-align: center;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.pbar--now .pbar__k { color: var(--ink); font-weight: var(--w-label); }
+
+/* ------------------------------------------------------- the top three strip */
+/*  The leaderboard on the Social hub, at the size a preview should be. It was
+    three plinths, a sentence about what is counted, nine more rows in three
+    columns and a button: 640 pixels for a table that has its own page and is
+    one press away. See app/app/social/page.tsx. */
+.top3 {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--s2) var(--s5);
+  margin-bottom: var(--gap-block);
+  padding: var(--s3) var(--s4);
+  border: 1px solid var(--line2);
+  border-radius: var(--r-ctl);
+  background: var(--surface);
+}
+.top3__k { flex: none; }
+.top3__list { display: flex; flex-wrap: wrap; align-items: center; gap: var(--s2) var(--s5); flex: 1 1 auto; min-width: 0; }
+.top3__row { display: inline-flex; align-items: center; gap: var(--s2); min-width: 0; }
+.top3__pos {
+  display: inline-grid;
+  place-items: center;
+  width: 20px; height: 20px;
+  flex: none;
+  border-radius: var(--r-pill);
+  font-size: var(--t-micro);
+  font-weight: var(--w-label);
+  font-variant-numeric: tabular-nums;
+}
+.top3__nm {
+  font-size: var(--t-small);
+  font-weight: var(--w-label);
+  color: var(--ink);
+  text-decoration: none;
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.top3__nm:hover { text-decoration: underline; }
+/*  Same defect as .openbar__n and the same fix: three names, each a link, each
+    20 pixels of text with no box around it. The strip is taller than this
+    already because of the button at its right hand end, so growing the names
+    moves nothing. */
+.top3__nm { padding-block: 2px; }
+@media (max-width: 699px), (pointer: coarse) { .top3__nm { padding-block: 12px; } }
+.top3__u { flex: none; }
+.top3__go { flex: none; margin-left: auto; }
+
+/*  A region inside a card that is one row of a screen sized to the window.
+    The list scrolls in its own box and the card's footer stays put, which is
+    what keeps the link to the whole feed on screen. */
+@media (min-width: 1000px) {
+  .soc__scroll { flex: 1 1 auto; min-height: 0; overflow-y: auto; scrollbar-width: thin; }
+}
+
+/* --------------------------------------------------------------- badges */
+/*  Six rows of a title, a sentence and a tick came to 360 pixels to say that
+    four of six are held. The name of a badge is what it is for, and the
+    sentence under each was a restatement of the name. A held one is filled
+    and one that is not is an outline, so which is which is the shape rather
+    than a mark beside a paragraph. */
+.badges { display: flex; flex-wrap: wrap; gap: var(--s2); margin-top: var(--s2); }
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s1h);
+  padding: 5px var(--s3);
+  border-radius: var(--r-pill);
+  border: 1px solid var(--line);
+  background: transparent;
+  /*  --ink-2, not --ink-3. A badge that is not held still has to be read:
+      --ink-3 is a border token and the contrast test refuses it as text,
+      which is the rule that caught a whole page of faded captions once. The
+      outline against the filled chip beside it is what says it is not held,
+      and that is a shape rather than a fade. */
+  color: var(--ink-2);
+  font-size: var(--t-small);
+  font-weight: var(--w-label);
+}
+.badge--on {
+  border-color: color-mix(in oklab, var(--accent) 40%, transparent);
+  background: color-mix(in oklab, var(--accent) 12%, var(--surface));
+  color: var(--ink);
 }

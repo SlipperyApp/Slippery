@@ -27,8 +27,14 @@ export function HistoryUpload() {
   }
 
   return (
-    <>
-      <div className="card" style={{ alignItems: 'center', textAlign: 'center', padding: 'var(--s8) var(--s5)', borderStyle: 'dashed', borderWidth: '1.5px' }}>
+    /*  THE STEPS BESIDE THE DROPZONE, from the two column width up. The
+        upload, its button and the four things that happen after it were a
+        single 860 pixel column down the left of a 1440 screen with 430
+        pixels of nothing beside them, which is a phone laid out on a
+        monitor. The grid is the app's own. */
+    <div className="grid">
+      <div className="col-7">
+      <div className="card card--mid" style={{ padding: 'var(--s8) var(--s5)', borderStyle: 'dashed', borderWidth: '1.5px' }}>
         <Icon name="upload" size={28} style={{ color: 'var(--ink-3)' }} />
         <p className="card__title" style={{ marginTop: 'var(--s3)' }}>{name || 'Choose an export'}</p>
         <p className="small muted" style={{ marginTop: 'var(--s2)' }}>
@@ -44,13 +50,17 @@ export function HistoryUpload() {
       </div>
       {error ? <p className="field__err" role="alert" style={{ marginTop: 'var(--s3)' }}>{error}</p> : null}
 
+      {/*  NOT grow. A lone button in a row with flex on it took the whole
+           860 pixels, so the step that follows the upload read as a banner
+           rather than as the next thing to press. */}
       <div className="row" style={{ marginTop: 'var(--s5)', gap: 'var(--s3)' }}>
-        <button type="button" className="btn btn--primary grow" onClick={() => router.push('/app/import/history/review')}>
+        <button type="button" className="btn btn--primary" onClick={() => router.push('/app/import/history/review')}>
           Match the columns <Icon name="arrowRight" size={16} />
         </button>
       </div>
+      </div>
 
-      <div className="card" style={{ marginTop: 'var(--s5)' }}>
+      <div className="card col-5">
         <p className="label">What happens next</p>
         <ol style={{ marginTop: 'var(--s3)' }}>
           {[
@@ -69,6 +79,6 @@ export function HistoryUpload() {
           ))}
         </ol>
       </div>
-    </>
+    </div>
   );
 }

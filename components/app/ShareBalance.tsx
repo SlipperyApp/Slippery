@@ -16,12 +16,18 @@ import { Icon } from '@/components/Icon';
  *  Copy is there because nobody should have to select twenty characters of
  *  token by hand. */
 export function ShareBalance({
-  balanceId, name, path,
+  balanceId, name, path, explain = true,
 }: {
   balanceId: string;
   name: string;
   /** The public path when it is shared, or null when it is not. */
   path: string | null;
+  /** Whether this control carries the paragraph about what a link gives
+   *  away. It is true beside one balance and false in a list of them: the
+   *  sentence is the same for every balance on the account, so three
+   *  balances printed it three times, twice of them word for word identical
+   *  under two buttons that said the same thing. The list says it once. */
+  explain?: boolean;
 }) {
   const router = useRouter();
   const [busy, setBusy] = useState(false);
@@ -88,11 +94,13 @@ export function ShareBalance({
               <Icon name="lock" size={15} /> Turn the link off
             </button>
           </div>
-          <p className="small dim" style={{ marginTop: 'var(--s2)' }}>
-            It shows this balance in units: net, return, bet count, the calendar and the curve.
-            No stakes, no money, no email and nothing about your other balances. Turning it off
-            stops it immediately, and turning it on again issues a different link.
-          </p>
+          {explain ? (
+            <p className="small dim" style={{ marginTop: 'var(--s2)' }}>
+              It shows this balance in units: net, return, bet count, the calendar and the curve.
+              No stakes, no money, no email and nothing about your other balances. Turning it off
+              stops it immediately, and turning it on again issues a different link.
+            </p>
+          ) : null}
         </>
       ) : (
         <>
@@ -102,10 +110,12 @@ export function ShareBalance({
               <Icon name="link" size={15} /> Share this balance
             </button>
           </div>
-          <p className="small dim" style={{ marginTop: 'var(--s2)' }}>
-            Off. A link would show this balance in units and nothing in money, at an address
-            nobody can guess, and you can turn it off again whenever you like.
-          </p>
+          {explain ? (
+            <p className="small dim" style={{ marginTop: 'var(--s2)' }}>
+              Off. A link would show this balance in units and nothing in money, at an address
+              nobody can guess, and you can turn it off again whenever you like.
+            </p>
+          ) : null}
         </>
       )}
       {said ? <p className="small" role="status" style={{ marginTop: 'var(--s2)' }}>{said}</p> : null}

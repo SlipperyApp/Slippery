@@ -20,6 +20,22 @@ export const SIDE_NAV: NavItem[] = [
   { href: '/app/you', label: 'You', icon: 'you', match: ['/app/you', '/app/settings', '/app/billing'] },
 ];
 
+/** The rail's second group: four things you DO, under the four places.
+ *
+ *  The rail is 72 pixels wide and about 800 tall, and between the four
+ *  places at the top and the account at the bottom there were five hundred
+ *  pixels of nothing on every route. These fill it, and every one is a real
+ *  address rather than a fifth name for a screen already in the list above:
+ *  the ledger with its search box focused, the ledger filtered to every open
+ *  bet, the import, and the group directory. Nothing here repeats a row of
+ *  SIDE_NAV, which is the defect this file already records once. */
+export const RAIL_TOOLS: NavItem[] = [
+  { href: '/app/ledger?find=1', label: 'Search your bets', icon: 'search', match: [] },
+  { href: '/app/ledger?needs=open', label: 'Open bets', icon: 'clock', match: [] },
+  { href: '/app/import', label: 'Add a bet', icon: 'plus', match: ['/app/import'] },
+  { href: '/app/social/discover', label: 'Groups', icon: 'trophy', match: ['/app/social/discover'] },
+];
+
 /** Dashboard, Ledger, [ + ], Social, You. The plus is 56px, raised, centred,
  *  no label.
  *

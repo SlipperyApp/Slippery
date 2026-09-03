@@ -38,7 +38,6 @@ export function MoneyMoved({
     <section className="card moved" aria-labelledby="moved-t" style={{ marginBottom: 'var(--gap-block)' }}>
       <header className="card__head">
         <h2 className="card__title" id="moved-t">{balanceName ?? 'Balance'}</h2>
-        <p className="card__note">This balance, ignoring the scope</p>
       </header>
 
       <div className="moved__sums">

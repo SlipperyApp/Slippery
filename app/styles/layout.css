@@ -92,7 +92,40 @@
 }
 
 /* ------------------------------------------------------------------ shell */
-.shell { display: block; min-height: 100svh; }
+/*  THE APP IS FLAT AND THE MARKETING SITE IS NOT.
+ *
+ *  The background field is three drifting blobs with a baked gaussian on
+ *  them and an accent wash across the top, and behind a landing page that is
+ *  the right thing: a dark product that is a flat sheet reads as unfinished.
+ *  Behind a dashboard it is not. Every module here is a card on the field,
+ *  so the field was a coloured bloom under a grid of boxes, and the boxes
+ *  each carried their own 30 pixel drop shadow on top of it: two soft
+ *  gradients arguing under every figure on the screen, on the one page whose
+ *  whole job is that a number is easy to read.
+ *
+ *  The shell paints the page ground over the field rather than the field
+ *  being removed, because /(marketing) shares the root layout and the field
+ *  belongs to it. `.page` already carries --z-content, which is one above
+ *  --z-background, so this simply covers it.
+ *
+ *  Flat, then: a ground, a hairline, and the pastel tint each surface token
+ *  already carries. Nothing here glows. */
+.shell { display: block; min-height: 100svh; background: var(--bg); }
+
+/*  The card, flattened, inside the app only. Same ground, same hairline, no
+    top sheen and no drop shadow. The gradient and the shadow stay on the
+    marketing site, where a card sits on a moving field and needs to lift off
+    it. */
+/*  :not(.tile--on), because the one filled tile IS its ground: the accent
+    behind it is what marks the figure the product is about, and flattening
+    it to the card surface left --accent-ink, which is a dark ink chosen to
+    read on the accent, sitting on a dark surface at about 1.4 to 1. */
+.shell .card:not(.tile--on),
+.shell .rail {
+  background: var(--surface);
+  box-shadow: none;
+}
+.shell .tile--on { box-shadow: none; }
 
 /*  The rail's column is the rail plus the air around it: it floats as a card
     on the field rather than butting against the edge of the window, which is
@@ -139,8 +172,10 @@
 .rail__brand { justify-content: center; width: var(--tap); margin-inline: 0; padding-inline: 0; }
 
 .rail__nav { display: flex; flex-direction: column; align-items: center; gap: var(--s1); width: 100%; }
-/*  The four above are places. These are jobs, and the difference has to be
-    visible or they read as four more places. A hairline says it once. */
+/*  The four above are places. These are things you do, and the difference
+    has to be visible or they read as four more places. A hairline says it
+    once, and the same hairline separates the jobs below them. */
+.rail__nav--tools,
 .rail__nav--jobs { padding-top: var(--s3); border-top: 1px solid var(--line); }
 
 .rail__link {
@@ -220,11 +255,11 @@
 .rail__me[aria-current='page'] .avatar { border-color: var(--accent); color: var(--ink); }
 
 /* --------------------------------------------------------- the app header */
-/*  A GREETING, A SEARCH AND ONE ACTION.
-    The bar carried a mark, an avatar, a handle, an Example pill and a
-    balance box: four ways of saying whose account this is and no way of
-    finding anything in it. The name says it once, and the line under it
-    carries the two facts that are true on every route. */
+/*  A SEARCH AND TWO ACTIONS.
+    The bar carried a mark, an avatar, a handle, an Example pill, a balance
+    box and a line about the time zone: five ways of saying whose account
+    this is and one way of finding anything in it. The greeting and the zone
+    line are gone, so the search takes the width they were holding. */
 .topbar {
   position: sticky;
   top: 0;
@@ -250,46 +285,15 @@
     to it and the mark drew twice, once in the rail and once in the header. */
 @media (min-width: 1000px) { .topbar .topbar__mark { display: none; } }
 
-.topbar__hello { flex: 1 1 auto; min-width: 0; }
-.topbar__greet {
-  display: flex;
-  align-items: center;
-  gap: var(--s2);
-  font-size: var(--t-h3);
-  line-height: var(--lh-h3);
-  font-weight: var(--w-label);
-  letter-spacing: var(--tr-tight);
-  min-width: 0;
-}
-.topbar__name { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-/*  See the note in AppShell: the phone's menu button costs the greeting 38
-    pixels and "Hello, Tester" had exactly none spare at 390. */
-.topbar__hi { display: none; }
-@media (min-width: 700px) { .topbar__hi { display: inline; } }
-.topbar__pill { flex: none; }
-/*  NOT ON A PHONE. It is two facts about the whole account and the phone
-    header has room for a name and a balance. Nothing is lost that was there
-    before: both of them lived in the desktop rail's footer.
-
-    max-width: none, because .small is capped at 54ch for reading and this is
-    a status line rather than prose: capped, it wrapped to a second line
-    inside a bar that is one line tall. */
-.topbar__sub { display: none; }
-@media (min-width: 700px) {
-  .topbar__sub {
-    display: block;
-    max-width: none;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-  }
-}
-
 /*  A SEARCH THAT SEARCHES. A GET form at the ledger's own ?q=, so it works
     with scripting off and lands on a list that is really filtered and really
     says so. A field that filtered nothing would be the third dead control
     this build has had to delete. */
-.topbar__search { display: none; position: relative; flex: 0 1 300px; min-width: 172px; }
+/*  It grows into what the greeting was holding rather than sitting at a
+    fixed 300: the bar now carries a mark, this, a balance and two round
+    controls, and a 300px field with 700 pixels of nothing beside it is the
+    hole the greeting used to fill. */
+.topbar__search { display: none; position: relative; flex: 1 1 auto; min-width: 172px; max-width: 560px; }
 @media (min-width: 760px) { .topbar__search { display: flex; align-items: center; } }
 .topbar__q {
   width: 100%;
@@ -431,8 +435,15 @@
 .balance__v { font-size: var(--t-fig-s); font-weight: var(--w-fig); font-variant-numeric: tabular-nums; }
 
 /*  Same again for the app's own content area. The bottom is not fluid: it
-    clears the tab bar and the safe area, which are fixed sizes. */
-.main {
+    clears the tab bar and the safe area, which are fixed sizes.
+
+    THE PADDING IS ON THE BODY AND NOT ON THE MAIN, because from 1000 the
+    main is a fixed height box and the body inside it is the part that
+    scrolls. Padding on a scroll container's own edge is padding the scrollbar
+    sits inside; padding on the scrolled child keeps the bar against the
+    window edge where every other scroll bar in the product is. */
+.main { min-width: 0; }
+.mainbody {
   padding: var(--gap-block) clamp(16px, 1.1vw + 12px, 32px)
     calc(var(--bottombar-h) + env(safe-area-inset-bottom) + var(--s8));
   min-width: 0;
@@ -440,7 +451,7 @@
 /*  --s8, not --s10. The dashboard is sized to end exactly at the bottom of
     the window (see .dash), and the seventy two pixels that used to sit under
     every app page were seventy two pixels the modules could not have. */
-@media (min-width: 1000px) { .main { padding-bottom: var(--s8); } }
+@media (min-width: 1000px) { .mainbody { padding-bottom: var(--s8); } }
 
 /* -------------------------------------------------------------- bottom bar */
 .bottombar {
@@ -539,6 +550,15 @@
   .col-12 { grid-column: span 12; }
 }
 
+/*  THE PERIOD SELECTOR, CENTRED AND AS NARROW AS ITS OWN CHIPS.
+    It governs every module under it, so it is above all of them rather than
+    inside the one whose subject is time. inline-flex through a centring
+    wrapper, not width: max-content on a block, because the strip scrolls its
+    own chips on a phone and a max-content box would refuse to be narrower
+    than the five of them. */
+.scopepick { display: flex; justify-content: center; margin-bottom: var(--gap-block); }
+.scopepick > .seg { max-width: 100%; }
+
 /*  The getting started card sits above the grid rather than in it, and the
     holder is what carries the gap under it. :empty, because the card draws
     nothing at all once the four are done and a margin under nothing is a
@@ -602,7 +622,65 @@
     flex-direction: column;
     height: calc(100svh - var(--apphead-h));
   }
-  .main--fit .dash { flex: 1 1 auto; min-height: 0; }
+  /*  THE BODY IS THE SCROLLER AND THE DOCUMENT IS NOT.
+      Every app route is now a fixed height box, so a page that is longer
+      than the window scrolls inside this rather than moving the header, the
+      rail and the whole document with it. A page that fits, which is what
+      the six main screens are built to do, never draws a bar at all.
+      overscroll-behavior, or the wheel carries on into the document once
+      this reaches its end and the page bounces under a fixed header. */
+  .main--fit > .mainbody {
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+  }
+  .mainbody .dash { flex: 1 1 auto; min-height: 0; }
+  /*  A SCREEN THAT ENDS WHERE THE WINDOW DOES, and the region inside it that
+      scrolls instead. The dashboard's grid and the ledger's list are the two
+      so far: the body becomes a column, the marked child takes what the
+      blocks above it leave, and whatever scrolls inside that child scrolls
+      there rather than moving the page. */
+  .mainbody:has(> .dash),
+  .mainbody:has(> .fitcol) { display: flex; flex-direction: column; }
+  /*  AND ONLY THE REGION GIVES WAY. A flex column shrinks every item that
+      will let it, so on the leaderboard the three period links were squeezed
+      from 44 pixels to 28 and the words were cut through the middle by the
+      card below them. Everything above the scroller keeps the height it
+      asked for; the scroller takes what is left, which is the whole point of
+      marking one. */
+  .mainbody:has(> .dash) > :not(.dash),
+  .mainbody:has(> .fitcol) > :not(.fitcol) { flex-shrink: 0; }
+  .mainbody > .fitcol { flex: 1 1 auto; min-height: 0; }
+  /*  AND THE REGION ITSELF SCROLLS, for the screens whose long part is not
+      the ledger's list and has no class of its own to hang it on. The
+      heading and whatever states the page's terms stay where they are, and
+      the blocks under them move inside this box.
+      The padding is for the bar: a scrollbar against the edge of a bordered
+      card sits on the border, and the rows end a bar's width short of it. */
+  .fitcol--scroll { overflow-y: auto; overscroll-behavior: contain; padding-right: var(--s1); }
+  /*  The list is the scroller. Its own card carries the load-more footer, so
+      the footer travels with the rows it is counting rather than sitting
+      under a list that has scrolled away from it.
+
+      AND IT COULD NOT SCROLL WHILE ITS PARENT WAS A PLAIN BLOCK. .lgr is
+      handed the height the body has left, but a block child of a definite
+      height block has no definite height of its own, so overflow-y: auto on
+      the list had nothing to overflow: measured at 1440 by 900 the list grew
+      to all 218 rows and 3,671 pixels, and the ledger's body came out 3,900
+      against the 824 the window leaves. The page did not scroll, which is
+      why it went unnoticed; the body did, which is the same thing with the
+      header and the filter row scrolling away too.
+
+      Column flex makes the list a flex item, and a flex item with a zero
+      min-height is allowed to be shorter than its content. From 1400 with a
+      bet open .lgr--open is a grid instead and the list is a stretched grid
+      item, which reaches the same definite height by the other route.
+
+      The display that does it is on .lgr in components.css, beside the rest
+      of the ledger's layout, because the `.lgr { display: block }` there is
+      the same specificity and a later file. Setting it here lost. */
+  .lgr__list { flex: 1 1 auto; min-height: 0; overflow-y: auto; }
   .dash {
     min-height: calc(100svh - var(--apphead-h) - var(--gap-block) - var(--s8));
     /*  minmax(min-content, auto) on the tiles, NOT auto. A definite grid
@@ -611,8 +689,32 @@
         the captions in half. min-content is the row's own wrapped height, so
         it can no longer be the one that pays: where a window is too short
         the page scrolls the difference instead. */
-    grid-template-rows: minmax(min-content, auto) minmax(200px, 1fr) minmax(348px, 1.62fr);
+    /*  THREE ROWS, AND WHAT IS IN EACH DECIDED THE RATIO.
+        Row one is the two figures and the six period bars, and it takes its
+        own content height with min-content as its floor, so a short window
+        cannot squeeze the captions off the tiles: it was `auto`, and a
+        definite grid that cannot fit takes the difference out of the auto
+        track, which cut the tile row from 127 to 68 at 1024 by 800.
+        Row two is the calendar and the breakdown and is the tallest, because
+        a month is six rows of cells and a bookmaker list is as long as the
+        account has bookmakers.
+        Row three is the cumulative net and the win rate ring, which are a
+        line and a circle and read at any height above about 200. */
+    grid-template-rows: minmax(min-content, auto) minmax(286px, 1.55fr) minmax(176px, 1fr);
+    /*  THE ROW GAP IS NOT THE COLUMN GAP, on this grid alone.
+        Measured at 1440 by 900: the window leaves the grid 674 pixels and
+        the tile row, the two floors and two shared 26px gaps came to 718, so
+        the cumulative net and the win rate ran 20 pixels past the bottom of
+        the screen. Nothing said so, because the body is the scroller and a
+        20px overflow inside it draws a bar nobody sees on a page whose whole
+        claim is that it ends at the window. Vertical air is the scarce one
+        here and horizontal is not, so the two stopped being one number. */
+    row-gap: var(--s5);
   }
+  /*  And the period selector sits closer to what it governs. Same budget,
+      same defect: a full --gap-block under a 54px control is eight of the
+      forty four pixels the last row was short. */
+  .mainbody:has(> .dash) > .scopepick { margin-bottom: var(--s5); }
   /*  THE HEAD GIVES WAY BEFORE THE TITLE DOES. The period strip is five
       chips and the card is 437px at 1024, which left "Profit curve" 85 of
       the 95 pixels it needs and broke it over two lines under a control.
@@ -835,3 +937,27 @@ a.brk__name {
 }
 .navsheet__row:hover { background: color-mix(in oklab, var(--ink) 8%, transparent); }
 .navsheet__i { color: var(--ink-2); flex: none; }
+
+/* ---------------------------------------------------------------- settings */
+/*  A FIXED LIST AND A COLUMN THAT SCROLLS INSIDE ITSELF.
+
+    It was a three column grid: the list, the open pane and a "Right now"
+    module. A grid row takes its tallest cell, so the Data pane at 980 pixels
+    made the whole page scroll and took the list off the top of the screen
+    with it: on a settings screen the one control always needed is the list,
+    and it was the one that scrolled away.
+
+    Two columns from 1000, one stacked column below it, and the pane is the
+    only thing that moves. */
+.setgrid { display: block; }
+.setgrid__nav { margin-bottom: var(--gap-block); }
+@media (min-width: 1000px) {
+  .setgrid {
+    display: grid;
+    grid-template-columns: clamp(240px, 22vw, 320px) minmax(0, 1fr);
+    gap: var(--gap-grid);
+    align-items: stretch;
+  }
+  .setgrid__nav { margin-bottom: 0; align-self: start; }
+  .setgrid__body { min-height: 0; overflow-y: auto; scrollbar-width: thin; }
+}

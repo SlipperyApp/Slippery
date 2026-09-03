@@ -9,7 +9,7 @@ import { units as fmtUnits, initials, longDate, count, pct, plural } from '@/lib
 
 export const metadata: Metadata = {
   title: 'A Slipper',
-  description: 'What another Slipper shows: units, slip backed percentage and the groups they are in. Never their stakes.',
+  description: 'What another Slipper shows: units, how much of their record came off a slip, and the groups they are in. Never their stakes.',
 };
 
 export default async function PersonPage({

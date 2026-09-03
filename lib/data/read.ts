@@ -86,7 +86,24 @@ export type SlipRead = {
    *  question on the review screen, never a refusal: the bet is still there
    *  to confirm or to throw away, and the person decides which. */
   duplicateOf?: { id: string; when: string; matchedOn: DuplicateMatch };
-  promotional: { freeBet: boolean; boosted: boolean; bonusFunds: boolean };
+  /*  WHO PAID FOR THE STAKE, and what the reader saw that made it say so.
+   *
+   *  These three are the only fields on a read that cannot be recovered from
+   *  the ledger afterwards. A 25 pound stake at 3.0 that returned 50 is three
+   *  different profits depending on whose money the 25 was, and every one of
+   *  them is a true reading of the same row. `saw` is the evidence, printed
+   *  beside the switch on the review screen, because a flag somebody cannot
+   *  check is a flag that silently rewrites a return. */
+  promotional: {
+    /** Stake not returned, and out of turnover. */
+    freeBet: boolean;
+    /** Stake returned with the winnings, and out of turnover. */
+    bonusFunds: boolean;
+    /** Recorded, and changes no arithmetic: see lib/domain/fold.ts. */
+    boosted: boolean;
+    /** The phrases the reader matched, verbatim. Empty when it found none. */
+    saw?: string[];
+  };
   /** True for the worked example on the review screen, so it can never be
    *  mistaken for a read of somebody's own slip. */
   example?: boolean;
@@ -448,7 +465,7 @@ export const EXAMPLE_READ: SlipRead = {
     { selection: 'Jonbon', fixture: '16:10 Punchestown', odds: '4.33', market: 'Win', confidence: 'medium' },
     { selection: 'Lossiemouth', fixture: '16:25 Newmarket', odds: '', market: 'Win', confidence: 'missing' },
   ],
-  promotional: { freeBet: false, boosted: false, bonusFunds: false },
+  promotional: { freeBet: false, bonusFunds: false, boosted: false, saw: [] },
 };
 
 export const CONFIDENCE_COPY: Record<Confidence, { label: string; note: string }> = {

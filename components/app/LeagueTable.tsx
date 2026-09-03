@@ -94,7 +94,7 @@ export function LeagueBoard({
               <p className="card__title">Press a Slipper</p>
               <p className="small dim">
                 What a position is made of opens here beside the table: the bets it is over, how
-                they went, and how much of it came off a slip captured before the off.
+                they went, and how much of it came off a slip rather than a keyboard.
               </p>
             </div>
           )
@@ -123,7 +123,12 @@ export function LeagueTable({
       are useless. */
   const peak = Math.max(1, ...rows.map((r) => Math.abs(r.record.units)));
   return (
-    <>
+    /*  THE CONTAINER THE TABLE MEASURES ITSELF AGAINST. Every rule that turns
+        the stacked row into a table keys off this box rather than off the
+        window, so the same component can be the whole content column on the
+        leaderboard and half a card on the Social hub and be right in both.
+        See .lgtwrap in components.css. */
+    <div className="lgtwrap">
       <table className="lgt">
         <caption className="sr-only">
           Ranked in units. {onPick ? 'Press a row to read one Slipper beside the table.' : ''}
@@ -170,7 +175,7 @@ export function LeagueTable({
           return is left out rather than worked out over one of them.
         </p>
       ) : null}
-    </>
+    </div>
   );
 }
 
@@ -360,7 +365,15 @@ export function SlipperPane({
           <li className="brow">
             <span style={{ minWidth: 0 }}>
               <span className="brow__title">Slip backed</span>
-              <span className="brow__sub">Captured from a slip before the off</span>
+              {/*  IT SAID "Captured from a slip before the off", AND THAT IS
+                   NOT WHAT THIS FIGURE COUNTS. slipBacked is set by where a
+                   bet came from: read off a slip image, or typed in, or
+                   brought in from a file. It says nothing about when, and
+                   Slippery takes a bet at any time. The old wording read as a
+                   deadline, so a group requiring slip backed bets looked like
+                   a group refusing anything sent after a kick off, which it
+                   has never been. */}
+              <span className="brow__sub">Read off a slip rather than typed in</span>
             </span>
             <span className="fig fig--s tnum">{row.slipBackedPct}%</span>
           </li>

@@ -5,9 +5,8 @@ import { useRef, useState } from 'react';
 import { Brand } from '@/components/Brand';
 import { usePathname } from 'next/navigation';
 import { Icon, type IconName } from '@/components/Icon';
-import { SIDE_NAV, TAB_NAV, isActive } from '@/lib/nav';
+import { SIDE_NAV, RAIL_TOOLS, TAB_NAV, isActive } from '@/lib/nav';
 import { money, plural, type Currency } from '@/lib/format';
-import { timeZoneClock } from '@/lib/data/reference';
 import { BalanceSwitch } from '@/components/app/BalanceSwitch';
 import { AppMenu } from '@/components/app/AppMenu';
 
@@ -24,10 +23,14 @@ export type ShellChrome = {
    *  asked for, and the currency is the fact that matters when choosing. */
   balances: { id: string; name: string; currency: Currency }[];
   balanceId: string;
-  /** The zone every day boundary on this account is computed in. The line
-   *  under the greeting says which one, because a calendar that files a
-   *  midnight kick off on the other day has to be answerable. */
-  timeZone: string;
+  /*  THE ZONE IS NOT HERE ANY MORE. It rode on the chrome to feed a line
+      under the greeting reading "Times in UK time", and the greeting and that
+      line both went: it is the product explaining its own filing on every
+      route rather than stating a number. The zone still governs every day
+      boundary in the fold and is still named, once, in Settings, beside the
+      control that sets it. A field nothing reads is the dead control this
+      codebase refuses everywhere else, so it is gone rather than left
+      passed in and ignored. */
   /** Counters ride as badges on the row they belong to. One: the open bets
    *  on Ledger. Social had one too and it was the literal 3, which counted
    *  nothing and never cleared. */
@@ -36,12 +39,12 @@ export type ShellChrome = {
       match. See lib/data/attention.ts for why there are two of these and
       not the prototype's three. */
   needs?: { resting: number; running: number; waiting: number; proposals: number; asks: number };
-  /*  WHAT IS ON THE TABLE RIGHT NOW, in money, for the line under the
-      greeting. The counts above say how many bets are open; this says what
-      they are worth, which is the fact a bettor wants in front of them on
-      every screen and which appeared on exactly one card on one route. It is
-      never coloured: an exposure is neither a profit nor a loss, and the two
-      result colours mean money that has been won or lost and nothing else. */
+  /*  WHAT IS ON THE TABLE RIGHT NOW, in money, for the one sentence in the
+      phone's menu. The counts above say how many bets are open; this says
+      what they are worth, which is the fact a bettor wants in front of them
+      and which appeared on exactly one card on one route. It is never
+      coloured: an exposure is neither a profit nor a loss, and the two result
+      colours mean money that has been won or lost and nothing else. */
   atRiskMinor: number;
   openBets: number;
   /** Read only pauses new slips, imports and the bot. The ledger and export
@@ -94,26 +97,30 @@ export function AppShell({ chrome, children }: { chrome: ShellChrome; children: 
     : [];
 
   /*  THE NAME, NOT THE HANDLE. An account that has finished its profile is
-      greeted by the name it gave; one that has not falls back to the handle
-      rather than to a bare "Hello," with a comma hanging off it. Both were
-      drawn from empty strings the moment a signed-in account stopped being
-      handed the example account's name. */
+      known by the name it gave; one that has not falls back to the handle
+      rather than to an empty string. Both were drawn from empty strings the
+      moment a signed-in account stopped being handed the example account's
+      name. */
   const name = chrome.displayName || (chrome.handle ? `@${chrome.handle}` : '');
   const initial = (chrome.displayName || chrome.handle || '?').slice(0, 1);
 
-  /*  ONE SENTENCE, AND IT IS THE ONE THAT IS TRUE ON THIS ROUTE.
-      What is at risk is the money version of the job counts in the rail and
-      lived on one card on one route. It is not printed on the ledger, which
-      opens with the same figure at four times the size: one number printed
-      twice on one screen is a number somebody has to check against itself.
-      The zone is here because a calendar that files a midnight kick off on
-      the other day has to be answerable from wherever you are standing. */
-  const zone = `Times in ${timeZoneClock(chrome.timeZone)}`;
+  /*  THE GREETING AND THE ZONE ARE GONE FROM THE CHROME.
+      "Hello, Tester" was 49 pixels of a 900 pixel window on every route
+      saying something the reader knew before they opened the tab, and
+      "Times in UK time" was the product explaining its own mechanics on
+      every screen rather than stating a number. The zone still governs every
+      day boundary and is still named, once, in Settings, beside the control
+      that sets it.
+
+      What survives is the one fact that is about money: what is at risk. It
+      is a sentence in the phone's menu and nowhere else, because the ledger
+      prints the same figure at four times the size and one number printed
+      twice on one screen is a number somebody has to check against itself. */
   const sub = chrome.readOnly
     ? 'Read only. Ledger and export stay live.'
     : chrome.openBets > 0 && !pathname.startsWith('/app/ledger')
-      ? `${money(chrome.atRiskMinor, chrome.currency)} at risk over ${plural(chrome.openBets, 'open bet')} in ${here?.name ?? 'this balance'}. ${zone}.`
-      : `${zone}.`;
+      ? `${money(chrome.atRiskMinor, chrome.currency)} at risk over ${plural(chrome.openBets, 'open bet')} in ${here?.name ?? 'this balance'}.`
+      : '';
 
   return (
     <div className="shell page">
@@ -146,6 +153,28 @@ export function AppShell({ chrome, children }: { chrome: ShellChrome; children: 
               </Link>
             );
           })}
+        </nav>
+
+        {/*  THE MIDDLE OF THE RAIL, WHICH WAS FIVE HUNDRED PIXELS OF NOTHING.
+             Four places at the top, an account at the bottom, and between
+             them a column of empty column on every route at every height.
+             These are the four things somebody does rather than the four
+             places they go, and every one is an address that exists and is
+             not one of the four above it: the ledger with its search open,
+             the ledger filtered to every open bet, the import, and the group
+             directory. See RAIL_TOOLS in lib/nav.ts. */}
+        <nav className="rail__nav rail__nav--tools" aria-label="Jump to">
+          {RAIL_TOOLS.map((item) => (
+            <Link
+              key={item.href}
+              href={item.href}
+              className="rail__link"
+              aria-current={isActive(pathname, item) ? 'page' : undefined}
+              aria-label={item.label}
+            >
+              <Icon name={item.icon} size={20} />
+            </Link>
+          ))}
         </nav>
 
         {jobs.length > 0 ? (
@@ -202,34 +231,16 @@ export function AppShell({ chrome, children }: { chrome: ShellChrome; children: 
       </aside>
 
       <div style={{ minWidth: 0 }}>
-        {/*  THE GREETING, THE SEARCH AND THE ACTIONS.
-             The bar carried a mark, an avatar, a handle and a balance box,
-             which is four ways of saying whose account this is and no way of
-             finding anything in it. */}
+        {/*  THE SEARCH AND THE ACTIONS, AND NOTHING ELSE.
+             The bar carried a mark, a greeting, an Example pill, a line about
+             the time zone and a balance box, which is four ways of saying
+             whose account this is and one way of finding anything in it. The
+             one way is what is left. */}
         <header className="topbar">
           {/*  The mark only where there is no rail to carry it. Under 1000 the
                rail is display:none and the phone would otherwise have no way
                back to the dashboard from the top of the screen. */}
           <Brand size={30} href="/app" word={false} className="brand topbar__mark" label="Slippery, dashboard" />
-
-          <div className="topbar__hello">
-            <p className="topbar__greet">
-              {/*  The name is its own box so that IT truncates and the pill
-                   beside it does not: inside one line box at 320 the pill
-                   was cut to "EXAN", and the pill is the sentence saying the
-                   ledger below is not yours. */}
-              {/*  The greeting drops its first word on a phone, and it is the
-                   menu button beside it that pays for that: measured at 390,
-                   "Hello, Tester" needs 93px and had exactly 93, so adding a
-                   38px control on the right truncated it to "Hello...". The
-                   name is the half worth keeping. */}
-              <span className="topbar__name">
-                {name ? <><span className="topbar__hi">Hello, </span>{name}</> : 'Hello'}
-              </span>
-              {chrome.demo ? <span className="pill topbar__pill">Example</span> : null}
-            </p>
-            <p className="topbar__sub small dim">{sub}</p>
-          </div>
 
           {/*  A REAL SEARCH OR NONE AT ALL.
                It is a GET form aimed at the ledger's own ?q=, which is the
@@ -286,14 +297,19 @@ export function AppShell({ chrome, children }: { chrome: ShellChrome; children: 
           </div>
         </header>
 
-        {/*  THE ONE SCREEN IN THIS PRODUCT THAT IS SIZED TO THE WINDOW.
-             Everything else is a page you scroll, and the modifier says which
-             is which HERE rather than in a :has() selector, so the rule is
-             visible to anybody reading either file. The dashboard's grid
-             takes whatever is left after the banners above it, which is why a
-             trial banner or the example note shortens the modules instead of
-             pushing the last one off the bottom. */}
-        <main className={`main${pathname === '/app' ? ' main--fit' : ''}`} id="main">{children}</main>
+        {/*  EVERY APP SCREEN IS SIZED TO THE WINDOW NOW, not just the
+             dashboard. It was one modifier on one route, and every other
+             screen in the product ran past the bottom of a 900 pixel window:
+             the ledger measured 2,946 pixels and Social 2,209, so two thirds
+             of both was never seen by anybody who did not go looking.
+
+             The main is the window less the header and the body inside it is
+             what scrolls, so a long list scrolls in its own region and the
+             document never does. On a phone this rule is absent and the page
+             scrolls the way it always has. */}
+        <main className="main main--fit" id="main">
+          <div className="mainbody">{children}</div>
+        </main>
       </div>
 
       <AppMenu

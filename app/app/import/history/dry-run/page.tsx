@@ -26,7 +26,10 @@ export default function DryRun() {
           <Icon name="chevronLeft" size={16} /> Match the columns
         </Link>
       </div>
-      <div className="column column--wide" style={{ marginInline: 0 }}>
+      {/*  THE STEP SCROLLS AND THE WAY BACK DOES NOT. Measured at 1440 by
+           900: 840 pixels against the 824 the window leaves. See .fitcol in
+           layout.css. */}
+      <div className="column column--wide fitcol fitcol--scroll" style={{ marginInline: 0 }}>
         <span className="pill">Nothing written</span>
         <h1 style={{ marginTop: 'var(--s4)' }}>Dry run</h1>
         <p className="muted" style={{ marginTop: 'var(--s2)' }}>
@@ -42,7 +45,11 @@ export default function DryRun() {
                   <span className="brow__title">{r.t}</span>
                   <span className="brow__sub">{r.s}</span>
                 </span>
-                <span className={`fig fig--s tnum ${r.k === 'needsYou' && DRY_RUN[r.k] > 0 ? 'neg' : ''}`}>
+                {/*  THE ATTENTION COLOUR, NOT THE LOSS COLOUR. Fourteen rows
+                     that cannot be split is a thing to do, not money lost,
+                     and this screen is two presses from one that writes a
+                     ledger. See .attn in base.css. */}
+                <span className={`fig fig--s tnum ${r.k === 'needsYou' && DRY_RUN[r.k] > 0 ? 'attn' : ''}`}>
                   {count(DRY_RUN[r.k])}
                 </span>
               </li>

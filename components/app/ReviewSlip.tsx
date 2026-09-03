@@ -99,6 +99,33 @@ export function ReviewSlip({ fallback, balances, balanceId, unitMinor }: {
 
   const questions = read.fields.filter((f) => f.confidence !== 'high');
   const totalMinor = stakeMinor === null ? null : stakeMinor * Math.max(1, read.lines);
+  const promoSaw = read.promotional.saw ?? [];
+
+  /*  WHAT THE SWITCHES ABOVE COME TO, worked the way lib/domain/fold.ts works
+      it and nowhere else in the browser. This is a PREVIEW of one line of
+      that fold and not a second grader: it multiplies the legs' own prices,
+      which is what effectiveOdds does on a bet with no void legs, and it
+      applies the same two rules the fold applies to a promotional stake.
+      Rounding is Math.round on integer minor units, which is the fold's own
+      arithmetic, so the figure here is the figure that gets written. */
+  /*  ONE LINE ONLY, and a perm is not one line. A Lucky 15 is fifteen bets
+      off four selections and what it pays depends on how many of them win;
+      multiplying the four prices gives the four-fold, and applying that to
+      the whole fifteen pounds of stake states a return the bet cannot
+      produce. A single and a straight multiple are one line and the product
+      of their prices IS the price, which is what effectiveOdds folds. */
+  const onePriced = Math.max(1, read.lines) === 1 && legs.length > 0
+    && legs.every((l) => Number(l.odds) > 1);
+  const bestOdds = onePriced
+    ? legs.reduce((acc, l) => acc * Number(l.odds), 1)
+    : 0;
+  const ownStake = !free && !bonus;
+  const total = totalMinor ?? 0;
+  const returnsMinor = free
+    ? Math.round(total * (bestOdds - 1))
+    : Math.round(total * bestOdds);
+  const profitMinor = ownStake ? returnsMinor - total : returnsMinor;
+  const lossMinor = ownStake ? total : 0;
   const heldOnDuplicate = Boolean(duplicate) && !duplicateOk;
 
   async function confirm() {
@@ -183,7 +210,7 @@ export function ReviewSlip({ fallback, balances, balanceId, unitMinor }: {
            in this product carries an exchange rate, and a rate would make the
            figure change overnight without a bet being placed. */}
       {wrongCurrency && balance && read.currency ? (
-        <div className="banner banner--neg col-12">
+        <div className="banner banner--warn col-12">
           <Icon name="alert" size={18} className="banner__icon" />
           <span>
             This slip is in {CURRENCY_WORD[read.currency]} and <strong>{balance.name}</strong> is
@@ -195,7 +222,7 @@ export function ReviewSlip({ fallback, balances, balanceId, unitMinor }: {
       ) : null}
 
       {duplicate ? (
-        <div className="banner banner--neg col-12">
+        <div className="banner banner--warn col-12">
           <Icon name="alert" size={18} className="banner__icon" />
           <span>
             This looks like a bet you already have, saved {dateTime(duplicate.when)}. It was matched
@@ -397,16 +424,49 @@ export function ReviewSlip({ fallback, balances, balanceId, unitMinor }: {
           />
         </section>
 
+        {/*  WHOSE MONEY THE STAKE WAS.
+             It is the one thing on this screen that cannot be recovered from
+             the ledger afterwards: a 25 pound stake at 3.0 returning 50 is
+             three different profits depending on who paid the 25, and all
+             three are a true reading of the same row. The reader looks for
+             it and says what it saw; every switch is one press to correct.
+
+             FREE BET AND BONUS FUNDS ARE EXCLUSIVE, because a stake came from
+             one place or the other. Turning one on turns the other off rather
+             than letting both stand, which would be a bet whose stake both
+             does and does not come back. */}
         <section className="card">
-          <h2 className="card__title">Money you won, or money they gave you</h2>
-          <p className="small muted" style={{ marginTop: 'var(--s2)' }}>
-            Flagged here, at ingestion, because it is impossible to work out later.
-          </p>
+          <h2 className="card__title">Whose money the stake was</h2>
+          {promoSaw.length > 0 ? (
+            <p className="small muted" style={{ marginTop: 'var(--s2)' }}>
+              The reader saw <strong>{promoSaw.join(', ')}</strong> on this slip. Correct anything
+              it read wrongly before you confirm.
+            </p>
+          ) : (
+            <p className="small muted" style={{ marginTop: 'var(--s2)' }}>
+              Nothing on the slip said the stake was anything but your own money.
+            </p>
+          )}
           <div style={{ marginTop: 'var(--s3)' }}>
             {[
-              { on: free, set: setFree, t: 'Free bet', s: 'Stake is not returned, and it leaves turnover.' },
-              { on: bonus, set: setBonus, t: 'Bonus funds', s: 'Counts to the promotional half of the headline.' },
-              { on: boost, set: setBoost, t: 'Price boost', s: 'The uplift is promotional money.' },
+              {
+                on: free,
+                press: () => { setFree(!free); if (!free) setBonus(false); },
+                t: 'Free bet',
+                s: 'The stake is not returned with a win, losing it costs nothing, and it is out of turnover.',
+              },
+              {
+                on: bonus,
+                press: () => { setBonus(!bonus); if (!bonus) setFree(false); },
+                t: 'Bonus funds',
+                s: 'The stake IS returned with a win, losing it costs nothing, and it is out of turnover.',
+              },
+              {
+                on: boost,
+                press: () => setBoost(!boost),
+                t: 'Price boost',
+                s: 'Recorded on the bet. The stake was yours and the price is the one it was struck at, so no figure moves.',
+              },
             ].map((r) => (
               <div key={r.t} className="switchrow">
                 <span style={{ minWidth: 0 }}>
@@ -416,11 +476,22 @@ export function ReviewSlip({ fallback, balances, balanceId, unitMinor }: {
                 <button
                   type="button" className="switch" aria-pressed={r.on}
                   aria-label={`${r.t}: ${r.on ? 'on' : 'off'}`}
-                  onClick={() => r.set(!r.on)}
+                  onClick={r.press}
                 />
               </div>
             ))}
           </div>
+          {/*  WHAT IT COMES TO, in money, for the read as it stands. Two
+               sentences about turnover are a policy; this is the number the
+               ledger is about to hold, and it changes as the switches do. */}
+          {totalMinor !== null && bestOdds > 1 ? (
+            <p className="small dim card__foot">
+              As it stands: {money(totalMinor, currency)} at {bestOdds.toFixed(2)} returns{' '}
+              <strong>{money(returnsMinor, currency)}</strong> on a win, which is a profit of{' '}
+              <strong>{money(profitMinor, currency, { sign: true })}</strong>, and losing it costs{' '}
+              <strong>{money(lossMinor, currency)}</strong>.
+            </p>
+          ) : null}
         </section>
 
         <section className="card">

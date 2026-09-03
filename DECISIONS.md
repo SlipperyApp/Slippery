@@ -248,6 +248,63 @@ class that is not deciding on an outcome, a money figure, the sign of a number,
 the calendar ramp, or one of the two places the brief explicitly specifies a
 result colour: the "Save £11.89 a year" pill and the destructive block.
 
+## The fourth way a colour reaches a screen, and it was the stylesheet
+
+The section above holds for `className`, and a later pass closed the same hole
+for `style={{}}`. Both read `.tsx` files, so neither could see a colour applied
+by a rule, and three had settled there and stayed:
+
+- `.factlist svg` painted a tick in profit green for "this sentence is true",
+  which is the "read cleanly" meaning taken out of nine other places.
+- `.field__err` painted every form error in the loss colour, on nine forms
+  including login and signup. That is "field missing", by another name.
+- `.banner--neg` painted six banners in it: the slip reader is down, this
+  browser cannot open a HEIC, the slip is in the wrong currency, the bet is
+  already in your ledger, and new slips are paused. Five faults and a state.
+
+The tick takes the accent, which is what the same mark on the marketing pages
+has always used, and the other two take `--warn`, which is the token for
+attention and what a cash out already draws in. A third test reads the
+stylesheets the way the other two read the components: a rule naming #86EFAC
+or #FCA5A5 has to be a bar, a meter, the calendar ramp, an outcome pill, a
+swatch that explains the colours, or the destructive block.
+
+A fourth was in a component and the test's own allowance let it through. The
+import's dry run painted "Cannot split reliably: 14" in the loss colour
+through `DRY_RUN[r.k] > 0 ? 'neg'`, and the rule that excuses "the sign of a
+number picks the colour" read that as a sign test. A count above zero is not a
+loss. The allowance is written out per direction now: above zero is never the
+loss colour and below zero is never the profit one.
+
+## What the polish pass did not get to
+
+Written down for whoever picks this up, in the order I would take them.
+
+- **Four import screens are a phone layout on a monitor.** `/app/import/
+  history/dry-run`, `/done`, `/resolve` and `/review` are an 860 pixel column
+  down the left of a 1288 pixel content area with nothing beside them. The
+  upload screen was given a second column and is one screen now; the other
+  four want the same treatment, and each needs a different second column,
+  which is why they are still like this. `/changelog`, `/terms` and
+  `/privacy` have the same shape and a better excuse: they are prose, and
+  prose has a measure.
+
+- **The dashboard's breakdown clips its third row at 1024 and 1440.** The
+  module is sized from the window, which is what makes the dashboard one
+  screen at any height, and the row that does not fit is cut in half rather
+  than left out. It is the one place on the dashboard that reads as an
+  accident rather than a decision. Either the list takes whole rows only, or
+  the cut edge needs to say it is a cut edge.
+
+- **The demo page's tiles lose their sparklines by one pixel.** `.tile` drops
+  the line under 236px of content box, which is measured and right; the
+  marketing wrap gives each tile 235. The tiles are otherwise the dashboard's
+  own, module for module.
+
+- **`/app/history` is 120 rows and 8,000 pixels.** The ledger loads fifty and
+  offers a button. Nothing is wrong with the page, but it is the longest
+  scroll in the product.
+
 ## The migration that ran, failed, and looked fine
 
 `0001_init.sql` uses `create table if not exists`, which is correct for a file
@@ -653,3 +710,258 @@ rather than making anybody count. Nothing has been charged to anybody on this
 deployment: the Stripe price and webhook variables are not set, `/api/sources`
 says so, and the plan step says payments are not configured rather than
 spinning.
+
+## The app overhaul
+
+The signed-in product was overbuilt. Six screens, every one of them longer
+than the window it is read in, each explaining its own mechanics in a
+paragraph beside the figure it was explaining. The dashboard was the only
+route in the build sized to a screen and everything else ran past the bottom
+of it: the ledger measured 2,946 pixels at 1440 by 900 and Social 2,209, so
+two thirds of both was never seen by anybody who did not go looking for it.
+This section is what was removed and why.
+
+### Take a break is gone, and the owner asked for it
+
+`CLAUDE.md` carried "There is a 'take a break' control" inside the section
+marked LOCKED. The owner asked for the control to be removed and said so
+explicitly, overriding that line, and the line has been rewritten to match
+rather than left to contradict the build.
+
+**What went is not a safeguard.** The control set `break_until` on the
+account, which paused every notification and took the account out of the
+monthly leagues. It touched no ledger, no export and no history, and it was
+never any form of self exclusion, because there is nothing here to be
+excluded from: Slippery accepts no bets, holds no money, pays no winnings and
+gives no tips, which is the whole legal position the product is built on. A
+control named for a gambling intervention on a product that cannot take a
+gambling transaction is a safeguard that looks like a safeguard, and that is
+worse than not having one, because somebody who needs an exclusion could
+reasonably read it as having got one.
+
+**Everything genuine stays**, and each is now asserted rather than described:
+18+ on the safer gambling page and at sign up, BeGambleAware, the National
+Gambling Helpline on 0808 8020 133, and the safer gambling page itself, linked
+from the footer of every public page and now from the Account pane as well.
+`tests/responsible.test.ts` had a test called "the break control stays
+reachable"; it is now "the genuine safeguards stay on screen" and it fails if
+any of the four goes missing, and also if the break control comes back.
+
+**The plumbing went with the control.** The `break` branch of
+`POST /api/settings`, the `onBreak` field on the account, the `break_until`
+read in `lib/server/book.ts` and the "is taking a break" line in the social
+feed are all gone, because a route that still accepts a field no screen can
+send is a way to put an account into a state nothing can show or clear. The
+`break_until` column stays in the schema: migrations here are forward only,
+and dropping a column is not the same as removing a control.
+
+**Two sentences about it are still on the marketing site**, on
+`/safer-gambling` and `/(marketing)/social`, and they are not touched here
+because `app/(marketing)/` belongs to another branch working at the same time.
+They describe a control that no longer exists and need deleting there.
+`lib/content/faq.ts` is not under that directory and was corrected: the answer
+to "I want to stop for a while" now says that nothing here has to be closed
+and that no notification is ever sent about not having bet, and it carries
+the helpline.
+
+### Slippery tracks bets at any time
+
+Every sentence implying a slip has to be sent before kick off is gone. The
+product's argument is that a record written afterwards is a record of the bets
+somebody felt like writing down, and the way to hold that line is to state,
+per bet, whether it reached the record before its event started. That is a
+fact about a bet. It was being printed as a rule about what may be sent, which
+is a different claim and a false one: an import of four hundred rows from a
+spreadsheet is bets recorded years late, and this product has a whole screen
+for doing it.
+
+So `slipBacked` is described as "came off a slip rather than a keyboard"
+wherever it is shown, "Before kick off only" has gone from the tracking
+module, and the import no longer opens with "Send it now, while you still do
+not know". What the social feed's gate does is unchanged and is still absolute:
+an item there is a bet captured before its event started, whose event has not
+started, from somebody who opted in. That is a rule about what may be
+PUBLISHED to other people, not about what may be recorded.
+
+### The import, and who paid for the stake
+
+**Three flags, three different profits, and only the slip knows which.** Take
+a £25 stake at 3.0 that returned £50. If the £25 was the account holder's
+money the bet made £25. If it was a free bet, the token bought nothing back
+and the bet made £50, and losing it would have cost nothing. If it was bonus
+funds, the whole £75 converts and the bet made £75 off no capital at all.
+Every one of those is a true reading of the same row, and three weeks later
+nothing in the ledger can tell them apart. That is why the flags are set at
+ingestion and why the reader now looks for them.
+
+**What was there.** `isFreeBet` and `isBoosted` were asked of the model as
+bare booleans with no evidence attached, `isBonusFunds` existed as a column,
+a field on the bet and a switch on the review screen and was **hardcoded
+false at every point a read could set it**. The fold gave bonus funds no
+behaviour of its own, so a bonus stake was folded as the bettor's own money:
+a real loss where there was none, and a return computed over a stake that was
+never put up. Manual entry had no bonus funds control at all.
+
+**Detection is a phrase table beside the model, and both show their working.**
+`detectPromotions` in `lib/data/importing.ts` is pure and reads the chrome the
+reader transcribes: free bet, Bet Credits, stake not returned, SNR, risk free;
+bonus funds, bonus balance, bonus money, staked from a bonus, wagering
+requirement; price boost, enhanced odds, Power Price, a crossed out price
+raised. The model is asked as well and the two are OR-ed, because a model can
+miss a greyed token in a footer and the table can miss a promotion it has
+never seen. Neither is believed silently: the phrase that fired rides to the
+review screen and sits beside the switch, so a wrong read is one press to
+undo.
+
+**The bonus funds phrases are the narrow ones, deliberately.** bet365 prints
+"BONUS 1/4 2x" on a Lucky 15, which doubles the odds on a single winner and is
+not a penny of bonus money. Reading the bare word "bonus" as bonus funds would
+take a real stake out of turnover and stop a real loss counting, on a slip
+shape this product's own worked example uses. A bonus funds match needs the
+word beside something that names a balance, and a test pins the Lucky 15
+string.
+
+**Free bet beats bonus funds when a slip says both**, in the table and again
+in the reader. "Free bet placed from your bonus balance" is a token that
+happened to sit in the bonus wallet, and the stake of a free bet is not
+returned, which is the fact the arithmetic turns on.
+
+**The arithmetic, in `lib/domain/fold.ts`, is two questions and not one.**
+`ownMoney()` says whether the stake cost anything and `stakeReturns()` says
+whether it comes back:
+
+| | risk | a win returns | a loss costs | in turnover |
+|---|---|---|---|---|
+| own money | S | S x odds | S | yes |
+| free bet | 0 | S x (odds − 1) | nothing | no |
+| bonus funds | 0 | S x odds | nothing | no |
+| boost | S | S x odds | S | yes |
+
+A void or a pushed half follows `ownMoney`, not `stakeReturns`: a voided bonus
+funds bet puts the restricted balance back where it came from, which is not
+money arriving. Read off the wrong one it paid the whole stake out as pure
+profit on every void, and a test pins it.
+
+**Turnover excludes both.** A return is a return on what you put up, and
+neither a free bet stake nor a bonus stake was yours to put up. `turnoverPence`
+asked only about free bets before.
+
+**A deduction is charged on winnings, and a free bet's winnings are the whole
+return.** A Rule 4 and an exchange commission both take a percentage of what a
+bet won, and the fold worked that base out as the return less the stake
+consumed. That is right for every bet whose return HAS the stake inside it and
+wrong for the one kind that does not. A £25 free bet at 3.0 wins £50; the fold
+read its winnings as £25 and a 25p in the pound Rule 4 took £6.25 where the
+bookmaker takes £12.50, and the same slip on a 2% exchange was charged 50p
+instead of a pound. Both errors ran the same way, in the account holder's
+favour, which is the direction that does not get reported. Bonus funds do
+return the stake and were already right. `winningsOn` is now the one place
+that answers it, called by the Rule 4 and commission branches inside the fold
+and by `commissionDue` outside it, so the base a charge is computed on cannot
+disagree with the base the fold charges it on. Five tests pin it: the two
+deductions on a free bet, the two on bonus funds, and one asserting a winning
+free bet and the same bet in cash profit the SAME after an identical Rule 4,
+which is the assertion that failed before.
+
+**A boost changes no arithmetic and the flag says so on screen.** The stake is
+the bettor's own and the price on the slip is the price the bet was struck at.
+Nothing in this product records what the price would have been unboosted, so
+nothing can compute an uplift, and a flag that guessed one would put an
+invented number into a return. Where a boost pays as a separate credit it
+arrives as a `promo_refund` event, which the fold already carries. For the
+same reason a boosted bet is no longer counted into `netPromoPence`: that
+figure is profit made with money that was not yours, and counting the WHOLE
+profit of a boosted bet into it overstated the promotional half by everything
+the bet would have won anyway.
+
+**The review screen states the consequence in money.** Under the three
+switches it prints what the bet as flagged returns on a win, what that is as
+a profit, and what losing it costs, and the figures move as the switches do.
+It is drawn only for a bet that is ONE line: a Lucky 15 is fifteen bets off
+four selections and what it pays depends on how many win, so multiplying the
+four prices and applying them to the whole stake states a return the bet
+cannot produce. That was on screen for a minute before the guard went in.
+
+**And the import stopped telling anybody when to send.** It opened with "Four
+ways in. Send it now, while you still do not know." The third of those four
+ways is a CSV of bets placed years ago.
+
+### One screen, measured on every route rather than on six
+
+"Every page fits one desktop screen with no page scroll" was built as two
+rules that are not the same rule, and only the first was being checked. The
+document never scrolls on any app route: `.main--fit` is the window less the
+header and `.mainbody` inside it is the scroller, so `scrollHeight` equals
+`clientHeight` at 1440 by 900 on all fifty of them and always did. That
+measurement passes while the page runs off the bottom of the screen, because
+what scrolls is the body and not the document, and it hides two different
+defects.
+
+**The first is content past the window with nothing to say so.** The
+dashboard's three rows came to 718 pixels against the 674 the window leaves,
+so the cumulative net and the win rate ran twenty pixels below the fold. A
+twenty pixel overflow draws a scrollbar nobody notices on a page whose whole
+claim is that it ends at the window. The row gap is no longer the column gap
+on that grid, the period selector sits closer to what it governs, and the two
+row floors come down by fourteen each: sixty pixels found against a deficit
+of forty four.
+
+**The second is a region that was never allowed to scroll.** The ledger's
+list carries `overflow-y: auto` and had nothing to overflow, because its
+parent was a plain block and a block child of a definite height block has no
+definite height of its own. The list grew to all 218 rows and 3,671 pixels,
+the ledger's body to 3,900 against a window of 824, and the header and the
+filter row scrolled away with it. A column flex on `.lgr` is the whole fix,
+and it had to go in components.css because `.lgr { display: block }` there is
+the same specificity in a later file.
+
+**Then the same measurement, on every route.** Twenty eight of the fifty were
+scrolling their own body. Each now marks the part that is long and keeps the
+part that says what the long part is: the table on change history and on the
+crossed analyser, the grid of slips, the sheet and the movements on balances,
+both leaderboards, the feed, the review of a read and every step of a history
+import, the plan cards, the two billing states and the two device states.
+`.fitcol--scroll` in layout.css is the region; `.mainbody:has(> .fitcol) >
+:not(.fitcol)` stops everything else giving way, which it was doing, and had
+squeezed the leaderboard's period links from 44 pixels to 28 with the words
+cut through the middle. Fifty routes, nought scrolling, nought clipped.
+
+**Two of those were shape rather than fit.** The loading placeholder was the
+dashboard from before the overhaul, four tiles over four rows against seven
+cards over three, so it measured 1,135 for a page that fits 824 and moved
+everything the moment it was replaced, which is the one thing a placeholder
+exists to prevent. The empty dashboard put the third of the three modules a
+new account is shown below the fold.
+
+### What a sweep finds that a measurement does not
+
+`npm run audit` at 1440 by 900 turned up four defects, all of them in the
+overhaul's own new work.
+
+The ledger scrolled sideways by thirteen pixels at 320. Five period chips are
+317 pixels wide against the 288 that phone leaves, and the strip sits in the
+ledger's header as a flex item, whose automatic minimum size is its content.
+It carries its own `overflow-x` and its own snap already; `min-width: 0` is
+permission to use them.
+
+Two links measured twenty pixels, the height of their text: the open bets
+count above the ledger and the three names in the leaderboard strip on
+Social. The floor is 24 on a mouse and 44 on a thumb, and symmetric padding
+is what reaches it, because a ring drawn three pixels outside a box leaves
+the box twenty pixels tall.
+
+And **the win rate spilled the ring it is supposed to be inside.** The dial
+takes what the card's height leaves, so at 1024 by 800 it came out 68 pixels
+across while the figure stayed at `--t-fig-m`: "49.0%" needs 74 of them and
+five pixels of the percent sign painted over the track. A media query cannot
+see it, because the width that went wrong is the height of a grid row, so the
+dial is a container and the figure steps down at 118 and 88 pixels, measured
+off "100.0%" as the longest figure a ring here can hold. The module then
+reads across rather than down: four columns of the bottom row is 430 pixels
+wide and 96 tall, and a ring stacked over its denominator had 73 pixels with
+a number in the middle smaller than the caption under it. Side by side the
+ring is 100 and the figure is a figure. The dial needed `flex: 0 0 auto` to
+get there, because the `flex: 1 1 auto` that makes it take the height in a
+column makes it take the width in a row: the box went to 200 pixels with a 98
+pixel ring drawn inside it, and the container query, which measures the box,
+went on believing there was room.

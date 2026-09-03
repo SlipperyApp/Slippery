@@ -104,7 +104,6 @@ export function newAccountFacts(
         else, so a reload put every one of them back. */
     notifications: switchDefaults(NOTIFICATIONS, null),
     sharing: switchDefaults(SHARING_SWITCHES, null),
-    onBreak: false,
     ...over,
   };
 }

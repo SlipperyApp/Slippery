@@ -24,7 +24,9 @@ export default async function Plan() {
       </div>
       <h1>Plan and billing</h1>
 
-      <div className="grid" style={{ marginTop: 'var(--s5)' }}>
+      {/*  Measured at 1440 by 900: 1,383 pixels against the 824 the window
+           leaves. The cards scroll under the heading. */}
+      <div className="grid fitcol fitcol--scroll" style={{ marginTop: 'var(--s5)', alignContent: 'start' }}>
         <section className="card col-6">
           <h2 className="card__title">Where you are</h2>
           <p className="fig fig--m" style={{ marginTop: 'var(--s3)' }}>
@@ -68,7 +70,7 @@ export default async function Plan() {
         <section className="card col-12">
           <h2 className="card__title">Change plan</h2>
           <div style={{ marginTop: 'var(--s4)', maxWidth: '560px' }}>
-            <PlanPicker stripeReady={stripeReady} />
+            <PlanPicker stripeReady={stripeReady} nested />
           </div>
         </section>
       </div>

@@ -99,7 +99,15 @@ input, select, textarea { font-size: 16px; line-height: 1.4; }
 
 /* Every money value carries tabular figures or digits jitter and columns
    misalign. tests/e2e asserts "111111" and "000000" measure the same width. */
-.tnum, .fig, .money, table, .u-tnum {
+/*  THE SUB LINES ARE IN THE LIST TOO. `.brk__sub`, `.brow__sub` and
+    `.wrow__mid` are the second line of a stacked row, and every one of them
+    carries figures that the eye reads down a column: "+133.3% on £930.00"
+    under "+69.1% on £771.25" under "+53.6% on £812.94". A proportional digit
+    in the second line of a row jitters against the row above it exactly as
+    it does in the first, and these were the last places in the product still
+    setting one. */
+.tnum, .fig, .money, table, .u-tnum,
+.brk__sub, .brow__sub, .wrow__mid {
   font-variant-numeric: tabular-nums lining-nums;
   font-feature-settings: 'tnum' 1, 'lnum' 1;
 }
@@ -242,6 +250,13 @@ input, select, textarea { font-size: 16px; line-height: 1.4; }
     a span or a div, and max-width on an inline box does nothing at all, so
     applying it to the class is both broader and still safe: it changes
     only the ones that are actually laying out as blocks. */
+/*  ATTENTION, AND IT IS NOT A LOSS. --warn is the token for a figure that
+    needs somebody, which is what the dry run's "14 rows cannot be split
+    reliably" is: it was painted in --neg, four screens from where that
+    colour means money gone, and it passed the semantic test because the
+    test read "a count above zero picks the colour" as the sign of a
+    number picking it. A count is not a sign. */
+.attn { color: var(--warn); }
 .small, .muted, .lead, p.dim, .rowcard__s, .prose p, dd { max-width: 54ch; }
 
 /*  ONE CAP, IN ONE PLACE. There were fourteen more of these written inline

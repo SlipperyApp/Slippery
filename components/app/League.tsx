@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { units as fmtUnits, initials, pct, plural, position as fmtPosition } from '@/lib/format';
+import { units as fmtUnits, initials, pct, plural } from '@/lib/format';
 import { thinReturn } from '@/lib/data/social';
 import type { LeagueRow } from '@/lib/data/social';
 
@@ -72,48 +72,5 @@ export function LeagueLine({
         </span>
       </span>
     </li>
-  );
-}
-
-export function League({
-  rows, you = 'tester123', showEdits = false, showSlipBacked = true,
-}: {
-  rows: LeagueRow[];
-  you?: string;
-  showEdits?: boolean;
-  showSlipBacked?: boolean;
-}) {
-  /*  The note lives with the thing it explains rather than in each page's
-      footer, so a board cannot grow a marked row and lose the sentence that
-      says what the mark means. */
-  const anyThin = rows.some((r) => thinReturn(r.record));
-  return (
-    <>
-      <ul>
-        {rows.map((r) => (
-          <LeagueLine
-            key={r.handle}
-            row={r}
-            mine={r.handle === you}
-            showEdits={showEdits}
-            showSlipBacked={showSlipBacked}
-          />
-        ))}
-      </ul>
-      {anyThin ? (
-        <p className="small dim lb__note">
-          A row marked down the left has fewer than five settled bets in this table, and its
-          return is left out rather than worked out over one of them.
-        </p>
-      ) : null}
-    </>
-  );
-}
-
-export function PositionLine({ rank, of }: { rank: number; of: number }) {
-  return (
-    <p className="small muted">
-      You are <span className={`medal medal--${rank <= 3 ? rank : 'none'}`} style={{ fontWeight: 600 }}>{fmtPosition(rank, of)}</span>.
-    </p>
   );
 }

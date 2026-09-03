@@ -63,7 +63,7 @@ export function ProfitCurve({
     <div ref={ref} className="chartbox chartbox--fill">
       {width > 0 ? (
         <svg viewBox={`0 0 ${w} ${height}`} width={w} height={height} role="img"
-          aria-label={`Profit curve, ending at ${unitMinor > 0 ? fmtUnits(last / unitMinor, { sign: true }) : axisMoney(last, currency)}`}>
+          aria-label={`Cumulative net, ending at ${unitMinor > 0 ? fmtUnits(last / unitMinor, { sign: true }) : axisMoney(last, currency)}`}>
           <defs>
             <linearGradient id={`g${id}`} x1="0" y1="0" x2="0" y2="1">
               <stop offset="0%" stopColor={tone} stopOpacity="0.28" />
@@ -178,6 +178,69 @@ export function RowSpark({
       <path d={line} fill="none" stroke={c} strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" />
       <circle cx={width} cy={y(last)} r="1.9" fill={c} />
     </svg>
+  );
+}
+
+/** Six periods, side by side, with the figure above each bar and the period
+ *  under it.
+ *
+ *  IT REPLACED TWO MODULES AND THE ARGUMENT AGAINST BOTH IS THE SAME ONE. A
+ *  "By month" list drew four rows of a month name and a money figure, which
+ *  is a table pretending to be a chart: nothing about it is comparable at a
+ *  glance and the fourth row was under the card's own edge. The trend bars on
+ *  the tiles drew a shape with no axis, no labels and no zero line, so a
+ *  losing month and a winning month were the same shape in a different
+ *  colour.
+ *
+ *  A LOSING PERIOD HANGS BELOW THE LINE, which is the whole point of drawing
+ *  it rather than listing it: down is down, at the length it was down by,
+ *  next to the ones that were up. The zero line is drawn across the whole
+ *  chart whether or not anything crosses it, because a chart whose baseline
+ *  appears only when something is negative moves its own axis between two
+ *  renders of the same account.
+ *
+ *  THE FIGURE IS ABOVE THE BAR AND NOT INSIDE IT. Inside, it has to fit the
+ *  bar, so a short bar loses its own figure and the small numbers vanish;
+ *  above, every one of the six is the same size and legible, and the bar is
+ *  left to carry the comparison. A period with no settled bets prints nothing
+ *  at all rather than a zero, because no bets and a break-even period are
+ *  different facts and only one of them is worth a figure. */
+export function PeriodBars({
+  bars, currency = 'GBP',
+}: {
+  bars: { key: string; label: string; full: string; netPence: number; count: number; current: boolean }[];
+  currency?: 'GBP' | 'EUR';
+}) {
+  if (!bars.length) return <p className="small dim">Nothing settled yet, so there is nothing to compare.</p>;
+  const peak = Math.max(1, ...bars.map((b) => Math.abs(b.netPence)));
+
+  return (
+    <div className="pbars" role="img" aria-label={bars.map((b) => `${b.full}: ${b.count === 0 ? 'no bets' : axisMoney(b.netPence, currency)}`).join('. ')}>
+      {bars.map((b) => {
+        const up = b.netPence >= 0;
+        /*  The share of the half height this bar takes. A period with bets
+            that came out exactly level still draws a sliver, so it can be
+            told from a period with nothing in it, which draws none. */
+        const share = b.count === 0 ? 0 : Math.max(0.02, Math.abs(b.netPence) / peak);
+        return (
+          <div key={b.key} className={`pbar${b.current ? ' pbar--now' : ''}`}>
+            <span className={`pbar__v tnum ${b.count === 0 ? 'dim' : up ? 'pos' : 'neg'}`}>
+              {b.count === 0 ? '' : axisMoney(b.netPence, currency)}
+            </span>
+            <span className="pbar__plot" aria-hidden="true">
+              <span className="pbar__half pbar__half--up">
+                {up ? <span className="pbar__barfill pbar__barfill--pos" style={{ height: `${(share * 100).toFixed(1)}%` }} /> : null}
+              </span>
+              <span className="pbar__zero" />
+              <span className="pbar__half pbar__half--down">
+                {up ? null : <span className="pbar__barfill pbar__barfill--neg" style={{ height: `${(share * 100).toFixed(1)}%` }} />}
+              </span>
+            </span>
+            <span className="pbar__k">{b.label}</span>
+          </div>
+        );
+      })}
+    </div>
   );
 }
 

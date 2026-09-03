@@ -46,9 +46,11 @@ export default async function JoinGroup({
         set up, and the group says which before you press anything.
       </p>
 
-      <div className="column column--narrow" style={{ marginTop: 'var(--gap-block)', marginInline: 0 }}>
+      {/*  Measured at 1440 by 900 with a code in the box: 887 pixels
+           against the 824 the window leaves. */}
+      <div className="column column--narrow fitcol fitcol--scroll" style={{ marginTop: 'var(--gap-block)', marginInline: 0 }}>
         <form className="card" method="get" action="/app/social/group/join">
-          <div className="field">
+          <div className="field field--tight">
             <label className="field__label" htmlFor="join-code">The code</label>
             <input
               id="join-code"

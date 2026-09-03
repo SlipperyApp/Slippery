@@ -21,7 +21,9 @@ export default function NewGroup() {
         A table ranks everyone in units, so what people stake stays their own business.
         It takes about a minute.
       </p>
-      <div className="column column--narrow" style={{ marginTop: 'var(--gap-block)', marginInline: 0 }}>
+      {/*  Measured at 1440 by 900: 954 pixels against the 824 the window
+           leaves, and the button that makes the group was in the 130. */}
+      <div className="column column--narrow fitcol fitcol--scroll" style={{ marginTop: 'var(--gap-block)', marginInline: 0 }}>
         <CreateGroup />
       </div>
     </>

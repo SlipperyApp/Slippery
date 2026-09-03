@@ -11,15 +11,15 @@ import { formatOdds } from '@/lib/odds';
 
 export const metadata: Metadata = {
   title: 'Feed',
-  description: 'What Slippers are tracking before kick off, and what they have been doing in the app. No results, either way.',
+  description: 'What Slippers are tracking, and what they have been doing in the app. No results, either way.',
 };
 
 /*  There is no streak kind. It was removed with the badge behind it: a line
     reading "captured a slip every day for 30 days" is a volume reward with an
     audience. See the note over feed() in lib/data/social.ts. */
-const KIND_ICON: Record<string, 'check' | 'social' | 'upload' | 'shield' | 'trophy' | 'pause' | 'sliders'> = {
+const KIND_ICON: Record<string, 'check' | 'social' | 'upload' | 'shield' | 'trophy' | 'sliders'> = {
   settle: 'check', join: 'social', import: 'upload', 'slip-backed': 'shield',
-  group: 'trophy', break: 'pause', unit: 'sliders',
+  group: 'trophy', unit: 'sliders',
 };
 
 /*  TWO TABS, NOT TWO SECTIONS.
@@ -40,7 +40,7 @@ export default async function Feed({
   searchParams,
 }: { searchParams: Promise<Record<string, string | string[] | undefined>> }) {
   const sp = await searchParams;
-  const { now, chrome, source } = await getViewer();
+  const { now, data, source } = await getViewer();
 
   /*  THE SOCIAL GRAPH ON THIS SCREEN IS THE EXAMPLE ACCOUNT'S. It is folded
       out of lib/data/social.ts, which invents the Slippers around
@@ -53,8 +53,14 @@ export default async function Feed({
 
   /*  A kick off time is shown as a clock time only when it is today, and
       which day that is depends on the account's zone rather than the
-      server's: a 23:40 off in Dublin is tomorrow in Berlin. */
-  const tz = chrome.timeZone;
+      server's: a 23:40 off in Dublin is tomorrow in Berlin.
+
+      OFF THE ACCOUNT, LIKE EVERY OTHER PAGE. This was the one screen reading
+      the zone off the shell's chrome object, which carried it only to print
+      "Times in UK time" under a greeting; both of those are gone, and a
+      field kept alive on the chrome for a single date format is a second
+      route to a fact the account already states. */
+  const tz = data.account.timeZone;
   const wanted = typeof sp.tab === 'string' ? sp.tab : '';
   const tab = TABS.some((t) => t.id === wanted) ? wanted : 'tracking';
 
@@ -72,8 +78,8 @@ export default async function Feed({
       </div>
       <h1>Feed</h1>
       <p className="muted" style={{ marginTop: 'var(--s2)' }}>
-        Nothing here says who won what. One half is bets captured before the off and never revisited
-        afterwards; the other is what people have been doing in the app.
+        Nothing here says who won what. One half is bets that have not started yet, which go when
+        they do; the other is what people have been doing in the app.
       </p>
 
       <div className="seg seg--gap" role="group" aria-label="Which feed" style={{ marginTop: 'var(--s5)' }}>
@@ -89,12 +95,17 @@ export default async function Feed({
         ))}
       </div>
 
+      {/*  THE FEED SCROLLS AND ITS TWO TABS DO NOT. Measured at 1440 by 900:
+           1,577 pixels of tracking against the 824 the window leaves, so the
+           sentence saying an item goes when the event starts, and the card
+           saying why you are not in the list, were both under the fold. The
+           heading, the lead and the tabs stay put. */}
+      <div className="fitcol fitcol--scroll">
       {tab === 'tracking' ? (
         <>
           <div className="card" style={{ marginTop: 'var(--s4)' }}>
             <div className="card__head">
               <h2 className="card__title">Tracking now</h2>
-              <p className="card__note">Before kick off only</p>
             </div>
 
             {tracking.length === 0 ? (
@@ -200,6 +211,7 @@ export default async function Feed({
           </p>
         </div>
       )}
+      </div>
     </>
   );
 }

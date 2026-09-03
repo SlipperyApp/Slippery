@@ -49,9 +49,12 @@ export async function POST(req: Request) {
   if (timeZone && isKnownTimeZone(timeZone)) push('time_zone', timeZone);
 
   if (typeof body.calendarDates === 'boolean') push('calendar_dates', body.calendarDates);
-  if (typeof body.break === 'boolean') {
-    push('break_until', body.break ? new Date(Date.now() + 30 * 86400000).toISOString() : null);
-  }
+  /*  There was a `break` branch here writing break_until. The control it
+      served is gone on the owner's instruction, so the branch is gone with
+      it: a route that still accepts a field no screen can send is a way to
+      put an account into a state nothing can show or clear. The column stays
+      in the schema, because migrations here are forward only and dropping a
+      column is not the same as removing a control. See DECISIONS.md. */
 
   const startBalance = Number(body.balanceStartPence);
   if (Number.isFinite(startBalance) && startBalance >= 0) push('balance_start_pence', Math.round(startBalance));

@@ -336,3 +336,94 @@ export function detectTemplate(text: unknown): TemplateMatch {
     runnerUp,
   };
 }
+
+/*  ------------------------------------------------- promotions, at ingestion
+ *
+ *  WHAT THE BOOKMAKER GAVE YOU, READ OFF THE SLIP, BECAUSE IT CANNOT BE
+ *  RECONSTRUCTED AFTERWARDS.
+ *
+ *  A free bet, bonus funds and a boost are three different things and every
+ *  one of them changes what a bet is worth. Three weeks later the ledger shows
+ *  a £25 stake at 3.0 that returned £50, and nothing in that row says whether
+ *  the £25 was the account holder's money, a token the bookmaker handed over,
+ *  or a restricted balance from a deposit match. The three cases have three
+ *  different profits and only the slip knows which it was.
+ *
+ *  So the reader looks for it, and every match is EVIDENCE rather than a
+ *  verdict: the phrase it found rides to the review screen beside a switch,
+ *  because a wrong read that nobody can see is worse than no read at all.
+ *
+ *  THE PHRASES ARE NARROW ON PURPOSE, and the narrowest is bonus funds. The
+ *  word "bonus" on its own is on half the slips in this country: bet365
+ *  prints "BONUS 1/4 2x" on a Lucky 15, which is a bonus on the ODDS of a
+ *  single winner and is not a penny of bonus money. A bonus funds match needs
+ *  the word beside something that names a balance.
+ *
+ *  Where two of the three fire, free bet wins: "Free bet placed from your
+ *  bonus balance" is a free bet whose token happened to sit in the bonus
+ *  wallet, and the stake of a free bet is not returned, which is the fact
+ *  that decides the arithmetic. */
+
+export type PromoKind = 'freeBet' | 'bonusFunds' | 'boosted';
+
+export type PromoRead = {
+  freeBet: boolean;
+  bonusFunds: boolean;
+  boosted: boolean;
+  /** The phrases that fired, verbatim from the table, in the order they are
+   *  listed. Shown on the review screen as what the reader saw. */
+  matched: string[];
+};
+
+const PROMO_SIGNATURES: { kind: PromoKind; pattern: RegExp; label: string }[] = [
+  /*  A free bet: the stake is the bookmaker's and it does not come back. Bet
+      Credits are bet365's name for exactly this and settle the same way. */
+  { kind: 'freeBet', pattern: /\bfree\s?bets?\b/i, label: 'Free bet' },
+  { kind: 'freeBet', pattern: /\bbet\s?credits?\b/i, label: 'Bet Credits' },
+  { kind: 'freeBet', pattern: /\bstake\s+not\s+returned\b/i, label: 'Stake not returned' },
+  { kind: 'freeBet', pattern: /\bs\.?n\.?r\.?\b/i, label: 'SNR' },
+  { kind: 'freeBet', pattern: /\brisk[\s-]?free\b/i, label: 'Risk free' },
+  { kind: 'freeBet', pattern: /\bqualifying\s+free\s+bet\b/i, label: 'Qualifying free bet' },
+
+  /*  Bonus funds: a restricted balance that was staked. The stake DOES come
+      back on a win, which is what separates it from a free bet, and it was
+      still never the account holder's money. */
+  { kind: 'bonusFunds', pattern: /\bbonus\s+(funds|balance|money|cash|stake|wallet)\b/i, label: 'Bonus funds' },
+  { kind: 'bonusFunds', pattern: /\b(from|using|paid\s+from)\s+(your\s+)?bonus\b/i, label: 'Staked from a bonus' },
+  { kind: 'bonusFunds', pattern: /\bwagering\s+(requirement|contribution)\b/i, label: 'Wagering requirement' },
+  { kind: 'bonusFunds', pattern: /\bbonus\s+funds?\s+used\b/i, label: 'Bonus funds used' },
+
+  /*  A boost: the price on the slip is not the price the market was. The
+      stake is the account holder's own money and the arithmetic of the bet is
+      unchanged, which is why this flag is recorded and changes nothing. */
+  { kind: 'boosted', pattern: /\b(price|odds|profit|acca|super)\s?boost(ed)?\b/i, label: 'Boost' },
+  { kind: 'boosted', pattern: /\bboosted\s+(odds|price)\b/i, label: 'Boosted price' },
+  { kind: 'boosted', pattern: /\benhanced\s+(odds|price)\b/i, label: 'Enhanced odds' },
+  { kind: 'boosted', pattern: /\bpower\s?price\b/i, label: 'Power Price' },
+  { kind: 'boosted', pattern: /\bwas\s+\d+(\.\d+)?\s*(now|→|->)\s*\d+(\.\d+)?/i, label: 'A price crossed out and raised' },
+];
+
+/** What the slip says about who paid for the stake.
+ *
+ *  Pure, so it can be tested without a model and without a browser, and used
+ *  by the reader on the server and by anything that has the slip's text. */
+export function detectPromotions(text: unknown): PromoRead {
+  const empty: PromoRead = { freeBet: false, bonusFunds: false, boosted: false, matched: [] };
+  if (typeof text !== 'string' || !text.trim()) return empty;
+
+  const hits = PROMO_SIGNATURES.filter((s) => s.pattern.test(text));
+  const has = (k: PromoKind) => hits.some((s) => s.kind === k);
+  const freeBet = has('freeBet');
+  return {
+    freeBet,
+    /*  Free bet wins the tie. A token that happened to sit in the bonus
+        wallet is still a free bet, and the stake of a free bet is not
+        returned, which is the fact the arithmetic turns on. */
+    bonusFunds: !freeBet && has('bonusFunds'),
+    boosted: has('boosted'),
+    /*  De-duplicated: two phrases with one label between them ("free bet" and
+        "Free Bet Stake Not Returned" both carry Free bet) would otherwise
+        print the same evidence twice. */
+    matched: [...new Set(hits.map((s) => s.label))],
+  };
+}

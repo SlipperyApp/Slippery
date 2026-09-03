@@ -329,6 +329,130 @@ test('a free bet is excluded from turnover, because it was never turned over', (
   assert.equal(turnoverPence(b, recompute(b, seqd(ev('won')), NOW)), 0);
 });
 
+test('a voided free bet is neither a profit nor a loss', () => {
+  const s = recompute(bet({ isFreeBet: true }), seqd(ev('void')), NOW);
+  assert.equal(s.returnedPence, 0, 'the token does not come back as money');
+  assert.equal(s.realisedPlPence, 0);
+});
+
+// -------------------------------------------------------- bonus funds
+/*  THE OTHER HALF OF "MONEY THEY GAVE YOU", AND IT IS NOT THE SAME HALF.
+ *
+ *  A bonus funds stake and a free bet stake are both the bookmaker's money,
+ *  so neither costs anything to lose and neither is in turnover. They part
+ *  company on a win: a free bet pays the winnings alone, because the token
+ *  is spent, and bonus funds pay the stake AND the winnings, because the
+ *  restricted balance converts. That difference is 25 pounds on the bet
+ *  below, it is impossible to reconstruct three weeks later, and it is the
+ *  whole reason the review screen asks which one a slip is. */
+
+test('bonus funds return the stake as well as the winnings', () => {
+  const b = bet({ isBonusFunds: true });
+  const s = recompute(b, seqd(ev('won')), NOW);
+  assert.equal(s.returnedPence, 7500, 'stake and winnings, unlike a free bet');
+  assert.equal(s.realisedPlPence, 7500, 'all of it is money the account did not have');
+});
+
+test('a free bet and bonus funds differ by exactly the stake', () => {
+  const free = recompute(bet({ isFreeBet: true }), seqd(ev('won')), NOW);
+  const bonus = recompute(bet({ isBonusFunds: true }), seqd(ev('won')), NOW);
+  assert.equal(bonus.realisedPlPence - free.realisedPlPence, 2500);
+});
+
+test('losing bonus funds costs nothing, because they were never the bettor\'s', () => {
+  const s = recompute(bet({ isBonusFunds: true }), seqd(ev('lost')), NOW);
+  assert.equal(s.returnedPence, 0);
+  assert.equal(s.realisedPlPence, 0);
+});
+
+test('a voided bonus funds bet is not a profit', () => {
+  /*  Read off "does the stake come back" rather than "was it your money",
+      this paid the whole stake out as pure profit on every void. */
+  const s = recompute(bet({ isBonusFunds: true }), seqd(ev('void')), NOW);
+  assert.equal(s.returnedPence, 0);
+  assert.equal(s.realisedPlPence, 0);
+  assert.equal(s.voidedStakePence, 2500);
+});
+
+test('bonus funds are out of turnover, so a return is a return on your own money', () => {
+  const b = bet({ isBonusFunds: true });
+  assert.equal(turnoverPence(b, recompute(b, seqd(ev('won')), NOW)), 0);
+  const lost = bet({ isBonusFunds: true });
+  assert.equal(turnoverPence(lost, recompute(lost, seqd(ev('lost')), NOW)), 0);
+});
+
+test('a quarter line splits a bonus funds stake the way it splits an own one', () => {
+  /*  Half wins at the price and half pushes. The winning half pays stake and
+      winnings; the pushed half goes back to the restricted balance and is
+      not money arriving. */
+  const b = bet({ isBonusFunds: true, odds: 3 });
+  const s = recompute(b, seqd(ev('half_won')), NOW);
+  assert.equal(s.returnedPence, 3750, 'half at 3.0, and nothing for the push');
+  assert.equal(s.realisedPlPence, 3750);
+  assert.equal(s.voidedStakePence, 1250);
+});
+
+test('a boost changes no arithmetic at all', () => {
+  /*  The stake is the bettor's own and the price on the slip is the price the
+      bet was struck at. Nothing here records what the price would have been
+      unboosted, so nothing can compute an uplift, and a flag that guessed one
+      would put an invented number into a return. */
+  const plain = recompute(bet(), seqd(ev('won')), NOW);
+  const boosted = recompute(bet({ isBoosted: true }), seqd(ev('won')), NOW);
+  assert.equal(boosted.realisedPlPence, plain.realisedPlPence);
+  assert.equal(boosted.returnedPence, plain.returnedPence);
+  const b = bet({ isBoosted: true });
+  assert.equal(turnoverPence(b, recompute(b, seqd(ev('won')), NOW)), 2500, 'still your own money');
+});
+
+// ------------------------------- what a deduction is charged on, per flag
+/*  A Rule 4 and an exchange commission are both charged on winnings. The
+ *  figure they are charged on came out of the return less the stake, which
+ *  is right for a bet whose return HAS the stake in it and wrong for a free
+ *  bet, whose return is the winnings alone. Both were undercharged on one,
+ *  by half a Rule 4 and half a commission on the bet below. */
+
+test('a Rule 4 on a free bet is charged on the whole winnings', () => {
+  const b = bet({ isFreeBet: true, odds: 3 });
+  const s = recompute(b, seqd(ev('won'), ev('rule4', { deductionPence: 25 })), NOW);
+  // £25 at 3.0 as a token wins £50, and 25p in the pound off that is £12.50.
+  assert.equal(s.realisedPlPence, 3750);
+});
+
+test('a Rule 4 on bonus funds is charged on the winnings and not the stake', () => {
+  const b = bet({ isBonusFunds: true, odds: 3 });
+  const s = recompute(b, seqd(ev('won'), ev('rule4', { deductionPence: 25 })), NOW);
+  // £75 comes back, £50 of it is winnings, and £12.50 comes off that.
+  assert.equal(s.returnedPence, 6250);
+  assert.equal(s.realisedPlPence, 6250, 'none of the stake was ever the bettor\'s');
+});
+
+test('a Rule 4 takes the same money off a free bet as off the same bet in cash', () => {
+  const own = recompute(bet({ odds: 3 }), seqd(ev('won'), ev('rule4', { deductionPence: 25 })), NOW);
+  const free = recompute(bet({ isFreeBet: true, odds: 3 }), seqd(ev('won'), ev('rule4', { deductionPence: 25 })), NOW);
+  /*  The deduction is the same £12.50 either way, so a WINNING free bet and
+      the same bet in cash profit the same: both are the winnings less the
+      deduction. Where they part is the loss and the turnover, which the tests
+      above pin. Charged the old way the free bet came out £6.25 ahead of the
+      cash bet on identical winnings, which is the deduction going missing. */
+  assert.equal(free.realisedPlPence - own.realisedPlPence, 0);
+});
+
+test('commission on a free bet is charged on the whole winnings', () => {
+  const b = bet({ isFreeBet: true, odds: 3, commissionPct: 2 });
+  const won = recompute(b, seqd(ev('won')), NOW);
+  assert.equal(commissionDue(b, [], won), 2);
+  const s = recompute(b, seqd(ev('won'), ev('commission', { commissionPct: 2 })), NOW);
+  // 2% of the £50 won, which is £1, not 2% of £25.
+  assert.equal(s.realisedPlPence, 4900);
+});
+
+test('commission on bonus funds is charged on the winnings alone', () => {
+  const b = bet({ isBonusFunds: true, odds: 3, commissionPct: 2 });
+  const s = recompute(b, seqd(ev('won'), ev('commission', { commissionPct: 2 })), NOW);
+  assert.equal(s.realisedPlPence, 7400);
+});
+
 // ----------------------------------------------------------- lay bets
 
 test('a lay bet risks its liability and its ROI denominator is the liability', () => {

@@ -77,7 +77,13 @@ export default async function Leaderboard({
            table are the same board read two ways, and two page wide cards
            for them put a heading and a border between the three names at the
            top and the twelve rows those three names came out of. */}
-      <div className="grid" style={{ marginTop: 'var(--s4)' }}>
+      {/*  THE BOARD SCROLLS AND THE PERIOD DOES NOT. Measured at 1440 by 900
+           this page was 1,567 pixels against the 824 the window leaves, so a
+           table of twelve had its bottom half under the fold on the one
+           screen whose whole subject is a ranked list. The three period
+           links, the heading and the sentence saying no figure here is money
+           stay where they are. */}
+      <div className="grid fitcol fitcol--scroll" style={{ marginTop: 'var(--s4)', alignContent: 'start' }}>
         <section className="card col-12">
           <div className="card__head">
             <h2 className="card__title">The table, {label}</h2>

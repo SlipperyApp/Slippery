@@ -23,11 +23,11 @@ type Account = {
    *  own copy and nothing else, so a reload put every one of them back. */
   notifications: Record<string, boolean>;
   sharing: Record<string, boolean>;
-  onBreak: boolean;
 };
 
-/** Six groups, each opening a detail pane. Every control changes something
- *  visible on this page, so none of them is a preference nothing reads. */
+/** Seven groups, each opening a detail pane. Every control changes
+ *  something visible on this page, so none of them is a preference nothing
+ *  reads. */
 export function SettingsPanes({ groups, account }: { groups: SettingsGroup[]; account: Account }) {
   /*  THE OPEN PANE IS IN THE URL.
       It was useState only, so no pane was linkable, the back button did not
@@ -49,11 +49,11 @@ export function SettingsPanes({ groups, account }: { groups: SettingsGroup[]; ac
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [valid]);
 
-  const show = (id: string | null) => {
+  const show = (id: string) => {
     setOpen(id);
     if (typeof window === 'undefined') return;
     const url = new URL(window.location.href);
-    if (id) url.searchParams.set('pane', id); else url.searchParams.delete('pane');
+    url.searchParams.set('pane', id);
     window.history.replaceState(null, '', url);
   };
   const { theme, setTheme } = useTheme();
@@ -67,7 +67,6 @@ export function SettingsPanes({ groups, account }: { groups: SettingsGroup[]; ac
   const [timeZone, setTimeZone] = useState(account.timeZone);
   const [notifs, setNotifs] = useState(account.notifications);
   const [sharing, setSharing] = useState<Record<string, boolean>>(account.sharing);
-  const [onBreak, setOnBreak] = useState(account.onBreak);
   const [typed, setTyped] = useState('');
   const [danger, setDanger] = useState<'reset' | 'delete' | null>(null);
   const [saved, setSaved] = useState('');
@@ -104,17 +103,30 @@ export function SettingsPanes({ groups, account }: { groups: SettingsGroup[]; ac
       : money(sampleProfit, currency, { sign: true });
 
   return (
-    <div className="grid">
-      {/*  One list, not six cards. Six separately bordered boxes stacked with
-           gaps between them is the shape of six unrelated things; these are
-           six sections of one screen. The selected state is a filled row and
-           a bar on the leading edge, which is what the sidebar already does
-           with the same job, rather than a second border in the accent.
+    /*  A FIXED LIST AND A COLUMN THAT SCROLLS INSIDE ITSELF.
+     *
+     *  It was a three column grid: the list, the open pane, and a "Right now"
+     *  module beside them. The grid row took the tallest of the three, so the
+     *  Data pane at 980 pixels made the page scroll and took the list off the
+     *  top of the screen with it: the one control on this screen that is
+     *  always needed is the one that scrolled away.
+     *
+     *  Two columns now. The list is fixed and never moves, the pane beside it
+     *  is the only thing that scrolls, and the page itself does not. "Right
+     *  now" moved into the Betting pane, where every row of it is the visible
+     *  consequence of a control on that same pane rather than a summary of a
+     *  pane that might not be open. */
+    <div className="setgrid fitcol">
+      {/*  One list, not seven cards. Seven separately bordered boxes stacked
+           with gaps between them is the shape of seven unrelated things;
+           these are seven sections of one screen. The selected state is a
+           filled row and a bar on the leading edge, which is what the rail
+           already does with the same job.
 
            The open state is read from aria-pressed in the stylesheet rather
            than written inline, because an inline style beats every rule in
            floors.css and there is no way to override one later. */}
-      <div className="col-4 navlist">
+      <div className="navlist setgrid__nav">
         {groups.map((g) => (
           <button
             key={g.id}
@@ -122,8 +134,13 @@ export function SettingsPanes({ groups, account }: { groups: SettingsGroup[]; ac
             className="rowcard"
             aria-pressed={open === g.id}
             aria-controls="settings-pane"
-            aria-expanded={open === g.id}
-            onClick={() => show(open === g.id ? null : g.id)}
+            /*  A PICKER, NOT SIX DISCLOSURES. Pressing the open row used to
+                close it, and the only thing on the other side of that was an
+                empty middle column: the summary that used to stand in for it
+                is now a module of its own that never goes away. One group is
+                always open, which is what the sidebar next to it does with
+                the same job. */
+            onClick={() => show(g.id)}
           >
             <Icon name={g.icon} size={20} className="rowcard__i" />
             <span className="grow">
@@ -135,34 +152,15 @@ export function SettingsPanes({ groups, account }: { groups: SettingsGroup[]; ac
         ))}
       </div>
 
-      {/*  The idle pane is titled for what it holds, not for what to do next.
-           "Pick a group" was an instruction aimed at the list beside it on a
-           desktop. On a phone the list is stacked above, so the card read as a
-           group picker showing a unit size and a theme, and "group" already
-           means a social group everywhere else in this product. */}
-      <div className="col-8" id="settings-pane" aria-live="polite">
-        {open === null ? (
-          <div className="card">
-            <p className="card__title">Right now</p>
-            <ul style={{ marginTop: 'var(--s4)' }}>
-              <li className="brow"><span className="brow__title">Unit</span><span className="fig fig--s tnum">{money(unitPence, currency)}</span></li>
-              <li className="brow"><span className="brow__title">A profit of {money(sampleProfit, currency)} reads as</span><span className="fig fig--s tnum">{profitPreview}</span></li>
-              <li className="brow"><span className="brow__title">A price of 1.90 reads as</span><span className="fig fig--s mono">{formatOdds(1.9, oddsFormat)}</span></li>
-              <li className="brow"><span className="brow__title">Week starts</span><span className="fig fig--s">{weekStart === 1 ? 'Monday' : 'Sunday'}</span></li>
-              <li className="brow"><span className="brow__title">A day ends at midnight in</span><span className="fig fig--s">{TIME_ZONES.find((z) => z.id === timeZone)?.label ?? timeZone}</span></li>
-              <li className="brow"><span className="brow__title">Theme</span><span className="fig fig--s">{THEMES.find((t) => t.name === theme)?.label}</span></li>
-            </ul>
-          </div>
-        ) : null}
-
+      <div className="setgrid__body" id="settings-pane" aria-live="polite">
         {open === 'account' ? (
           <div className="card">
             <h2 className="card__title">Account</h2>
-            <div className="field">
+            <div className="field field--name">
               <label className="field__label" htmlFor="st-name">Display name</label>
               <input id="st-name" className="input" defaultValue={account.displayName} autoComplete="name" />
             </div>
-            <div className="field">
+            <div className="field field--name">
               <label className="field__label" htmlFor="st-handle">Handle</label>
               <input id="st-handle" className="input mono" defaultValue={account.handle} autoComplete="username" />
             </div>
@@ -175,26 +173,22 @@ export function SettingsPanes({ groups, account }: { groups: SettingsGroup[]; ac
               Save these
             </button>
 
-            <div className="hr" />
-            <h3 className="card__title">Take a break</h3>
-            <p className="small muted" style={{ marginTop: 'var(--s2)' }}>
-              Pauses every notification and takes you out of the monthly leagues. Your ledger,
-              your history and your export are untouched.
-            </p>
-            <div className="switchrow">
-              <span className="brow__title">{onBreak ? 'On a break' : 'Not on a break'}</span>
-              <button type="button" className="switch" aria-pressed={onBreak}
-                aria-label={`Take a break: ${onBreak ? 'on' : 'off'}`}
-                onClick={() => { setOnBreak(!onBreak); save({ break: !onBreak }, 'Break'); }} />
-            </div>
-            {onBreak ? (
-              <p className="small muted">
-                Turn it back on whenever you want. Nothing will ask you to.
-              </p>
-            ) : null}
+            {/*  THE BREAK CONTROL IS GONE, on the owner's explicit
+                 instruction, and it overrides the line in CLAUDE.md that
+                 named it. What it did was pause notifications and take an
+                 account out of the leagues. It was never self exclusion and
+                 could not be: Slippery takes no bets, holds no money and pays
+                 no winnings, so there is nothing here to be excluded from,
+                 and a control called "take a break" on a product that cannot
+                 accept one is a safeguard that looks like a safeguard.
+
+                 The genuine ones all stay, and they are the four below plus
+                 18+ and the safer gambling page in the footer of every public
+                 page. See DECISIONS.md. */}
             <p className="small dim card__foot">
-              Free and confidential help is at <a href="https://www.begambleaware.org" rel="noopener noreferrer" target="_blank">BeGambleAware.org</a>{' '}
-              and on 0808 8020 133, 24 hours a day.
+              You must be 18 or over to use Slippery. Free and confidential help is at{' '}
+              <a href="https://www.begambleaware.org" rel="noopener noreferrer" target="_blank">BeGambleAware.org</a>{' '}
+              and on 0808 8020 133, 24 hours a day. <Link href="/safer-gambling">Safer gambling</Link>.
             </p>
           </div>
         ) : null}
@@ -203,7 +197,7 @@ export function SettingsPanes({ groups, account }: { groups: SettingsGroup[]; ac
           <div className="card">
             <h2 className="card__title">Betting</h2>
 
-            <div className="field">
+            <div className="field field--tight">
               <label className="field__label" htmlFor="st-unit">Unit size</label>
               <input id="st-unit" className="input input--money" inputMode="decimal"
                 value={(unitPence / 100).toFixed(2)}
@@ -236,11 +230,6 @@ export function SettingsPanes({ groups, account }: { groups: SettingsGroup[]; ac
                   </button>
                 ))}
               </div>
-              <p className="field__hint">
-                1.90 reads as <span className="mono">{formatOdds(1.9, oddsFormat)}</span>, 2.50 as{' '}
-                <span className="mono">{formatOdds(2.5, oddsFormat)}</span>. From a real ladder, not
-                a fraction reducer.
-              </p>
             </fieldset>
 
             <fieldset style={{ border: 0, padding: 0, margin: 'var(--s4) 0 0' }}>
@@ -253,9 +242,6 @@ export function SettingsPanes({ groups, account }: { groups: SettingsGroup[]; ac
                   </button>
                 ))}
               </div>
-              <p className="field__hint">
-                A {money(sampleProfit, currency)} win reads as <strong>{profitPreview}</strong>.
-              </p>
             </fieldset>
 
             <fieldset style={{ border: 0, padding: 0, margin: 'var(--s4) 0 0' }}>
@@ -266,10 +252,6 @@ export function SettingsPanes({ groups, account }: { groups: SettingsGroup[]; ac
                     onClick={() => { setWeekStart(v); save({ weekStart: v }, 'Week start'); }}>{l}</button>
                 ))}
               </div>
-              <p className="field__hint">
-                Day letters read {weekStart === 1 ? 'M T W T F S S' : 'S M T W T F S'} on the calendar,
-                and weekly totals recompute to match.
-              </p>
             </fieldset>
 
             <div className="field" style={{ marginTop: 'var(--s4)' }}>
@@ -290,7 +272,6 @@ export function SettingsPanes({ groups, account }: { groups: SettingsGroup[]; ac
                 Every day boundary uses this: the calendar, Today, the month a bet counts
                 towards and the period totals. Right now it is{' '}
                 <span className="mono tnum">{clock}</span> on {clockDay} where you are.
-                A bet placed at 23:40 belongs to the day it is 23:40 on here, not on the server.
               </span>
             </div>
 
@@ -304,10 +285,29 @@ export function SettingsPanes({ groups, account }: { groups: SettingsGroup[]; ac
                 onClick={() => { setCalendarDates(!calendarDates); save({ calendarDates: !calendarDates }, 'Calendar'); }} />
             </div>
 
-            <button type="button" className="btn btn--ghost card__foot" onClick={() => save({ unitPence }, 'Unit')}>
+            <button type="button" className="btn btn--ghost" style={{ marginTop: 'var(--s5)' }} onClick={() => save({ unitPence }, 'Unit')}>
               Save the unit
             </button>
             {saved ? <p className="small muted" role="status">{saved}</p> : null}
+
+            {/*  WHAT THESE SETTINGS ADD UP TO, under the controls that make
+                 it rather than in a third column beside them. Every row is
+                 the visible consequence of a control directly above it, so
+                 the four hint lines that each restated one of them in words
+                 have gone: a setting that says what it does is better shown
+                 once, in the shape the product actually prints, than
+                 described under every control. */}
+            <div className="card__foot">
+              <p className="label">Right now</p>
+              <ul style={{ marginTop: 'var(--s2)' }}>
+                <li className="brow"><span className="brow__title">Unit</span><span className="fig fig--s tnum">{money(unitPence, currency)}</span></li>
+                <li className="brow"><span className="brow__title">A profit of {money(sampleProfit, currency)} reads as</span><span className="fig fig--s tnum">{profitPreview}</span></li>
+                <li className="brow"><span className="brow__title">A price of 1.90 reads as</span><span className="fig fig--s mono">{formatOdds(1.9, oddsFormat)}</span></li>
+                <li className="brow"><span className="brow__title">Week starts</span><span className="fig fig--s">{weekStart === 1 ? 'Monday' : 'Sunday'}</span></li>
+                <li className="brow"><span className="brow__title">A day ends at midnight in</span><span className="fig fig--s">{TIME_ZONES.find((z) => z.id === timeZone)?.label ?? timeZone}</span></li>
+                <li className="brow"><span className="brow__title">Calendar dates</span><span className="fig fig--s">{calendarDates ? 'Shown' : 'Colour only'}</span></li>
+              </ul>
+            </div>
           </div>
         ) : null}
 
@@ -347,7 +347,7 @@ export function SettingsPanes({ groups, account }: { groups: SettingsGroup[]; ac
               Both need the word typed out. Neither can be undone, and both offer an export first.
             </p>
 
-            <div className="field">
+            <div className="field field--tight">
               <label className="field__label" htmlFor="st-typed">
                 Type {danger === 'delete' ? 'DELETE' : 'RESET'} to confirm
               </label>
@@ -448,12 +448,20 @@ export function SettingsPanes({ groups, account }: { groups: SettingsGroup[]; ac
           </div>
         ) : null}
 
-        {open === 'about' ? (
+        {open === 'theme' ? (
           <div className="card">
-            <h2 className="card__title">About</h2>
+            <h2 className="card__title">Theme</h2>
+            {/*  THEME SWITCHING LIVES HERE. It used to be three scrolls down
+                 a pane headed About, under the notification switches and
+                 beside the link to the terms, and the app rail carried a sun
+                 icon that opened this screen and was read as the switch. The
+                 rail's icon is a gear now and this is a group of its own.
 
-            <p className="label" style={{ marginTop: 'var(--s4)' }}>Theme</p>
-            <ul className="grid" style={{ marginTop: 'var(--s2)', gridTemplateColumns: 'repeat(2, minmax(0,1fr))' }}>
+                 Every one of the eight retints the whole product. The two
+                 result colours do not move in any of them: #86EFAC means
+                 money won and #FCA5A5 means money lost, in all eight, which
+                 is why there is no green theme and no red theme. */}
+            <ul className="grid" style={{ marginTop: 'var(--s4)', gridTemplateColumns: 'repeat(2, minmax(0,1fr))' }}>
               {THEMES.map((t) => (
                 <li key={t.name}>
                   <button type="button" className="wall__btn" aria-pressed={theme === t.name}
@@ -467,11 +475,17 @@ export function SettingsPanes({ groups, account }: { groups: SettingsGroup[]; ac
                 </li>
               ))}
             </ul>
-            <p className="small dim">
-              Eight, all dark. There is no light mode.
+            <p className="small dim card__foot">
+              Eight, all dark. There is no light mode: profit green measures 1.07 to 1 on beige,
+              which is invisible.
             </p>
+          </div>
+        ) : null}
 
-            <div className="hr" />
+        {open === 'about' ? (
+          <div className="card">
+            <h2 className="card__title">About</h2>
+
             <p className="label">Notifications</p>
             {NOTIFICATIONS.map((n) => (
               <div key={n.id} className="switchrow">
@@ -523,6 +537,7 @@ export function SettingsPanes({ groups, account }: { groups: SettingsGroup[]; ac
           </div>
         ) : null}
       </div>
+
     </div>
   );
 }

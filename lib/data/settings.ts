@@ -22,8 +22,8 @@ export type SettingsGroup = {
 export const SETTINGS_GROUPS: SettingsGroup[] = [
   {
     id: 'account', label: 'Account', icon: 'you',
-    blurb: 'Name, email, sign in, and taking a break.',
-    items: ['Display name and handle', 'Email address', 'Password', 'Two step sign in', 'Devices signed in', 'Take a break'],
+    blurb: 'Name, email and sign in.',
+    items: ['Display name and handle', 'Email address', 'Password', 'Two step sign in', 'Devices signed in'],
   },
   {
     id: 'betting', label: 'Betting', icon: 'slip',
@@ -46,9 +46,18 @@ export const SETTINGS_GROUPS: SettingsGroup[] = [
     items: ['Bookmakers and commission', 'Tipsters', 'Market groups and aliases', 'Tags'],
   },
   {
+    /*  ITS OWN GROUP NOW, not a block at the top of About. The theme is the
+        setting people change most and the only one whose effect is the whole
+        screen, and it was three scrolls down a pane headed About, under
+        notifications, beside the link to the terms. */
+    id: 'theme', label: 'Theme', icon: 'spark',
+    blurb: 'Eight, all dark.',
+    items: ['Theme'],
+  },
+  {
     id: 'about', label: 'About', icon: 'info',
-    blurb: 'Themes, notifications, and the legal pages.',
-    items: ['Theme', 'Notifications', 'What changed', 'Terms and Privacy', 'What this deployment can reach'],
+    blurb: 'Notifications and the legal pages.',
+    items: ['Notifications', 'What changed', 'Terms and Privacy', 'What this deployment can reach'],
   },
 ];
 

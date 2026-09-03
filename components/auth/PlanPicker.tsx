@@ -11,7 +11,14 @@ import { useDraft } from '@/components/auth/useDraft';
 /*  Two callers: step six of signup, where a plan chosen and then stepped away
     from has to come back chosen, and the settings pane, which has no draft in
     its address at all and reads the default out of an empty one. */
-export function PlanPicker({ stripeReady }: { stripeReady: boolean }) {
+export function PlanPicker({
+  stripeReady, nested = false,
+}: {
+  stripeReady: boolean;
+  /** Whether this is already inside a card. On the settings page it is, and
+   *  a bordered summary inside a bordered card is a card inside a card. */
+  nested?: boolean;
+}) {
   const draft = useDraft();
   const [plan, setPlan] = useState<'yearly' | 'monthly'>(draft.plan);
 
@@ -48,11 +55,14 @@ export function PlanPicker({ stripeReady }: { stripeReady: boolean }) {
     <form onSubmit={submit} noValidate>
       <fieldset style={{ border: 0, padding: 0, margin: 0 }}>
         <legend className="sr-only">Plan</legend>
-        <div className="rows">
+        {/*  The product's one way of picking one of a set: one frame, a rule
+             between the rows, the chosen row filled with a bar on its
+             leading edge. It was .rows, which draws each option as its own
+             bordered box. */}
+        <div className="navlist">
           <button
-            type="button" className={`rowcard${plan === 'yearly' ? ' rowcard--on' : ''}`}
+            type="button" className="rowcard"
             aria-pressed={plan === 'yearly'} onClick={() => choose('yearly')}
-            style={{ cursor: 'pointer', textAlign: 'left' }}
           >
             <Icon name={plan === 'yearly' ? 'check' : 'minus'} size={20} className="rowcard__i" />
             <span className="grow">
@@ -66,9 +76,8 @@ export function PlanPicker({ stripeReady }: { stripeReady: boolean }) {
           </button>
 
           <button
-            type="button" className={`rowcard${plan === 'monthly' ? ' rowcard--on' : ''}`}
+            type="button" className="rowcard"
             aria-pressed={plan === 'monthly'} onClick={() => choose('monthly')}
-            style={{ cursor: 'pointer', textAlign: 'left' }}
           >
             <Icon name={plan === 'monthly' ? 'check' : 'minus'} size={20} className="rowcard__i" />
             <span className="grow">
@@ -79,7 +88,13 @@ export function PlanPicker({ stripeReady }: { stripeReady: boolean }) {
         </div>
       </fieldset>
 
-      <div className="card" style={{ marginTop: 'var(--s5)' }}>
+      {/*  A CARD ONLY WHERE THERE IS NOT ONE ALREADY. On /signup/plan this
+           stands on the auth page's own ground and needs its frame; inside
+           the Change plan card on /app/settings/plan it was a bordered box
+           inside a bordered box, which is the shape the settings list and
+           the importer's resolve screen were both taken off. */}
+      <div className={nested ? '' : 'card'} style={{ marginTop: 'var(--s5)' }}>
+        {nested ? <div className="hr" /> : null}
         <div className="spread">
           <span className="card__title">Today</span>
           <span className="fig fig--m tnum">{money(0)}</span>

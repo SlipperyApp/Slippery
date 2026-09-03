@@ -10,12 +10,12 @@
  *  everywhere. Free bet stakes are excluded from turnover. Arb pairs count to
  *  net and turnover but never to win rate, streaks or average odds. */
 
-import { turnoverPence, riskPence, effectiveOdds } from '@/lib/domain/fold';
+import { turnoverPence, riskPence, effectiveOdds, ownMoney } from '@/lib/domain/fold';
 import { balanceMinor, type Movement } from '@/lib/domain/movements';
 import { isImportedSource } from '@/lib/domain/types';
 import type { Currency, Outcome, SportId } from '@/lib/domain/types';
 import type { DemoBet } from './demo';
-import { dayKey, zonedParts, startOfDay, DEFAULT_TZ, type TimeZone } from '@/lib/format';
+import { dayKey, zonedParts, startOfDay, MONTH_LONG, DEFAULT_TZ, type TimeZone } from '@/lib/format';
 import { ODDS_BANDS, STAKE_BANDS, oddsBand, stakeBand, marketGroupFor, marketGroupName, bookmakerName } from './reference';
 
 export type Period = 'today' | 'week' | 'month' | 'year' | 'all';
@@ -31,13 +31,18 @@ export type Period = 'today' | 'week' | 'month' | 'year' | 'all';
  *  strip scrolled and opened on All time with Today parked off the left
  *  edge, one letter of it showing under the fade: a word dissolving mid
  *  letter reads as a rendering fault rather than as an affordance. At chip
- *  length all five fit at 390 and there is nothing to scroll. */
+ *  length all five fit at 390 and there is nothing to scroll.
+ *
+ *  ALL TIME KEEPS BOTH WORDS. It was "All", which on a strip beside Today,
+ *  Week, Month and Year reads as "all of them" rather than as a period, and
+ *  it is the one the example account opens on. The other four lose the
+ *  word "This", which is the half that carries nothing. */
 export const PERIODS: { id: Period; label: string; chip: string }[] = [
   { id: 'today', label: 'Today', chip: 'Today' },
   { id: 'week', label: 'This week', chip: 'Week' },
   { id: 'month', label: 'This month', chip: 'Month' },
   { id: 'year', label: 'This year', chip: 'Year' },
-  { id: 'all', label: 'All time', chip: 'All' },
+  { id: 'all', label: 'All time', chip: 'All time' },
 ];
 
 export type Scope = {
@@ -193,7 +198,16 @@ export function summarise(rows: DemoBet[]): Summary {
     net += s.realisedPlPence;
     units += s.units;
     voided += s.voidedStakePence;
-    if (b.isFreeBet || b.isBonusFunds || b.isBoosted) netPromo += s.realisedPlPence;
+    /*  A BOOST IS NOT IN THIS HALF, and it used to be. netPromo is profit
+        made with money that was not the bettor's, which is what makes the
+        split worth printing: "up 1,184, of which 890 came from sign-up
+        offers". A boosted bet is the bettor's own stake at a price the
+        bookmaker improved, so counting the WHOLE of its profit as
+        promotional overstates the promotional half by everything the bet
+        would have won anyway. The uplift alone is the promotional part and
+        nothing in this product records the unboosted price, so it cannot be
+        computed and is not guessed. */
+    if (!ownMoney(b)) netPromo += s.realisedPlPence;
 
     if (!b.arbGroupId) {
       if (s.outcome === 'won' || s.outcome === 'cash-profit') wins += 1;
@@ -686,4 +700,119 @@ export function netByCurrency(bets: DemoBet[]): CurrencyTotals {
   const out: CurrencyTotals = { GBP: 0, EUR: 0 };
   for (const b of bets) out[b.currency] += b.state.realisedPlPence;
   return out;
+}
+
+/*  ------------------------------------------------- six of whatever is selected
+ *
+ *  THE ONE CHART ON THE DASHBOARD THAT COMPARES PERIODS, and it replaced two
+ *  modules that each compared one thing badly: a "By month" list of four rows
+ *  with money on the right, and a row of trend bars on the tiles that had no
+ *  axis, no labels and no zero line, so a losing month and a winning month
+ *  drew the same shape in a different colour.
+ *
+ *  ONE RULE, AND IT IS THE SELECTOR'S OWN UNIT. The chart draws six of
+ *  whatever period is selected, ending with the current one: Today is the
+ *  last six days, Week the last six weeks, Month the last six months, Year
+ *  the last six years. That is what "at whatever granularity fits the
+ *  selection" means here, and it is one rule rather than five, so nothing on
+ *  the page has to remember which chart is on which axis.
+ *
+ *  ALL TIME IS THE EXCEPTION AND HAS TO BE. There is no unit above a year
+ *  that a betting record has six of, and six calendar years of a seven month
+ *  record is one bar and five empty ones. So all time splits the record's own
+ *  span into six equal parts and labels each by the date it starts. It is the
+ *  only bucket list here whose boundaries are not calendar boundaries and the
+ *  labels say so by carrying a day as well as a month.
+ *
+ *  THE BUCKETS ARE FILLED FROM THE WHOLE BOOK, filtered by the bookmaker and
+ *  the sport but never by the period: five of the six bars are outside the
+ *  selected period by construction, and selecting "this month" and being shown
+ *  one bar with five empty ones beside it is the defect this replaces. */
+
+export type PeriodBar = {
+  key: string;
+  /** What is printed under the bar. */
+  label: string;
+  /** What a screen reader is told, which is the period spelled out. */
+  full: string;
+  netPence: number;
+  count: number;
+  /** The bar the selected period is actually in, drawn as the current one. */
+  current: boolean;
+};
+
+export const PERIOD_BARS = 6;
+
+const SHORT_MONTH = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+
+/** The label a period gets under its bar, and the sentence it gets in the
+ *  accessibility tree. Kept together so the two can never describe different
+ *  windows. */
+function barNames(period: Period, from: Date, tz: TimeZone): { label: string; full: string } {
+  const p = zonedParts(from, tz);
+  const dayMonth = `${p.day} ${SHORT_MONTH[p.month - 1]}`;
+  switch (period) {
+    case 'today': return { label: dayMonth, full: `${dayMonth} ${p.year}` };
+    case 'week': return { label: dayMonth, full: `the week of ${dayMonth} ${p.year}` };
+    case 'month': return { label: SHORT_MONTH[p.month - 1], full: `${MONTH_LONG[p.month - 1]} ${p.year}` };
+    case 'year': return { label: String(p.year), full: String(p.year) };
+    default: return { label: dayMonth, full: `from ${dayMonth} ${p.year}` };
+  }
+}
+
+/** Step a period boundary back by `n` of its own unit, in the account's zone. */
+function backBy(period: Period, now: Date, n: number, weekStart: 0 | 1, tz: TimeZone): Date {
+  const p = zonedParts(now, tz);
+  switch (period) {
+    case 'today': return startOfDay(p.year, p.month, p.day - n, tz);
+    case 'week': {
+      const dow = new Date(Date.UTC(p.year, p.month - 1, p.day)).getUTCDay();
+      const back = (dow - weekStart + 7) % 7;
+      return startOfDay(p.year, p.month, p.day - back - n * 7, tz);
+    }
+    case 'month': return startOfDay(p.year, p.month - n, 1, tz);
+    default: return startOfDay(p.year - n, 1, 1, tz);
+  }
+}
+
+export function periodSeries(
+  bets: DemoBet[], scope: Scope, now = new Date(), weekStart: 0 | 1 = 1, tz: TimeZone = DEFAULT_TZ,
+): PeriodBar[] {
+  /*  The bookmaker and the sport still apply. Only the period is dropped,
+      because the period is what this chart is drawing six of. */
+  const rows = select(bets, { ...scope, period: 'all' }, now, weekStart, tz)
+    .filter((b) => b.state.status !== 'open');
+
+  /*  Edges, oldest first, one longer than the bar count: bucket i runs from
+      edges[i] up to but not including edges[i + 1]. */
+  const edges: Date[] = [];
+  if (scope.period === 'all') {
+    const times = rows.map((b) => Date.parse(b.eventAt)).filter(Number.isFinite);
+    if (!times.length) return [];
+    const first = Math.min(...times);
+    /*  A millisecond past the last event, so the newest bet is inside the
+        last bucket rather than exactly on the edge that ends it. */
+    const last = Math.max(...times) + 1;
+    const step = Math.max(1, (last - first) / PERIOD_BARS);
+    for (let i = 0; i <= PERIOD_BARS; i++) edges.push(new Date(first + step * i));
+  } else {
+    for (let i = PERIOD_BARS; i >= 0; i--) edges.push(backBy(scope.period, now, i, weekStart, tz));
+  }
+
+  const bars: PeriodBar[] = [];
+  for (let i = 0; i < PERIOD_BARS; i++) {
+    const from = edges[i].getTime();
+    const to = edges[i + 1].getTime();
+    let netPence = 0;
+    let count = 0;
+    for (const b of rows) {
+      const t = Date.parse(b.eventAt);
+      if (t < from || t >= to) continue;
+      netPence += b.state.realisedPlPence;
+      count += 1;
+    }
+    const { label, full } = barNames(scope.period, edges[i], tz);
+    bars.push({ key: edges[i].toISOString(), label, full, netPence, count, current: i === PERIOD_BARS - 1 });
+  }
+  return bars;
 }

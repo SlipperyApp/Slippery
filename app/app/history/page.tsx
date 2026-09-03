@@ -4,7 +4,7 @@ import { getViewer } from '@/lib/data/session';
 import { Icon } from '@/components/Icon';
 import { bookmakerName } from '@/lib/data/reference';
 import { legLine } from '@/lib/domain/working';
-import { dateTime, money, shortDate, timeOfDay } from '@/lib/format';
+import { count, dateTime, money, shortDate, timeOfDay } from '@/lib/format';
 
 export const metadata: Metadata = {
   title: 'Change history',
@@ -30,6 +30,15 @@ export default async function History() {
 
   const late = rows.filter((r) => r.event.afterResultKnown).length;
   const byHand = rows.filter((r) => r.event.enteredBy !== 'system').length;
+  /*  A COLUMN WHERE EVERY ROW SAYS THE SAME THING IS NOT A COLUMN. On an
+      account the bot has settled, By reads "system" a hundred and twenty
+      times and Returned is a hundred and twenty dashes, which is 260 pixels
+      of the table spent saying nothing twice. Each is drawn when it has
+      something to tell apart, the way the league table draws its two
+      optional columns, and the footer says in words what the By column would
+      have said in a column of identical cells. */
+  const anyByHand = byHand > 0;
+  const anyReturn = rows.some((r) => r.event.returnedPence != null);
 
   return (
     <>
@@ -40,24 +49,31 @@ export default async function History() {
         </Link>
       </div>
 
-      {/*  The three figures across the card rather than huddled in its left
-           third. A row of figures with a fluid gap puts them all against the
-           left edge of a 1620 pixel card and leaves the rest empty; a divided
-           strip says they are one measurement in three parts, which is what
-           they are. */}
-      <div className="card" style={{ marginBottom: 'var(--gap-block)' }}>
-        <p className="small muted">
-          Append only: a correction is a new event, never an edit. Anything entered{' '}
-          <strong>after a result was known</strong> is flagged.
-        </p>
-        <div className="figstrip" style={{ marginTop: 'var(--s5)' }}>
-          <div><p className="label">Events shown</p><p className="fig fig--s tnum">{rows.length}</p></div>
-          <div><p className="label">Entered by hand</p><p className="fig fig--s tnum">{byHand}</p></div>
-          <div><p className="label">After a result was known</p><p className="fig fig--s tnum">{late}</p></div>
-        </div>
-      </div>
+      {/*  A CARD OF THREE FIGURES, TWO OF WHICH WERE ZERO. "Entered by hand
+           0" and "After a result was known 0" are the two facts this page
+           exists to establish, and a 34 pixel zero under a label is the
+           weakest way to state either: it reads as a measurement that has
+           not been taken. They are a sentence in the table's own footer now,
+           where they are about the rows above them, and the card they were
+           in has gone with its heading and its paragraph.
 
-      <div className="card">
+           The append only rule is the page's lead, because it is the reason
+           the table has the shape it has. */}
+      <p className="muted" style={{ marginTop: 'var(--s2)', marginBottom: 'var(--gap-block)' }}>
+        Append only: a correction is a new event, never an edit. Anything entered{' '}
+        <strong>after a result was known</strong> is flagged.
+      </p>
+
+      {/*  THE TABLE SCROLLS AND THE RULE ABOVE IT DOES NOT. Measured at
+           1440 by 900 this page was 7,861 pixels against the 824 the window
+           leaves, which is nine screens of a table whose heading, its count
+           and the sentence saying corrections are appended rather than
+           edited all scrolled away at the first flick. */}
+      <div className="card fitcol fitcol--scroll">
+        <div className="card__head">
+          <h2 className="card__title">Every settlement event</h2>
+          <p className="card__note">{count(rows.length)} shown, newest first</p>
+        </div>
         <div className="scroller" tabIndex={0} role="region" aria-label="Settlement events, scrollable">
           <table className="tbl">
             <caption className="sr-only">Settlement events, newest first</caption>
@@ -75,8 +91,8 @@ export default async function History() {
                 <th scope="col">Fixture</th>
                 <th scope="col">Bookmaker</th>
                 <th scope="col">Event</th>
-                <th scope="col">By</th>
-                <th scope="col" className="num">Returned</th>
+                {anyByHand ? <th scope="col">By</th> : null}
+                {anyReturn ? <th scope="col" className="num">Returned</th> : null}
               </tr>
             </thead>
             <tbody>
@@ -111,18 +127,26 @@ export default async function History() {
                       </>
                     ) : null}
                   </td>
-                  <td className="dim nowrap">{event.enteredBy}</td>
-                  <td className="num tnum">
-                    {event.returnedPence == null ? '–' : money(event.returnedPence, account.currency)}
-                  </td>
+                  {anyByHand ? <td className="dim nowrap">{event.enteredBy}</td> : null}
+                  {anyReturn ? (
+                    <td className="num tnum">
+                      {event.returnedPence == null ? '–' : money(event.returnedPence, account.currency)}
+                    </td>
+                  ) : null}
                 </tr>
               ))}
             </tbody>
           </table>
         </div>
         <p className="small dim card__foot">
-          Showing the most recent {rows.length}. Every one carries the time it happened in UK time:
-          the newest is {rows.length ? dateTime(rows[0].event.occurredAt) : 'not yet recorded'}.
+          {/*  THE ZONE SENTENCE IS GONE. "Every one carries the time it
+               happened in UK time" told the reader how the product stores a
+               timestamp, which is the mechanics copy this branch removes from
+               every app screen; the zone is named once, in Settings, beside
+               the control that sets it. What is left is three counts. */}
+          {byHand === 0 ? 'None of them was' : `${count(byHand)} of them were`} entered by hand and{' '}
+          {late === 0 ? 'none' : count(late)} after a result was known. The newest is{' '}
+          {rows.length ? dateTime(rows[0].event.occurredAt) : 'not yet recorded'}.
         </p>
       </div>
     </>

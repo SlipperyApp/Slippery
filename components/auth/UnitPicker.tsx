@@ -87,7 +87,7 @@ export function UnitPicker() {
       </fieldset>
 
       {custom ? (
-        <div className="field">
+        <div className="field field--tight">
           <label className="field__label" htmlFor="cu">Your own unit</label>
           <input
             id="cu" className="input input--money" inputMode="decimal" autoComplete="off"

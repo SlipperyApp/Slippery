@@ -48,12 +48,12 @@ export function Dropzone({ enabled }: { enabled: boolean }) {
   return (
     <div>
       <div
-        className="card"
+        className="card card--mid"
         onDragOver={(e) => { if (enabled) { e.preventDefault(); setOver(true); } }}
         onDragLeave={() => setOver(false)}
         onDrop={(e) => { e.preventDefault(); setOver(false); if (enabled) take(e.dataTransfer.files?.[0]); }}
         style={{
-          alignItems: 'center', textAlign: 'center', padding: 'var(--s8) var(--s5)',
+          padding: 'var(--s8) var(--s5)',
           borderWidth: '1.5px',
           borderColor: over ? 'var(--accent)' : 'var(--line-2)',
           background: over ? 'color-mix(in oklab, var(--accent) 8%, var(--surface))' : undefined,
@@ -83,7 +83,7 @@ export function Dropzone({ enabled }: { enabled: boolean }) {
       </div>
 
       {error ? (
-        <div className="banner banner--neg" role="alert" style={{ marginTop: 'var(--s3)' }}>
+        <div className="banner banner--warn" role="alert" style={{ marginTop: 'var(--s3)' }}>
           <Icon name="alert" size={18} className="banner__icon" />
           <span>
             <strong>{error.title}.</strong> {error.message} {error.fix}

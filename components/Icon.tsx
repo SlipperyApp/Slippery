@@ -36,7 +36,11 @@ const P: Record<string, React.ReactNode> = {
   sort: <><path d="M7 4v16" /><path d="m3.5 16.5 3.5 3.5 3.5-3.5" /><path d="M17 20V4" /><path d="m13.5 7.5 3.5-3.5 3.5 3.5" /></>,
   calendar: <><rect x="3.5" y="5" width="17" height="15.5" rx="2.4" /><path d="M3.5 9.6h17" /><path d="M8 3v4" /><path d="M16 3v4" /></>,
   chart: <><path d="M4 19.5h16.5" /><path d="M4 15.5 9 10l3.6 3.2L20 5.5" /></>,
-  settings: <><circle cx="12" cy="12" r="3.1" /><path d="M12 2.8v2.6M12 18.6v2.6M2.8 12h2.6M18.6 12h2.6M5.5 5.5l1.9 1.9M16.6 16.6l1.9 1.9M18.5 5.5l-1.9 1.9M7.4 16.6l-1.9 1.9" /></>,
+  /*  A GEAR, NOT A SUN. The old path was a disc with eight rays coming off
+      it, which is the glyph every product on the web uses for a light and
+      dark switch. It sat in the app rail above the avatar and read as a
+      theme toggle, and theme switching is not what it opens. */
+  settings: <><circle cx="12" cy="12" r="3.1" /><path d="M19.1 14.4a1.5 1.5 0 0 0 .3 1.7l.1.1a1.8 1.8 0 1 1-2.6 2.6l-.1-.1a1.5 1.5 0 0 0-1.7-.3 1.5 1.5 0 0 0-.9 1.4v.2a1.8 1.8 0 0 1-3.6 0V20a1.5 1.5 0 0 0-1-1.4 1.5 1.5 0 0 0-1.7.3l-.1.1a1.8 1.8 0 1 1-2.6-2.6l.1-.1a1.5 1.5 0 0 0 .3-1.7 1.5 1.5 0 0 0-1.4-.9H4a1.8 1.8 0 0 1 0-3.6h.1a1.5 1.5 0 0 0 1.4-1 1.5 1.5 0 0 0-.3-1.7l-.1-.1a1.8 1.8 0 1 1 2.6-2.6l.1.1a1.5 1.5 0 0 0 1.7.3H9.6a1.5 1.5 0 0 0 .9-1.4V4a1.8 1.8 0 0 1 3.6 0v.1a1.5 1.5 0 0 0 .9 1.4 1.5 1.5 0 0 0 1.7-.3l.1-.1a1.8 1.8 0 1 1 2.6 2.6l-.1.1a1.5 1.5 0 0 0-.3 1.7v.1a1.5 1.5 0 0 0 1.4.9h.2a1.8 1.8 0 0 1 0 3.6H20a1.5 1.5 0 0 0-1.4.9Z" /></>,
   clock: <><circle cx="12" cy="12" r="8.6" /><path d="M12 7.2V12l3.2 2" /></>,
   alert: <><path d="M12 4.2 21 19.6H3Z" /><path d="M12 10v4.2" /><path d="M12 17.1h.01" /></>,
   info: <><circle cx="12" cy="12" r="8.6" /><path d="M12 11v5.4" /><path d="M12 7.7h.01" /></>,

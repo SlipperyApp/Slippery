@@ -35,7 +35,11 @@ export function EmptyDashboard({
         <Onboarding signals={signals} trial={trial} />
       </div>
 
-      <div className="grid" style={{ marginTop: 'var(--s4)' }}>
+      {/*  Measured at 1440 by 900: 955 pixels against the 824 the window
+           leaves, so the third of the three modules a new account is being
+           shown was under the fold. The heading, the reason there is nothing
+           here and the four things to do stay put; the modules scroll. */}
+      <div className="grid fitcol fitcol--scroll" style={{ marginTop: 'var(--s4)', alignContent: 'start' }}>
         <section className="card col-4 h-m">
           <p className="card__title">Net</p>
           <EmptyState

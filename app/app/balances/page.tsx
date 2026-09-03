@@ -4,9 +4,11 @@ import { getViewer } from '@/lib/data/session';
 import { balanceSheet, CURRENCY_WORD } from '@/lib/data/balance-sheet';
 import { nameList } from '@/lib/domain/balances';
 import { BalanceTable } from '@/components/app/BalanceTable';
+import { MoneyMoved } from '@/components/app/MoneyMoved';
 import { sharePath } from '@/lib/data/share';
 import { Icon } from '@/components/Icon';
 import { plural } from '@/lib/format';
+import { realisedPence } from '@/lib/data/analytics';
 
 export const metadata: Metadata = {
   title: 'Balances',
@@ -27,6 +29,12 @@ export default async function Balances() {
     names: nameList(total.balances),
     lines: sheet.lines.filter((l) => l.currency === total.currency),
   }));
+
+  /*  Scoped to the balance that is OPEN, because the block below reads one
+      balance: pounds and euros are never summed, and a movement belongs to
+      exactly one balance. */
+  const ownBets = book.bets.filter((b) => b.balanceId === open.id);
+  const ownMovements = book.movements.filter((m) => m.balanceId === open.id);
 
   const sharePaths: Record<string, string | null> = {};
   for (const l of sheet.lines) {
@@ -68,7 +76,34 @@ export default async function Balances() {
           : 'Each one keeps its own starting figure, its own money in and out and its own bets, so no figure here is an average over two of them.'}
       </p>
 
-      <BalanceTable groups={groups} openId={open.id} sharePaths={sharePaths} many={many} />
+      {/*  THE SHEET AND THE MOVEMENTS SCROLL TOGETHER, and the heading and
+           the sentence that says which balance is in which currency do not.
+           Measured at 1440 by 900 this page was 1,349 pixels against the 824
+           the window leaves, so a second balance and everything that was
+           paid into the first one were below the fold with nothing on screen
+           saying so. See .fitcol in layout.css. */}
+      <div className="fitcol fitcol--scroll">
+        <BalanceTable groups={groups} openId={open.id} sharePaths={sharePaths} />
+
+        {/*  THE BALANCE THAT IS OPEN, AND WHAT IT IS MADE OF. It was the
+             third block down the ledger, under a summary strip and a card of
+             open positions, on the screen whose subject is bets. Money paid
+             in is not a bet and is in no betting figure, which is what its
+             own paragraph says, and a block that has to say it is in none of
+             the figures above it is a block on the wrong page. Here it is on
+             the page about balances, under the table of every balance, which
+             is where somebody who has just read a balance asks what it is
+             made of. Record a deposit came with it. */}
+        <div style={{ marginTop: 'var(--gap-block)' }}>
+          <MoneyMoved
+            balanceName={open.name}
+            movements={ownMovements}
+            startMinor={open.startMinor}
+            realisedMinor={realisedPence(ownBets)}
+            currency={open.currency}
+          />
+        </div>
+      </div>
     </>
   );
 }

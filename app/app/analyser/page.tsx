@@ -62,7 +62,10 @@ export default async function AnalyserPage({
         column to sort by it.
       </p>
 
-      <div className="card">
+      {/*  Crossed, this table is 4,127 pixels at 1440 by 900 against the 824
+           the window leaves, and the axis it is crossed on is stated above
+           it. The table scrolls and the statement stays. */}
+      <div className="card fitcol fitcol--scroll">
         {tab.total.bets === 0 ? (
           <p className="small dim">Nothing in this scope yet. Widen the period above.</p>
         ) : (

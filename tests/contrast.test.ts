@@ -290,12 +290,27 @@ test('the two result colours are never used to mean anything but money', () => {
     // the destructive block, which the brief specifies is in the loss colour
     "Destructive",
     // and the general shape of "the sign of a number picks the colour", which
-    // is the correct use by definition
-    "> 0 \\? '(pos|neg)'", ">= 0 \\? '(pos|neg)'", "< 0 \\? '(pos|neg)'",
+    // is the correct use by definition.
+    //
+    // ABOVE ZERO IS NEVER THE LOSS COLOUR AND BELOW IT IS NEVER THE PROFIT
+    // ONE, which is what this used to allow: the import's dry run painted
+    // "14 rows cannot be split reliably" in --neg through
+    // `DRY_RUN[r.k] > 0 ? 'neg'`, and the allowance read it as a sign test
+    // and let it through. A count above zero is not a loss. Written out per
+    // direction, a colour that disagrees with the comparison beside it now
+    // has to say so somewhere else.
+    "> 0 \\? 'pos'", ">= 0 \\? 'pos'", "< 0 \\? 'neg'", "<= 0 \\? 'neg'",
     "startsWith\\('-'\\)", "startsWith\\('\\+'\\)",
     "'var\\(--pos\\)' : 'var\\(--neg\\)'",
     // a boolean already named for the sign of the figure it colours
     "\\bpos \\? '(pos|neg)'", "tone=\\{pos", "brk__fig", "brk__barfill",
+    /*  The six period bars, whose fill is chosen by `up`, which is
+        `netPence >= 0` and nothing else. Same category as brk__barfill above
+        it: a bar drawn at the length and in the colour of a money figure. It
+        is listed rather than covered by widening the sign-test allowance,
+        because a wider allowance is what let the import's dry run paint a
+        row count in the loss colour. */
+    "pbar__barfill",
     // a ghosted empty state is a picture of a money figure
     "ghost=", "\\+£",
   ].join('|'));
@@ -352,6 +367,53 @@ test('the two result colours are never applied inline to mean anything but money
     if (!APPLIED.test(line)) continue;
     if (ALLOWED_INLINE.test(line)) continue;
     offences.push(`${at} ${line.trim().slice(0, 84)}`);
+  }
+  assert.deepEqual(offences, [], offences.join('\n'));
+});
+
+/*  AND THE THIRD WAY A COLOUR REACHES A SCREEN, which neither test above can
+ *  see: a rule in the stylesheet. Both of them read .tsx files, so a colour
+ *  applied by class name from CSS is invisible to both, and three had drifted
+ *  there and stayed:
+ *
+ *    .factlist svg   profit green as "this sentence is true"
+ *    .field__err     loss red as "this field is wrong", on nine forms
+ *    .banner--neg    loss red as "the reader is down", "this browser cannot
+ *                    open a HEIC", "you already have this bet"
+ *
+ *  Every one of those meanings is on the list DECISIONS.md records the two
+ *  colours being taken back from. The allowance below is the money: the bars
+ *  and meters that draw a figure, the calendar's own ramp, the two utility
+ *  classes that ARE the colours, and the destructive block the brief puts in
+ *  the loss colour on purpose. A custom property is the token layer and is
+ *  allowed to name them; anything else has to be money.
+ */
+test('the stylesheet paints nothing but money in the two result colours', () => {
+  const dir = new URL('../app/styles/', import.meta.url);
+  const files = readdirSync(dir).filter((f) => f.endsWith('.css'));
+  const ALLOWED = new RegExp([
+    // the two utility classes that are the colours themselves
+    "^\\.(pos|neg)\\b",
+    // a bar, a meter or a swatch that draws a money figure or explains it
+    "barfill", "meter__fill", "cal__", "themecard__sw", "swatch",
+    // the outcome pill: won, lost, and the two cash outs that carry a sign
+    "pill--(pos|neg)",
+    // the destructive block, which the brief specifies is in the loss colour
+    "btn--danger",
+  ].join('|'));
+  const offences: string[] = [];
+  for (const file of files) {
+    const text = readFileSync(new URL(file, dir), 'utf8').replace(/\/\*[\s\S]*?\*\//g, (m) => m.replace(/[^\n]/g, ' '));
+    let selector = '';
+    text.split('\n').forEach((line, i) => {
+      if (line.includes('{')) selector = line.slice(0, line.indexOf('{')).trim() || selector;
+      if (!/var\(--(pos|neg)\)|#86EFAC|#FCA5A5/i.test(line)) return;
+      // The token layer: --cal-pos and the washes are named from the pair and
+      // are the sanctioned way to derive from it.
+      if (/^\s*--[a-z0-9-]+\s*:/.test(line)) return;
+      if (ALLOWED.test(selector)) return;
+      offences.push(`${file}:${i + 1} ${selector} { ${line.trim().slice(0, 64)} }`);
+    });
   }
   assert.deepEqual(offences, [], offences.join('\n'));
 });

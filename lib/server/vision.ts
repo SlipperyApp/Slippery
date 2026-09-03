@@ -18,7 +18,7 @@ import { parseMoneyMinor } from '@/lib/format';
 import { fromFractional } from '@/lib/odds';
 import type { Currency } from '@/lib/domain/types';
 import type { Confidence, ReadField, ReadLeg, SlipRead, SlipRefusal } from '@/lib/data/read';
-import { detectTemplate, type TemplateMatch } from '@/lib/data/importing';
+import { detectPromotions, detectTemplate, type PromoRead, type TemplateMatch } from '@/lib/data/importing';
 
 export function readerReady(): boolean {
   return Boolean(visionKey());
@@ -39,6 +39,7 @@ const SYSTEM = [
   '6. Score confidence per field, never for the slip as a whole.',
   '7. Set capture to photo_of_screen when the image is a camera photograph of a phone or monitor rather than a screenshot: look for moire, glare, a bezel, keystoned edges or a visible reflection.',
   '8. List in cutOff the name of any field whose row runs off the edge of the image, even partly.',
+  '8b. Say who paid for the stake, and quote the wording. isFreeBet when the slip says free bet, bet credits, stake not returned or SNR. isBonusFunds when it says the stake came from bonus funds, a bonus balance or bonus money, which is not the same thing and is not the odds bonus a Lucky 15 prints. isBoosted when the price is a boost, an enhanced price or a crossed out price raised. Put the wording verbatim in slipText.',
   '9. If the image is not a betting slip, set isSlip to false and return nothing else.',
   '',
   'Return JSON only, with no prose around it.',
@@ -48,7 +49,7 @@ const SCHEMA = [
   '{"isSlip":bool,"capture":"screenshot|photo_of_screen|photo_of_paper|unknown",',
   '"bookmaker":str|null,"bookmakerConfidence":"high|medium|low","slipText":str|null,"shape":str|null,',
   '"stakeText":str|null,"stakePence":int|null,"currency":"GBP|EUR"|null,"placedAt":str|null,',
-  '"isFreeBet":bool,"isBoosted":bool,"isEachWay":bool,"ewTerms":str|null,',
+  '"isFreeBet":bool,"isBonusFunds":bool,"isBoosted":bool,"isEachWay":bool,"ewTerms":str|null,',
   '"legs":[{"selection":str|null,"eventName":str|null,"marketRaw":str|null,',
   '"oddsText":str|null,"odds":number|null,"confidence":"high|medium|low"}],',
   '"notLegible":[str],"cutOff":[str]}',
@@ -88,7 +89,14 @@ export type VisionResult = {
   currency: Currency | null;
   placedAt: string | null;
   isFreeBet: boolean;
+  isBonusFunds: boolean;
   isBoosted: boolean;
+  /** What the phrase table found in the slip's own chrome, and the phrases it
+   *  found. The model is asked as well and the two are OR-ed: a model that
+   *  misses "Bet Credits" in a footer is caught by the table, and a promotion
+   *  the table has never seen is caught by the model. Neither is believed
+   *  silently, because the evidence rides to the review screen with it. */
+  promo: PromoRead;
   isEachWay: boolean;
   ewTerms: string | null;
   legs: VisionLeg[];
@@ -232,7 +240,7 @@ export function normaliseRead(raw: unknown, ctx: ReadContext): ReadOutcome {
    *  confirmed. What goes in is what it says it SAW, including the raw
    *  selections, because a slip whose header was cropped out of frame still
    *  carries the book's own wording further down. */
-  const template = detectTemplate([
+  const promoText = [
     text(r.slipText) ?? '',
     text(r.stakeText) ?? '',
     text(r.ewTerms) ?? '',
@@ -242,7 +250,41 @@ export function normaliseRead(raw: unknown, ctx: ReadContext): ReadOutcome {
         return [text(l.selection), text(l.eventName), text(l.marketRaw)].filter(Boolean).join(' ');
       })
       .join(' '),
-  ].join(' \n '));
+  ].join(' \n ');
+  const template = detectTemplate(promoText);
+
+  /*  WHO PAID FOR THE STAKE, read off the same text the template came off.
+   *
+   *  Two readers, OR-ed, and both of them show their working. The model is
+   *  asked directly, because it is looking at the picture and can see a
+   *  greyed free bet token the transcription might flatten; the phrase table
+   *  reads the chrome it transcribed, because a model that answers a boolean
+   *  is a model that can answer it wrong with no way to tell. Where either
+   *  fires the review screen gets a switch that is already on, WITH the
+   *  phrase beside it, so a wrong read is one press to undo.
+   *
+   *  It matters more than any other flag on the slip. A free bet stake is not
+   *  returned and is out of turnover, a bonus funds stake is returned and is
+   *  also out of turnover, and an own-money stake is neither: three different
+   *  profits for the same three numbers, and nothing in a ledger three weeks
+   *  later can tell them apart. See lib/domain/fold.ts. */
+  const found = detectPromotions(promoText);
+  const modelFree = r.isFreeBet === true;
+  const modelBonus = r.isBonusFunds === true;
+  const freeBet = found.freeBet || modelFree;
+  const promo: PromoRead = {
+    freeBet,
+    /*  Free bet wins the tie here as well as inside the table: a token that
+        sat in the bonus wallet is still a token, and its stake does not come
+        back. */
+    bonusFunds: !freeBet && (found.bonusFunds || modelBonus),
+    boosted: found.boosted || r.isBoosted === true,
+    matched: found.matched.length
+      ? found.matched
+      : /*  The model saw something the table has no phrase for. Saying so is
+            the honest evidence: it is a reason to look, not a quotation. */
+        (modelFree || modelBonus || r.isBoosted === true ? ['The reader saw promotional wording'] : []),
+  };
 
   const spec = shapeFor(r.shape);
   const isEachWay = r.isEachWay === true;
@@ -348,8 +390,10 @@ export function normaliseRead(raw: unknown, ctx: ReadContext): ReadOutcome {
       lines,
       currency,
       placedAt: text(r.placedAt),
-      isFreeBet: r.isFreeBet === true,
-      isBoosted: r.isBoosted === true,
+      isFreeBet: promo.freeBet,
+      isBonusFunds: promo.bonusFunds,
+      isBoosted: promo.boosted,
+      promo,
       isEachWay,
       ewTerms,
       legs,
@@ -548,6 +592,11 @@ export function toRead(v: VisionResult, opts: { id: string; currency: Currency }
     placedAt: v.placedAt,
     fields: toFields(v, opts.currency),
     legs: toLegs(v),
-    promotional: { freeBet: v.isFreeBet, boosted: v.isBoosted, bonusFunds: false },
+    promotional: {
+      freeBet: v.isFreeBet,
+      bonusFunds: v.isBonusFunds,
+      boosted: v.isBoosted,
+      saw: v.promo.matched,
+    },
   };
 }
